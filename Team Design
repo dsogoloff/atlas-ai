@@ -1,0 +1,121 @@
+The minimum viable human team (0–2 employees)
+1) CEO — non-delegable
+CEO must own:
+
+Opportunity selection (what to build, what to kill)
+
+Customer discovery for the first ~20–30 high-quality interviews (district + homeschool)
+
+Early sales (first pilots / first paying homeschool cohort)
+
+Product direction (what “good” looks like)
+
+**2) One “Project Manager” **
+Strong PM instincts + growth ops + basic technical fluency
+
+Runs interview ops, keeps Notion system clean, coordinates contractors, manages funnel experiments, keeps cadence.
+
+What you can outsource almost entirely
+A) Engineering (initial build)
+Outsourceable: 70–90% early on
+
+Contract a senior full-stack dev (or small studio) for MVP
+
+PM + AI + architect guidance define PRD and acceptance tests
+
+What you keep in-house: product judgment + QA signoff + architecture guardrails (can be AI-assisted)
+
+Warning: Never outsource to a team that cannot ship weekly. You need weekly releases to learn fast.
+
+B) Design
+Outsourceable: ~90%
+
+UI/UX designer for 2–3 week bursts (flows + design system)
+
+Brand/landing pages via contractor
+
+C) Content production
+Outsourceable: 80–90%
+
+AI drafts; contractor polishes
+
+You approve narrative and claims
+
+D) Lead generation / list building
+Outsourceable: 90%
+
+VA + Clay specialist for district contact lists and homeschool community mapping
+E) Security / privacy documentation
+Outsourceable: 60–80% early
+
+A part-time security consultant to build a “district-ready security packet”
+
+Templates adapted to your architecture
+
+F) Legal
+Outsourceable: 100% (but tightly managed)
+
+You provide commercial intent; counsel drafts/reviews NDAs, MSAs, DPAs, ToS/Privacy Policy
+What you should NOT outsource (or only later)
+1) Core customer interviews (initial 20–30)
+You can outsource scheduling, transcription, and synthesis.
+You should personally conduct the early conversations because:
+
+You need to hear the language, politics, and real objections
+
+It builds credibility for pilots
+
+Later, you can outsource interviewing to a researcher once your script is mature.
+
+2) Product management (decision authority)
+You can outsource PRD drafting, but not prioritization and tradeoffs. That’s the company.
+
+Lean execution model: “Two pods + contractors”
+You run two parallel tracks with minimal humans:
+
+Pod 1 — Discovery & Validation (you + AI)
+3–5 interviews/week district + 5–10/week homeschool
+
+Weekly scorecard updates
+
+2 experiments/week (landing page, concierge, pricing, outreach)
+
+Pod 2 — Build & Ship (contractors + AI)
+Weekly release cadence
+
+You approve acceptance criteria and review demos
+
+Concrete outsourcing plan (what to hire, how many hours)
+Here is a realistic configuration that keeps cost and complexity down:
+
+Senior full-stack contractor: 20–30 hrs/week (MVP build)
+
+Product designer: 10 hrs/week for 3–4 weeks, then ad hoc
+
+VA / research assistant: 5–10 hrs/week (scheduling, lists, CRM hygiene)
+
+Security/privacy consultant: 5–10 hrs total to produce “district-ready packet” v1
+
+Attorney: as-needed (DPA/MSA/ToS)
+
+That’s it.
+
+The operating cadence with a minimal human team
+Daily (10 min): Orchestrator gives you 3 decisions + 3 actions
+
+Weekly (60 min): Evidence review + decision log update
+
+Weekly (30 min): Contractor demo + next sprint scope
+
+Everything else is asynchronous through the Notion system.
+
+The “outsourcing boundary” rules (hard guardrails)
+Contractors deliver working increments weekly, not “big reveals.”
+
+You define acceptance tests (AI can help draft them).
+
+No contractor touches real student PII in early MVP—use synthetic data.
+
+Every major decision gets logged (Decision Log).
+
+Growth experiments must have pass/fail thresholds before launch.
