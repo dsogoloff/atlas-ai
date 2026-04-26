@@ -1,0 +1,329 @@
+<!-- Module D - 1: Parent Dashboard (Desktop) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Assessment - Parent Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#936f03",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-navy": "#1B3A6B",
+                    "on-surface": "#001a40",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-primary-container": "#fffbff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#5b403f",
+                    "surface-dim": "#cadaff",
+                    "inverse-surface": "#0d2f60",
+                    "sam-yellow": "#FFD166",
+                    "on-error-container": "#93000a",
+                    "sam-gray-dark": "#333333",
+                    "surface-container": "#e8edff",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e0e8ff",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-gray-mid": "#777777",
+                    "on-background": "#001a40",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "surface-tint": "#bb152c",
+                    "secondary": "#8e4e14",
+                    "sam-red": "#E63946",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#410007",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-highest": "#d7e2ff",
+                    "secondary-fixed": "#ffdcc4",
+                    "secondary-container": "#ffab69",
+                    "white": "#FFFFFF",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "sam-orange": "#F4A261",
+                    "background": "#f9f9ff",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-variant": "#d7e2ff",
+                    "tertiary": "#755700",
+                    "sam-cream": "#FFF8F0",
+                    "on-secondary-fixed": "#2f1400",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "surface-bright": "#f9f9ff",
+                    "sam-gray-light": "#E5E5E5",
+                    "sam-teal": "#06A77D",
+                    "surface": "#f9f9ff",
+                    "primary": "#b7102a",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-secondary-container": "#783d01",
+                    "outline": "#8f6f6e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "report-width": "880px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "container-max": "1440px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "display-child": ["Plus Jakarta Sans"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "caption": ["Inter"],
+                    "body-regular": ["Inter"]
+            },
+            "fontSize": {
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-sam-cream min-h-screen text-on-surface selection:bg-sam-red/20">
+<!-- TopAppBar -->
+<header class="bg-[#FDFBF7] flex justify-between items-center w-full px-4 py-3 h-16 border-b border-gray-200 docked full-width top-0 z-50">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#1B3A6B] transition-colors duration-200 active:scale-95 hover:bg-gray-100 p-2 rounded-full">menu</button>
+<h1 class="text-[#1B3A6B] font-extrabold text-xl font-['Plus_Jakarta_Sans'] tracking-tight">Atlas Assessment</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-6 mr-6">
+<a class="text-[#E63946] font-['Plus_Jakarta_Sans'] font-bold text-lg" href="#">Reports</a>
+<a class="text-[#1B3A6B] font-['Plus_Jakarta_Sans'] font-bold text-lg hover:text-[#E63946] transition-colors" href="#">Resources</a>
+</div>
+<div class="w-10 h-10 rounded-full bg-sam-navy flex items-center justify-center text-white font-bold overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a smiling professional woman, high-end photography, soft natural lighting, blurry office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2R4s2iO7ohCYkFkrnVZUHJNtAS8og8ayn-CGn_ysCH1MhA59TJbT16iKV1bqxCDfWxPCbKreiavvfyHIaKbxGnYVtakSGfLpPvDlqU3nH3613LkfRDUnI4yKJMTePLAlvlURth_Dx3ZD8r9KYJkavfCi6KJ_LIzRiQbOlehzYA4eHA6R5geqNpt09KD30JbM8o00GJAKVVSeWHqYmKMqUv85fLvXwZyY8rSG2KzV6RubQSkUq4GI9XuWXYRoiJZmTOkyWgLUFe6Ai"/>
+</div>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-4 py-8 pb-32">
+<!-- Hero Section / Welcome -->
+<div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="text-sam-red font-headline-adult text-caption tracking-widest uppercase mb-2 block">Instructor View</span>
+<h2 class="font-headline-adult text-[40px] leading-tight text-sam-navy mb-2">Welcome back, Sarah</h2>
+<p class="font-body-regular text-sam-gray-mid max-w-lg">Monitor student diagnostic progress and review detailed performance metrics for the S.A.M. Level 2 Cohort.</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-white border-2 border-sam-navy text-sam-navy px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-sam-navy hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined">download</span>
+                    Export Class Data
+                </button>
+</div>
+</div>
+<!-- Metric Overview Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+<div class="md:col-span-2 glass-card rounded-3xl p-8 shadow-[0_4px_12px_rgba(27,58,107,0.08)] flex flex-col justify-between">
+<div>
+<h3 class="text-sam-navy font-headline-adult text-caption font-bold mb-4">COHORT PROGRESS</h3>
+<div class="flex items-end gap-2 mb-6">
+<span class="text-5xl font-black text-sam-navy leading-none">84%</span>
+<span class="text-sam-teal font-bold mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_up</span> +5%</span>
+</div>
+</div>
+<div class="w-full h-4 bg-sam-gray-light rounded-full overflow-hidden">
+<div class="w-[84%] h-full bg-sam-red rounded-full"></div>
+</div>
+</div>
+<div class="bg-sam-navy rounded-3xl p-8 shadow-xl text-white flex flex-col justify-between">
+<h3 class="text-white/70 font-headline-adult text-caption font-bold">TOTAL STUDENTS</h3>
+<div class="text-5xl font-black">24</div>
+<div class="text-white/60 text-sm">Active Enrolled</div>
+</div>
+<div class="bg-sam-teal rounded-3xl p-8 shadow-xl text-white flex flex-col justify-between">
+<h3 class="text-white/70 font-headline-adult text-caption font-bold">AVG. SCORE</h3>
+<div class="text-5xl font-black">72</div>
+<div class="text-white/60 text-sm">Diagnostic Points</div>
+</div>
+</div>
+<!-- Student Cards Grid -->
+<h3 class="font-headline-adult text-xl text-sam-navy mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">group</span>
+            Student Rosters
+        </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Student Card 1: Completed -->
+<div class="bg-white rounded-[32px] p-6 shadow-[0_4px_12px_rgba(27,58,107,0.08)] hover:shadow-xl transition-shadow border-2 border-transparent hover:border-sam-red/10 cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-2xl bg-sam-cream flex items-center justify-center overflow-hidden border-2 border-sam-gray-light">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young joyful Asian student boy wearing a yellow t-shirt, studio lighting, clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8ePUorvordmTOQVGTr1Dx-n6UlF-BWkQE_oBGBqAmMETGiCRVDnrSOYjwLqgUzMHLHhWzoxF5hsKAeJSEc4FXMf0yHYyvBEmzyQuMvpH0eFqlouC1lDpM8EJIcnoD_zcXRa8I_tVm67DGOy_4-X9hoDCJHgqc-xHvm6XxkuTIVu24XyiUgMun2PO9FyEMAQXmQ5dkHNRiFNf4Z6sX2XFv07z_GIV1v_LI43eNV0SIUMDnyOLhEFYegpOhQ_DOkgd7vzi1IAGIl0N5"/>
+</div>
+<div>
+<h4 class="font-headline-adult text-lg text-sam-navy leading-tight">Oliver Zhang</h4>
+<span class="text-xs font-bold text-sam-teal bg-sam-teal/10 px-2 py-1 rounded-full uppercase tracking-wider">Complete</span>
+</div>
+</div>
+<div class="bg-sam-cream p-2 rounded-xl">
+<span class="material-symbols-outlined text-sam-navy">more_vert</span>
+</div>
+</div>
+<div class="space-y-4 mb-6">
+<div class="flex justify-between items-center text-sm">
+<span class="text-sam-gray-mid">Visual Thinking</span>
+<span class="font-bold text-sam-navy">92%</span>
+</div>
+<div class="w-full h-2 bg-sam-gray-light rounded-full">
+<div class="w-[92%] h-full bg-sam-teal rounded-full"></div>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-sam-gray-mid">Number Sense</span>
+<span class="font-bold text-sam-navy">78%</span>
+</div>
+<div class="w-full h-2 bg-sam-gray-light rounded-full">
+<div class="w-[78%] h-full bg-sam-teal rounded-full"></div>
+</div>
+</div>
+<button class="w-full py-4 bg-sam-red text-white rounded-2xl font-bold hover:bg-primary-container transition-all active:scale-[0.98]">
+                    View Diagnostic Report
+                </button>
+</div>
+<!-- Student Card 2: In Progress -->
+<div class="bg-white rounded-[32px] p-6 shadow-[0_4px_12px_rgba(27,58,107,0.08)] hover:shadow-xl transition-shadow border-2 border-transparent hover:border-sam-red/10 cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-2xl bg-sam-cream flex items-center justify-center overflow-hidden border-2 border-sam-gray-light">
+<img class="w-full h-full object-cover" data-alt="Close-up of a young girl with curly hair smiling, warm bright lighting, soft focus background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbSuTfLRknnBymCSE69QMj3PR3mJRyp2yZcyWKcB9XfsjSpPXjJk_FptBMdvelPAAA4msfpUOk5Ju3xn4w81zkjhplWn_aW0n3gZIx5rwUUNzeTmXEKhB_TswCYzIsFg9czcfKWpPQIcA6pTRAzgPTXb5aaXbxW79JeJ0OWhoGxCZ3mz6ArygqoW-O0tAXcsvEkoF7qTK4AmbXi86jgkqa4oTjlkhUpBfN-LHxFKBuW5c2qquLa3KsZ5wcEUc6aD_JJqKUH4lEb5Kx"/>
+</div>
+<div>
+<h4 class="font-headline-adult text-lg text-sam-navy leading-tight">Maya Rodriguez</h4>
+<span class="text-xs font-bold text-sam-orange bg-sam-orange/10 px-2 py-1 rounded-full uppercase tracking-wider">In Progress</span>
+</div>
+</div>
+<div class="bg-sam-cream p-2 rounded-xl">
+<span class="material-symbols-outlined text-sam-navy">more_vert</span>
+</div>
+</div>
+<div class="bg-sam-cream/50 rounded-2xl p-4 mb-6">
+<div class="flex items-center gap-3 text-sam-navy mb-2">
+<span class="material-symbols-outlined">timer</span>
+<span class="font-bold text-sm">Currently Active</span>
+</div>
+<p class="text-xs text-sam-gray-dark leading-relaxed">Solving: Multi-step word problems (Level 3 Strand)</p>
+</div>
+<div class="space-y-4 mb-6">
+<div class="w-full h-2 bg-sam-gray-light rounded-full overflow-hidden">
+<div class="w-[45%] h-full bg-sam-orange rounded-full"></div>
+</div>
+<div class="flex justify-between text-xs font-bold text-sam-gray-mid">
+<span>45% Completed</span>
+<span>12/28 Tasks</span>
+</div>
+</div>
+<button class="w-full py-4 border-2 border-sam-navy text-sam-navy rounded-2xl font-bold hover:bg-sam-navy hover:text-white transition-all active:scale-[0.98]">
+                    Live Monitor
+                </button>
+</div>
+<!-- Student Card 3: Ready to Start -->
+<div class="bg-white rounded-[32px] p-6 shadow-[0_4px_12px_rgba(27,58,107,0.08)] hover:shadow-xl transition-shadow border-2 border-transparent hover:border-sam-red/10 cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-2xl bg-sam-cream flex items-center justify-center overflow-hidden border-2 border-sam-gray-light">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young boy student looking at camera, soft lighting, minimalist background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXaRuUpf26TiFGh0fGIHFjjbs7z0FVfJOEhYgIlpzRn4D9jQJaODP1vDwZbj8OMaKZW38pI4P5cotC895UU2ZqAwwPgIp8HyGpBckiJudj1Atx7ZK1U4cEETWL5eOVT0oDDoyHhhAgy0PcqiPPOrkNPMiWB8ywM-sYWk7UmEv5poL3223UAwKviH0blnhqSHHfME9eM7ZC7S-TjHV2Pdl9HJeY5TiSXG7dezZ_B68n7jRqiQ7hzgxiivJ60sewp8HAXJQem40DhnPA"/>
+</div>
+<div>
+<h4 class="font-headline-adult text-lg text-sam-navy leading-tight">Liam Thompson</h4>
+<span class="text-xs font-bold text-sam-gray-mid bg-sam-gray-light px-2 py-1 rounded-full uppercase tracking-wider">Scheduled</span>
+</div>
+</div>
+<div class="bg-sam-cream p-2 rounded-xl">
+<span class="material-symbols-outlined text-sam-navy">more_vert</span>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center py-6 text-center border-2 border-dashed border-sam-gray-light rounded-2xl mb-6">
+<span class="material-symbols-outlined text-sam-gray-light text-4xl mb-2">calendar_today</span>
+<span class="text-sm font-bold text-sam-navy">Next Session</span>
+<span class="text-xs text-sam-gray-mid">Oct 24, 2023 at 10:00 AM</span>
+</div>
+<button class="w-full py-4 bg-sam-gray-light text-sam-gray-mid rounded-2xl font-bold cursor-not-allowed">
+                    Report Not Ready
+                </button>
+</div>
+</div>
+<!-- Insight Section (Asymmetric) -->
+<div class="mt-16 bg-[#1B3A6B] rounded-[40px] overflow-hidden flex flex-col md:flex-row relative">
+<div class="p-12 md:w-3/5 z-10">
+<h3 class="text-white font-headline-adult text-3xl mb-4">Cohort Misconception Alert</h3>
+<p class="text-white/80 font-body-regular mb-8 leading-relaxed">
+                    65% of your class is currently struggling with **Visual Word Problems involving Division**. We've prepared a targeted worksheet bundle to address this specific gap before the next assessment module.
+                </p>
+<div class="flex gap-4">
+<button class="bg-sam-red text-white px-8 py-4 rounded-2xl font-bold hover:shadow-lg transition-all">Download Worksheets</button>
+<button class="bg-white/10 text-white border border-white/20 px-8 py-4 rounded-2xl font-bold hover:bg-white/20 transition-all">View Analytics</button>
+</div>
+</div>
+<div class="md:w-2/5 relative min-h-[300px]">
+<div class="absolute inset-0 bg-gradient-to-l from-[#1B3A6B] via-transparent to-transparent z-10"></div>
+<img class="w-full h-full object-cover" data-alt="Abstract colorful education concept with books and geometry shapes floating in soft light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_-ctpMajWS0vbnZ7_mrtVmvmw_XNTrWthAj0JU9IYNNdm0MPIdBRLydtauj3m08W5YVoqLWjRDSpOKX-REKily_fIl5hYfjuZTHRG1PAw0MIZb-lU5YVQ2vG5oJ5Rjp1EE3eskrgpDy59X9SFjXUzbCVdQKnkRX84BeNcIN45cBUt9UeuvQUvepFQoyXOf2TP7SsbngRkUxZFScbK8fiKBo26LWahHHeC7zoROZ1YlJwVTX4oegOm35ONALMSj97G9oxvtZUBoxIB"/>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-2xl md:hidden">
+<a class="flex flex-col items-center justify-center text-[#E63946] dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/30 rounded-xl px-3 py-1" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#E63946] transition-transform scale-100 active:scale-90" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Cohort</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#E63946] transition-transform scale-100 active:scale-90" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#E63946] transition-transform scale-100 active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Settings</span>
+</a>
+</nav>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-sam-red text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</body></html>

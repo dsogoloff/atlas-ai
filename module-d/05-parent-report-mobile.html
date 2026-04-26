@@ -1,0 +1,287 @@
+<!-- Module D - 5: Parent Report (Mobile) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "on-surface": "#001a40",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5b403f",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "sam-yellow": "#FFD166",
+                        "on-error-container": "#93000a",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-gray-mid": "#777777",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "white": "#FFFFFF",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "tertiary": "#755700",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-secondary-container": "#783d01",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "display-child": ["Plus Jakarta Sans"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "caption": ["Inter"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .radar-grid {
+            clip-path: polygon(50% 0%, 100% 38%, 81% 100%, 19% 100%, 0% 38%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream font-body-regular text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm fixed top-0 w-full z-50">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="text-xl font-bold text-slate-900 dark:text-white font-['Plus_Jakarta_Sans']">Atlas Assessment</div>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400 cursor-pointer active:opacity-80">notifications</span>
+<div class="w-8 h-8 rounded-full bg-sam-gray-light overflow-hidden cursor-pointer active:opacity-80">
+<img alt="Instructor profile avatar" data-alt="professional headshot of a friendly female teacher in her 30s with a warm smile, soft studio lighting, blurred classroom background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACxVyRv2mjDEe2N09ztzUbT-zkNDu6d59g71VqM4EgsAMcBA0gR3pfNizCqv4v8GlJSASMmGb5swH_po58qQEKROkYnKtWENxhCw3HT-FxWKM51qntwLHESYzVAATLY3MSYS22hF5x8Xkij9L1WlENXQOyV6v3yXrSRu0OZfzsWoAelkvz3RFv3RAS8HWbIDSwH5snbCxrCq16V45uz6-XkE9mbiTXGdtLLJu9DM01TdAoqs1sjDzlpT86qNsnA4VaZMYsiM1BzRRU"/>
+</div>
+</div>
+</div>
+<!-- Desktop Nav Placeholder (Hidden on Mobile) -->
+<nav class="hidden md:flex justify-center gap-8 pb-2">
+<a class="text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors font-['Plus_Jakarta_Sans'] font-medium" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors font-['Plus_Jakarta_Sans'] font-medium" href="#">Students</a>
+<a class="text-red-600 border-b-2 border-red-600 pb-1 font-['Plus_Jakarta_Sans'] font-medium" href="#">Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors font-['Plus_Jakarta_Sans'] font-medium" href="#">Curriculum</a>
+</nav>
+</header>
+<main class="pt-24 pb-32 px-4 max-w-report-width mx-auto">
+<!-- Report Header Section -->
+<section class="mb-8">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-sam-red">analytics</span>
+<h1 class="font-headline-adult text-headline-adult text-sam-navy">Diagnostic Report</h1>
+</div>
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light/30">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-sam-orange/10 flex items-center justify-center border-2 border-sam-orange">
+<span class="text-2xl font-bold text-sam-orange">AL</span>
+</div>
+<div>
+<h2 class="text-lg font-bold text-sam-navy">Alex Lim</h2>
+<p class="text-caption text-sam-gray-mid">Primary 3 • Mid-Year Diagnostic</p>
+<p class="text-caption font-semibold text-sam-teal flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">check_circle</span>
+                            Assessment Completed
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Skill Profile / Radar Chart Container -->
+<section class="mb-8">
+<h3 class="font-headline-adult text-lg text-sam-navy mb-4">Competency Map</h3>
+<div class="bg-white rounded-xl p-6 shadow-[0_4px_12px_rgba(27,58,107,0.08)] relative overflow-hidden">
+<!-- Radar Chart Visual Logic -->
+<div class="relative w-full aspect-square flex items-center justify-center max-w-[300px] mx-auto">
+<!-- Radar Rings -->
+<div class="absolute inset-0 border border-sam-gray-light radar-grid opacity-20"></div>
+<div class="absolute inset-[15%] border border-sam-gray-light radar-grid opacity-40"></div>
+<div class="absolute inset-[30%] border border-sam-gray-light radar-grid opacity-60"></div>
+<div class="absolute inset-[45%] border border-sam-gray-light radar-grid opacity-80"></div>
+<!-- Radar Polygon (Performance) -->
+<div class="absolute inset-0 bg-sam-red/20 radar-grid" style="clip-path: polygon(50% 10%, 90% 40%, 75% 85%, 30% 90%, 15% 45%);"></div>
+<!-- Labels -->
+<div class="absolute top-[-20px] left-1/2 -translate-x-1/2 text-caption font-bold text-sam-navy">Number Sense</div>
+<div class="absolute top-[35%] right-[-10px] text-caption font-bold text-sam-navy">Algebra</div>
+<div class="absolute bottom-[0] right-[10%] text-caption font-bold text-sam-navy text-right">Data Analysis</div>
+<div class="absolute bottom-[0] left-[10%] text-caption font-bold text-sam-navy">Measurement</div>
+<div class="absolute top-[35%] left-[-10px] text-caption font-bold text-sam-navy">Geometry</div>
+</div>
+<div class="mt-8 flex justify-center gap-6">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-sam-red"></div>
+<span class="text-caption">Alex's Performance</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-sam-gray-light"></div>
+<span class="text-caption">Grade Average</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Strands Progress -->
+<section class="mb-8">
+<h3 class="font-headline-adult text-lg text-sam-navy mb-4">Performance by Strand</h3>
+<div class="space-y-4">
+<!-- Strand Item -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-teal">
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-sam-navy">Whole Numbers</span>
+<span class="text-sam-teal font-bold">85%</span>
+</div>
+<div class="w-full bg-sam-gray-light h-2.5 rounded-full overflow-hidden">
+<div class="bg-sam-teal h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Strand Item -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-orange">
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-sam-navy">Fractions &amp; Decimals</span>
+<span class="text-sam-orange font-bold">62%</span>
+</div>
+<div class="w-full bg-sam-gray-light h-2.5 rounded-full overflow-hidden">
+<div class="bg-sam-orange h-full rounded-full" style="width: 62%"></div>
+</div>
+</div>
+<!-- Strand Item -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-red">
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-sam-navy">Measurement</span>
+<span class="text-sam-red font-bold">48%</span>
+</div>
+<div class="w-full bg-sam-gray-light h-2.5 rounded-full overflow-hidden">
+<div class="bg-sam-red h-full rounded-full" style="width: 48%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Misconceptions Alert -->
+<section class="mb-8">
+<h3 class="font-headline-adult text-lg text-sam-navy mb-4">Identified Misconceptions</h3>
+<div class="bg-white rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(27,58,107,0.08)] border border-red-100">
+<div class="bg-red-50 p-4 flex gap-3 items-start border-b border-red-100">
+<span class="material-symbols-outlined text-sam-red">warning</span>
+<div>
+<h4 class="font-bold text-sam-navy">Place Value Gap</h4>
+<p class="text-caption text-sam-gray-dark">Alex is struggling with regrouping when subtracting three-digit numbers across zeros.</p>
+</div>
+</div>
+<div class="p-4 bg-white">
+<h5 class="text-xs font-bold text-sam-navy uppercase tracking-wider mb-2">Recommended Strategy</h5>
+<p class="text-caption text-sam-gray-mid">Utilize base-ten blocks for visual subtraction. Focus on concrete-to-abstract transition.</p>
+</div>
+</div>
+</section>
+<!-- Sammy the Otter Suggestion -->
+<section class="mb-8 mt-12 text-center">
+<div class="relative inline-block">
+<div class="bg-white p-4 rounded-2xl shadow-lg border border-sam-gray-light mb-4 text-left max-w-[280px]">
+<p class="text-sm font-medium text-sam-navy">"Great job, Alex! You've mastered Whole Numbers. Let's work on Measurement next!"</p>
+<!-- Speech bubble tail -->
+<div class="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-b border-r border-sam-gray-light rotate-45"></div>
+</div>
+<img class="w-24 mx-auto" data-alt="cute playful otter mascot character called Sammy, wearing a small scholar cap, cartoon style with soft textures and bright colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4LqkD1-ZfDF9B5KWIqwruhJZUVjqbxCT4TOr7T9O75VkFAfadNNzMKAI2CAIKx-iaMeTKHw7p3qYYgY8DGHK3If2XKA1-k59oeXQHW6Y1yfit1bNBq9Fu4x09gyu2STq0Z-TBrV3WMZZrCqdJYxbkM-ByO7XlIzo6roY51n7pB3lnzqrvuIOX4CChhTLDpP5HCuUhgqn8EEfmDPvc7wOKBVQ7XK5qH9Zzk8KZRe2dR2NLQ-Ym6WHJkrPoY-F12xps9KD32t_jh_b4"/>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-stone-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 w-full mt-auto mb-16">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center py-8 px-6">
+<div class="font-bold text-slate-800 dark:text-slate-200 mb-4 md:mb-0 font-['Plus_Jakarta_Sans']">Atlas Assessment</div>
+<div class="flex flex-wrap justify-center gap-4 mb-4 md:mb-0">
+<a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:underline decoration-red-600 underline-offset-4" href="#">Privacy Policy</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:underline decoration-red-600 underline-offset-4" href="#">Terms of Service</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:underline decoration-red-600 underline-offset-4" href="#">Help Center</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:underline decoration-red-600 underline-offset-4" href="#">Contact</a>
+</div>
+<div class="font-['Plus_Jakarta_Sans'] text-xs text-slate-500 dark:text-slate-400">© 2024 S.A.M Atlas Assessment. All rights reserved.</div>
+</div>
+</footer>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-white border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-xl">
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">edit_document</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Assess</span>
+</div>
+<!-- Active Tab: Insights -->
+<div class="flex flex-col items-center justify-center text-red-600 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-1 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Insights</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Profile</span>
+</div>
+</nav>
+</body></html>

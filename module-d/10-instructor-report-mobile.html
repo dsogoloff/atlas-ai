@@ -1,0 +1,307 @@
+<!-- Module D - 10: Instructor Report (Mobile) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "on-surface": "#001a40",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5b403f",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "sam-yellow": "#FFD166",
+                        "on-error-container": "#93000a",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-gray-mid": "#777777",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "white": "#FFFFFF",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "tertiary": "#755700",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-secondary-container": "#783d01",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "report-width": "880px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-max": "1440px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "display-child": ["Plus Jakarta Sans"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "caption": ["Inter"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .radar-grid {
+            background-image: radial-gradient(circle, #E5E5E5 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .custom-shadow {
+            box-shadow: 0px 4px 12px rgba(27, 58, 107, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream font-body-regular text-sam-gray-dark min-h-screen flex flex-col">
+<!-- Top AppBar (Adult Shell) -->
+<header class="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-red-600">arrow_back</span>
+<h1 class="text-xl font-bold text-slate-900 dark:text-white font-['Plus_Jakarta_Sans']">Atlas Assessment</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400 cursor-pointer">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
+<img alt="Instructor Profile" data-alt="close-up portrait of a professional female teacher smiling warmly in a bright office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKsSluuLuW3DkLAuufoTsYqaREz7ypmUhAOwM5ZOI95pIikquZ63IzxdWKiTvzLCcF3dqg2ostutRTjeAerEFH0Gw7eV1_QTjUJj18VgEGF6F3Rrh8WKcyx6hO-8vMC3GKf19-L1M_PY8q-g7ZaCe_pLDsqmZWdDjlSsXE42l54bHY8CyvLi5VKd8IYiT8FkZym3yT7TP4TuuywCAIbKvMwisM7I3pFpxVDGmKNGNWJ057E0022d_CD6PVPQNCAcGq3GxeR1VpC1Xq"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow pb-24">
+<!-- Student Header Card -->
+<section class="p-6">
+<div class="bg-white rounded-xl p-6 custom-shadow border border-sam-gray-light flex items-center gap-4 mb-8">
+<div class="w-16 h-16 rounded-2xl bg-sam-yellow flex items-center justify-center">
+<span class="material-symbols-outlined text-sam-navy text-4xl" data-weight="fill">child_care</span>
+</div>
+<div>
+<p class="font-caption text-sam-gray-mid">Individual Report</p>
+<h2 class="font-headline-adult text-sam-navy">Leo Takahashi</h2>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-sam-teal/10 text-sam-teal text-xs font-bold rounded-full">Grade 2</span>
+<span class="px-2 py-0.5 bg-sam-orange/10 text-sam-orange text-xs font-bold rounded-full">Primary Level</span>
+</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 gap-6">
+<!-- Radar Chart Container -->
+<div class="bg-white rounded-xl p-6 custom-shadow border border-sam-gray-light">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-headline-adult text-sam-navy text-lg">Skill Proficiency</h3>
+<p class="font-caption text-sam-gray-mid">Performance across math domains</p>
+</div>
+<span class="material-symbols-outlined text-sam-gray-mid">info</span>
+</div>
+<!-- Simplified SVG Radar Chart -->
+<div class="relative aspect-square w-full max-w-[280px] mx-auto flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 200 200">
+<!-- Background Circles -->
+<circle cx="100" cy="100" fill="none" r="90" stroke="#E5E5E5" stroke-width="1"></circle>
+<circle cx="100" cy="100" fill="none" r="60" stroke="#E5E5E5" stroke-width="1"></circle>
+<circle cx="100" cy="100" fill="none" r="30" stroke="#E5E5E5" stroke-width="1"></circle>
+<!-- Axes -->
+<line stroke="#E5E5E5" stroke-width="1" x1="100" x2="100" y1="10" y2="190"></line>
+<line stroke="#E5E5E5" stroke-width="1" x1="10" x2="190" y1="100" y2="100"></line>
+<line stroke="#E5E5E5" stroke-width="1" x1="36" x2="164" y1="36" y2="164"></line>
+<line stroke="#E5E5E5" stroke-width="1" x1="36" x2="164" y1="164" y2="36"></line>
+<!-- Data Polygon -->
+<polygon fill="rgba(230, 57, 70, 0.15)" points="100,30 150,60 170,100 140,140 100,160 60,140 30,100 50,60" stroke="#E63946" stroke-width="2"></polygon>
+<!-- Data Points -->
+<circle cx="100" cy="30" fill="#E63946" r="4"></circle>
+<circle cx="150" cy="60" fill="#E63946" r="4"></circle>
+<circle cx="170" cy="100" fill="#E63946" r="4"></circle>
+<circle cx="140" cy="140" fill="#E63946" r="4"></circle>
+<circle cx="100" cy="160" fill="#E63946" r="4"></circle>
+<circle cx="60" cy="140" fill="#E63946" r="4"></circle>
+<circle cx="30" cy="100" fill="#E63946" r="4"></circle>
+<circle cx="50" cy="60" fill="#E63946" r="4"></circle>
+</svg>
+<!-- Labels (Absolute Positioned for clarity) -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-bold text-sam-navy uppercase tracking-tighter">Number Sense</div>
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-bold text-sam-navy uppercase tracking-tighter">Logic</div>
+<div class="absolute top-1/2 right-0 -translate-y-1/2 text-[10px] font-bold text-sam-navy uppercase tracking-tighter rotate-90 origin-right pr-2">Geometry</div>
+<div class="absolute top-1/2 left-0 -translate-y-1/2 text-[10px] font-bold text-sam-navy uppercase tracking-tighter -rotate-90 origin-left pl-2">Algebra</div>
+</div>
+<div class="mt-8 grid grid-cols-2 gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-sam-red"></span>
+<span class="text-xs font-medium">Actual Level</span>
+</div>
+<div class="flex items-center gap-2 opacity-40">
+<span class="w-3 h-3 rounded-full bg-sam-gray-mid"></span>
+<span class="text-xs font-medium">Peer Average</span>
+</div>
+</div>
+</div>
+<!-- Misconception Highlight -->
+<div class="bg-white rounded-xl p-6 custom-shadow border border-sam-gray-light border-l-4 border-l-sam-orange">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-sam-orange">warning</span>
+<h4 class="font-bold text-sam-navy">Key Misconception</h4>
+</div>
+<p class="text-sm text-sam-gray-dark leading-relaxed">
+                        Leo frequently confuses "regrouping" with "borrowing" when working with multi-digit subtraction, specifically when zero is in the tens place.
+                    </p>
+<div class="mt-4 pt-4 border-t border-sam-gray-light flex justify-between items-center">
+<span class="text-xs font-bold text-sam-navy">Recommended Action</span>
+<button class="text-xs font-bold text-sam-red flex items-center gap-1">
+                            View Exercise <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Strategic Progress Bento Grid (Small) -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white p-4 rounded-xl custom-shadow border border-sam-gray-light flex flex-col justify-between">
+<span class="material-symbols-outlined text-sam-teal mb-2">timer</span>
+<div>
+<p class="text-2xl font-bold text-sam-navy">14m</p>
+<p class="text-[10px] text-sam-gray-mid uppercase font-bold tracking-wider">Avg Response Time</p>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl custom-shadow border border-sam-gray-light flex flex-col justify-between">
+<span class="material-symbols-outlined text-sam-red mb-2">trending_up</span>
+<div>
+<p class="text-2xl font-bold text-sam-navy">+12%</p>
+<p class="text-[10px] text-sam-gray-mid uppercase font-bold tracking-wider">Monthly Growth</p>
+</div>
+</div>
+</div>
+<!-- Detailed Strand Chart (Simplified for mobile) -->
+<div class="bg-white rounded-xl p-6 custom-shadow border border-sam-gray-light">
+<h3 class="font-bold text-sam-navy mb-4">Detailed Breakdown</h3>
+<div class="space-y-4">
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-bold">
+<span>Operations</span>
+<span>85%</span>
+</div>
+<div class="h-2 w-full bg-sam-gray-light rounded-full overflow-hidden">
+<div class="h-full bg-sam-teal rounded-full w-[85%]"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-bold">
+<span>Measurement</span>
+<span>62%</span>
+</div>
+<div class="h-2 w-full bg-sam-gray-light rounded-full overflow-hidden">
+<div class="h-full bg-sam-orange rounded-full w-[62%]"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-bold">
+<span>Data Handling</span>
+<span>45%</span>
+</div>
+<div class="h-2 w-full bg-sam-gray-light rounded-full overflow-hidden">
+<div class="h-full bg-sam-red rounded-full w-[45%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Shell -->
+<footer class="bg-stone-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 mt-auto">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center py-8 px-6">
+<p class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400 text-center">© 2024 S.A.M Atlas Assessment. All rights reserved.</p>
+<div class="flex gap-4 mt-4 md:mt-0">
+<span class="text-slate-500 text-sm hover:text-slate-800 underline decoration-red-600 underline-offset-4 cursor-pointer transition-all duration-200">Privacy Policy</span>
+<span class="text-slate-500 text-sm hover:text-slate-800 underline decoration-red-600 underline-offset-4 cursor-pointer transition-all duration-200">Terms of Service</span>
+</div>
+</div>
+</footer>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-white shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-xl md:hidden">
+<div class="flex flex-col items-center justify-center text-slate-500 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">edit_document</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Assess</span>
+</div>
+<div class="flex flex-col items-center justify-center text-red-600 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-1 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Insights</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Profile</span>
+</div>
+</nav>
+</body></html>

@@ -1,0 +1,281 @@
+<!-- Module D - 12: Instructor Cohort View (Mobile) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "on-surface": "#001a40",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5b403f",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "sam-yellow": "#FFD166",
+                        "on-error-container": "#93000a",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-gray-mid": "#777777",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "white": "#FFFFFF",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "tertiary": "#755700",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-secondary-container": "#783d01",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "report-width": "880px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-max": "1440px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "display-child": ["Plus Jakarta Sans"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "caption": ["Inter"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream foundation */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-white sticky top-0 z-40 border-b border-slate-200 shadow-sm flex justify-between items-center w-full px-6 py-4">
+<div class="text-xl font-bold text-slate-900 font-['Plus_Jakarta_Sans']">Atlas Assessment</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-600 cursor-pointer" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-sam-navy overflow-hidden">
+<img alt="Instructor Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a professional male instructor with a warm smile in a modern educational office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABkUWesZ97ApNz3c3NVGNUuW2MYx-FJS3ffFdGAqRzjlNqMbuDuNcUXW8eBu53bIBluW76lYKofDohG2HMwUa0V1BfUzRXYtn_sw4prhPwSyTXn8hE2bjA27szgxCpxdhp01UWbdGCLZwuYFi6pS5oCTJCTtdmffd53cKjotnAEABT5K4_pKwHeO0kU4mrvKGK43doll-zWGO1xZZfGsbqo87rHNuTgZZe77DW8F_I7q5fVNKZwHJNbs4uSr8XgQ3n_qEutcVwcmID"/>
+</div>
+</div>
+</header>
+<main class="flex-grow p-4 md:p-8 max-w-report-width mx-auto w-full">
+<!-- Dashboard Header & Selector -->
+<div class="mb-6 flex flex-col gap-2">
+<h1 class="font-headline-adult text-headline-adult text-sam-navy">Cohort Overview</h1>
+<div class="flex items-center gap-2 text-sam-gray-mid">
+<span class="font-caption text-caption">Grade 4 • Advanced Mathematics</span>
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Metric Grid (Bento Style) -->
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] flex flex-col gap-1 border border-transparent">
+<span class="text-sam-gray-mid font-caption text-caption">Completion</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-sam-navy">84%</span>
+<span class="text-sam-teal font-bold text-xs">+12%</span>
+</div>
+<div class="w-full bg-slate-100 h-1.5 rounded-full mt-2">
+<div class="bg-sam-teal h-full rounded-full w-[84%]"></div>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] flex flex-col gap-1">
+<span class="text-sam-gray-mid font-caption text-caption">Avg. Score</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-sam-navy">72</span>
+<span class="text-sam-gray-mid font-caption text-xs">/100</span>
+</div>
+<span class="text-sam-orange text-xs font-medium">Needs Attention</span>
+</div>
+</div>
+<!-- Strand Mastery Bars -->
+<section class="bg-white p-6 rounded-xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] mb-8">
+<h2 class="font-headline-adult text-lg text-sam-navy mb-4">Strand Performance</h2>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-caption text-caption text-sam-gray-dark">Number Sense</span>
+<span class="font-caption text-caption font-bold text-sam-navy">92%</span>
+</div>
+<div class="w-full bg-slate-100 h-3 rounded-full">
+<div class="bg-gradient-to-r from-sam-teal to-emerald-400 h-full rounded-full w-[92%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-caption text-caption text-sam-gray-dark">Geometry &amp; Space</span>
+<span class="font-caption text-caption font-bold text-sam-navy">64%</span>
+</div>
+<div class="w-full bg-slate-100 h-3 rounded-full">
+<div class="bg-gradient-to-r from-sam-orange to-amber-400 h-full rounded-full w-[64%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-caption text-caption text-sam-gray-dark">Logic &amp; Patterns</span>
+<span class="font-caption text-caption font-bold text-sam-navy">48%</span>
+</div>
+<div class="w-full bg-slate-100 h-3 rounded-full">
+<div class="bg-gradient-to-r from-sam-red to-rose-400 h-full rounded-full w-[48%]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Student Quick List -->
+<section class="mb-20">
+<div class="flex justify-between items-center mb-4">
+<h2 class="font-headline-adult text-lg text-sam-navy">Recent Activity</h2>
+<button class="text-sam-red font-caption text-caption font-bold">View All</button>
+</div>
+<div class="space-y-3">
+<!-- Student Card -->
+<div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4 border-l-4 border-sam-teal">
+<div class="w-12 h-12 rounded-full bg-slate-200 overflow-hidden shrink-0">
+<img alt="Student" class="w-full h-full object-cover" data-alt="close-up of a smiling young boy wearing a school uniform, high quality photography with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsx56fUIgfCCl55jJd9otpJ7qnWa3NP4G6krIA1m_CALl7weZwhJM7lamu6CpC2j4rX-gEGRYE8R3DBM_LPCAfZmJIlctccsyPvZGV_i8vSa22Bn4VHFO1T-_lveP4Sz7qR3Lf2cfDPPjsFy8uJ69-U4QwPN5KGjqObO6H4VkwLLQlp4KE67-2CUQlyfXP_vjQmX_P0jC35XTloGRvqUhXLmGA-HvrEVRVZMhdNR_Drrd9RWzvg0wD9dYgZC8kt4fQR7C1fDdWWNYS"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-body-regular font-bold text-sam-navy">Leo Chen</h3>
+<p class="font-caption text-xs text-sam-gray-mid">Completed 'Fraction Basics'</p>
+</div>
+<div class="text-right">
+<span class="block text-sam-teal font-bold text-lg">98</span>
+<span class="text-[10px] text-sam-gray-mid uppercase tracking-wider">A+</span>
+</div>
+</div>
+<!-- Student Card -->
+<div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4 border-l-4 border-sam-orange">
+<div class="w-12 h-12 rounded-full bg-slate-200 overflow-hidden shrink-0">
+<img alt="Student" class="w-full h-full object-cover" data-alt="close-up of a young girl with a thoughtful expression, wearing a school uniform, high quality photography with warm bright lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDTtxhqo9mc9tmunzneJD_aeLlZk_xUwEOJ49F-lnExV5Pvfq6RrTgFwipndD4iHctNg9adA6zsyXRc1vwQkIJ16lT2sXFCgYlHiVIGRWbLqM9iuXUBFOsgNyVMK1kLRuUs_7rJicsk3r7D29D9NOupAV7q4bMfOi9RtkDdJrwijXF89ksyvAA5-PKyR57eCVy3UivAWlKw2YHum7xoxAGkuTFltWULODxtcnEfWcFwV_3ecz6J3mp3ifgnbYwI63vBdmofrwbJC1u"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-body-regular font-bold text-sam-navy">Maya Patel</h3>
+<p class="font-caption text-xs text-sam-gray-mid">In Progress: Spatial Logic</p>
+</div>
+<div class="text-right">
+<span class="block text-sam-orange font-bold text-lg">72</span>
+<span class="text-[10px] text-sam-gray-mid uppercase tracking-wider">B-</span>
+</div>
+</div>
+<!-- Student Card -->
+<div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4 border-l-4 border-sam-red">
+<div class="w-12 h-12 rounded-full bg-slate-200 overflow-hidden shrink-0">
+<img alt="Student" class="w-full h-full object-cover" data-alt="close-up of a young boy smiling broadly, wearing a casual school shirt, high quality photography with vibrant classroom background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_eRyh8Y8Dh7hiq4Uqa7L_dfVU0QZUDdCHVFiEeD8EswLVwEGDoNz26Of4yR7hWd1uMqG3yw61sEPAwtIuykHV_58gaxaxdpNiToZ5gtW0nQeZa47plVouYm8NsDTeT6p1MXDSUn6aWoYXDaDGlT_yA-NhPUJm26VqMMR6PHgtQIxYtdK0zV4kjb6mivPyARapk5_cPzjDvy1WW7HUam_ZuGD0e5cSz-SPS7_e1Gn8ZloGLmXTSJ7jKd4Rry4ZPDXHMz8LoZLqUR99"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-body-regular font-bold text-sam-navy">James Wilson</h3>
+<p class="font-caption text-xs text-sam-gray-mid">Flagged: Calculation Error</p>
+</div>
+<div class="text-right">
+<span class="block text-sam-red font-bold text-lg">45</span>
+<span class="text-[10px] text-sam-gray-mid uppercase tracking-wider">FAIL</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-white border-t border-slate-100 shadow-[0_-4px_12px_rgba(27,58,107,0.08)]">
+<div class="flex flex-col items-center justify-center text-slate-500 active:scale-95 transition-transform hover:bg-slate-50">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-red-600 bg-red-50 rounded-xl px-3 py-1 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="edit_document">edit_document</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Assess</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 active:scale-95 transition-transform hover:bg-slate-50">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Insights</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 active:scale-95 transition-transform hover:bg-slate-50">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Profile</span>
+</div>
+</nav>
+<!-- Footer (Standard adult shell, but mobile version) -->
+<footer class="bg-stone-50 border-t border-slate-200 mt-auto pb-24">
+<div class="max-w-7xl mx-auto flex flex-col justify-center items-center py-8 px-6 text-center">
+<div class="font-bold text-slate-800 mb-4 font-['Plus_Jakarta_Sans']">S.A.M Atlas</div>
+<div class="flex flex-wrap justify-center gap-4 mb-4">
+<a class="text-slate-500 font-['Plus_Jakarta_Sans'] text-sm hover:text-slate-800 transition-all hover:underline decoration-red-600 underline-offset-4" href="#">Terms</a>
+<a class="text-slate-500 font-['Plus_Jakarta_Sans'] text-sm hover:text-slate-800 transition-all hover:underline decoration-red-600 underline-offset-4" href="#">Privacy</a>
+<a class="text-slate-500 font-['Plus_Jakarta_Sans'] text-sm hover:text-slate-800 transition-all hover:underline decoration-red-600 underline-offset-4" href="#">Help</a>
+</div>
+<p class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500">© 2024 S.A.M Atlas Assessment. All rights reserved.</p>
+</div>
+</footer>
+</body></html>
