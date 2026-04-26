@@ -35,9 +35,17 @@
 **Material Design 3 system tokens** — Stitch also exports a 48-token component-level palette (`primary`, `secondary`, `tertiary`, `surface`, `surface-container*`, `on-*`, `outline`, `error`, etc.). These are the working tokens used by the Stitch components themselves; brand tokens above are layered on top for identity moments. Notable: `primary: #b7102a` (the CTA red used in question tiles, dashboard buttons) is a deeper red than `sam-red: #E63946` (the logo red) — they are intentionally distinct, not a conflict. The full M3 palette is captured in the Stitch HTML and lifted into `@theme` during implementation; it is not duplicated here to avoid drift between this doc and the source.
 
 ### Typography
-- **Display / Headlines**: A friendly, rounded sans-serif. **Fredoka** or **Quicksand** for child-facing screens; **DM Sans** or **Inter** for parent/instructor screens.
-- **Body**: **DM Sans** or **Inter**, regular weight.
-- **Numerals (in math questions)**: A clear, geometric font with strong figures. **Fredoka** works for kids; for the actual math expressions, prefer a slightly larger weight for legibility.
+> Locked from the Stitch HTML exports. Two families used across all 39 screens; lift verbatim into Tailwind v4 `@theme`.
+
+| Token | Family | Used For |
+|-------|--------|----------|
+| `display-child` | **Plus Jakarta Sans** | Child-facing display / headlines |
+| `headline-adult` | **Inter** | Parent / instructor headlines |
+| `body-regular` | **Inter** | Body copy across all surfaces |
+| `math-numeral` | **Plus Jakarta Sans** | Numerals in math questions |
+| `caption` | **Inter** | Captions, helper text |
+
+Both families are open-source via Google Fonts (Plus Jakarta Sans: SIL Open Font License; Inter: SIL Open Font License). Self-host via `next/font/google` for performance and to avoid third-party requests on child screens.
 
 ### Visual Mood
 **Bright and playful** — think Duolingo and Khan Academy Kids. Rounded corners (12–24px), generous white space, soft shadows, warm illustrations, gentle animations. Never sterile. Never dark.
@@ -386,5 +394,5 @@ When complete, the prototype should include:
 
 1. ~~**Confirm exact S.A.M. brand colors and logo files**~~ — Resolved: Stitch exports are authoritative for color tokens (see §1). Logo files still pending from S.A.M.
 2. ~~**Confirm Sammy the Otter direction**~~ — Resolved: long-haired mini dachshund (see §3).
-3. **Confirm font licensing** — Stitch exports use Plus Jakarta Sans + Inter; design.md §1 still lists Fredoka/Quicksand/DM Sans. Pick one source of truth before any UI build, and confirm licensing for whichever wins.
+3. ~~**Confirm font licensing**~~ — Resolved: Stitch wins. Plus Jakarta Sans + Inter, both SIL Open Font License via Google Fonts; self-hosted via `next/font/google`. No commercial licensing required.
 4. **Confirm "Powered by Inspirea Labs" treatment** — exact lockup, sizing relative to S.A.M. logo

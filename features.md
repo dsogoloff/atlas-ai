@@ -128,23 +128,51 @@ PlacementEstimate {
 
 **What it does**: Parent creates an account, adds child profiles, assessment sessions are saved.
 
+**Signup flow (v1)**:
+1. Parent enters email + password.
+2. Parent reads privacy notice and ticks the consent checkbox (unchecked by default).
+3. **Parent selects their S.A.M. center** from a dropdown of active centers within the tenant. The consent text explicitly covers ongoing disclosure of the child's assessment data to instructors at the selected center (the "school operator" consent extension — see *School operator consent* below).
+4. "Email plus" verification step per `compliance.md` §2.
+5. After verification, parent adds children. Children inherit the parent's `home_center_id` by default; the parent may move a child between centers later (which re-triggers a consent confirmation).
+
 **Data model**:
 ```
+Center {
+  id: string                   // domain UUID
+  tenant_id: string            // = "inspirea_singapore_math" in v1
+  name: string                 // e.g., "S.A.M. Bukit Timah"
+  status: enum [ACTIVE, INACTIVE]
+  created_at: timestamp
+}
+
 Parent {
-  id: string
+  id: string                   // domain UUID
+  auth_user_id: string         // links to auth.users (Supabase) per architecture.md #9
+  tenant_id: string
+  home_center_id: string       // selected at signup; covered by school-operator consent
   email: string
   name: string
-  children: Child[]
+  subscription_tier: enum [PILOT]   // architecture.md #8 — adds tiers later as data
   created_at: timestamp
 }
 
 Child {
   id: string
-  name: string
-  birth_year: int  // for age-appropriate question selection
-  assessments: AssessmentSession[]
+  tenant_id: string
+  parent_id: string
+  home_center_id: string       // defaults to parent.home_center_id; movable
+  name: string                 // first name only
+  birth_year: int              // not full birth date — compliance.md §3
+  grade_level: string?         // optional
+  created_at: timestamp
 }
 ```
+
+**School operator consent (school-operator consent extension to "email plus" VPC)**:
+- At signup, parental consent explicitly covers disclosure of the child's assessment data to instructors at the parent's selected `home_center_id`. No per-child / per-instructor approval needed thereafter.
+- Privacy notice must specify, in plain language: (a) which data the center sees (placement, strand levels, misconceptions, response patterns; not raw question text per `compliance.md` §8), (b) which roles at the center see it (instructors only — not center admins or marketing), (c) the parent's revocation path.
+- Revocation: parent can change `home_center_id` (or set to null) from account settings. Effective immediately — RLS stops returning child rows to instructors at the prior center on the next request. Historic pedagogical notes authored by prior-center instructors are retained per `compliance.md` retention policy but no longer visible to instructors at the prior center.
+- Switching centers re-triggers a consent confirmation step (light-weight: confirm new center + click verify, no second email loop required within the 24-hour skip window of `compliance.md` §2).
 
 **Implementation notes**:
 - Auth: Supabase Auth (per `architecture.md` decision #1). Email + password for v1; social login (Google) deferred.
@@ -152,42 +180,37 @@ Child {
 - Every table has a `tenant_id` column from day one (v1 = `inspirea_singapore_math`); per `architecture.md` guardrail #1.
 - Each child can have multiple assessment sessions over time (for growth tracking in Phase 2).
 - For MVP, support one assessment per child at a time (can be retaken after completion).
-- COPPA "email plus" verifiable parental consent flow per `compliance.md` §2.
+- Center list is bootstrapped server-side (S.A.M. provides the v1 center roster); no parent-driven center creation in v1.
 
 ### 6. Instructor Portal
 
-**What it does**: Lets a S.A.M. instructor view assessment results for the children assigned to them, surface pedagogical recommendations, and track cohort-level patterns.
+**What it does**: Lets a S.A.M. instructor view assessment results for the children whose parents have selected the instructor's center as their home center, surface pedagogical recommendations, and track cohort-level patterns.
+
+**Access model**: Center-based, not per-child assignment. An instructor is associated with a center; the instructor sees children whose `home_center_id` matches the instructor's `center_id`. This aligns with the school-operator consent extension in §5 — parents have already consented to disclosure to instructors at their selected center, so no per-child approval step is required.
 
 **Scope (v1)**:
-- **Login** — separate entry point from parent signup; instructor accounts are provisioned by S.A.M. (no self-signup in v1).
-- **Student roster** — table of children assigned to the instructor with per-child status (assessment complete / in progress / not started), placement level, and last-assessment date. Empty-state view for new instructors.
+- **Login** — separate entry point from parent signup. Instructor accounts are provisioned by S.A.M. (no self-signup in v1).
+- **Student roster** — table of children at the instructor's center with per-child status (assessment complete / in progress / not started), placement level, and last-assessment date. Empty-state view for new instructors.
 - **Individual student report** — same diagnostic report parents see, plus a **Pedagogical Notes** section (suggested first lesson focus, recommended S.A.M. worksheets, instructor-authored notes after first session).
-- **Cohort view** — placement distribution chart, top-5 misconceptions across the instructor's students, summary stats (avg placement, avg time to complete, students needing attention).
+- **Cohort view** — placement distribution chart, top-5 misconceptions across the center's children, summary stats (avg placement, avg time to complete, children needing attention).
 
 **Data model (additive on top of §5)**:
 ```
 Instructor {
   id: string                   // domain UUID
-  auth_user_id: string         // links to auth.users (Supabase)
+  auth_user_id: string         // links to auth.users (Supabase) per architecture.md #9
   tenant_id: string            // = "inspirea_singapore_math" in v1
+  center_id: string            // instructor sees children whose home_center_id matches
   email: string
   name: string
+  status: enum [ACTIVE, INACTIVE]
   created_at: timestamp
-}
-
-InstructorChildAssignment {
-  id: string
-  tenant_id: string
-  instructor_id: string
-  child_id: string
-  assigned_at: timestamp
-  // RLS: instructor can only read child rows reachable through this table
 }
 
 PedagogicalNote {
   id: string
   tenant_id: string
-  instructor_id: string
+  instructor_id: string        // author
   child_id: string
   body: string
   created_at: timestamp
@@ -195,12 +218,10 @@ PedagogicalNote {
 ```
 
 **Implementation notes**:
-- RLS: an instructor can read a child's assessment data only when an `InstructorChildAssignment` row exists for that pair. The Compliance Agent must produce explicit RLS test cases proving an instructor cannot see unassigned children's data.
-- Pedagogical notes are visible only to instructors, never to parents.
-- Cohort view aggregates only over the instructor's assigned children (no cross-instructor leakage).
-
-**Open compliance question** (raise to founder before instructor portal build):
-- COPPA implication of S.A.M. instructor seeing a parent-consented child's data: does the parent's existing VPC consent cover instructor access, or is a separate "consent to share with instructor" step required when the child is assigned? `compliance.md` §2 doesn't currently address this — needs explicit resolution before launch.
+- RLS: an instructor can read a child's assessment data when (a) `instructor.center_id == child.home_center_id` and (b) `instructor.tenant_id == child.tenant_id` and (c) `instructor.status == ACTIVE`. The Compliance Agent must produce explicit RLS test cases proving an instructor cannot see children at other centers, deactivated instructors cannot read any data, and a child whose parent revoked center consent (set `home_center_id` to null or moved to another center) is no longer visible to prior-center instructors.
+- Pedagogical notes are visible only to instructors at the center where the note was authored. Never visible to parents. If a child moves to a new center, prior-center pedagogical notes are retained per `compliance.md` retention policy but not surfaced at the new center.
+- Cohort view aggregates only over the instructor's center (no cross-center leakage).
+- A `Phase 2` finer-grained model (`InstructorChildAssignment` for per-child instructor pairing within a center) can be added later as an additive table without schema changes to `Instructor` or `Child`.
 
 ---
 
@@ -246,4 +267,4 @@ These are **not** in scope for the initial build but should be considered in arc
 2. ~~**LLM provider**~~ — Resolved (`architecture.md` #3): Anthropic Claude. Haiku 4.5 for high-volume misconception classification (<2s budget), Sonnet for report narrative (5–10s budget acceptable).
 3. ~~**Pricing model**~~ — Resolved (`architecture.md` #8): no paywall in v1, free pilot. Schema includes `subscription_tier` field set to `pilot` so tiers can be introduced later as a data migration.
 4. **Pilot plan**: How many families for beta? Suggest 50–100 homeschool families via Singapore Math community forums for initial validation. (S.A.M. parent network as alternative source — see `architecture.md` open question #3.)
-5. **Instructor-COPPA consent model**: Does parental VPC consent cover S.A.M. instructor access to that child's report, or is a separate per-assignment consent required? Raised in §6 above; needs founder + counsel resolution before instructor portal launch.
+5. ~~**Instructor-COPPA consent model**~~ — Resolved: blanket "school operator" consent at signup. The parent selects a `home_center_id` during signup; the consent text explicitly covers ongoing disclosure of the child's assessment data to instructors at the selected center. Revocation is handled by changing `home_center_id` in account settings — RLS stops returning the child's data to prior-center instructors on the next request. See §5 *School operator consent*. Privacy notice text covering this disclosure must be reviewed by counsel before launch (a `compliance.md` §2 update is also pending).
