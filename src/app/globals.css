@@ -1,26 +1,123 @@
+/* Material Symbols Outlined — Google Fonts variable icon font.
+ * Used by Stitch screens via `<span class="material-symbols-outlined">`.
+ * Must precede the Tailwind import (Tailwind inlines its content here).
+ * v1 loads from Google CDN; consider self-hosting in a follow-up cycle. */
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =============================================================================
+ * Stitch design tokens — locked from stitch/ exports (zero drift across all
+ * 39 screens). Do not hand-edit.
+ *
+ * Governance: design.md §1. To change a token, regenerate from Stitch and
+ * re-extract via the workflow in design.md.
+ * ============================================================================= */
+
+@theme {
+  /* --- Brand tokens (S.A.M. identity) ------------------------------------- */
+  --color-sam-red: #e63946;
+  --color-sam-orange: #f4a261;
+  --color-sam-yellow: #ffd166;
+  --color-sam-cream: #fff8f0;
+  --color-sam-navy: #1b3a6b;
+  --color-sam-teal: #06a77d;
+  --color-sam-gray-dark: #333333;
+  --color-sam-gray-mid: #777777;
+  --color-sam-gray-light: #e5e5e5;
+
+  /* --- Material Design 3 system tokens (component layer) ------------------ */
+  --color-primary: #b7102a;
+  --color-primary-container: #db313f;
+  --color-primary-fixed: #ffdad8;
+  --color-primary-fixed-dim: #ffb3b1;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #fffbff;
+  --color-on-primary-fixed: #410007;
+  --color-on-primary-fixed-variant: #92001c;
+  --color-secondary: #8e4e14;
+  --color-secondary-container: #ffab69;
+  --color-secondary-fixed: #ffdcc4;
+  --color-secondary-fixed-dim: #ffb780;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #783d01;
+  --color-on-secondary-fixed: #2f1400;
+  --color-on-secondary-fixed-variant: #6f3800;
+  --color-tertiary: #755700;
+  --color-tertiary-container: #936f03;
+  --color-tertiary-fixed: #ffdf9b;
+  --color-tertiary-fixed-dim: #edc157;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #fffbff;
+  --color-on-tertiary-fixed: #251a00;
+  --color-on-tertiary-fixed-variant: #5b4300;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+  --color-surface: #f9f9ff;
+  --color-surface-bright: #f9f9ff;
+  --color-surface-dim: #cadaff;
+  --color-surface-tint: #bb152c;
+  --color-surface-variant: #d7e2ff;
+  --color-surface-container: #e8edff;
+  --color-surface-container-high: #e0e8ff;
+  --color-surface-container-highest: #d7e2ff;
+  --color-surface-container-low: #f1f3ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #001a40;
+  --color-on-surface-variant: #5b403f;
+  --color-background: #f9f9ff;
+  --color-on-background: #001a40;
+  --color-inverse-on-surface: #edf0ff;
+  --color-inverse-primary: #ffb3b1;
+  --color-inverse-surface: #0d2f60;
+  --color-outline: #8f6f6e;
+  --color-outline-variant: #e4bebc;
+
+  /* --- Font families (wired to next/font/google in src/app/layout.tsx) ---- */
+  --font-display-child: var(--font-plus-jakarta), sans-serif;
+  --font-body-regular: var(--font-inter), sans-serif;
+  --font-headline-adult: var(--font-inter), sans-serif;
+  --font-math-numeral: var(--font-plus-jakarta), sans-serif;
+  --font-caption: var(--font-inter), sans-serif;
+
+  /* --- Font sizes (with line-height / weight / letter-spacing) ------------ */
+  --text-display-child: 36px;
+  --text-display-child--line-height: 1.2;
+  --text-display-child--font-weight: 700;
+  --text-body-regular: 16px;
+  --text-body-regular--line-height: 1.6;
+  --text-body-regular--font-weight: 400;
+  --text-math-numeral: 32px;
+  --text-math-numeral--line-height: 1;
+  --text-math-numeral--font-weight: 600;
+  --text-headline-adult: 24px;
+  --text-headline-adult--line-height: 1.4;
+  --text-headline-adult--font-weight: 600;
+  --text-caption: 14px;
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: 0.01em;
+  --text-caption--font-weight: 500;
+
+  /* --- Spacing scale ------------------------------------------------------ */
+  --spacing-unit: 4px;
+  --spacing-stack-sm: 8px;
+  --spacing-stack-md: 16px;
+  --spacing-stack-lg: 32px;
+  --spacing-gutter: 24px;
+  --spacing-margin-tablet: 32px;
+  --spacing-margin-desktop: 40px;
+  --spacing-report-width: 880px;
+  --spacing-container-max: 1440px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Stitch global body baseline */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-sam-cream);
+  color: var(--color-on-surface);
+}
+
+/* Material Symbols Outlined defaults — matches stitch/ inline styles */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
