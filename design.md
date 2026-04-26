@@ -360,7 +360,6 @@ To keep the prototype scoped:
 - No payment / billing screens
 - No school admin or onboarding screens (those are v2)
 - No multi-language UI (English only for v1)
-- No phone-specific layouts
 - No marketing landing pages beyond Screen 1
 - No email templates (separate deliverable)
 
