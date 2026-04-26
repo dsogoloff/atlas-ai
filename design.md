@@ -75,7 +75,7 @@ Stitch should generate **two responsive breakpoints**: tablet (1024×768) and de
 
 ## 4. Screen Inventory
 
-The full flow has four user types and approximately 18 distinct screens. Listed in the order Stitch should design them.
+The full flow has four user types. The final number of screens are per Stitch design. Basic screens are listed below, Stitch may produce more variants.
 
 ### Parent Flow (Desktop)
 1. **Landing / Splash** — S.A.M. branding, value prop, "Get Started" CTA
