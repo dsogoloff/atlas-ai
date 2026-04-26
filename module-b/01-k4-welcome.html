@@ -1,0 +1,192 @@
+<!-- Module B - 1: K-4 Welcome -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Welcome to S.A.M. Atlas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "sam-yellow": "#FFD166",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "surface-container-high": "#e0e8ff",
+                        "tertiary-container": "#936f03",
+                        "sam-red": "#E63946",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "tertiary-fixed": "#ffdf9b",
+                        "tertiary": "#755700",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-tertiary-fixed": "#251a00",
+                        "surface-tint": "#bb152c",
+                        "sam-gray-light": "#E5E5E5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#edf0ff",
+                        "sam-teal": "#06A77D",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "background": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "sam-cream": "#FFF8F0",
+                        "white": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-primary-fixed-variant": "#92001c",
+                        "sam-gray-mid": "#777777",
+                        "inverse-primary": "#ffb3b1",
+                        "on-error-container": "#93000a",
+                        "on-background": "#001a40",
+                        "primary-container": "#db313f",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "surface-dim": "#cadaff",
+                        "secondary": "#8e4e14",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "outline": "#8f6f6e",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-navy": "#1B3A6B",
+                        "on-secondary-fixed": "#2f1400",
+                        "surface-container-low": "#f1f3ff",
+                        "on-surface-variant": "#5b403f",
+                        "surface-container": "#e8edff",
+                        "sam-orange": "#F4A261",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#410007",
+                        "primary-fixed": "#ffdad8",
+                        "on-tertiary-container": "#fffbff",
+                        "sam-gray-dark": "#333333",
+                        "outline-variant": "#e4bebc",
+                        "inverse-surface": "#0d2f60",
+                        "surface-variant": "#d7e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "unit": "4px",
+                        "container-max": "1440px",
+                        "margin-tablet": "32px",
+                        "stack-sm": "8px",
+                        "gutter": "24px",
+                        "report-width": "880px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "caption": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 10%;
+            border-width: 20px 20px 0 0;
+            border-style: solid;
+            border-color: #FFFFFF transparent transparent transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen flex flex-col font-body-regular text-on-surface">
+<!-- Top Navigation (Shell Implementation) -->
+<header class="bg-[#fdfcf8] dark:bg-slate-950 shadow-sm dark:shadow-none border-b border-gray-100 dark:border-slate-800 flex items-center justify-between px-6 py-4 w-full top-0">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400 cursor-pointer" data-icon="arrow_back">arrow_back</span>
+<span class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight">S.A.M.</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="h-10 w-10 bg-sam-yellow rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+<span class="material-symbols-outlined text-sam-navy" data-icon="person">person</span>
+</div>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-4 py-8">
+<div class="max-w-[1200px] w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+<!-- Mascot & Speech Bubble Section -->
+<div class="flex flex-col items-center md:items-start order-2 md:order-1">
+<div class="relative mb-12">
+<!-- Speech Bubble -->
+<div class="speech-bubble bg-white rounded-3xl p-8 shadow-[0_8px_24px_rgba(27,58,107,0.08)] max-w-sm border-2 border-sam-gray-light relative">
+<p class="font-display-child text-display-child text-sam-navy">Hi! I'm Sammy! What's your name?</p>
+</div>
+</div>
+<!-- Sammy Mascot -->
+<div class="w-64 md:w-80 lg:w-96 transform hover:scale-105 transition-transform duration-500">
+<img alt="Sammy the friendly dachshund mascot" class="w-full h-auto drop-shadow-xl" data-alt="A cheerful, cartoon dachshund wearing a small graduation cap, waving enthusiastically with a friendly smile, vibrant colors, soft 3D render style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARDp2ubGpZ221A-hSTGGU09lW8yjFMeHeOMdc7u3ifV6Gq0_bT1g3JyXsqQ1IN4R_5qnWqgHSV48XHnOTt_mg6e64qpKLvv1742Y9cDuh7zFmUn7R9W8hKgZCX3sxjYhcNuFUGLry7C4w5qjGI7czPHw0f0xOkZlxSiY3fOfw9g7_YEy63kVqsMaG1mEjOOEn076IMVky5TC9ksVsH0nRyiqoWhY-PKHD-RDnkN0hQ5r1ewECMbJ6iqRnbtdUNRK2rGnXh5sltq9s_"/>
+</div>
+</div>
+<!-- Interaction Section -->
+<div class="bg-white rounded-[32px] p-10 md:p-14 shadow-[0_12px_40px_rgba(27,58,107,0.06)] border border-sam-gray-light order-1 md:order-2">
+<div class="space-y-10">
+<div class="space-y-4">
+<h1 class="font-display-child text-display-child text-sam-navy">Welcome to Atlas!</h1>
+<p class="font-body-regular text-body-regular text-sam-gray-dark opacity-80">Let's start our mathematical adventure today.</p>
+</div>
+<div class="space-y-6">
+<label class="block font-caption text-caption text-sam-navy ml-2" for="student-name">Type your name here</label>
+<input class="w-full bg-surface-container-low border-2 border-sam-gray-light rounded-2xl px-6 py-6 text-2xl font-math-numeral text-sam-navy focus:border-sam-red focus:ring-0 transition-all placeholder:text-sam-gray-mid" id="student-name" placeholder="E.g. Charlie" type="text"/>
+<button class="w-full bg-sam-red text-white font-display-child text-2xl py-6 rounded-2xl shadow-[0_6px_0_#b7102a] hover:translate-y-[2px] hover:shadow-[0_4px_0_#b7102a] active:translate-y-[6px] active:shadow-none transition-all flex items-center justify-center gap-3">
+                            That's me!
+                            <span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+</button>
+</div>
+<div class="pt-6 border-t border-sam-gray-light flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-sam-yellow"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-sam-teal"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-sam-orange"></div>
+</div>
+<p class="font-caption text-caption text-sam-gray-mid">12,400 kids learning today!</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Accents (Playful Dots) -->
+<div class="fixed top-20 right-10 w-24 h-24 bg-sam-yellow opacity-20 rounded-full blur-2xl -z-10"></div>
+<div class="fixed bottom-20 left-10 w-32 h-32 bg-sam-teal opacity-10 rounded-full blur-3xl -z-10"></div>
+<div class="fixed top-1/2 left-1/4 w-16 h-16 bg-sam-red opacity-10 rounded-full blur-xl -z-10"></div>
+<!-- Bottom Navigation (Shell Implementation - Suppressed for focus screen as per UX goal, but placeholder structure provided if needed) -->
+<!-- Navigation suppressed to prioritize the onboarding content canvas -->
+</body></html>

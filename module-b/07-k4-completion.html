@@ -1,0 +1,188 @@
+<!-- Module B - 7: K-4 Completion -->
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "sam-yellow": "#FFD166",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "surface-container-high": "#e0e8ff",
+                        "tertiary-container": "#936f03",
+                        "sam-red": "#E63946",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "tertiary-fixed": "#ffdf9b",
+                        "tertiary": "#755700",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-tertiary-fixed": "#251a00",
+                        "surface-tint": "#bb152c",
+                        "sam-gray-light": "#E5E5E5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#edf0ff",
+                        "sam-teal": "#06A77D",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "background": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "sam-cream": "#FFF8F0",
+                        "white": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-primary-fixed-variant": "#92001c",
+                        "sam-gray-mid": "#777777",
+                        "inverse-primary": "#ffb3b1",
+                        "on-error-container": "#93000a",
+                        "on-background": "#001a40",
+                        "primary-container": "#db313f",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "surface-dim": "#cadaff",
+                        "secondary": "#8e4e14",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "outline": "#8f6f6e",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-navy": "#1B3A6B",
+                        "on-secondary-fixed": "#2f1400",
+                        "surface-container-low": "#f1f3ff",
+                        "on-surface-variant": "#5b403f",
+                        "surface-container": "#e8edff",
+                        "sam-orange": "#F4A261",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#410007",
+                        "primary-fixed": "#ffdad8",
+                        "on-tertiary-container": "#fffbff",
+                        "sam-gray-dark": "#333333",
+                        "outline-variant": "#e4bebc",
+                        "inverse-surface": "#0d2f60",
+                        "surface-variant": "#d7e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "unit": "4px",
+                        "container-max": "1440px",
+                        "margin-tablet": "32px",
+                        "stack-sm": "8px",
+                        "gutter": "24px",
+                        "report-width": "880px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "caption": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            opacity: 0.7;
+            border-radius: 2px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen overflow-hidden flex flex-direction-column">
+<!-- Top Navigation Shell (Suppressed as per Transactional Rule, but keeping TopAppBar for Brand identity and "Close" equivalent) -->
+<header class="flex items-center justify-between px-6 py-4 w-full bg-[#fdfcf8] shadow-sm z-10 border-b border-gray-100">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-500 hover:bg-gray-100 transition-colors p-2 rounded-full cursor-pointer">arrow_back</span>
+<span class="text-2xl font-black text-[#1b3a6b] tracking-tight">S.A.M.</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="h-2 w-48 bg-sam-gray-light rounded-full overflow-hidden">
+<div class="h-full bg-sam-teal w-full"></div>
+</div>
+<span class="font-caption text-caption text-sam-gray-mid">100%</span>
+</div>
+</header>
+<!-- Main Content Canvas: Child Assessment Viewport -->
+<main class="relative flex-1 flex flex-col items-center justify-center p-stack-lg max-w-container-max mx-auto w-full text-center overflow-hidden">
+<!-- Decorative Confetti Background Elements -->
+<div class="absolute inset-0 pointer-events-none">
+<div class="confetti-piece bg-sam-red top-20 left-10 rotate-12"></div>
+<div class="confetti-piece bg-sam-yellow top-40 left-1/4 -rotate-45"></div>
+<div class="confetti-piece bg-sam-teal top-10 right-20 rotate-45"></div>
+<div class="confetti-piece bg-sam-orange bottom-32 left-20 rotate-12"></div>
+<div class="confetti-piece bg-sam-navy bottom-40 right-1/4 -rotate-12"></div>
+<div class="confetti-piece bg-sam-red top-1/2 right-10 rotate-90"></div>
+<div class="confetti-piece bg-sam-yellow bottom-10 right-20 -rotate-45"></div>
+</div>
+<!-- Completion Hero Section -->
+<div class="z-20 flex flex-col items-center gap-stack-md">
+<!-- Mascot: Sammy the Otter (Represented by IMAGE_74) -->
+<div class="relative w-64 h-64 md:w-80 md:h-80 mb-stack-sm">
+<div class="absolute inset-0 bg-sam-yellow opacity-10 rounded-full scale-110 blur-2xl"></div>
+<img alt="a cheerful dachshund mascot wearing a small graduate cap performing a joyful victory dance with confetti in the background" class="w-full h-full object-contain relative z-20" data-alt="a cheerful cartoon dachshund wearing a colorful vest and a tiny graduate cap dancing happily with floating math symbols" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcOVQO6Jq8ZzvYtKofk7oRhIRDc0jQsPdBRU4NRHISdQyorAmM4nzrEZcl_3PcqSE1evd19VIeAZV53q6PfqBNQKXt3JnMmp4Sa6H9_gR-2MwD5rk1mIjhyxQFOsdvuOXdo-OY8Aq7m1kJktRLn6u15GBB-M26Dt-8eQDBdw-W4m0rBfly_RltKMR7TV4bcJGb2IE3a5b8y1GNJYTd1KIDvYIOiCdGsNuG2o_3BIcOmdBOsqszp66yTzxBOQqf9bz-td9mMz5fYY-o"/>
+</div>
+<!-- Headlines -->
+<div class="space-y-unit">
+<h1 class="font-display-child text-display-child text-sam-navy tracking-tight">All done! Amazing work!</h1>
+<p class="font-headline-adult text-headline-adult text-sam-gray-dark opacity-80">Show this screen to your grown-up.</p>
+</div>
+<!-- Action Area -->
+<div class="mt-stack-lg flex flex-col items-center gap-4">
+<button class="bg-sam-red hover:bg-primary-container text-white px-12 py-6 rounded-xl font-display-child text-[28px] shadow-lg active:scale-95 transition-all flex items-center gap-3 border-b-4 border-b-[#92001c]">
+                    Show My Grown-up
+                    <span class="material-symbols-outlined text-[32px]">arrow_forward</span>
+</button>
+<p class="font-caption text-caption text-sam-gray-mid max-w-xs">
+                    Great job! You've completed all your math challenges for today.
+                </p>
+</div>
+</div>
+<!-- Decorative Achievement Badge (Asymmetric Layout Detail) -->
+<div class="absolute bottom-20 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-margin-desktop md:bottom-margin-desktop bg-white p-4 rounded-2xl shadow-sm border border-sam-gray-light flex items-center gap-4 rotate-[-2deg]">
+<div class="w-12 h-12 bg-sam-teal rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<div class="text-left">
+<p class="font-caption text-caption text-sam-gray-dark font-bold">New Badge!</p>
+<p class="font-caption text-[12px] text-sam-gray-mid">Math Explorer Level 1</p>
+</div>
+</div>
+</main>
+<!-- Background Decoration Shell -->
+<div class="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#FFF2E2] to-transparent pointer-events-none -z-10"></div>
+<!-- Bottom Shell Suppressed for Transactional Completion Screen as per Destination Rule -->
+</body></html>

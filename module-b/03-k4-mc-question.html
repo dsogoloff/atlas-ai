@@ -1,0 +1,200 @@
+<!-- Module B - 3: K-4 MC Question -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.A.M. Assessment - Question</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "sam-yellow": "#FFD166",
+                    "surface-bright": "#f9f9ff",
+                    "surface-container-highest": "#d7e2ff",
+                    "surface-container-high": "#e0e8ff",
+                    "tertiary-container": "#936f03",
+                    "sam-red": "#E63946",
+                    "on-primary-container": "#fffbff",
+                    "on-surface": "#001a40",
+                    "tertiary-fixed": "#ffdf9b",
+                    "tertiary": "#755700",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-tertiary-fixed": "#251a00",
+                    "surface-tint": "#bb152c",
+                    "sam-gray-light": "#E5E5E5",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#edf0ff",
+                    "sam-teal": "#06A77D",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface": "#f9f9ff",
+                    "primary": "#b7102a",
+                    "on-secondary-container": "#783d01",
+                    "background": "#f9f9ff",
+                    "error": "#ba1a1a",
+                    "sam-cream": "#FFF8F0",
+                    "white": "#FFFFFF",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "on-primary-fixed-variant": "#92001c",
+                    "sam-gray-mid": "#777777",
+                    "inverse-primary": "#ffb3b1",
+                    "on-error-container": "#93000a",
+                    "on-background": "#001a40",
+                    "primary-container": "#db313f",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "surface-dim": "#cadaff",
+                    "secondary": "#8e4e14",
+                    "secondary-fixed": "#ffdcc4",
+                    "secondary-container": "#ffab69",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "outline": "#8f6f6e",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-navy": "#1B3A6B",
+                    "on-secondary-fixed": "#2f1400",
+                    "surface-container-low": "#f1f3ff",
+                    "on-surface-variant": "#5b403f",
+                    "surface-container": "#e8edff",
+                    "sam-orange": "#F4A261",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#410007",
+                    "primary-fixed": "#ffdad8",
+                    "on-tertiary-container": "#fffbff",
+                    "sam-gray-dark": "#333333",
+                    "outline-variant": "#e4bebc",
+                    "inverse-surface": "#0d2f60",
+                    "surface-variant": "#d7e2ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "40px",
+                    "unit": "4px",
+                    "container-max": "1440px",
+                    "margin-tablet": "32px",
+                    "stack-sm": "8px",
+                    "gutter": "24px",
+                    "report-width": "880px",
+                    "stack-lg": "32px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "caption": ["Inter"],
+                    "headline-adult": ["Inter"],
+                    "display-child": ["Plus Jakarta Sans"],
+                    "body-regular": ["Inter"]
+            },
+            "fontSize": {
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .touch-target {
+            min-width: 88px;
+            min-height: 88px;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream foundation */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body-regular text-on-background overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-[#fdfcf8] dark:bg-slate-950 flex items-center justify-between px-6 py-4 w-full border-b border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<button class="hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors p-2 rounded-full Active:opacity-80 Active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[#E63946] dark:text-red-400" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight font-['Plus_Jakarta_Sans']">S.A.M.</h1>
+</div>
+<div class="flex items-center gap-3">
+<!-- Progress Trail Concept -->
+<div class="flex items-center gap-1.5 bg-white px-4 py-2 rounded-full shadow-sm border border-sam-gray-light">
+<div class="w-3 h-3 rounded-full bg-sam-teal"></div>
+<div class="w-3 h-3 rounded-full bg-sam-teal"></div>
+<div class="w-3 h-3 rounded-full bg-sam-red ring-4 ring-red-50"></div>
+<div class="w-3 h-3 rounded-full bg-sam-gray-light"></div>
+<div class="w-3 h-3 rounded-full bg-sam-gray-light"></div>
+<span class="ml-2 font-caption text-sam-navy font-bold">3 / 10</span>
+</div>
+</div>
+</header>
+<!-- Main Assessment Canvas -->
+<main class="flex-grow flex items-center justify-center p-gutter relative">
+<!-- Focused Content Area -->
+<div class="max-w-4xl w-full flex flex-col items-center gap-stack-lg">
+<!-- Question Section -->
+<div class="text-center mb-8">
+<h2 class="font-display-child text-display-child text-sam-navy mb-4">What is 47 - 19?</h2>
+<div class="h-1 w-24 bg-sam-yellow rounded-full mx-auto"></div>
+</div>
+<!-- Choice Grid (2x2) -->
+<div class="grid grid-cols-2 gap-stack-md w-full max-w-2xl">
+<!-- Tile 1: 28 (Correct) -->
+<button class="bg-white border-2 border-sam-gray-light rounded-xl p-10 shadow-[0px_4px_12px_rgba(27,58,107,0.08)] hover:border-sam-navy hover:scale-105 active:scale-95 transition-all duration-200 group flex items-center justify-center">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red transition-colors">28</span>
+</button>
+<!-- Tile 2: 38 -->
+<button class="bg-white border-2 border-sam-gray-light rounded-xl p-10 shadow-[0px_4px_12px_rgba(27,58,107,0.08)] hover:border-sam-navy hover:scale-105 active:scale-95 transition-all duration-200 group flex items-center justify-center">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red transition-colors">38</span>
+</button>
+<!-- Tile 3: 26 -->
+<button class="bg-white border-2 border-sam-gray-light rounded-xl p-10 shadow-[0px_4px_12px_rgba(27,58,107,0.08)] hover:border-sam-navy hover:scale-105 active:scale-95 transition-all duration-200 group flex items-center justify-center">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red transition-colors">26</span>
+</button>
+<!-- Tile 4: 32 -->
+<button class="bg-white border-2 border-sam-gray-light rounded-xl p-10 shadow-[0px_4px_12px_rgba(27,58,107,0.08)] hover:border-sam-navy hover:scale-105 active:scale-95 transition-all duration-200 group flex items-center justify-center">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red transition-colors">32</span>
+</button>
+</div>
+</div>
+<!-- Decorative Elements for Calm Atmosphere (Subtle gradients, no mascot) -->
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-sam-yellow opacity-10 blur-3xl -z-10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+<div class="absolute top-0 right-0 w-80 h-80 bg-sam-red opacity-5 blur-3xl -z-10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+</main>
+<!-- Contextual Footer (Focus mode: No Nav Bar, just navigation aid if needed) -->
+<footer class="p-6 flex justify-between items-center bg-white border-t border-gray-100">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sam-orange" data-icon="lightbulb" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+<span class="text-caption font-caption text-sam-gray-dark">Read carefully!</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-8 py-3 bg-sam-gray-light text-sam-navy font-bold rounded-xl active:scale-95 transition-transform">
+                Skip
+            </button>
+<button class="px-10 py-3 bg-sam-red text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform flex items-center gap-2">
+                Continue
+                <span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</footer>
+<!-- BottomNavBar is suppressed as per UX Goal for focused journey -->
+</body></html>

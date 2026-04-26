@@ -1,0 +1,223 @@
+<!-- Module B - 2: K-4 Practice Question -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "sam-yellow": "#FFD166",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "surface-container-high": "#e0e8ff",
+                        "tertiary-container": "#936f03",
+                        "sam-red": "#E63946",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "tertiary-fixed": "#ffdf9b",
+                        "tertiary": "#755700",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-tertiary-fixed": "#251a00",
+                        "surface-tint": "#bb152c",
+                        "sam-gray-light": "#E5E5E5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#edf0ff",
+                        "sam-teal": "#06A77D",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "background": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "sam-cream": "#FFF8F0",
+                        "white": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-primary-fixed-variant": "#92001c",
+                        "sam-gray-mid": "#777777",
+                        "inverse-primary": "#ffb3b1",
+                        "on-error-container": "#93000a",
+                        "on-background": "#001a40",
+                        "primary-container": "#db313f",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "surface-dim": "#cadaff",
+                        "secondary": "#8e4e14",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "outline": "#8f6f6e",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-navy": "#1B3A6B",
+                        "on-secondary-fixed": "#2f1400",
+                        "surface-container-low": "#f1f3ff",
+                        "on-surface-variant": "#5b403f",
+                        "surface-container": "#e8edff",
+                        "sam-orange": "#F4A261",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#410007",
+                        "primary-fixed": "#ffdad8",
+                        "on-tertiary-container": "#fffbff",
+                        "sam-gray-dark": "#333333",
+                        "outline-variant": "#e4bebc",
+                        "inverse-surface": "#0d2f60",
+                        "surface-variant": "#d7e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "caption": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .assessment-canvas {
+            min-height: calc(100vh - 140px);
+        }
+        .answer-tile {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .answer-tile:active {
+            transform: scale(0.92);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream font-body-regular text-on-background selection:bg-sam-red/20 overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-[#fdfcf8] dark:bg-slate-950 border-b border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none docked full-width top-0 sticky z-50">
+<div class="flex items-center justify-between px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<button class="text-[#E63946] dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors rounded-full p-2 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight font-['Plus_Jakarta_Sans']">S.A.M.</h1>
+</div>
+<!-- Progress Journey Map (Custom Component) -->
+<div class="hidden md:flex items-center gap-3">
+<div class="flex items-center">
+<div class="w-4 h-4 rounded-full bg-sam-teal shadow-sm"></div>
+<div class="w-12 h-1.5 bg-sam-teal"></div>
+<div class="w-8 h-8 rounded-full bg-sam-red border-4 border-white shadow-md flex items-center justify-center text-white text-[10px] font-bold">2</div>
+<div class="w-12 h-1.5 bg-sam-gray-light"></div>
+<div class="w-4 h-4 rounded-full bg-sam-gray-light"></div>
+</div>
+<span class="font-math-numeral text-caption text-sam-gray-mid">2 / 10</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="bg-sam-yellow/20 px-3 py-1 rounded-full flex items-center gap-2">
+<span class="material-symbols-outlined text-sam-yellow" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold text-sam-navy">120</span>
+</div>
+</div>
+</div>
+</header>
+<main class="assessment-canvas flex flex-col items-center justify-center px-4 py-8 max-w-6xl mx-auto">
+<!-- Question Section -->
+<div class="w-full flex flex-col lg:flex-row items-center justify-center gap-12 mb-12">
+<!-- Mascot Sidebar -->
+<div class="flex flex-col items-center gap-4 order-2 lg:order-1">
+<div class="relative">
+<!-- Speech Bubble -->
+<div class="absolute -top-16 -right-12 bg-white p-4 rounded-2xl shadow-lg border-2 border-sam-gray-light max-w-[200px] after:content-[''] after:absolute after:bottom-[-12px] after:left-10 after:border-l-[12px] after:border-l-transparent after:border-r-[12px] after:border-r-transparent after:border-t-[12px] after:border-t-white">
+<p class="text-sam-navy font-bold text-center leading-tight">Count them carefully!</p>
+</div>
+<!-- Mascot Image -->
+<img alt="Dachshund mascot in a thinking pose" class="w-48 h-48 object-contain" data-alt="adorable cartoon dachshund mascot wearing small glasses, sitting in a thinking pose with one paw on chin, playful educational style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBREivXHAnLO3NbuwNSMi0DHeTvZO4s3rkqi9yHjF9y2MO_GdtPTV7cTIocbn4IHanXc1yhDfRCeP7oaZttYkBeyg81kmT_EzbKugZqp8kDCMqEjVyrRgi_7dwveKgNmKVlcrX6EoKF5CfSh-9kvsJXG6qFQRyZ-CA5spO2-XqO5GgIxbjYhgePVhQtnkP6UzPZ6yj26c7UYatB_so8AuAglcMvA9Aq-A4Sdg2KVS1_nK3UdUob551OIVPdTq2wJEsENTuRb8uLhDPV"/>
+</div>
+</div>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left order-1 lg:order-2">
+<h2 class="font-display-child text-display-child text-sam-navy mb-10">How many apples do you see?</h2>
+<!-- Visual Aid -->
+<div class="bg-white p-10 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-2 border-sam-gray-light flex flex-wrap justify-center gap-8 w-full max-w-md">
+<div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-6xl text-sam-red" style="font-variation-settings: 'FILL' 1;">nutrition</span>
+</div>
+<div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-6xl text-sam-red" style="font-variation-settings: 'FILL' 1;">nutrition</span>
+</div>
+<div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-6xl text-sam-red" style="font-variation-settings: 'FILL' 1;">nutrition</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Answer Grid -->
+<div class="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-6 px-4">
+<!-- Answer Tile 2 -->
+<button class="answer-tile group bg-white border-4 border-sam-gray-light hover:border-sam-orange rounded-[24px] py-8 flex flex-col items-center justify-center shadow-sm">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-orange transition-colors">2</span>
+</button>
+<!-- Answer Tile 3 (Target Selection State) -->
+<button class="answer-tile group bg-white border-4 border-sam-red ring-4 ring-sam-red/10 rounded-[24px] py-8 flex flex-col items-center justify-center shadow-md scale-[1.02]">
+<span class="font-math-numeral text-math-numeral text-sam-red">3</span>
+<div class="absolute -top-3 -right-3 bg-sam-red text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-lg font-bold">check</span>
+</div>
+</button>
+<!-- Answer Tile 4 -->
+<button class="answer-tile group bg-white border-4 border-sam-gray-light hover:border-sam-orange rounded-[24px] py-8 flex flex-col items-center justify-center shadow-sm">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-orange transition-colors">4</span>
+</button>
+<!-- Answer Tile 5 -->
+<button class="answer-tile group bg-white border-4 border-sam-gray-light hover:border-sam-orange rounded-[24px] py-8 flex flex-col items-center justify-center shadow-sm">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-orange transition-colors">5</span>
+</button>
+</div>
+</main>
+<!-- Footer Controls -->
+<div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-6 py-6 flex items-center justify-between z-40">
+<button class="text-sam-navy font-bold flex items-center gap-2 hover:bg-sam-gray-light/30 px-4 py-2 rounded-xl transition-all">
+<span class="material-symbols-outlined">help</span>
+<span class="hidden sm:inline">I need help</span>
+</button>
+<button class="bg-sam-red text-white font-bold text-lg px-12 py-4 rounded-2xl shadow-[0_4px_0_#b7102a] active:shadow-none active:translate-y-[4px] transition-all flex items-center gap-2">
+            CHECK ANSWER
+            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<div class="w-24 hidden sm:block"></div> <!-- Spacer for balance -->
+</div>
+<!-- BottomNavBar (Suppressed for focused assessment task as per mandate) -->
+<!-- The BottomNavBar is hidden here because this is a 'Task-Focused' screen -->
+</body></html>
