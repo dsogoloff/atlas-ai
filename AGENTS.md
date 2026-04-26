@@ -148,40 +148,39 @@ Boris Cherny (creator of Claude Code) keeps his team's file around 100 lines. Un
 
 ## 10. Project context
 
-**Fill this in per project. Keep it specific. Delete sections that don't apply.**
-
-Repo name: `atlas-ai`. Currently a planning/strategy repository — no application code yet. Existing top-level files: `Team Design` (org/outsourcing plan) and `market_opportunities.md` (EdTech product opportunities, grades 6–12 / homeschool). Update this section as soon as code lands.
+Repo name: `atlas-ai`. Product: **Atlas Assessment**, a K-12 adaptive-assessment app (K-4 + grades 5-8 in v1). Top-level docs: `Atlas Assessment_ PRD.md`, `Atlas Assessment_ Core User Flows.md`, `Atlas Assessment_ Design Foundation.md`, `atlas_assessment_mvp_spec.md`. Design references: `stitch/` (5 modules, 39 HTML screens exported from Google Stitch).
 
 ### Stack
-- Language and version: TODO (no source code committed yet)
-- Framework(s): TODO
-- Package manager: TODO (no package.json, pyproject.toml, Cargo.toml, or Makefile present)
-- Runtime / deployment target: TODO
+- Language and version: TypeScript 5 (strict)
+- Framework(s): Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4
+- Package manager: pnpm 10 (Node 20+)
+- Runtime / deployment target: TBD (Next.js default is Vercel)
 
 ### Commands
-- Install: `TODO`
-- Build: `TODO`
-- Test (all): `TODO`
+- Install: `pnpm install`
+- Build: `pnpm build`
+- Test (all): `TODO` (no test framework wired up)
 - Test (single file): `TODO`
-- Lint: `TODO`
-- Typecheck: `TODO`
-- Run locally: `TODO`
+- Lint: `pnpm lint`
+- Typecheck: `pnpm typecheck`
+- Run locally: `pnpm dev`
 
 Prefer single-file or single-test runs during iteration. Full suites are for the final verification pass.
 
 ### Layout
-- Source lives in: `TODO` (no source tree yet)
-- Tests live in: `TODO` (no tests yet)
-- Do not modify: `TODO`
+- Source lives in: `src/` (App Router under `src/app/`, alias `@/* -> ./src/*`)
+- Tests live in: `TODO` (none yet)
+- Do not modify: `stitch/` (upstream Google Stitch HTML exports — regenerate, don't hand-edit)
 
 ### Conventions specific to this repo
-- Naming: `TODO`
-- Import style: `TODO`
-- Error handling pattern: `TODO`
-- Testing pattern and framework: `TODO`
+- Naming: kebab-case files and folders; PascalCase React components and types
+- Import style: alias `@/...` for anything under `src/`; relative imports only within the same feature folder
+- Error handling pattern: TODO (decide once first real route lands)
+- Testing pattern and framework: TODO (no tests yet)
 
 ### Forbidden
-- `TODO`: things that look reasonable but will break this project.
+- Editing files under `stitch/`: they are upstream design artifacts; regenerate in Stitch and re-import
+- Mixing package managers (no `npm`/`yarn` — pnpm only); adding UI component libraries (shadcn, MUI, etc.) without confirmation; disabling strict mode, ESLint rules, or build checks to silence errors
 
 ---
 
