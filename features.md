@@ -1,8 +1,10 @@
 # Atlas Assessment — MVP Feature Spec
 
-> **Product**: Atlas Assessment by Inspirea Labs
-> **Audience**: Parents placing children (ages 4–12) into Singapore Math curriculum
-> **Competitive baseline**: Free static PDF placement tests from singaporemath.com — untimed, one per half-grade (KA–5B), manually scored, no diagnostic insight beyond right/wrong
+> **Product**: Atlas Assessment by Seriously Addictive Mathematics (S.A.M.), powered by Inspirea Labs
+> **Audience**: Parents and S.A.M. instructors placing K-8 children (ages ~4–13) into Singapore Math curriculum
+> **Competitive baseline**: Free static PDF placement tests from singaporemath.com — untimed, one per half-grade, manually scored, no diagnostic insight beyond right/wrong
+>
+> **Authority**: On any conflict between this document and `architecture.md`, `architecture.md` wins. This file describes *what* the MVP does; `architecture.md` describes *how* and locks the technical decisions.
 
 ---
 
@@ -21,24 +23,29 @@ Atlas Assessment replaces this with an AI-adaptive, interactive experience that 
 **What it does**: Dynamically selects the next question based on prior responses. Starts at an estimated mid-point and branches up or down, converging on the child's level efficiently.
 
 **Implementation notes**:
-- Use an Item Response Theory (IRT) or Bayesian adaptive model. Each question has a difficulty rating mapped to Singapore Math curriculum levels (KA through 5B, half-grade granularity).
+- **Two-layer engine**:
+  - **Layer 1 — IRT/Bayesian (deterministic core)**: maintains the posterior over the child's level per strand, decides the next ideal difficulty range, and decides when to terminate. Fast, auditable, improvable via response-data calibration. Never LLM-driven.
+  - **Layer 2 — LLM-assisted question selection**: once Layer 1 names the next difficulty range and strand, an LLM call picks among candidate questions in that range based on the misconceptions the child has shown so far. Bounded scope — the LLM never overrides the placement math, it only chooses among items the math has already deemed appropriate.
+- Each question has a difficulty rating mapped to Singapore Math curriculum levels (KA through 8B, half-grade granularity — 24 levels total).
 - Question bank must cover **6 strands**: Number Sense, Operations (add/sub/mult/div), Word Problems, Fractions/Decimals, Geometry, Measurement & Data.
 - Termination criteria: confidence threshold on placement level (e.g., 90% posterior probability) OR max 25 questions, whichever comes first.
 - Target session length: **~15 minutes** for a child.
 - The engine should track response time per question (useful for Phase 2 fluency analysis).
 
 **Question bank requirements**:
-- Minimum 10 items per strand per half-grade level = ~10 × 6 × 12 levels = **720 items** for MVP.
+- Minimum 10 items per strand per half-grade level = ~10 × 6 × 24 levels = **~1,440 items** for full K-8 coverage.
+- v1 ships with whatever S.A.M. content lands first (per `architecture.md` decision #5 — licensing pending). The architecture supports K-8 from day one; coverage rolls out as S.A.M. content arrives.
 - Items should be a mix of: multiple choice, numeric entry, and (where feasible) drag-and-drop visual interactions.
 - Word problems should be age-appropriate in reading level.
-- All items need difficulty calibration — initially via expert tagging, later refined with real response data.
+- All items need difficulty calibration — initially via expert tagging (S.A.M.), later refined with real response data.
+- Per `compliance.md` §8, raw question content is never sent to the browser in bulk — questions are served one at a time via authenticated API calls and access is audit-logged.
 
 **Data model**:
 ```
 Question {
   id: string
   strand: enum [NUMBER_SENSE, OPERATIONS, WORD_PROBLEMS, FRACTIONS_DECIMALS, GEOMETRY, MEASUREMENT_DATA]
-  level: enum [KA, KB, 1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B]
+  level: enum [KA, KB, 1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B]
   difficulty: float  // IRT difficulty parameter
   format: enum [MULTIPLE_CHOICE, NUMERIC_ENTRY, DRAG_DROP]
   content: QuestionContent  // text, images, answer options, correct answer
@@ -140,9 +147,60 @@ Child {
 ```
 
 **Implementation notes**:
-- Auth: email + password (or magic link) is fine for MVP. Social login (Google) is nice-to-have.
+- Auth: Supabase Auth (per `architecture.md` decision #1). Email + password for v1; social login (Google) deferred.
+- Domain tables (`parents`, `children`, etc.) reference `auth_user_id`, never put `auth.users.id` directly into foreign keys (per `architecture.md` guardrail #9).
+- Every table has a `tenant_id` column from day one (v1 = `inspirea_singapore_math`); per `architecture.md` guardrail #1.
 - Each child can have multiple assessment sessions over time (for growth tracking in Phase 2).
 - For MVP, support one assessment per child at a time (can be retaken after completion).
+- COPPA "email plus" verifiable parental consent flow per `compliance.md` §2.
+
+### 6. Instructor Portal
+
+**What it does**: Lets a S.A.M. instructor view assessment results for the children assigned to them, surface pedagogical recommendations, and track cohort-level patterns.
+
+**Scope (v1)**:
+- **Login** — separate entry point from parent signup; instructor accounts are provisioned by S.A.M. (no self-signup in v1).
+- **Student roster** — table of children assigned to the instructor with per-child status (assessment complete / in progress / not started), placement level, and last-assessment date. Empty-state view for new instructors.
+- **Individual student report** — same diagnostic report parents see, plus a **Pedagogical Notes** section (suggested first lesson focus, recommended S.A.M. worksheets, instructor-authored notes after first session).
+- **Cohort view** — placement distribution chart, top-5 misconceptions across the instructor's students, summary stats (avg placement, avg time to complete, students needing attention).
+
+**Data model (additive on top of §5)**:
+```
+Instructor {
+  id: string                   // domain UUID
+  auth_user_id: string         // links to auth.users (Supabase)
+  tenant_id: string            // = "inspirea_singapore_math" in v1
+  email: string
+  name: string
+  created_at: timestamp
+}
+
+InstructorChildAssignment {
+  id: string
+  tenant_id: string
+  instructor_id: string
+  child_id: string
+  assigned_at: timestamp
+  // RLS: instructor can only read child rows reachable through this table
+}
+
+PedagogicalNote {
+  id: string
+  tenant_id: string
+  instructor_id: string
+  child_id: string
+  body: string
+  created_at: timestamp
+}
+```
+
+**Implementation notes**:
+- RLS: an instructor can read a child's assessment data only when an `InstructorChildAssignment` row exists for that pair. The Compliance Agent must produce explicit RLS test cases proving an instructor cannot see unassigned children's data.
+- Pedagogical notes are visible only to instructors, never to parents.
+- Cohort view aggregates only over the instructor's assigned children (no cross-instructor leakage).
+
+**Open compliance question** (raise to founder before instructor portal build):
+- COPPA implication of S.A.M. instructor seeing a parent-consented child's data: does the parent's existing VPC consent cover instructor access, or is a separate "consent to share with instructor" step required when the child is assigned? `compliance.md` §2 doesn't currently address this — needs explicit resolution before launch.
 
 ---
 
@@ -155,19 +213,18 @@ These are **not** in scope for the initial build but should be considered in arc
 | **Growth Tracking** | Compare assessment results over time. Dashboard showing level progression per strand across multiple sessions (e.g., 3-month intervals). |
 | **Fluency Analysis** | Use response time data to distinguish "knows it" from "can figure it out slowly." Report fluency vs. accuracy separately. |
 | **Curriculum-Agnostic Mode** | Support placement into Primary Mathematics and other Singapore Math series, not just Dimensions Math. |
-| **Educator/Tutor Dashboard** | Multi-child view for co-ops, tutors, and small schools. Aggregate insights across a class. |
-| **Expanded Grade Range** | Add Dimensions Math 6–8 (pre-algebra/algebra) question bank. |
+| **School Customer Tier** | Multi-school / multi-classroom administration, FERPA layer, school-as-data-controller consent model. (The single-instructor view ships in v1 per §6 above; this is the multi-org wrapper around it.) |
 | **Embeddable Widget** | Allow homeschool bloggers and curriculum sites to embed Atlas assessment via iframe/SDK. |
 
 ---
 
 ## Architecture Considerations
 
-- **Question bank is the moat**: Invest heavily in high-quality, well-calibrated items with expert-tagged misconception distractors. This is the hardest thing for a competitor to replicate.
-- **LLM calls should be surgical**: Use LLM for misconception classification on free-response items and for generating the narrative report. The adaptive engine itself should be algorithmic (IRT/Bayesian), not LLM-driven — it needs to be fast and deterministic.
+- **Question bank is the moat**: Licensed from S.A.M. (per `architecture.md` decision #5). Invest in tooling that lets S.A.M. add/edit calibrated items with expert-tagged misconception distractors over time.
+- **LLM calls should be surgical**: Use LLM only for (a) misconception classification on free-response items and (b) report narrative generation. Per `architecture.md` decision #3: Anthropic Claude — Haiku 4.5 for classification, Sonnet for report narrative. The adaptive engine itself is algorithmic (IRT/Bayesian), never LLM-driven.
 - **Calibration data loop**: Every assessment session produces response data that can refine item difficulty parameters. Build the pipeline for this from day one even if you don't use it until you have volume.
-- **Offline-capable assessment**: Once a session starts, the child should be able to complete it even if connectivity drops. Queue responses and sync when back online.
-- **Privacy**: Children's data is sensitive (COPPA applies). Parent must consent. Store minimal PII. No child email addresses. Assessment data should be deletable on request.
+- **Connection resilience (no offline mode in v1)**: Per `architecture.md` decision #7, v1 implements graceful degradation only — UI freezes politely on connection loss, queues the current response in memory, resumes on reconnect. Service worker / IndexedDB / true offline is deferred to v2.
+- **Privacy**: Children's data is sensitive (COPPA applies). Parent must consent via the "email plus" VPC flow per `compliance.md` §2. Store minimal PII. No child email addresses. Assessment data deletable on request per `compliance.md` §4.
 
 ---
 
@@ -185,7 +242,8 @@ These are **not** in scope for the initial build but should be considered in arc
 
 ## Open Questions
 
-1. **Question bank creation**: Build in-house vs. contract with Singapore Math curriculum experts? Likely need subject matter experts for initial calibration regardless.
-2. **LLM provider**: Which model for misconception classification and report generation? Needs to be fast (< 2s per call) and cost-effective at scale.
-3. **Pricing model**: Freemium (one free assessment, pay for detailed report)? Subscription? One-time purchase? This affects what's behind the paywall vs. what's the hook.
-4. **Pilot plan**: How many families for beta? Suggest 50–100 homeschool families via Singapore Math community forums for initial validation.
+1. ~~**Question bank creation**~~ — Resolved (`architecture.md` #5): license from S.A.M.; pending Sam Chia conversation. Engine and schema work proceeds with placeholder content in the meantime.
+2. ~~**LLM provider**~~ — Resolved (`architecture.md` #3): Anthropic Claude. Haiku 4.5 for high-volume misconception classification (<2s budget), Sonnet for report narrative (5–10s budget acceptable).
+3. ~~**Pricing model**~~ — Resolved (`architecture.md` #8): no paywall in v1, free pilot. Schema includes `subscription_tier` field set to `pilot` so tiers can be introduced later as a data migration.
+4. **Pilot plan**: How many families for beta? Suggest 50–100 homeschool families via Singapore Math community forums for initial validation. (S.A.M. parent network as alternative source — see `architecture.md` open question #3.)
+5. **Instructor-COPPA consent model**: Does parental VPC consent cover S.A.M. instructor access to that child's report, or is a separate per-assignment consent required? Raised in §6 above; needs founder + counsel resolution before instructor portal launch.

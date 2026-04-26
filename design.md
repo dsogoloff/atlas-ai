@@ -15,11 +15,13 @@
 - **Product name**: "Atlas Assessment" — appears as a section/product label, never larger than the S.A.M. logo.
 
 ### Color Palette
-> **Note**: Use the official S.A.M. brand colors. The placeholders below are starting values — replace with exact hex codes from the S.A.M. brand guidelines if available.
+> Locked from the Stitch HTML exports under `stitch/`. All 39 screens use these exact tokens with zero drift; lift them verbatim into the Tailwind v4 `@theme` block.
 
-| Token | Color | Hex (placeholder) | Usage |
-|-------|-------|-------------------|-------|
-| `sam-red` | S.A.M. signature red | `#E63946` | Logo, primary CTAs, hero accents |
+**Brand tokens** — the S.A.M. identity layer. Use these by name in components.
+
+| Token | Color | Hex | Usage |
+|-------|-------|-----|-------|
+| `sam-red` | S.A.M. signature red | `#E63946` | Logo, brand accents (see note on `primary` below for CTA red) |
 | `sam-orange` | Warm secondary | `#F4A261` | Highlights, badges, accent elements |
 | `sam-yellow` | Sunshine accent | `#FFD166` | Celebratory moments, progress milestones |
 | `sam-cream` | Soft background | `#FFF8F0` | Page backgrounds, cards |
@@ -29,6 +31,8 @@
 | `sam-gray-mid` | Muted text | `#777777` | Captions, helper text |
 | `sam-gray-light` | Borders, dividers | `#E5E5E5` | UI structure |
 | `white` | White | `#FFFFFF` | Cards, modals |
+
+**Material Design 3 system tokens** — Stitch also exports a 48-token component-level palette (`primary`, `secondary`, `tertiary`, `surface`, `surface-container*`, `on-*`, `outline`, `error`, etc.). These are the working tokens used by the Stitch components themselves; brand tokens above are layered on top for identity moments. Notable: `primary: #b7102a` (the CTA red used in question tiles, dashboard buttons) is a deeper red than `sam-red: #E63946` (the logo red) — they are intentionally distinct, not a conflict. The full M3 palette is captured in the Stitch HTML and lifted into `@theme` during implementation; it is not duplicated here to avoid drift between this doc and the source.
 
 ### Typography
 - **Display / Headlines**: A friendly, rounded sans-serif. **Fredoka** or **Quicksand** for child-facing screens; **DM Sans** or **Inter** for parent/instructor screens.
@@ -380,7 +384,7 @@ When complete, the prototype should include:
 
 ## 12. Open Items to Resolve Before Build
 
-1. **Confirm exact S.A.M. brand colors and logo files** — replace placeholder hexes with official values
-2. **Confirm Sammy the Otter direction** — or substitute with another animal if S.A.M. has an existing mascot
-3. **Confirm font licensing** — if Fredoka/Quicksand/DM Sans are not approved by S.A.M. brand, swap to brand-approved alternatives
+1. ~~**Confirm exact S.A.M. brand colors and logo files**~~ — Resolved: Stitch exports are authoritative for color tokens (see §1). Logo files still pending from S.A.M.
+2. ~~**Confirm Sammy the Otter direction**~~ — Resolved: long-haired mini dachshund (see §3).
+3. **Confirm font licensing** — Stitch exports use Plus Jakarta Sans + Inter; design.md §1 still lists Fredoka/Quicksand/DM Sans. Pick one source of truth before any UI build, and confirm licensing for whichever wins.
 4. **Confirm "Powered by Inspirea Labs" treatment** — exact lockup, sizing relative to S.A.M. logo
