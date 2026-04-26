@@ -61,7 +61,7 @@ Stitch should generate **two responsive breakpoints**: tablet (1024×768) and de
 ## 3. Mascot System
 
 ### K-4 Mascot: "Long haired mini dachshund"
-- **Character**: A friendly dachshund — chosen because otters are clever, playful, and smart. Approachable to young children, neutral across cultures.
+- **Character**: A friendly dachshund — chosen because dachshunds are clever, playful, and smart. Approachable to young children, neutral across cultures.
 - **Personality**: Playful peer — silly, enthusiastic, kid-energy. Says things like "Whoa, look at this one!" and "Ooh, that was tricky! Let's try another." Never condescending, never preachy.
 - **Visual style**: Per sample screens. Multiple poses: greeting/waving, thinking (paw on chin), cheering, encouraging.
 - **Role**: Mascot appears on the welcome screen, between question groups (every ~5 questions) for a quick word of encouragement, and on the completion screen. Never appears during a question itself — that screen stays focused on the math.
