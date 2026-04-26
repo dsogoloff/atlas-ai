@@ -1,0 +1,308 @@
+<!-- Module D - 7: Instructor Roster - Empty (Desktop) -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Assessment - Instructor Roster</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#936f03",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-navy": "#1B3A6B",
+                    "on-surface": "#001a40",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-primary-container": "#fffbff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#5b403f",
+                    "surface-dim": "#cadaff",
+                    "inverse-surface": "#0d2f60",
+                    "sam-yellow": "#FFD166",
+                    "on-error-container": "#93000a",
+                    "sam-gray-dark": "#333333",
+                    "surface-container": "#e8edff",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e0e8ff",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-gray-mid": "#777777",
+                    "on-background": "#001a40",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "surface-tint": "#bb152c",
+                    "secondary": "#8e4e14",
+                    "sam-red": "#E63946",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#410007",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-highest": "#d7e2ff",
+                    "secondary-fixed": "#ffdcc4",
+                    "secondary-container": "#ffab69",
+                    "white": "#FFFFFF",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "sam-orange": "#F4A261",
+                    "background": "#f9f9ff",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-variant": "#d7e2ff",
+                    "tertiary": "#755700",
+                    "sam-cream": "#FFF8F0",
+                    "on-secondary-fixed": "#2f1400",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "surface-bright": "#f9f9ff",
+                    "sam-gray-light": "#E5E5E5",
+                    "sam-teal": "#06A77D",
+                    "surface": "#f9f9ff",
+                    "primary": "#b7102a",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-secondary-container": "#783d01",
+                    "outline": "#8f6f6e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "report-width": "880px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "container-max": "1440px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "display-child": ["Plus Jakarta Sans"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "caption": ["Inter"],
+                    "body-regular": ["Inter"]
+            },
+            "fontSize": {
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-sam-cream font-body-regular text-on-surface antialiased">
+<!-- TopAppBar Shell -->
+<nav class="bg-white dark:bg-slate-900 font-['Plus_Jakarta_Sans'] text-sm antialiased docked full-width top-0 z-50 border-b border-slate-200 dark:border-slate-800 shadow-sm flex justify-between items-center w-full px-6 h-16 fixed">
+<div class="flex items-center gap-8">
+<span class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Atlas Assessment</span>
+<div class="hidden md:flex gap-6">
+<a class="text-[#E63946] font-bold transition-all" href="#">Student Roster</a>
+<a class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">Cohort Analytics</a>
+<a class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">Resources</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-[#E63946]" placeholder="Search roster..." type="text"/>
+</div>
+<button class="p-2 text-slate-500 hover:bg-slate-50 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-50 rounded-full">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<img alt="Instructor Profile Avatar" class="w-8 h-8 rounded-full border-2 border-slate-200" data-alt="close-up portrait of a professional male instructor with a friendly smile, clean lighting, blurred office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzDRW_UZyVOn1kFRnZVW2kJnt8YnHfkxTd5kdNHC2EOFyFhzBvqdlYobOuyrsowrQZ97KQ69vPx6siuNso6uu7z8QEN_KT-RF_9LLaq-EaNEhvPAEC3ZNHW-rrHSR56-s8c9Lr36c3XJnc-LgF2ZGK4GZD-tC8WsZCSXqGsauMe5RD49Y_fS3k18aH1ApQWjlIPnNolcdE34s8t_A4TlN1ycgICkbVXdzS69DlBEiadLYF2qquv2ZFm642-CnFGBz0Ify2Q0covbv4"/>
+</div>
+</nav>
+<div class="flex pt-16">
+<!-- SideNavBar Shell -->
+<aside class="bg-slate-50 dark:bg-slate-950 font-['Plus_Jakarta_Sans'] text-[14px] font-medium h-screen w-64 fixed left-0 top-0 border-r border-slate-200 dark:border-slate-800 flat no-shadows flex flex-col h-full pt-20 pb-6 hidden md:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 bg-[#E63946] rounded-xl flex items-center justify-center text-white font-bold">A</div>
+<div>
+<h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Instructor Portal</h2>
+<p class="text-xs text-slate-500">Diagnostic Dashboard</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-4">
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 text-[#E63946] border-r-4 border-[#E63946] shadow-sm transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Student Roster</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Cohort Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span>Diagnostic Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span>Resources</span>
+</a>
+</nav>
+<div class="px-4 space-y-1 border-t border-slate-200 dark:border-slate-800 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-8">
+<div class="max-w-report-width mx-auto">
+<!-- Header Actions -->
+<div class="flex justify-between items-end mb-12">
+<div>
+<h1 class="font-headline-adult text-headline-adult text-sam-navy mb-1">Student Roster</h1>
+<p class="font-body-regular text-body-regular text-sam-gray-mid">Manage your classes and individual student progress.</p>
+</div>
+<button class="bg-sam-red text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all active:scale-95">
+<span class="material-symbols-outlined">person_add</span>
+<span>Add First Student</span>
+</button>
+</div>
+<!-- Empty State Bento Grid -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Main Hero Empty State -->
+<div class="col-span-12 lg:col-span-8 bg-white rounded-2xl p-12 flex flex-col items-center justify-center text-center shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light">
+<div class="relative mb-8">
+<div class="w-48 h-48 bg-sam-cream rounded-full flex items-center justify-center relative">
+<img alt="Empty Slate Illustration" class="w-32 h-32 object-contain" data-alt="expressive whimsical illustration of a friendly otter mascot holding an empty clipboard with colorful math symbols floating around, soft 3d render style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY_OyRdrioBofuua6jLiMJ95l32betIBFhHHpQugwE37a7RMkMRERqIEXyLdpUd6x_5eA2QLovT2KEPMaZM320lAeTk3KTlu69DJk1kOMMATA3Lblo86CiiwFHfSL6OTPTyVSrMHSPl-xpcVOWaFunKU_Fu1_NRm6-KwzW0j1mRV15fXmhc3SShGNVQvfHPDGWOcSS4qSKNuWkj2tvDjlY045cX3A4COFh3dxrBx1nVEyNzDGMFTf1Ce0Ewgb4S3dZ6Pgl-vb0Tfe0"/>
+</div>
+<div class="absolute -bottom-2 -right-2 w-12 h-12 bg-sam-yellow rounded-full flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-sam-navy">waving_hand</span>
+</div>
+</div>
+<h2 class="font-display-child text-display-child text-sam-navy mb-4">Your Classroom is Quiet!</h2>
+<p class="text-sam-gray-dark max-w-md mx-auto mb-8 leading-relaxed">
+                            It looks like you haven't added any students to your roster yet. Once you add your cohort, you'll be able to track diagnostic progress, view heatmaps, and generate personalized reports.
+                        </p>
+<div class="flex gap-4">
+<button class="bg-sam-red text-white px-8 py-3 rounded-full font-bold shadow-lg hover:brightness-110 transition-all">
+                                Import Class List
+                            </button>
+<button class="bg-white border-2 border-sam-navy text-sam-navy px-8 py-3 rounded-full font-bold hover:bg-sam-cream transition-all">
+                                Watch Tutorial
+                            </button>
+</div>
+</div>
+<!-- Side Actions / Tips -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<div class="bg-sam-navy text-white p-6 rounded-2xl shadow-lg relative overflow-hidden group">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-sam-yellow mb-2 text-3xl">lightbulb</span>
+<h3 class="font-headline-adult text-lg mb-2">Getting Started</h3>
+<p class="text-sm text-slate-300 mb-4 leading-relaxed">The best way to begin is by assigning the "Baseline Diagnostics" to your new students.</p>
+<a class="text-sam-yellow font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all" href="#">
+                                    Browse Assessments <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-all">
+<span class="material-symbols-outlined text-9xl">school</span>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light">
+<h3 class="font-headline-adult text-base text-sam-navy mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sam-teal">check_circle</span>
+                                Setup Checklist
+                            </h3>
+<ul class="space-y-4">
+<li class="flex items-center gap-3 text-sm text-sam-gray-mid">
+<div class="w-5 h-5 rounded-full border-2 border-sam-gray-light flex-shrink-0"></div>
+<span>Create your first cohort</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-sam-gray-mid">
+<div class="w-5 h-5 rounded-full border-2 border-sam-gray-light flex-shrink-0"></div>
+<span>Add students manually or via CSV</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-sam-gray-mid">
+<div class="w-5 h-5 rounded-full border-2 border-sam-gray-light flex-shrink-0"></div>
+<span>Schedule a Diagnostic Session</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-sam-gray-mid">
+<div class="w-5 h-5 rounded-full border-2 border-sam-gray-light flex-shrink-0"></div>
+<span>Review Instructor resources</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Secondary Insights Empty State -->
+<div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-gutter mt-4">
+<div class="bg-white/50 border-2 border-dashed border-sam-gray-light p-6 rounded-2xl flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-sam-gray-mid mb-3 text-4xl">group_work</span>
+<span class="font-headline-adult text-sm text-sam-navy">Cohort Analytics</span>
+<p class="text-xs text-sam-gray-mid mt-1">Data will populate after the first assessment</p>
+</div>
+<div class="bg-white/50 border-2 border-dashed border-sam-gray-light p-6 rounded-2xl flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-sam-gray-mid mb-3 text-4xl">trending_up</span>
+<span class="font-headline-adult text-sm text-sam-navy">Growth Tracking</span>
+<p class="text-xs text-sam-gray-mid mt-1">Monitor long-term student progress trends</p>
+</div>
+<div class="bg-white/50 border-2 border-dashed border-sam-gray-light p-6 rounded-2xl flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-sam-gray-mid mb-3 text-4xl">warning</span>
+<span class="font-headline-adult text-sm text-sam-navy">Misconception Alerts</span>
+<p class="text-xs text-sam-gray-mid mt-1">Identify early learning gaps automatically</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex justify-around items-center h-16 px-4">
+<a class="flex flex-col items-center text-[#E63946]" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-[10px] mt-1 font-bold">Roster</span>
+</a>
+<a class="flex flex-col items-center text-slate-400" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] mt-1">Analytics</span>
+</a>
+<div class="relative -top-6">
+<button class="w-14 h-14 bg-sam-red rounded-full text-white shadow-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center text-slate-400" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-[10px] mt-1">Reports</span>
+</a>
+<a class="flex flex-col items-center text-slate-400" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-[10px] mt-1">Resources</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,370 @@
+<!-- Module D - 4: Diagnostic Report (Desktop) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Assessment - Diagnostic Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "on-surface": "#001a40",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5b403f",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "sam-yellow": "#FFD166",
+                        "on-error-container": "#93000a",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-gray-mid": "#777777",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "white": "#FFFFFF",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "tertiary": "#755700",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-secondary-container": "#783d01",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "report-width": "880px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-max": "1440px",
+                        "stack-md": "16px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .radar-chart-bg {
+            background-image: radial-gradient(circle, #E5E5E5 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-sam-cream font-body-regular text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm docked full-width top-0 z-50 fixed w-full h-16 flex justify-between items-center px-6">
+<div class="flex items-center gap-stack-md">
+<span class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white font-['Plus_Jakarta_Sans']">Atlas Assessment</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans'] text-sm">
+<a class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-2 py-1 rounded" href="#">Student Roster</a>
+<a class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-2 py-1 rounded" href="#">Cohort Analytics</a>
+<a class="text-[#E63946] font-bold px-2 py-1 rounded" href="#">Diagnostic Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-2 py-1 rounded" href="#">Resources</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-slate-600 dark:text-slate-400 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all">notifications</button>
+<button class="material-symbols-outlined text-slate-600 dark:text-slate-400 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all">help_outline</button>
+<img alt="Instructor Profile Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-sam-red ring-offset-2" data-alt="Professional headshot of a female educator with a friendly smile, soft natural lighting in a modern office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDy8dLz44a3BT0_2cVBhPDGOkCz4_3sU9jSElN2ZGfOj1iA5ZdYUZ-_5VWTRlnPpWFPQxiMkbo_8SWtgOgEeMGx7Wins0IS0p-UKGe2iiS3QBu28IqRrK5Fg6YjMc09h7CmVtPxUHjwT7FzVlVn2qpCLayKowcojcvlN6Rljd9f06LJVNEVgmRdCEMw0Bz-X6ly0-DCCl_1kOQMBUSrn7k3QR2LY7PUTANx1UwXZtgaX1vPOmU5vrTDwWBsRwxiCMqZQ9ixiLV7oaEf"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="bg-slate-50 dark:bg-slate-950 h-screen w-64 fixed left-0 top-0 border-r border-slate-200 dark:border-slate-800 flat no-shadows hidden lg:flex flex-col pt-20 pb-6 z-40">
+<div class="px-6 mb-8">
+<h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 font-['Plus_Jakarta_Sans']">Instructor Portal</h2>
+<p class="text-[12px] text-slate-500 font-medium">Diagnostic Dashboard</p>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all font-['Plus_Jakarta_Sans'] text-[14px] font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-900">group</span>
+                Student Roster
+            </a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all font-['Plus_Jakarta_Sans'] text-[14px] font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-900">analytics</span>
+                Cohort Analytics
+            </a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg bg-white dark:bg-slate-900 text-[#E63946] border-r-4 border-[#E63946] shadow-sm font-['Plus_Jakarta_Sans'] text-[14px] font-medium" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assessment</span>
+                Diagnostic Reports
+            </a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all font-['Plus_Jakarta_Sans'] text-[14px] font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-900">menu_book</span>
+                Resources
+            </a>
+</nav>
+<div class="px-3 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 transition-all font-['Plus_Jakarta_Sans'] text-[14px]" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 transition-all font-['Plus_Jakarta_Sans'] text-[14px]" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                Support
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 pb-16 px-6 lg:px-margin-desktop">
+<div class="max-w-[880px] mx-auto">
+<!-- Report Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-stack-md mb-stack-lg">
+<div>
+<span class="text-sam-red font-bold tracking-wider uppercase text-[12px]">Diagnostic Report • Grade 4</span>
+<h1 class="text-[32px] font-bold text-sam-navy leading-tight mt-1 font-['Plus_Jakarta_Sans']">Benjamin "Ben" Harrison</h1>
+<div class="flex items-center gap-4 mt-2 text-sam-gray-mid">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> Oct 24, 2023</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">timer</span> 42m duration</span>
+</div>
+</div>
+<div class="flex gap-stack-sm">
+<button class="flex items-center gap-2 px-6 py-2 border-2 border-sam-navy text-sam-navy rounded-xl font-bold hover:bg-sam-navy hover:text-white transition-all text-[14px]">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Export PDF
+                    </button>
+<button class="flex items-center gap-2 px-6 py-2 bg-sam-red text-white rounded-xl font-bold shadow-md hover:scale-[1.02] transition-all text-[14px]">
+<span class="material-symbols-outlined text-[18px]">share</span>
+                        Share with Parent
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Summary -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-stack-lg">
+<!-- Overall Proficiency -->
+<div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] flex items-center justify-between overflow-hidden relative">
+<div class="z-10">
+<h3 class="text-sam-navy font-bold text-lg mb-2">Overall Proficiency</h3>
+<div class="flex items-baseline gap-2">
+<span class="text-5xl font-extrabold text-sam-red">84%</span>
+<span class="text-sam-teal font-bold flex items-center gap-1 text-[14px]">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> +5%
+                            </span>
+</div>
+<p class="text-sam-gray-mid mt-4 max-w-[280px] text-[14px]">Ben is performing significantly above grade-level average in <span class="font-bold text-sam-navy">Algebraic Thinking</span>.</p>
+</div>
+<!-- Simplified Visual Radar Backdrop -->
+<div class="w-48 h-48 bg-slate-50 rounded-full flex items-center justify-center relative">
+<div class="absolute inset-0 border-[1px] border-dashed border-slate-200 rounded-full scale-75"></div>
+<div class="absolute inset-0 border-[1px] border-dashed border-slate-200 rounded-full scale-50"></div>
+<svg class="w-40 h-40 transform rotate-12" viewbox="0 0 100 100">
+<polygon fill="none" points="50,10 90,40 75,90 25,90 10,40" stroke="#E5E5E5" stroke-width="1"></polygon>
+<polygon fill="#E63946" fill-opacity="0.2" points="50,20 80,45 65,75 35,75 20,45" stroke="#E63946" stroke-width="2"></polygon>
+</svg>
+</div>
+</div>
+<!-- Learning Persona -->
+<div class="bg-sam-navy text-white p-8 rounded-3xl shadow-lg flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-lg mb-4">Learner Profile</h3>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-[12px] font-bold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">bolt</span> Dynamic Strategist
+                        </div>
+</div>
+<div class="mt-6">
+<p class="text-white/80 text-[14px] leading-relaxed">Excels at visual problem solving and mental math, but needs focus on procedural notation.</p>
+</div>
+</div>
+</div>
+<!-- Strand Map Section -->
+<div class="bg-white p-8 rounded-3xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] mb-stack-lg">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold text-sam-navy font-['Plus_Jakarta_Sans']">Competency Strand Map</h2>
+<div class="flex gap-4">
+<div class="flex items-center gap-2 text-[12px] font-medium text-sam-gray-mid">
+<div class="w-3 h-3 rounded-full bg-sam-teal"></div> Mastery
+                        </div>
+<div class="flex items-center gap-2 text-[12px] font-medium text-sam-gray-mid">
+<div class="w-3 h-3 rounded-full bg-sam-yellow"></div> Developing
+                        </div>
+<div class="flex items-center gap-2 text-[12px] font-medium text-sam-gray-mid">
+<div class="w-3 h-3 rounded-full bg-sam-red"></div> Growth Opportunity
+                        </div>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Strand Item: Number Sense -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-bold text-sam-navy">Number &amp; Operations</span>
+<span class="text-sam-teal font-extrabold">92%</span>
+</div>
+<div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-sam-teal to-[#10c99a] w-[92%] rounded-full"></div>
+</div>
+</div>
+<!-- Strand Item: Algebra -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-bold text-sam-navy">Algebraic Thinking</span>
+<span class="text-sam-teal font-extrabold">88%</span>
+</div>
+<div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-sam-teal to-[#10c99a] w-[88%] rounded-full"></div>
+</div>
+</div>
+<!-- Strand Item: Geometry -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-bold text-sam-navy">Measurement &amp; Geometry</span>
+<span class="text-sam-yellow font-extrabold">64%</span>
+</div>
+<div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-sam-yellow to-[#ffdf91] w-[64%] rounded-full"></div>
+</div>
+</div>
+<!-- Strand Item: Fractions -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-bold text-sam-navy">Fractions &amp; Decimals</span>
+<span class="text-sam-red font-extrabold">42%</span>
+</div>
+<div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-sam-red to-[#ff6b76] w-[42%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Insights & Recommendations -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Misconception Cards -->
+<div class="space-y-4">
+<h3 class="text-xl font-bold text-sam-navy px-2">Identified Gaps</h3>
+<div class="bg-white p-6 rounded-2xl border border-sam-gray-light shadow-sm flex gap-4">
+<div class="w-12 h-12 bg-sam-red/10 rounded-xl flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sam-red">troubleshoot</span>
+</div>
+<div>
+<h4 class="font-bold text-sam-navy">Denominator Confusion</h4>
+<p class="text-[14px] text-sam-gray-mid mt-1">Attempts to add denominators when calculating fraction sums. (e.g., 1/4 + 1/4 = 2/8)</p>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl border border-sam-gray-light shadow-sm flex gap-4">
+<div class="w-12 h-12 bg-sam-orange/10 rounded-xl flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sam-orange">architecture</span>
+</div>
+<div>
+<h4 class="font-bold text-sam-navy">Spatial Orientation</h4>
+<p class="text-[14px] text-sam-gray-mid mt-1">Struggles with rotating 3D shapes mentally in geometry problems.</p>
+</div>
+</div>
+</div>
+<!-- Recommendations -->
+<div class="space-y-4">
+<h3 class="text-xl font-bold text-sam-navy px-2">Next Steps</h3>
+<div class="bg-sam-cream p-6 rounded-2xl border-2 border-dashed border-sam-orange flex flex-col h-full">
+<div class="flex items-center gap-3 mb-4">
+<img alt="Sammy the Otter Mascot" class="w-10 h-10 object-contain" data-alt="A friendly and cute cartoon otter mascot with wide eyes and a welcoming expression, simple vector style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZW1ow00H1SwH49eKMGDh3tECQ68YwceE7DpbEYHxSH3AClUVFdkXKtaqeEo03doI79vPrRN9iWJQOhVw6vIHgDFHNk7Z0FyrJ47Epil4oBccSo8Wfd-a3Uz4ef_xhd_bPuZrNLAaCFVL9FPTWqK-Nz5LczOdTzOySP9mqgi-J2nH0UTCphvzUEbH0m07auGdUau2HexZk1s9Qqa3nxXzGJsYXG4NbBAJtOO-mwNX2rrK2YSi-1d1KkmCxEtRsnI-TRFHdBPMGhghg"/>
+<span class="font-bold text-sam-navy">Sammy's Plan for Ben</span>
+</div>
+<ul class="space-y-3">
+<li class="flex items-start gap-3 text-[14px] text-sam-navy/80">
+<span class="material-symbols-outlined text-sam-teal text-[20px]">check_circle</span>
+                                Practice visual fraction models using circular diagrams.
+                            </li>
+<li class="flex items-start gap-3 text-[14px] text-sam-navy/80">
+<span class="material-symbols-outlined text-sam-teal text-[20px]">check_circle</span>
+                                Target "Equivalent Fractions" module in the Portal.
+                            </li>
+<li class="flex items-start gap-3 text-[14px] text-sam-navy/80">
+<span class="material-symbols-outlined text-sam-teal text-[20px]">check_circle</span>
+                                Use manipulative tools for 3D shape identification.
+                            </li>
+</ul>
+<button class="mt-auto pt-6 w-full py-3 bg-sam-navy text-white rounded-xl font-bold hover:bg-sam-red transition-all">
+                            Assign Practice Missions
+                        </button>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="mt-12 p-8 bg-white rounded-3xl border border-sam-gray-light flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-sam-teal/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-sam-teal">history_edu</span>
+</div>
+<div>
+<p class="font-bold text-sam-navy">View Full Response Log</p>
+<p class="text-[14px] text-sam-gray-mid">Review every answer Ben gave during the assessment.</p>
+</div>
+</div>
+<button class="px-8 py-3 bg-slate-100 text-sam-navy font-bold rounded-xl hover:bg-slate-200 transition-all">
+                    Open Answer Key
+                </button>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 px-4 z-50">
+<button class="flex flex-col items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined">group</span>
+<span class="text-[10px]">Students</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px]">Cohort</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-[#E63946]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assessment</span>
+<span class="text-[10px] font-bold">Reports</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-[10px]">Resources</span>
+</button>
+</nav>
+</body></html>
