@@ -148,7 +148,7 @@ Boris Cherny (creator of Claude Code) keeps his team's file around 100 lines. Un
 
 ## 10. Project context
 
-Repo name: `atlas-ai`. Product: **Atlas Assessment**, a K-12 adaptive-assessment app (K-4 + grades 5-8 in v1). Top-level docs: `Atlas Assessment_ PRD.md`, `Atlas Assessment_ Core User Flows.md`, `Atlas Assessment_ Design Foundation.md`, `atlas_assessment_mvp_spec.md`. Design references: `stitch/` (5 modules, 39 HTML screens exported from Google Stitch).
+Repo name: `atlas-ai`. Product: **Atlas Assessment**, a K-12 adaptive-assessment app (K-4 + grades 5-8 in v1). Top-level docs: `features.md`, `design.md`, `compliance.md`, `architecture.md`. Design references: `stitch/` (5 modules, 39 HTML screens exported from Google Stitch).
 
 ### Stack
 - Language and version: TypeScript 5 (strict)
