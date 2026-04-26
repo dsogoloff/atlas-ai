@@ -1,0 +1,228 @@
+<!-- Module A - 7: COPPA Disclosure (Mobile) -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "secondary-container": "#ffab69",
+                    "primary-fixed": "#ffdad8",
+                    "sam-navy": "#1B3A6B",
+                    "inverse-on-surface": "#edf0ff",
+                    "primary": "#b7102a",
+                    "tertiary": "#755700",
+                    "sam-cream": "#FFF8F0",
+                    "secondary-fixed": "#ffdcc4",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-secondary-container": "#783d01",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "secondary": "#8e4e14",
+                    "outline-variant": "#e4bebc",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#936f03",
+                    "primary-container": "#db313f",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#410007",
+                    "on-tertiary": "#ffffff",
+                    "sam-teal": "#06A77D",
+                    "background": "#f9f9ff",
+                    "on-surface-variant": "#5b403f",
+                    "surface-dim": "#cadaff",
+                    "on-background": "#001a40",
+                    "on-tertiary-container": "#fffbff",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "on-secondary-fixed": "#2f1400",
+                    "sam-yellow": "#FFD166",
+                    "tertiary-fixed-dim": "#edc157",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-container": "#e8edff",
+                    "surface": "#f9f9ff",
+                    "on-primary": "#ffffff",
+                    "sam-red": "#E63946",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-gray-dark": "#333333",
+                    "on-primary-container": "#fffbff",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e0e8ff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "sam-gray-light": "#E5E5E5",
+                    "surface-tint": "#bb152c",
+                    "outline": "#8f6f6e",
+                    "sam-gray-mid": "#777777",
+                    "surface-variant": "#d7e2ff",
+                    "surface-container-highest": "#d7e2ff",
+                    "inverse-primary": "#ffb3b1",
+                    "error-container": "#ffdad6",
+                    "white": "#FFFFFF",
+                    "inverse-surface": "#0d2f60",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-orange": "#F4A261",
+                    "on-surface": "#001a40"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "report-width": "880px",
+                    "stack-sm": "8px",
+                    "margin-desktop": "40px",
+                    "container-max": "1440px",
+                    "stack-lg": "32px"
+            },
+            "fontFamily": {
+                    "display-child": ["Plus Jakarta Sans"],
+                    "body-regular": ["Inter"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "caption": ["Inter"]
+            },
+            "fontSize": {
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #E5E5E5;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream font-body-regular text-on-surface antialiased">
+<!-- Top Navigation Anchor -->
+<header class="bg-[#fdfcf8] dark:bg-slate-950 text-[#E63946] dark:text-red-400 font-['Plus_Jakarta_Sans'] font-bold text-lg docked full-width top-0 border-b border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none flex items-center justify-between px-6 py-4 w-full sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-2xl" data-icon="arrow_back">arrow_back</span>
+<span class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight">S.A.M.</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-sam-yellow flex items-center justify-center">
+<span class="material-symbols-outlined text-sam-navy text-sm" data-icon="shield" data-weight="fill" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+</div>
+</header>
+<main class="min-h-[calc(100vh-140px)] flex flex-col items-center justify-center p-4 sm:p-6">
+<!-- COPPA Disclosure Overlay / Content -->
+<div class="w-full max-w-md bg-white rounded-[32px] shadow-[0px_8px_30px_rgba(27,58,107,0.12)] overflow-hidden flex flex-col relative">
+<!-- Header Aesthetic -->
+<div class="bg-sam-navy p-8 text-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10">
+<div class="absolute -top-10 -left-10 w-40 h-40 bg-sam-teal rounded-full blur-3xl"></div>
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-sam-red rounded-full blur-3xl"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-white text-4xl" data-icon="policy">policy</span>
+</div>
+<h1 class="text-white font-display-child text-[24px] leading-tight">Privacy &amp; Safety First</h1>
+<p class="text-white/80 font-caption text-sm mt-1">COPPA Disclosure for Atlas Assessment</p>
+</div>
+</div>
+<!-- Content Area -->
+<div class="p-6 custom-scrollbar overflow-y-auto max-h-[442px]">
+<div class="space-y-6">
+<section>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-sam-teal text-xl" data-icon="verified_user">verified_user</span>
+<h2 class="text-sam-navy font-headline-adult text-lg">Our Commitment</h2>
+</div>
+<p class="text-sam-gray-dark font-body-regular text-sm leading-relaxed">
+                            The Seriously Addictive Mathematics (S.A.M.) platform is committed to protecting the privacy of children. The Atlas Assessment is designed to be a safe space for mathematical discovery.
+                        </p>
+</section>
+<section class="bg-sam-cream rounded-2xl p-4 border border-sam-gray-light">
+<h3 class="text-sam-navy font-bold text-xs uppercase tracking-wider mb-3">Information We Collect</h3>
+<ul class="space-y-3">
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-sam-orange text-lg flex-shrink-0" data-icon="check_circle">check_circle</span>
+<p class="text-sam-gray-dark text-sm"><span class="font-bold">Assessment Data:</span> Numerical answers and problem-solving patterns.</p>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-sam-orange text-lg flex-shrink-0" data-icon="check_circle">check_circle</span>
+<p class="text-sam-gray-dark text-sm"><span class="font-bold">Progress Metrics:</span> Time taken per question and completion status.</p>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-sam-orange text-lg flex-shrink-0" data-icon="check_circle">check_circle</span>
+<p class="text-sam-gray-dark text-sm"><span class="font-bold">User Identity:</span> First name and grade level only (no full identities).</p>
+</li>
+</ul>
+</section>
+<section>
+<h2 class="text-sam-navy font-headline-adult text-lg mb-2">Parental Rights</h2>
+<p class="text-sam-gray-dark font-body-regular text-sm leading-relaxed">
+                            Under COPPA, parents have the right to review their child's information, request its deletion, and refuse further collection. S.A.M. does not share child data with third-party advertisers.
+                        </p>
+</section>
+<div class="flex items-start gap-4 p-4 bg-red-50 rounded-2xl">
+<span class="material-symbols-outlined text-sam-red" data-icon="info">info</span>
+<p class="text-sam-red text-xs font-medium leading-relaxed">
+                            By clicking "I Agree", you confirm you are the legal guardian and consent to the collection of the assessment data described above.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="p-6 pt-2 bg-white border-t border-sam-gray-light">
+<button class="w-full py-4 bg-sam-red text-white font-bold rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all mb-3 flex items-center justify-center gap-2">
+<span>I Agree &amp; Continue</span>
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="w-full py-3 bg-white text-sam-navy font-semibold rounded-2xl border-2 border-sam-navy/10 hover:bg-sam-gray-light transition-colors">
+                    Review Full Policy
+                </button>
+</div>
+</div>
+<!-- Mascot Tip -->
+<div class="mt-8 flex items-center gap-4 max-w-xs">
+<div class="w-20 h-20 bg-sam-teal/20 rounded-full flex-shrink-0 overflow-hidden border-4 border-white shadow-md">
+<img alt="Sammy the Otter Mascot" class="w-full h-full object-cover" data-alt="Expressive friendly otter mascot Sammy wearing a small green educator vest, smiling warmly with wide eyes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLpgJQX2XsVbUquI02kPQ-iiRHVDYaTzqXX8oZ3NFexrutSEtkF8gEdBAGUstB1GHZyqnedGuPHGkakyCXhpf60pSWsQMcy7Z-ZkOvXydrOA_OtUyKxLMibXDxK89uRKyidoBv2iOu2yVyGFbtv5ZnlLAZdpYiQoNRQaruf_QEeUyK2NxIfHC4uy39aPYK3E2IQNXM-lfwObZo8AbYuZsfmAl4IhseiY2OFepGR1G2-CKhQm_xRaOUHMgAQfal3bscR_Ju_vEhsz2X"/>
+</div>
+<div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm relative">
+<div class="absolute -left-2 top-0 w-4 h-4 bg-white rotate-45"></div>
+<p class="text-xs text-sam-navy font-medium italic">"We keep your data super safe so you can focus on the fun math!"</p>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Anchor (Suppressed based on Transactional Context, but coded for global visibility if needed elsewhere) -->
+<!-- Not visible in this transactional screen as per rule: "suppress the navigation to prioritize the content canvas" -->
+</body></html>
