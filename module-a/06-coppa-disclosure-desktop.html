@@ -1,0 +1,273 @@
+<!-- Module A - 6: COPPA Disclosure (Desktop) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Assessment - COPPA Disclosure</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "secondary-container": "#ffab69",
+                        "primary-fixed": "#ffdad8",
+                        "sam-navy": "#1B3A6B",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary": "#b7102a",
+                        "tertiary": "#755700",
+                        "sam-cream": "#FFF8F0",
+                        "secondary-fixed": "#ffdcc4",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-secondary-container": "#783d01",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "secondary": "#8e4e14",
+                        "outline-variant": "#e4bebc",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#936f03",
+                        "primary-container": "#db313f",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#410007",
+                        "on-tertiary": "#ffffff",
+                        "sam-teal": "#06A77D",
+                        "background": "#f9f9ff",
+                        "on-surface-variant": "#5b403f",
+                        "surface-dim": "#cadaff",
+                        "on-background": "#001a40",
+                        "on-tertiary-container": "#fffbff",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-secondary-fixed": "#2f1400",
+                        "sam-yellow": "#FFD166",
+                        "tertiary-fixed-dim": "#edc157",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-container": "#e8edff",
+                        "surface": "#f9f9ff",
+                        "on-primary": "#ffffff",
+                        "sam-red": "#E63946",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-gray-dark": "#333333",
+                        "on-primary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e0e8ff",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "sam-gray-light": "#E5E5E5",
+                        "surface-tint": "#bb152c",
+                        "outline": "#8f6f6e",
+                        "sam-gray-mid": "#777777",
+                        "surface-variant": "#d7e2ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "inverse-primary": "#ffb3b1",
+                        "error-container": "#ffdad6",
+                        "white": "#FFFFFF",
+                        "inverse-surface": "#0d2f60",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-orange": "#F4A261",
+                        "on-surface": "#001a40"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "report-width": "880px",
+                        "stack-sm": "8px",
+                        "margin-desktop": "40px",
+                        "container-max": "1440px",
+                        "stack-lg": "32px"
+                    },
+                    "fontFamily": {
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "caption": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #FFF8F0;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #E5E5E5;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-sam-cream font-body-regular text-on-background min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-[#FEFBF6] dark:bg-slate-950 docked full-width top-0 z-40 border-b border-[#F2EDE4] dark:border-slate-800 shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4 sticky">
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-[#1B3A6B] dark:text-slate-100">Atlas Assessment</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans'] font-semibold">
+<a class="text-[#E63946] border-b-2 border-[#E63946] pb-1 hover:text-[#E63946] transition-colors" href="#">Assessment</a>
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 hover:text-[#E63946] transition-colors" href="#">Resources</a>
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 hover:text-[#E63946] transition-colors" href="#">Support</a>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-[#1B3A6B]/60 hover:text-[#E63946] scale-95 active:duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-[#1B3A6B]/60 hover:text-[#E63946] scale-95 active:duration-150">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-sam-teal ml-2">
+<img alt="Instructor Profile" class="w-full h-full object-cover" data-alt="professional portrait of a smiling female educator in a bright classroom setting, soft natural lighting, educational environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNf1Zyo-TnvqRob3rnHk3c1rpC_6Lf11SUQR-knAhalQnRYEGdH8OdXtuBYGUBTZwYnBPEwcar-fj1LpRCy4auMx5v72nKzDxoKiB9gBFBVc0kENU20b3A75Sgzbz4Zr05RJHnBmjppZLPr_ke0YHBaI4gqzItHQ6UNg0BrLvjFeKGq4s_x_s-3R6M4sJhGCpjEeuKpDYvtWyYejohtthuKORgDEDRUOHRGbH-JcdRkYRShkR-xKzzwep89Hd9J8bmy40aVu8YdCuv"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Modal Backdrop -->
+<main class="flex items-center justify-center min-h-[calc(100vh-80px)] p-6 md:p-12 relative overflow-hidden">
+<!-- Background Mascot Decoration -->
+<div class="absolute bottom-[-20px] left-[5%] opacity-20 pointer-events-none select-none">
+<img alt="Mascot Design Element" class="w-64 grayscale contrast-125" data-alt="playful digital illustration of an otter character peering curiously, minimalist flat design, vector style, soft round shapes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEL8CzShDz2_ezQgRAYw2-5vPhAFE4zXOtMczioeausspAZV89wlAJo-bRQqijQtmrlDfA3EUDXbuhLjsU6DXccITBSJ_WbYOtqSz9mShNcc9KINrulgfA-pkNSBfWAndnhcD30MTV3X47ioJbWLVh49Q1UtVQqM1f5RmJi6Wkp_ymWCzGDhABc9nzdXrxSBvGFUM_8eqm9_YoG3-dG00o2qB1LSFk72Mdu1kDmHF6BsoiWa8MWVyZrOe28zj7SNNpjt7w1-yLrOFa"/>
+</div>
+<!-- COPPA Disclosure Modal -->
+<div class="bg-white rounded-[32px] w-full max-w-report-width shadow-[0px_8px_40px_rgba(27,58,107,0.12)] flex flex-col max-h-[870px] relative z-10 border border-[#F2EDE4]">
+<!-- Modal Header -->
+<div class="p-8 border-b border-sam-gray-light flex justify-between items-start">
+<div class="space-y-1">
+<h1 class="font-headline-adult text-headline-adult text-sam-navy flex items-center gap-3">
+<span class="material-symbols-outlined text-sam-red" data-icon="security" style="font-variation-settings: 'FILL' 1;">security</span>
+                        COPPA Disclosure &amp; Parental Consent
+                    </h1>
+<p class="font-caption text-caption text-sam-gray-mid">Updated: October 24, 2023 • Required for Student Assessments</p>
+</div>
+<button class="text-sam-gray-mid hover:text-sam-navy transition-colors p-1">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
+<!-- Introduction Card -->
+<div class="bg-sam-cream/50 rounded-2xl p-6 border border-sam-orange/20">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-sam-orange" data-icon="info">info</span>
+<div class="space-y-2">
+<p class="font-body-regular text-on-background font-semibold">Our Commitment to Privacy</p>
+<p class="font-body-regular text-on-background text-sm leading-relaxed">
+                                Atlas Assessment is committed to complying with the Children's Online Privacy Protection Act (COPPA). We collect minimal information necessary to evaluate mathematical progress and never share identifiable data with third parties for marketing purposes.
+                            </p>
+</div>
+</div>
+</div>
+<!-- Privacy Policy Sections -->
+<div class="space-y-6">
+<section class="space-y-3">
+<h2 class="font-headline-adult text-lg text-sam-navy font-bold">1. Information Collection</h2>
+<p class="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
+                            For students under the age of 13, we collect only the following: first name (or nickname), age, and assessment responses. This data is used exclusively to generate diagnostic reports for parents and instructors.
+                        </p>
+</section>
+<section class="space-y-3">
+<h2 class="font-headline-adult text-lg text-sam-navy font-bold">2. Use of Data</h2>
+<p class="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
+                            The diagnostic data helps identify learning gaps and mathematical strands requiring attention. All progress data is encrypted and hosted on secure servers.
+                        </p>
+</section>
+<section class="space-y-3">
+<h2 class="font-headline-adult text-lg text-sam-navy font-bold">3. Your Rights as a Parent</h2>
+<p class="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
+                            You have the right to review your child's information, request its deletion, and refuse further collection or use. Please contact our Data Privacy Officer at privacy@atlasassessment.edu for any such requests.
+                        </p>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+<div class="border border-sam-gray-light rounded-xl p-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-sam-teal" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-caption text-sam-navy font-bold">No Advertising</p>
+<p class="text-xs text-sam-gray-mid">We do not serve ads to children.</p>
+</div>
+</div>
+<div class="border border-sam-gray-light rounded-xl p-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-sam-teal" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-caption text-sam-navy font-bold">Encrypted Storage</p>
+<p class="text-xs text-sam-gray-mid">Bank-grade security protocols.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Agreement Checkbox -->
+<div class="pt-6 border-t border-sam-gray-light">
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative mt-1">
+<input class="peer h-5 w-5 rounded border-sam-gray-mid text-sam-red focus:ring-sam-red transition-all" type="checkbox"/>
+</div>
+<span class="font-body-regular text-sam-navy group-hover:text-sam-red transition-colors">
+                            I verify that I am the parent/legal guardian and I give permission for Atlas Assessment to collect and use my child's diagnostic data as described above.
+                        </span>
+</label>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-8 border-t border-sam-gray-light bg-surface-container-lowest rounded-b-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
+<button class="w-full md:w-auto px-6 py-3 border-2 border-sam-navy text-sam-navy rounded-xl font-headline-adult text-sm hover:bg-sam-navy hover:text-white transition-all flex items-center justify-center gap-2 order-2 md:order-1">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+                    Download PDF
+                </button>
+<div class="flex flex-col md:flex-row gap-3 w-full md:w-auto order-1 md:order-2">
+<button class="px-8 py-3 text-sam-navy font-semibold hover:bg-sam-cream rounded-xl transition-colors">
+                        Decline
+                    </button>
+<button class="px-10 py-3 bg-sam-red text-white rounded-xl font-headline-adult text-base shadow-[0px_4px_12px_rgba(230,57,70,0.3)] hover:scale-105 active:scale-95 transition-all">
+                        I Consent &amp; Continue
+                    </button>
+</div>
+</div>
+</div>
+<!-- Mascot Sammy Interaction -->
+<div class="fixed bottom-8 right-12 z-50 flex items-end gap-2 group hidden lg:flex">
+<div class="bg-white p-4 rounded-2xl shadow-xl border border-sam-gray-light mb-12 relative opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-300 w-48">
+<p class="text-xs text-sam-navy italic">"Safety first! Let's keep your data as secure as my favorite shells!"</p>
+<div class="absolute bottom-[-10px] right-6 w-5 h-5 bg-white border-r border-b border-sam-gray-light rotate-45"></div>
+</div>
+<div class="w-24 h-24 relative">
+<img alt="Sammy the Otter" class="w-full h-full object-contain drop-shadow-lg" data-alt="friendly cartoon otter mascot waving, bright eyes, high quality 3d style digital illustration, warm lighting, educational mascot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCN5QkpH4174uGZxxzBbr-I3Dl4HeC93npKw9TIsnd5guGbPHVzUcyRUgdmC-V-SJuLGgrOVSZkC8rpqCPBwbrMMiN9PKcCcDKMxinlo-WGmUCB2Z64n-VV4MSmDDQpU1AsnbI_Jbs5eRzEov23CEN8avWeUxgEXo9DcEvjV8uwjEPcB4EubWuMLWaPBwXYzAqXNYsxVA76D3LQ2j0LH0GoAGsxww6OHFbv6RyWsd3dlrAoTfCWDuA5IFmUwegskFptUNXU1ZXGu6tF"/>
+</div>
+</div>
+</main>
+<!-- Background Decorative Elements -->
+<div class="fixed inset-0 pointer-events-none -z-10">
+<div class="absolute top-20 left-10 w-64 h-64 bg-sam-yellow/10 rounded-full blur-[80px]"></div>
+<div class="absolute bottom-20 right-10 w-96 h-96 bg-sam-teal/10 rounded-full blur-[100px]"></div>
+</div>
+</body></html>

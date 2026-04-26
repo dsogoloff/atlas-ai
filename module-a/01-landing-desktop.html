@@ -1,0 +1,298 @@
+<!-- Module A - 1: Landing Page (Desktop) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Assessment | Diagnostic Excellence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-secondary": "#ffffff",
+                "secondary-fixed-dim": "#ffb780",
+                "on-secondary-fixed-variant": "#6f3800",
+                "secondary-container": "#ffab69",
+                "primary-fixed": "#ffdad8",
+                "sam-navy": "#1B3A6B",
+                "inverse-on-surface": "#edf0ff",
+                "primary": "#b7102a",
+                "tertiary": "#755700",
+                "sam-cream": "#FFF8F0",
+                "secondary-fixed": "#ffdcc4",
+                "on-primary-fixed-variant": "#92001c",
+                "on-secondary-container": "#783d01",
+                "surface-bright": "#f9f9ff",
+                "on-tertiary-fixed": "#251a00",
+                "secondary": "#8e4e14",
+                "outline-variant": "#e4bebc",
+                "on-error-container": "#93000a",
+                "tertiary-container": "#936f03",
+                "primary-container": "#db313f",
+                "on-error": "#ffffff",
+                "on-primary-fixed": "#410007",
+                "on-tertiary": "#ffffff",
+                "sam-teal": "#06A77D",
+                "background": "#f9f9ff",
+                "on-surface-variant": "#5b403f",
+                "surface-dim": "#cadaff",
+                "on-background": "#001a40",
+                "on-tertiary-container": "#fffbff",
+                "on-tertiary-fixed-variant": "#5b4300",
+                "on-secondary-fixed": "#2f1400",
+                "sam-yellow": "#FFD166",
+                "tertiary-fixed-dim": "#edc157",
+                "tertiary-fixed": "#ffdf9b",
+                "surface-container": "#e8edff",
+                "surface": "#f9f9ff",
+                "on-primary": "#ffffff",
+                "sam-red": "#E63946",
+                "surface-container-low": "#f1f3ff",
+                "sam-gray-dark": "#333333",
+                "on-primary-container": "#fffbff",
+                "error": "#ba1a1a",
+                "surface-container-high": "#e0e8ff",
+                "primary-fixed-dim": "#ffb3b1",
+                "sam-gray-light": "#E5E5E5",
+                "surface-tint": "#bb152c",
+                "outline": "#8f6f6e",
+                "sam-gray-mid": "#777777",
+                "surface-variant": "#d7e2ff",
+                "surface-container-highest": "#d7e2ff",
+                "inverse-primary": "#ffb3b1",
+                "error-container": "#ffdad6",
+                "white": "#FFFFFF",
+                "inverse-surface": "#0d2f60",
+                "surface-container-lowest": "#ffffff",
+                "sam-orange": "#F4A261",
+                "on-surface": "#001a40"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "stack-md": "16px",
+                "unit": "4px",
+                "gutter": "24px",
+                "margin-tablet": "32px",
+                "report-width": "880px",
+                "stack-sm": "8px",
+                "margin-desktop": "40px",
+                "container-max": "1440px",
+                "stack-lg": "32px"
+            },
+            "fontFamily": {
+                "display-child": ["Plus Jakarta Sans"],
+                "body-regular": ["Inter"],
+                "math-numeral": ["Plus Jakarta Sans"],
+                "headline-adult": ["Inter"],
+                "caption": ["Inter"]
+            },
+            "fontSize": {
+                "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream foundation */
+        }
+    </style>
+</head>
+<body class="font-body-regular text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-[#FEFBF6] dark:bg-slate-950 font-['Plus_Jakarta_Sans'] font-semibold docked full-width top-0 z-40 border-b border-[#F2EDE4] dark:border-slate-800 shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4 sticky">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#1B3A6B] dark:text-slate-100">Atlas Assessment</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-[#E63946] border-b-2 border-[#E63946] pb-1 hover:text-[#E63946] transition-colors" href="#">Journey</a>
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 hover:text-[#E63946] transition-colors" href="#">Reports</a>
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 hover:text-[#E63946] transition-colors" href="#">Students</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#1B3A6B]/60 p-2 scale-95 active:duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-[#1B3A6B]/60 p-2 scale-95 active:duration-150">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-sam-red/20">
+<img alt="Instructor Profile" data-alt="close-up portrait of a friendly male educator with a warm smile in a brightly lit professional setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1GH_kHHBw160diw4SbdgcYSOxu-GYY6ezHCr-sucEgblYjqBIwxU3TY4mGDXdlf_ywqkBj3PzlEswBapc1WksNUlIkE7Z1KkrA-6TNz5vUIZPs9o0vONxa2vGB4GCEHWls8iBpjBdPGlnynm278pz8nEDuy2hi0qs_HK7Eh21bruuSljGO_RiGicZVj3a3XtEamSNbsPczq9SNT6ZQrWoy_u-Dgeh8vqqlyun3NYSA43JtfwY8V9RkfL00BKgdrqFBEJIYSAT85ac"/>
+</div>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-gutter py-stack-lg">
+<!-- Hero Section -->
+<section class="grid grid-cols-12 gap-gutter items-center min-h-[716px] mb-stack-lg">
+<div class="col-span-12 lg:col-span-6 space-y-stack-md">
+<div class="inline-flex items-center gap-2 bg-sam-red/10 text-sam-red px-4 py-2 rounded-full font-headline-adult text-caption">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+                    S.A.M. Mathematical Diagnostic Suite
+                </div>
+<h1 class="font-display-child text-[64px] leading-tight text-sam-navy">
+                    Unlocking Math Potential, <span class="text-sam-red underline decoration-sam-yellow">One Step</span> at a Time.
+                </h1>
+<p class="text-body-regular text-sam-gray-dark max-w-lg text-lg">
+                    A rigorous diagnostic journey designed for young learners. We turn complex data into actionable progress reports for parents and instructors.
+                </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="bg-sam-red text-white font-headline-adult px-8 py-4 rounded-[16px] shadow-lg hover:shadow-xl transition-all active:scale-95">
+                        Start Assessment
+                    </button>
+<button class="bg-white border-2 border-sam-navy text-sam-navy font-headline-adult px-8 py-4 rounded-[16px] hover:bg-sam-cream transition-all active:scale-95">
+                        View Sample Reports
+                    </button>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-6 relative flex justify-center items-center">
+<!-- Mascot Integration: Brown Dachshund -->
+<div class="relative z-10 w-full max-w-md">
+<img alt="Dachshund Mascot" class="rounded-[48px] shadow-2xl border-8 border-white transform rotate-3" data-alt="a cute brown dachshund wearing a small graduation cap sitting alert and happy on a bright cream background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJCd3Yla_yhJtaTRvks5fV6dDAmyJ9SWxQR6RMTeo-uwhafywd-QI51e781mGDI9wsEc73RFJyHHMsgD3JNPF9AIkUF4qwj750E-PJJphOmHXphLhw6agphOCZFuH8gbh5G3P-MmcK6FA2nfAq6jzg_uNsUBe4wIUqBzjWprISO18b741c7dWhRf9K9ONx2tzF4kBFAxu8dnO3vmMElPJWiB5qz54AmFAraLMz582k_DGzdN94QJRgRVgeaRDnCo442qa_UaQTw6kO"/>
+<!-- Decorative elements -->
+<div class="absolute -top-6 -right-6 bg-sam-yellow p-4 rounded-2xl shadow-md rotate-12">
+<span class="material-symbols-outlined text-sam-navy text-4xl" style="font-variation-settings: 'FILL' 1;">calculate</span>
+</div>
+<div class="absolute -bottom-4 -left-8 bg-sam-teal p-6 rounded-full shadow-lg -rotate-12">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">architecture</span>
+</div>
+</div>
+<!-- Background visual rhythm -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-sam-red/5 to-sam-navy/5 rounded-full blur-3xl -z-10"></div>
+</div>
+</section>
+<!-- Bento Grid: Diagnostic Areas -->
+<section class="mb-stack-lg">
+<div class="text-center mb-stack-lg">
+<h2 class="font-display-child text-sam-navy mb-2">Diagnostic Strands</h2>
+<p class="text-sam-gray-mid font-body-regular">Comprehensive coverage of mathematical foundations.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="col-span-1 md:col-span-2 bg-white p-8 rounded-[32px] shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light hover:border-sam-red transition-all group">
+<div class="w-14 h-14 bg-sam-red/10 rounded-2xl flex items-center justify-center mb-6 text-sam-red group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">apps</span>
+</div>
+<h3 class="font-headline-adult text-sam-navy mb-2">Number Sense</h3>
+<p class="text-sam-gray-mid text-sm">Deep analysis of place value, number patterns, and fundamental arithmetic logic for K-4 learners.</p>
+</div>
+<!-- Card 2 -->
+<div class="col-span-1 bg-sam-navy p-8 rounded-[32px] text-white flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-sam-yellow text-4xl mb-4" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<h3 class="font-headline-adult mb-2">Diagnostic Precision</h3>
+</div>
+<div class="text-[48px] font-black text-sam-yellow">98%</div>
+<p class="text-white/70 text-xs">Accuracy in identifying core mathematical misconceptions.</p>
+</div>
+<!-- Card 3 -->
+<div class="col-span-1 bg-white p-8 rounded-[32px] shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light hover:border-sam-teal transition-all group">
+<div class="w-14 h-14 bg-sam-teal/10 rounded-2xl flex items-center justify-center mb-6 text-sam-teal">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">shapes</span>
+</div>
+<h3 class="font-headline-adult text-sam-navy mb-2">Spatial Reasoning</h3>
+<p class="text-sam-gray-mid text-sm">Evaluating visualization skills and geometric understanding through interactive tiles.</p>
+</div>
+<!-- Card 4 -->
+<div class="col-span-1 md:col-span-2 bg-sam-yellow/10 p-8 rounded-[32px] border border-sam-yellow/30 relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-display-child text-sam-navy text-2xl mb-4">Instructor Dashboard</h3>
+<p class="text-sam-gray-dark max-w-sm mb-6">Real-time tracking of student progress with visual milestone mapping and detailed error analysis.</p>
+<button class="bg-sam-navy text-white px-6 py-2 rounded-xl text-caption">Explore Dashboard</button>
+</div>
+<div class="absolute -right-10 -bottom-10 opacity-20 transform -rotate-12">
+<span class="material-symbols-outlined text-[200px]" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="col-span-1 bg-white p-8 rounded-[32px] shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light hover:border-sam-orange transition-all">
+<div class="w-14 h-14 bg-sam-orange/10 rounded-2xl flex items-center justify-center mb-6 text-sam-orange">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">speed</span>
+</div>
+<h3 class="font-headline-adult text-sam-navy mb-2">Word Problems</h3>
+<p class="text-sam-gray-mid text-sm">Assessing the bridge between literacy and mathematical logic.</p>
+</div>
+<!-- Card 6 -->
+<div class="col-span-1 bg-sam-teal p-8 rounded-[32px] text-white group cursor-pointer">
+<h3 class="font-headline-adult mb-4">Success Story</h3>
+<div class="flex items-center gap-3">
+<img alt="Testimonial" class="h-10 w-10 rounded-full border-2 border-white/30" data-alt="profile headshot of a smiling professional woman wearing glasses against a neutral grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ8UFFVfI3VoQmUrYejQOWTs1WGNorplS-6iUxC4TiTVKKmi7u-O_h3gyZZuxHJgR59GMH6oc4HWH19PqOcceB1haHgs0SPqbzjyvjNNX3Bm9EJAoEMuM9nyo8CshWK3pRFckeHAnlQw1jFvI6PA3bhmX6NS4bJ6yGDhFIMjJN7ftWX_0iwC8czjhgIxP4N2V8gT2U_QBv2mj9xpiZEwvaooFnQXRINXXhNLGnWW-uefv-eveSNIbYilPrXZmVzlHQqlhdsUPIzGQR"/>
+<div class="text-[10px] uppercase tracking-widest font-bold">Mrs. Thompson, Grade 2</div>
+</div>
+<p class="mt-4 text-sm text-white/90 italic">"The most detailed reports I've ever used. It actually tells me *why* they are struggling."</p>
+</div>
+</div>
+</section>
+<!-- Mascot Intervention / Journey Strip -->
+<section class="bg-sam-navy rounded-[40px] p-12 text-center relative overflow-hidden">
+<div class="max-w-2xl mx-auto relative z-10">
+<h2 class="font-display-child text-white text-4xl mb-6">Ready to start the journey?</h2>
+<p class="text-white/70 mb-8 font-body-regular">Join over 10,000 instructors using Atlas to personalize math education for every child.</p>
+<div class="flex justify-center gap-4">
+<button class="bg-sam-red text-white px-10 py-4 rounded-[20px] font-bold shadow-xl">Get Started Now</button>
+<button class="bg-transparent border-2 border-white/30 text-white px-10 py-4 rounded-[20px] font-bold hover:bg-white/10 transition-colors">Book a Demo</button>
+</div>
+</div>
+<!-- Mascot Peek-a-boo -->
+<div class="absolute -bottom-4 right-10 w-48 h-48">
+<img alt="Dachshund Mascot" class="rounded-t-full border-8 border-sam-navy" data-alt="a playful brown dachshund puppy peeking up from the bottom of the frame with curious eyes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5DPIx7OtCXlqrSxGze1s_sEY7pM8kpRKODPhPTlwZK_XPUViTnG6BrNkFh33AVSf0-Po7LiHqVU2ZD_5B4Y9dwyAgicibmAsGMgziey4j1F3VuVBT4azc6q1cQDskXXR8zemkiObqjrYIfkdXecd0NsxEZSCL_EPAuaJanUhWV3k-iuU9hiO4BCt2xNzxSuAfDqi9298hOaufqcXcayGdt3ZygHJnedg8If-v1vyn1OtOWxXLUbMYYRUncAt7yzPUE38eiX_ZHNWt"/>
+</div>
+</section>
+</main>
+<footer class="bg-white border-t border-sam-gray-light mt-stack-lg py-12">
+<div class="max-w-container-max mx-auto px-gutter grid grid-cols-4 gap-gutter">
+<div class="col-span-4 md:col-span-1">
+<span class="text-xl font-black text-[#1B3A6B]">Atlas Assessment</span>
+<p class="text-sam-gray-mid text-sm mt-4">Empowering educators with world-class diagnostic tools.</p>
+</div>
+<div class="col-span-2 md:col-span-1">
+<h4 class="font-headline-adult text-sam-navy text-sm mb-4">Platform</h4>
+<ul class="space-y-2 text-sam-gray-mid text-sm">
+<li><a class="hover:text-sam-red" href="#">Journey Map</a></li>
+<li><a class="hover:text-sam-red" href="#">Diagnostic Suites</a></li>
+<li><a class="hover:text-sam-red" href="#">Reporting Portal</a></li>
+</ul>
+</div>
+<div class="col-span-2 md:col-span-1">
+<h4 class="font-headline-adult text-sam-navy text-sm mb-4">Resources</h4>
+<ul class="space-y-2 text-sam-gray-mid text-sm">
+<li><a class="hover:text-sam-red" href="#">Case Studies</a></li>
+<li><a class="hover:text-sam-red" href="#">Help Center</a></li>
+<li><a class="hover:text-sam-red" href="#">Math Pedagogy</a></li>
+</ul>
+</div>
+<div class="col-span-4 md:col-span-1">
+<h4 class="font-headline-adult text-sam-navy text-sm mb-4">Connect</h4>
+<div class="flex gap-4">
+<a class="h-10 w-10 bg-sam-cream rounded-full flex items-center justify-center text-sam-navy hover:bg-sam-red hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">alternate_email</span>
+</a>
+<a class="h-10 w-10 bg-sam-cream rounded-full flex items-center justify-center text-sam-navy hover:bg-sam-red hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">share</span>
+</a>
+</div>
+</div>
+</div>
+<div class="max-w-container-max mx-auto px-gutter mt-12 pt-8 border-t border-sam-gray-light text-center text-xs text-sam-gray-mid">
+            © 2024 Atlas Assessment Suite by S.A.M. All rights reserved.
+        </div>
+</footer>
+</body></html>

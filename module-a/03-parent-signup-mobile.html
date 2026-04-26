@@ -1,0 +1,221 @@
+<!-- Module A - 3: Parent Signup (Mobile) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.A.M. - Parent Signup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "secondary-container": "#ffab69",
+                    "primary-fixed": "#ffdad8",
+                    "sam-navy": "#1B3A6B",
+                    "inverse-on-surface": "#edf0ff",
+                    "primary": "#b7102a",
+                    "tertiary": "#755700",
+                    "sam-cream": "#FFF8F0",
+                    "secondary-fixed": "#ffdcc4",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-secondary-container": "#783d01",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "secondary": "#8e4e14",
+                    "outline-variant": "#e4bebc",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#936f03",
+                    "primary-container": "#db313f",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#410007",
+                    "on-tertiary": "#ffffff",
+                    "sam-teal": "#06A77D",
+                    "background": "#f9f9ff",
+                    "on-surface-variant": "#5b403f",
+                    "surface-dim": "#cadaff",
+                    "on-background": "#001a40",
+                    "on-tertiary-container": "#fffbff",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "on-secondary-fixed": "#2f1400",
+                    "sam-yellow": "#FFD166",
+                    "tertiary-fixed-dim": "#edc157",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-container": "#e8edff",
+                    "surface": "#f9f9ff",
+                    "on-primary": "#ffffff",
+                    "sam-red": "#E63946",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-gray-dark": "#333333",
+                    "on-primary-container": "#fffbff",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e0e8ff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "sam-gray-light": "#E5E5E5",
+                    "surface-tint": "#bb152c",
+                    "outline": "#8f6f6e",
+                    "sam-gray-mid": "#777777",
+                    "surface-variant": "#d7e2ff",
+                    "surface-container-highest": "#d7e2ff",
+                    "inverse-primary": "#ffb3b1",
+                    "error-container": "#ffdad6",
+                    "white": "#FFFFFF",
+                    "inverse-surface": "#0d2f60",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-orange": "#F4A261",
+                    "on-surface": "#001a40"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "report-width": "880px",
+                    "stack-sm": "8px",
+                    "margin-desktop": "40px",
+                    "container-max": "1440px",
+                    "stack-lg": "32px"
+            },
+            "fontFamily": {
+                    "display-child": ["Plus Jakarta Sans"],
+                    "body-regular": ["Inter"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "caption": ["Inter"]
+            },
+            "fontSize": {
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .bg-pattern {
+            background-image: radial-gradient(circle at 2px 2px, #E5E5E5 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream font-body-regular text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-[#fdfcf8] dark:bg-slate-950 border-b border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none flex items-center justify-between px-6 py-4 w-full sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<button class="text-[#E63946] dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors rounded-full p-2 active:opacity-80 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight">S.A.M.</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-sam-gray-light overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional profile portrait of a smiling woman with warm lighting and soft background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhqTGljHxg5nLR3WwiV8wdJABMLwTp34CbQEwV75Slt2pfErO85pE6FSU5YUCxxDPBCj2poDJYc_fQGpCCtQZOTy5R0N2Va-QQjoFw6JilVHim1nNOCdDPNi9nIMnSMvjCd6eG7f_LnykO6HjRaewC8-ZhEtfb5aJsHlmacaHEBdtq_Yp5kB9A6FfgUYeVHK8G26BD_P2WNw827RwijCpsj8VkRu-xoAs585n20-_t2RT5NgtBx3iC5ZLUY7stLOJMkAK8bRqmbuGz"/>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center px-gutter py-stack-lg max-w-md mx-auto w-full">
+<!-- Welcome Section -->
+<div class="w-full mb-stack-lg text-center">
+<div class="mb-4 inline-block">
+<img class="w-24 h-24 mx-auto rounded-full border-4 border-white shadow-sm" data-alt="Cute friendly sea otter mascot holding a pencil and waving, bright cheerful illustration style for children" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByacGCcTM6r1c_bHGC4c04nYGyuOf91iXwTmQt2C_OE21KLLjRj1qinExuyFO9uLKyDOuhfK-bHvlZ-N7IQUZIHJd45yLs6mtEvdV4eKmLLBvffsBie61825Sgj8yzWLEjc1eHZmq_sEDFVYfijs70ZSwzfQai5lYHDpKsc22C_20GshBGdyLxgReaT7iij7J6llnPI9V1UD192UgWHNwI4nsI8ZbRcG7tpfxfd7Y-I4t7s_B-2R3c6d5z453_-hC5-AQNj3MX90tV"/>
+</div>
+<h2 class="font-display-child text-display-child text-sam-navy mb-2">Welcome, Parent!</h2>
+<p class="font-body-regular text-sam-gray-mid">Let's set up your Atlas Assessment account to track your child's progress.</p>
+</div>
+<!-- Signup Form Card -->
+<div class="bg-white rounded-[24px] p-8 shadow-[0px_4px_12px_rgba(27,58,107,0.08)] w-full border border-sam-gray-light">
+<form class="space-y-6">
+<!-- Name Field -->
+<div>
+<label class="block font-caption text-sam-navy mb-2 ml-1">Full Name</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-sam-gray-mid" data-icon="person">person</span>
+<input class="w-full pl-12 pr-4 py-4 bg-sam-cream border-transparent focus:border-sam-red focus:ring-0 rounded-xl font-body-regular transition-all placeholder:text-sam-gray-mid" placeholder="John Doe" type="text"/>
+</div>
+</div>
+<!-- Email Field -->
+<div>
+<label class="block font-caption text-sam-navy mb-2 ml-1">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-sam-gray-mid" data-icon="mail">mail</span>
+<input class="w-full pl-12 pr-4 py-4 bg-sam-cream border-transparent focus:border-sam-red focus:ring-0 rounded-xl font-body-regular transition-all placeholder:text-sam-gray-mid" placeholder="parent@example.com" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div>
+<label class="block font-caption text-sam-navy mb-2 ml-1">Create Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-sam-gray-mid" data-icon="lock">lock</span>
+<input class="w-full pl-12 pr-12 py-4 bg-sam-cream border-transparent focus:border-sam-red focus:ring-0 rounded-xl font-body-regular transition-all placeholder:text-sam-gray-mid" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-sam-gray-mid" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Terms -->
+<div class="flex items-start gap-3 px-1">
+<input class="mt-1 rounded text-sam-red focus:ring-sam-red h-5 w-5 border-sam-gray-mid" type="checkbox"/>
+<p class="font-caption text-sam-gray-mid text-xs">
+                        I agree to the <a class="text-sam-red font-semibold hover:underline" href="#">Terms of Service</a> and <a class="text-sam-red font-semibold hover:underline" href="#">Privacy Policy</a>.
+                    </p>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-sam-red text-white font-bold py-4 rounded-xl shadow-md hover:bg-primary-container active:scale-95 transition-all flex items-center justify-center gap-2" type="submit">
+                    Create My Account
+                    <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<div class="mt-8 pt-6 border-t border-sam-gray-light text-center">
+<p class="font-body-regular text-sam-gray-mid">Already have an account?</p>
+<button class="mt-2 text-sam-navy font-bold hover:text-sam-red transition-colors flex items-center justify-center mx-auto gap-1">
+                    Log In
+                    <span class="material-symbols-outlined text-[18px]" data-icon="login">login</span>
+</button>
+</div>
+</div>
+<!-- Social Proof/Trust -->
+<div class="mt-8 flex flex-col items-center gap-4 opacity-70">
+<p class="font-caption text-sam-gray-mid text-xs tracking-wider uppercase">Trusted by thousands of parents</p>
+<div class="flex gap-6 grayscale contrast-125">
+<img class="h-6 object-contain" data-alt="minimalist educational trust badge logo with clean typography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzEVxq42vtNXn5LP1xYMblWU9TLsYA8zj1R9xZ9Csf6LahepR8T-eaC7Gl0iR0uJsUq5CKS4NiRgd370SkH7jlII5TWju5SBxvQWZw-_Rxm9lh5aGQXwHmlJXTLzYwSDZcR1uaCpGkzV5lOac2VC3h7AF1XruSoITDU_8gXH8FU-RevKvUVJRoqwJO4m1tfZ8ah-nfsuXqi0ZuG1lVw6zPMBBnrIkrOpJSF85OooJAgsIVDeLJfOnHeZgdWredcCp7_kkhBkHZe2cO"/>
+<img class="h-6 object-contain" data-alt="minimalist abstract geometry logo for school association" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmFYrBPSq8177FXS7SLYMz8JUQqzV3HuhkKNBeoRiV4ezs4s7OkXBRpNEZPqWN1SBO-HBtZf_uZ1u5D989M-a7WUSJUsQamIPYkP_bnwJMkLuyW8iIZYOYSAYYn7XFkS80UWNxX_UooHzrQkbjoJGFKGHnQEFbRwpYFS-XCy6lj7UgnZf4SpxNO0CPvrXOWNsuvLsTSF1KJ6HH4ApXpkDUNnMpOat-4XYilTWxnU-WzSIVCKOqPoyTHR_b9Kyn7DbWGEb3VS7I9u3o"/>
+<img class="h-6 object-contain" data-alt="professional modern education certification logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjMoLXtefNlWaowp-6a7rFp-4ubRlwT1UO1J_7p0P7IqdPlCvl2bEtSIm8whUt9YmvcusYraNSY3V-eixlBtGAfLb7rwzONdFBSSliWfEPOAFsMWXnf8aiZftOviwby88XiTaGTNKQ3hUxLYe4LGuarP3MnO55TGGJwOyE8XL1zgF7vdTAudvYP9eaxZ4M2a6kZm3St-wBMPUZrxk6U49KjtCUIhbyltc0OKSRrAcM6ajuvyAnmbBYmjyXu-vzB7KjhNO0LdO9RfND"/>
+</div>
+</div>
+</main>
+<!-- Footer Space -->
+<div class="h-20"></div>
+<!-- BottomNavBar (Suppressed for focused Transactional Signup Flow as per mandate, but structure kept for future context) -->
+<!-- 
+    The BottomNavBar is suppressed here because the Task is "Parent Signup", which is 
+    a "Linear/Transactional" flow. As per the "Shell Visibility & Relevance" rule,
+    we suppress the navigation shell to prioritize the content canvas.
+    -->
+</body></html>
