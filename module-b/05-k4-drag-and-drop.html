@@ -1,0 +1,216 @@
+<!-- Module B - 5: K-4 Drag & Drop -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.A.M. Assessment - Drag &amp; Drop</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "sam-yellow": "#FFD166",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "surface-container-high": "#e0e8ff",
+                        "tertiary-container": "#936f03",
+                        "sam-red": "#E63946",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "tertiary-fixed": "#ffdf9b",
+                        "tertiary": "#755700",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-tertiary-fixed": "#251a00",
+                        "surface-tint": "#bb152c",
+                        "sam-gray-light": "#E5E5E5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#edf0ff",
+                        "sam-teal": "#06A77D",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "background": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "sam-cream": "#FFF8F0",
+                        "white": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-primary-fixed-variant": "#92001c",
+                        "sam-gray-mid": "#777777",
+                        "inverse-primary": "#ffb3b1",
+                        "on-error-container": "#93000a",
+                        "on-background": "#001a40",
+                        "primary-container": "#db313f",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "surface-dim": "#cadaff",
+                        "secondary": "#8e4e14",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "outline": "#8f6f6e",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-navy": "#1B3A6B",
+                        "on-secondary-fixed": "#2f1400",
+                        "surface-container-low": "#f1f3ff",
+                        "on-surface-variant": "#5b403f",
+                        "surface-container": "#e8edff",
+                        "sam-orange": "#F4A261",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#410007",
+                        "primary-fixed": "#ffdad8",
+                        "on-tertiary-container": "#fffbff",
+                        "sam-gray-dark": "#333333",
+                        "outline-variant": "#e4bebc",
+                        "inverse-surface": "#0d2f60",
+                        "surface-variant": "#d7e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "caption": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream font-body-regular text-on-background selection:bg-sam-red/20 overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="bg-[#fdfcf8] dark:bg-slate-950 border-b border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none flex items-center justify-between px-6 py-4 w-full sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors p-2 rounded-full active:opacity-80 active:scale-95">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight font-['Plus_Jakarta_Sans']">S.A.M.</h1>
+</div>
+<!-- Progress Dot Trail (Journey Map) -->
+<div class="flex items-center gap-3">
+<div class="h-3 w-3 rounded-full bg-sam-teal"></div>
+<div class="h-1 w-8 rounded-full bg-sam-teal/20">
+<div class="h-full w-full bg-sam-teal rounded-full"></div>
+</div>
+<div class="h-4 w-4 rounded-full border-2 border-sam-teal bg-white flex items-center justify-center">
+<div class="h-1.5 w-1.5 rounded-full bg-sam-teal"></div>
+</div>
+<div class="h-1 w-8 rounded-full bg-sam-gray-light"></div>
+<div class="h-3 w-3 rounded-full bg-sam-gray-light"></div>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-sam-gray-light">
+<span class="material-symbols-outlined text-sam-orange" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-display-child text-lg text-sam-navy">120</span>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-6 py-8 min-h-[calc(100vh-160px)] flex flex-col items-center justify-center">
+<!-- Question Prompt Area -->
+<div class="text-center mb-12">
+<h2 class="font-display-child text-display-child text-sam-navy mb-4">12 + ? = 30</h2>
+<p class="font-body-regular text-headline-adult text-sam-gray-dark">Drag the right number into the bar.</p>
+</div>
+<!-- Interactive Bar Model Area -->
+<div class="w-full max-w-4xl bg-white rounded-[32px] p-12 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light relative mb-16">
+<div class="flex flex-col items-center w-full gap-8">
+<!-- Top Bracket Label -->
+<div class="relative w-full h-8 flex justify-center items-end">
+<div class="absolute bottom-0 w-full h-[2px] bg-sam-navy/20"></div>
+<div class="absolute -top-4 bg-white px-6 font-math-numeral text-math-numeral text-sam-navy">30</div>
+</div>
+<!-- The Bar Model -->
+<div class="flex w-full h-24 rounded-2xl overflow-hidden border-4 border-white ring-4 ring-sam-navy/5">
+<!-- Known Part -->
+<div class="w-[40%] bg-sam-yellow flex items-center justify-center relative border-r-4 border-white">
+<span class="font-math-numeral text-math-numeral text-sam-navy">12</span>
+<div class="absolute -bottom-10 font-caption text-caption text-sam-gray-mid">Part A</div>
+</div>
+<!-- Target Drop Zone -->
+<div class="w-[60%] bg-sam-cream border-2 border-dashed border-sam-red/40 flex items-center justify-center relative">
+<div class="flex flex-col items-center gap-1 opacity-40">
+<span class="material-symbols-outlined text-4xl text-sam-red" data-icon="touch_app">touch_app</span>
+<span class="font-caption text-caption text-sam-red font-bold uppercase tracking-wider">Drop Here</span>
+</div>
+<div class="absolute -bottom-10 font-caption text-caption text-sam-gray-mid">Part B</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Draggable Number Tiles -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-3xl">
+<!-- Tile 15 -->
+<div class="group cursor-grab active:cursor-grabbing bg-white border-2 border-sam-gray-light p-8 rounded-[24px] flex items-center justify-center shadow-sm hover:border-sam-red hover:scale-105 active:scale-95 transition-all duration-200">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red">15</span>
+</div>
+<!-- Tile 18 (Correct Answer) -->
+<div class="group cursor-grab active:cursor-grabbing bg-white border-2 border-sam-gray-light p-8 rounded-[24px] flex items-center justify-center shadow-sm hover:border-sam-red hover:scale-105 active:scale-95 transition-all duration-200">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red">18</span>
+</div>
+<!-- Tile 20 -->
+<div class="group cursor-grab active:cursor-grabbing bg-white border-2 border-sam-gray-light p-8 rounded-[24px] flex items-center justify-center shadow-sm hover:border-sam-red hover:scale-105 active:scale-95 transition-all duration-200">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red">20</span>
+</div>
+<!-- Tile 22 -->
+<div class="group cursor-grab active:cursor-grabbing bg-white border-2 border-sam-gray-light p-8 rounded-[24px] flex items-center justify-center shadow-sm hover:border-sam-red hover:scale-105 active:scale-95 transition-all duration-200">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-hover:text-sam-red">22</span>
+</div>
+</div>
+<!-- Mascot Placement (Sammy the Otter) -->
+<div class="fixed bottom-24 right-12 hidden lg:flex items-end gap-4 pointer-events-none select-none">
+<div class="bg-white p-6 rounded-[24px] rounded-br-none shadow-lg border border-sam-gray-light max-w-xs mb-12">
+<p class="font-body-regular text-sam-navy leading-snug">You're doing great! Think about what number added to 12 makes 30. 🦦</p>
+</div>
+<img alt="Sammy the Otter mascot cheering" class="w-48 h-48 object-contain drop-shadow-xl" data-alt="Illustration of a friendly, playful cartoon otter wearing a small academic cap, smiling warmly and waving with a friendly expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQpXD1_IgGBPw8L9tZkFjyp4zekUbww24z_2zBqfg-n0ceVanln1mV9L5qcLpBwAJl3HoseapHVWLUTFE0AxghsFnDltL_fnKypZ_qQdIBLvJPGkTcx2hq9wFNXGmU3yr372o9Umlv5rlD0Ygk-_u-7q1DiEJFfLf1xtZfxgkIIRv4fRLNr_3-wWDpA68E5Bh_H5nUcvio7zZCn-CD2H8zI89_cJDPFAmQ882Zv0LlVhgIIEVr8Nc3qp2Le9zIMtzsXY_1grNt5sTv"/>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<footer class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(27,58,107,0.06)] rounded-t-2xl">
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1 hover:text-[#E63946] transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#E63946] bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-1 hover:text-[#E63946] transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="calculate" style="font-variation-settings: 'FILL' 1;">calculate</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-bold">Assessments</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1 hover:text-[#E63946] transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-medium">Reports</span>
+</button>
+</footer>
+<!-- FAB: Only relevant on Home/Dashboard, typically suppressed on Detail/Assessment screens per instructions, but placeholder for structure -->
+<!-- Suppressed on assessment screens as per "Shell Visibility & Relevance" rule -->
+</body></html>
