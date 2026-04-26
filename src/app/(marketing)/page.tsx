@@ -6,7 +6,8 @@
 //  - Stripped `dark:` Tailwind variants (no dark-mode toggle wired yet).
 //  - Replaced inline `font-['Plus_Jakarta_Sans']` with the named
 //    `font-display-child` token so next/font/google self-hosting works.
-//  - Image URLs still point at Google Stitch's preview CDN; needs real assets.
+//  - Image src attributes swapped from broken Stitch CDN URLs to local
+//    placeholder SVGs in /public/img/. Real S.A.M. assets will replace them.
 //  - Top app bar shows notifications/help/avatar (logged-in chrome) — design.md
 //    Screen 1 calls for a public marketing landing without those.
 
@@ -50,7 +51,7 @@ export default function LandingPage() {
           <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-sam-red/20">
             <img
               alt="Instructor Profile"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1GH_kHHBw160diw4SbdgcYSOxu-GYY6ezHCr-sucEgblYjqBIwxU3TY4mGDXdlf_ywqkBj3PzlEswBapc1WksNUlIkE7Z1KkrA-6TNz5vUIZPs9o0vONxa2vGB4GCEHWls8iBpjBdPGlnynm278pz8nEDuy2hi0qs_HK7Eh21bruuSljGO_RiGicZVj3a3XtEamSNbsPczq9SNT6ZQrWoy_u-Dgeh8vqqlyun3NYSA43JtfwY8V9RkfL00BKgdrqFBEJIYSAT85ac"
+              src="/img/placeholder-avatar.svg"
             />
           </div>
         </div>
@@ -96,7 +97,7 @@ export default function LandingPage() {
               <img
                 alt="Dachshund mascot wearing a small graduation cap"
                 className="rounded-[48px] shadow-2xl border-8 border-white transform rotate-3"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJCd3Yla_yhJtaTRvks5fV6dDAmyJ9SWxQR6RMTeo-uwhafywd-QI51e781mGDI9wsEc73RFJyHHMsgD3JNPF9AIkUF4qwj750E-PJJphOmHXphLhw6agphOCZFuH8gbh5G3P-MmcK6FA2nfAq6jzg_uNsUBe4wIUqBzjWprISO18b741c7dWhRf9K9ONx2tzF4kBFAxu8dnO3vmMElPJWiB5qz54AmFAraLMz582k_DGzdN94QJRgRVgeaRDnCo442qa_UaQTw6kO"
+                src="/img/placeholder-mascot.svg"
               />
               {/* Decorative elements */}
               <div className="absolute -top-6 -right-6 bg-sam-yellow p-4 rounded-2xl shadow-md rotate-12">
@@ -233,7 +234,7 @@ export default function LandingPage() {
                 <img
                   alt="Mrs. Thompson, Grade 2 instructor"
                   className="h-10 w-10 rounded-full border-2 border-white/30"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ8UFFVfI3VoQmUrYejQOWTs1WGNorplS-6iUxC4TiTVKKmi7u-O_h3gyZZuxHJgR59GMH6oc4HWH19PqOcceB1haHgs0SPqbzjyvjNNX3Bm9EJAoEMuM9nyo8CshWK3pRFckeHAnlQw1jFvI6PA3bhmX6NS4bJ6yGDhFIMjJN7ftWX_0iwC8czjhgIxP4N2V8gT2U_QBv2mj9xpiZEwvaooFnQXRINXXhNLGnWW-uefv-eveSNIbYilPrXZmVzlHQqlhdsUPIzGQR"
+                  src="/img/placeholder-avatar.svg"
                 />
                 <div className="text-[10px] uppercase tracking-widest font-bold">
                   Mrs. Thompson, Grade 2
@@ -271,7 +272,7 @@ export default function LandingPage() {
             <img
               alt="Dachshund mascot peeking up"
               className="rounded-t-full border-8 border-sam-navy"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5DPIx7OtCXlqrSxGze1s_sEY7pM8kpRKODPhPTlwZK_XPUViTnG6BrNkFh33AVSf0-Po7LiHqVU2ZD_5B4Y9dwyAgicibmAsGMgziey4j1F3VuVBT4azc6q1cQDskXXR8zemkiObqjrYIfkdXecd0NsxEZSCL_EPAuaJanUhWV3k-iuU9hiO4BCt2xNzxSuAfDqi9298hOaufqcXcayGdt3ZygHJnedg8If-v1vyn1OtOWxXLUbMYYRUncAt7yzPUE38eiX_ZHNWt"
+              src="/img/placeholder-mascot.svg"
             />
           </div>
         </section>
