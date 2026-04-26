@@ -160,7 +160,9 @@ Child {
   id: string
   tenant_id: string
   parent_id: string
-  home_center_id: string       // defaults to parent.home_center_id; movable
+  home_center_id: string?      // defaults to parent.home_center_id; movable; null = no center
+  prior_center_id: string?     // set when home_center_id changes; supports 30-day grace
+  center_changed_at: timestamp? // when home_center_id last changed; grace ends at +30d
   name: string                 // first name only
   birth_year: int              // not full birth date — compliance.md §3
   grade_level: string?         // optional
@@ -170,8 +172,9 @@ Child {
 
 **School operator consent (school-operator consent extension to "email plus" VPC)**:
 - At signup, parental consent explicitly covers disclosure of the child's assessment data to instructors at the parent's selected `home_center_id`. No per-child / per-instructor approval needed thereafter.
-- Privacy notice must specify, in plain language: (a) which data the center sees (placement, strand levels, misconceptions, response patterns; not raw question text per `compliance.md` §8), (b) which roles at the center see it (instructors only — not center admins or marketing), (c) the parent's revocation path.
-- Revocation: parent can change `home_center_id` (or set to null) from account settings. Effective immediately — RLS stops returning child rows to instructors at the prior center on the next request. Historic pedagogical notes authored by prior-center instructors are retained per `compliance.md` retention policy but no longer visible to instructors at the prior center.
+- Privacy notice must specify, in plain language: (a) which data the center sees (placement, strand levels, misconceptions, response patterns; not raw question text per `compliance.md` §8), (b) which roles at the center see it (instructors only — not center admins or marketing), (c) the parent's revocation path and the 30-day grace window described below.
+- **Revocation with 30-day grace** (mirrors `compliance.md` §4 account-deletion): parent changes `home_center_id` (or sets to null) from account settings → soft-revoke at the prior center. During the 30-day grace, prior-center instructors retain **read-only** visibility into existing assessment data (no new pedagogical notes can be authored) and the parent can restore the prior-center association without a new email-verification round. At day 30, hard revocation: prior-center loses all visibility on the next request.
+- **Pedagogical-note continuity on center change**: pedagogical notes authored by the prior center are visible to the new center's instructors after a center change (continuity of care). Authorship is preserved on the note record; the new-center instructor sees both the note body and the original authoring center for context.
 - Switching centers re-triggers a consent confirmation step (light-weight: confirm new center + click verify, no second email loop required within the 24-hour skip window of `compliance.md` §2).
 
 **Implementation notes**:
@@ -211,6 +214,7 @@ PedagogicalNote {
   id: string
   tenant_id: string
   instructor_id: string        // author
+  authored_at_center_id: string // center where this note was authored (preserved if child later moves)
   child_id: string
   body: string
   created_at: timestamp
@@ -218,9 +222,9 @@ PedagogicalNote {
 ```
 
 **Implementation notes**:
-- RLS: an instructor can read a child's assessment data when (a) `instructor.center_id == child.home_center_id` and (b) `instructor.tenant_id == child.tenant_id` and (c) `instructor.status == ACTIVE`. The Compliance Agent must produce explicit RLS test cases proving an instructor cannot see children at other centers, deactivated instructors cannot read any data, and a child whose parent revoked center consent (set `home_center_id` to null or moved to another center) is no longer visible to prior-center instructors.
-- Pedagogical notes are visible only to instructors at the center where the note was authored. Never visible to parents. If a child moves to a new center, prior-center pedagogical notes are retained per `compliance.md` retention policy but not surfaced at the new center.
-- Cohort view aggregates only over the instructor's center (no cross-center leakage).
+- RLS: an instructor can read a child's assessment data when (a) `instructor.tenant_id == child.tenant_id` and (b) `instructor.status == ACTIVE` and (c) either `instructor.center_id == child.home_center_id` (active enrollment) **or** `instructor.center_id == child.prior_center_id` AND the prior-center revocation is within the 30-day grace window (read-only access; see §5 *Revocation with 30-day grace*). After day 30 of revocation, prior-center access is hard-revoked. The Compliance Agent must produce explicit RLS test cases for: (i) instructor cannot see children at other centers, (ii) deactivated instructors cannot read any data, (iii) prior-center instructors retain read-only access during the 30-day grace and lose all access after, (iv) a child whose parent set `home_center_id` to null is invisible to all instructors after the grace expires.
+- Pedagogical notes are visible to instructors at the child's current `home_center_id` and follow the child to a new center on a center change (continuity of care). Authorship (`instructor_id` and the authoring center, captured at write time) is preserved on each note so the new-center instructor knows the source. Notes are never visible to parents.
+- Cohort view aggregates only over the instructor's own `center_id`'s active children — children in the 30-day prior-center grace window do not appear in the new center's cohort stats until grace expires (avoids double-counting).
 - A `Phase 2` finer-grained model (`InstructorChildAssignment` for per-child instructor pairing within a center) can be added later as an additive table without schema changes to `Instructor` or `Child`.
 
 ---

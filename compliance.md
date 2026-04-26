@@ -66,6 +66,31 @@ This two-step structure is what FTC guidance permits as "email plus" for free, i
   - After 24 hours, adding a new child re-triggers the consent flow.
   - This balances UX (a parent registering 2-3 children in one sitting shouldn't get spammed with verification emails) with COPPA rigor.
 
+### School-operator consent extension
+
+Atlas v1 ships with an instructor portal (per `features.md` §6) where S.A.M. center instructors view assessment results for children whose parents have selected that center. COPPA permits this disclosure when the parent has given specific, informed consent at signup. Atlas implements that consent as an extension of the "email plus" flow:
+
+- After the standard COPPA consent checkbox, the parent selects a `home_center_id` from a dropdown of active S.A.M. centers within the tenant. The selection is an explicit affirmative action — no default selection.
+- The consent text covers ongoing disclosure of the child's **placement level, strand levels, detected misconceptions, and response patterns** to instructors at the selected center. Raw question text is **not** shared with the center (consistent with §8 licensing constraints) and the center **never** receives child data outside this scope (no child email — children don't have one — no payment info, no behavioral tracking).
+- Required language pattern (final wording reviewed by counsel):
+  > "I authorize Atlas to share my child's assessment results with instructors at the S.A.M. center I have selected ([Center Name]) for as long as my child is enrolled there. I understand I can change or remove the center at any time from my account settings. The center receives my child's placement, strand-level results, detected misconceptions, and response patterns — never the questions themselves. Removing or changing the center has a 30-day grace period during which I can restore the original center; after 30 days, the prior center loses access."
+- Center identity (name and ID) is logged in the VPC audit trail alongside the consent event so the audit record reflects exactly which center the parent authorized.
+
+### Revocation and center change
+
+Parents can change or clear `home_center_id` at any time from account settings. The mechanic mirrors the soft-delete grace in §4:
+
+- **Day 0 (change initiated)**: parent confirms the new center in the UI. Within the existing 24-hour skip window of the original consent, no new email-verification round is required; outside the window, a new verification email is sent for the center change. The system records `prior_center_id` and `center_changed_at` on the affected child(ren).
+- **Days 1–30 (grace window)**:
+  - Prior-center instructors retain **read-only** visibility into the child's existing assessment data. They cannot author new pedagogical notes for the child.
+  - New-center instructors gain full visibility (read + author) immediately.
+  - Parent can restore the prior-center association from account settings without a new email-verification round; restoration clears `prior_center_id` and `center_changed_at`.
+- **Day 30 (hard revocation)**: a scheduled job clears `prior_center_id`. RLS stops returning the child's data to prior-center instructors on the next request. No further restoration without re-consent.
+- **Removing a center entirely** (setting `home_center_id` to null) follows the same 30-day grace, after which the child is invisible to all instructors until a new center is selected and reconfirmed.
+- **Pedagogical-note continuity**: notes authored by a prior-center instructor follow the child to the new center for continuity of care. The original `authored_at_center_id` is preserved on each note so the new-center instructor sees the source.
+
+All center-change events are logged in the VPC audit trail (event types: `center_selected`, `center_changed`, `center_restored`, `center_removed`, `center_grace_expired`) with the same fields as the existing VPC audit (parent account ID, timestamp, IP, user agent).
+
 ### Audit trail for VPC
 
 Every consent-related event is logged with:
@@ -87,6 +112,7 @@ Retention: VPC audit logs retained for the **lifetime of the parent account plus
 - Email address
 - Password (hashed via bcrypt or Argon2 — never plaintext)
 - Name (first name only required; last name optional)
+- Selected S.A.M. center (`home_center_id`) — required at signup; covered by the school-operator consent extension in §2
 - IP address and user agent (audit logging only)
 
 **From children** (collected via the parent):
@@ -163,9 +189,9 @@ The Atlas privacy policy must include, in plain language:
 1. The operator's name, address, and contact information (Inspirea Labs, with parent-facing email).
 2. The types of personal information collected from children.
 3. How that information is used.
-4. Whether the information is disclosed to third parties (and if so, who and why).
-5. Parental rights: review, deletion, refusal of further collection.
-6. Procedures parents follow to exercise those rights.
+4. Whether the information is disclosed to third parties (and if so, who and why). For Atlas v1 this **must** explicitly enumerate disclosure to the parent's selected S.A.M. center, including: scope of disclosure (placement, strand levels, misconceptions, response patterns; not raw question text), which roles see the data (instructors only), and the 30-day-grace revocation mechanic.
+5. Parental rights: review, deletion, refusal of further collection, **change or removal of the selected center**.
+6. Procedures parents follow to exercise those rights, including the path to change `home_center_id` from account settings.
 7. Notice that the operator will not require disclosure of more information than is reasonably necessary for participation.
 
 ### Accessibility
@@ -198,6 +224,16 @@ Each of these processes user data and must be disclosed in the privacy notice:
 | Vercel | Application hosting | All user data in transit; logs |
 | Anthropic | LLM for misconception classification and report generation | Question responses, misconception data, child first name (for personalized reports) |
 | Resend | Transactional email delivery | Parent email, parent name, email content |
+
+### S.A.M. centers (consent recipient, not a sub-processor)
+
+The S.A.M. center selected by the parent at signup receives disclosed data under the school-operator consent extension in §2. This is **not** a sub-processor relationship in the data-protection sense — Atlas is not hiring the center to process data on Atlas's behalf; Atlas is disclosing data to a third party at the parent's specific direction with their informed consent.
+
+Implications for the privacy notice:
+- The center must be enumerated by name (the specific center the parent selected), not described generically.
+- The scope of disclosure (placement, strand levels, misconceptions, response patterns) must be specified.
+- The roles at the center who see the data (instructors only) must be specified.
+- The revocation mechanic (change or remove `home_center_id` from settings; 30-day grace; hard revocation at day 30) must be specified.
 
 ### Data Processing Agreements (DPAs)
 
@@ -340,6 +376,7 @@ The Compliance Agent reviews every feature proposal before it advances to build.
 5. Does the feature touch the consent flow, the verification flow, or the audit log?
 6. Does the feature involve question content, and if so, is licensing constraint compliance preserved?
 7. Does the feature change privacy notice content?
+8. Does the feature change which centers a parent can select, the scope of data disclosed to a center, or the center-revocation flow? If yes, the school-operator consent text and privacy notice must be re-reviewed.
 
 If any answer is yes, the Compliance Agent produces a **compliance impact assessment** that is reviewed by the founder before build proceeds.
 
@@ -347,9 +384,9 @@ If any answer is yes, the Compliance Agent produces a **compliance impact assess
 
 Before the v1 MVP launches publicly:
 1. Final privacy policy reviewed by qualified counsel.
-2. RLS policies audited (manual penetration test of API).
+2. RLS policies audited (manual penetration test of API), including the center-based instructor access rules and the 30-day grace behavior.
 3. Deletion flow tested end-to-end (including backup purging timeline).
-4. VPC flow tested with edge cases (expired token, replayed token, rate-limit boundary, multi-child window).
+4. VPC flow tested with edge cases (expired token, replayed token, rate-limit boundary, multi-child window, center-change re-confirmation, day-30 hard-revocation cutover).
 5. Incident response runbook reviewed.
 6. DPAs in place with all sub-processors.
 7. S.A.M. licensing agreement signed.
