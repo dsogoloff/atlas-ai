@@ -1,0 +1,233 @@
+<!-- Module C - 1: 5-8 Welcome -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#b7102a",
+                    "sam-cream": "#FFF8F0",
+                    "surface-container-high": "#e0e8ff",
+                    "secondary-container": "#ffab69",
+                    "on-surface-variant": "#5b403f",
+                    "surface": "#f9f9ff",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#e4bebc",
+                    "tertiary-container": "#936f03",
+                    "on-secondary-container": "#783d01",
+                    "sam-navy": "#1B3A6B",
+                    "on-background": "#001a40",
+                    "surface-container-highest": "#d7e2ff",
+                    "surface-dim": "#cadaff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#ffb3b1",
+                    "background": "#f9f9ff",
+                    "on-secondary-fixed": "#2f1400",
+                    "outline": "#8f6f6e",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "secondary-fixed-dim": "#ffb780",
+                    "sam-red": "#E63946",
+                    "on-primary-fixed": "#410007",
+                    "surface-tint": "#bb152c",
+                    "sam-gray-mid": "#777777",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#d7e2ff",
+                    "sam-yellow": "#FFD166",
+                    "white": "#FFFFFF",
+                    "on-secondary": "#ffffff",
+                    "sam-orange": "#F4A261",
+                    "on-surface": "#001a40",
+                    "secondary": "#8e4e14",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#e8edff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f1f3ff",
+                    "primary-container": "#db313f",
+                    "sam-gray-light": "#E5E5E5",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#ffdf9b",
+                    "inverse-on-surface": "#edf0ff",
+                    "secondary-fixed": "#ffdcc4",
+                    "inverse-surface": "#0d2f60",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "tertiary": "#755700",
+                    "sam-gray-dark": "#333333",
+                    "sam-teal": "#06A77D",
+                    "on-primary-container": "#fffbff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "stack-lg": "32px",
+                    "report-width": "880px",
+                    "margin-tablet": "32px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "40px",
+                    "container-max": "1440px"
+            },
+            "fontFamily": {
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "body-regular": ["Inter"],
+                    "display-child": ["Plus Jakarta Sans"],
+                    "caption": ["Inter"]
+            },
+            "fontSize": {
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen flex flex-col font-body-regular text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-stone-50 dark:bg-slate-950 border-b border-stone-200 dark:border-slate-800 shadow-sm dark:shadow-none docked full-width top-0 z-50">
+<div class="flex justify-between items-center w-full px-6 h-16">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-red-50 dark:hover:bg-slate-800 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-red-600 dark:text-red-500" data-icon="menu">menu</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-red-600 dark:text-red-500 tracking-tight">S.A.M. Assessment</h1>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border-2 border-white">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Modern geometric portrait of a young student against a clean blue background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCM3cTRWZPbipRl8yYL6FzGBLSt3510gIDEfYJqCqTjjj_u8vMhl5HwqzOuHFIBVAwBo4Hpd-muTQsTX-wY8V_8loipj7puOO1FbzBbtjhr5a3Zb1ZxVLW4NznpRR4dVT0nr8YeBN4fbpST-Xorfaabf8uNwwAbBwzNqhh_QV-mmsrX1E7MmssmOV-MYUOWZfLZT1ZXJqTjCC7SsZqtoapKfSbXCr-m8-YYRSZVQ_RI5r7cF-NDOyfyfTm8y1H9kSuNlFwji415S_GL"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col px-6 pt-8 pb-32 max-w-lg mx-auto w-full">
+<!-- Welcome Hero -->
+<div class="mb-stack-lg text-center">
+<h2 class="font-display-child text-display-child text-sam-navy mb-4">
+                Welcome to your mathematical journey, Alex!
+            </h2>
+<p class="text-body-regular text-on-surface-variant px-4">
+                Ready to explore new dimensions? Choose your mission icon to begin.
+            </p>
+</div>
+<!-- Avatar Selection Grid (Bento Style) -->
+<div class="grid grid-cols-2 gap-4 mb-stack-lg">
+<!-- Rocket - Featured Large -->
+<div class="col-span-2 group">
+<button class="w-full bg-white p-8 rounded-2xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-2 border-transparent hover:border-sam-red transition-all duration-300 flex flex-col items-center text-center active:scale-[0.98]">
+<div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
+<span class="material-symbols-outlined text-sam-red !text-6xl" data-icon="rocket_launch" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+<span class="font-display-child text-2xl text-sam-navy">Rocket</span>
+<span class="text-caption text-sam-gray-mid">For high-speed learners</span>
+</button>
+</div>
+<!-- Planet -->
+<button class="bg-white p-6 rounded-2xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-2 border-transparent hover:border-sam-red transition-all duration-300 flex flex-col items-center text-center active:scale-[0.98]">
+<div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-sam-orange !text-4xl" data-icon="public" style="font-variation-settings: 'FILL' 1;">public</span>
+</div>
+<span class="font-display-child text-xl text-sam-navy">Planet</span>
+</button>
+<!-- Star -->
+<button class="bg-white p-6 rounded-2xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-2 border-transparent hover:border-sam-red transition-all duration-300 flex flex-col items-center text-center active:scale-[0.98]">
+<div class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-sam-yellow !text-4xl" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="font-display-child text-xl text-sam-navy">Star</span>
+</button>
+</div>
+<!-- Journey Card - Goal Oriented -->
+<div class="bg-sam-navy rounded-3xl p-6 text-white mb-stack-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-sam-yellow" data-icon="auto_awesome">auto_awesome</span>
+<span class="uppercase tracking-widest text-[10px] font-bold opacity-80">Next Goal</span>
+</div>
+<h3 class="font-display-child text-xl mb-1">Master Number Sense</h3>
+<p class="text-caption opacity-70 mb-4">Complete 5 challenges to unlock the next level.</p>
+<div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+<div class="bg-sam-yellow h-full w-1/3 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- CTA Action -->
+<div class="mt-auto">
+<button class="w-full bg-sam-red text-white py-5 rounded-2xl font-display-child text-xl shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
+                Begin Journey
+                <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-white dark:bg-slate-900 border-t border-stone-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-2xl">
+<!-- Journey (Active) -->
+<a class="flex flex-col items-center justify-center text-red-600 dark:text-red-400 scale-110 transform transition-transform duration-200 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="map" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-medium">Journey</span>
+</a>
+<!-- Practice -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-medium">Practice</span>
+</a>
+<!-- Reports -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-medium">Reports</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[12px] font-medium">Settings</span>
+</a>
+</nav>
+<!-- Visual Polish: Decorative element for bg -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1] opacity-40">
+<div class="absolute top-[15%] left-[5%] w-24 h-24 bg-sam-orange/10 rounded-full blur-3xl"></div>
+<div class="absolute bottom-[25%] right-[5%] w-32 h-32 bg-sam-teal/10 rounded-full blur-3xl"></div>
+</div>
+</body></html>

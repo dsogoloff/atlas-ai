@@ -1,0 +1,196 @@
+<!-- Utility - Loading State -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Diagnostic Journey - Loading</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#936f03",
+                    "on-tertiary-container": "#fffbff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-navy": "#1B3A6B",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-primary-container": "#fffbff",
+                    "on-surface": "#001a40",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "outline-variant": "#e4bebc",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#cadaff",
+                    "inverse-surface": "#0d2f60",
+                    "on-surface-variant": "#5b403f",
+                    "sam-yellow": "#FFD166",
+                    "sam-gray-dark": "#333333",
+                    "surface-container": "#e8edff",
+                    "primary-container": "#db313f",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#ffdad8",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e0e8ff",
+                    "sam-gray-mid": "#777777",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#001a40",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "sam-red": "#E63946",
+                    "error-container": "#ffdad6",
+                    "surface-tint": "#bb152c",
+                    "secondary": "#8e4e14",
+                    "on-primary-fixed": "#410007",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-highest": "#d7e2ff",
+                    "secondary-container": "#ffab69",
+                    "secondary-fixed": "#ffdcc4",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "white": "#FFFFFF",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-variant": "#d7e2ff",
+                    "sam-orange": "#F4A261",
+                    "background": "#f9f9ff",
+                    "sam-cream": "#FFF8F0",
+                    "on-secondary-fixed": "#2f1400",
+                    "tertiary": "#755700",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "surface": "#f9f9ff",
+                    "surface-bright": "#f9f9ff",
+                    "sam-gray-light": "#E5E5E5",
+                    "sam-teal": "#06A77D",
+                    "primary": "#b7102a",
+                    "on-secondary-container": "#783d01",
+                    "on-primary-fixed-variant": "#92001c",
+                    "outline": "#8f6f6e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "stack-md": "16px",
+                    "stack-lg": "32px",
+                    "report-width": "880px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "stack-sm": "8px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "caption": ["Inter"],
+                    "body-regular": ["Inter"],
+                    "headline-adult": ["Inter"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "display-child": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        @keyframes custom-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-sam-spin {
+            animation: custom-spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen flex flex-col font-body-regular overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-[#FFFDF5] border-b border-[#F2F0E4] shadow-sm sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-sam-gray-light border-2 border-sam-red">
+<img alt="student_profile_photo" class="w-full h-full object-cover" data-alt="portrait of a young student smiling in a classroom setting, soft natural lighting, warm educational atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-KvM5PfgWmSo7fxpjeAdBeox5aSl_kgZSoeDcEeR7SfXibROsVOesORN6dcQpoOapH6eEXw2I-oByjHyXriX0RjBz8MTeH8p4LXYQ4J0l_Lmtp79LqYogLq7tZF6yO_lKbKJr1LE-BCiLsm6Pl2jyTm-5WSQv9zp1yZMA7PPrhWmRevV05QQizIM7byKDAQLdea_GNpnF-L6QfpyUvZ6SIVKyQIAAxD2ewyjVM_nRTaGQt6f3kvBMHso7IMJcDDlsKNnBu-HFDeL5"/>
+</div>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-[#1B3A6B] text-lg">Diagnostic Journey</h1>
+</div>
+<button class="p-2 rounded-full hover:bg-slate-100 transition-colors scale-95 duration-150 ease-in-out text-[#1B3A6B]">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area (Focused Journey) -->
+<main class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+<!-- Loading Container -->
+<div class="w-full max-w-md flex flex-col items-center gap-stack-lg">
+<!-- Mascot Visualization (Dachshund 'Fetching' Logic) -->
+<div class="relative w-64 h-64 mb-stack-md flex items-center justify-center">
+<!-- Background Decorative Shape -->
+<div class="absolute inset-0 bg-sam-yellow/20 rounded-full blur-3xl"></div>
+<!-- Mascot Illustration -->
+<div class="relative z-10 w-full h-full flex items-center justify-center">
+<img alt="Sammy the Otter's best friend, the Dachshund" class="w-full h-auto object-contain transform -rotate-6" data-alt="playful stylized dachshund puppy running happily with a bright red ball in its mouth, clean studio background, warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzZYhufFcokqzlmquKl5WKErMyk5wVnPOZylg_DneJgeMKEore-A4E6BJeho1RSz1z7GhHDn6d1Qp4dwC1jPnYPkpVYwTdUp8M4-j1kXNV5MWH2TYCPCTdpRQniLmdLaqGZfPd9K-tjlXggdcOjU1AXPAtEMYjTA8-DfBCRkLqXvhMTUPq9Syc4rGWDK9g60gtppI3YxMSD2RJE6LPrF3rhFTYZ_VYA1WIus0ny-V_q0ZlWXcvaAJ0yATvipuNUW9Ix3aFQTmMr-UC"/>
+</div>
+<!-- Floating Question Mark Icons (Fetching visual) -->
+<div class="absolute top-0 right-4 p-4 bg-white rounded-2xl shadow-lg border-2 border-sam-red transform rotate-12">
+<span class="material-symbols-outlined text-sam-red text-4xl" data-icon="quiz" data-weight="fill">quiz</span>
+</div>
+<div class="absolute bottom-4 left-4 p-3 bg-white rounded-xl shadow-md border border-sam-gray-light transform -rotate-12 opacity-60">
+<span class="material-symbols-outlined text-sam-navy text-2xl" data-icon="calculate">calculate</span>
+</div>
+</div>
+<!-- Progress Information -->
+<div class="text-center space-y-4">
+<h2 class="font-display-child text-display-child text-sam-navy">Fetching your next goal!</h2>
+<p class="font-body-regular text-body-regular text-sam-gray-dark max-w-[280px] mx-auto">
+                    Hang tight! Our friendly mascot is grabbing a fun new math puzzle just for you.
+                </p>
+</div>
+<!-- Custom Progress Spinner -->
+<div class="mt-stack-md flex flex-col items-center gap-4">
+<div class="relative">
+<!-- Outer Ring -->
+<div class="w-16 h-16 rounded-full border-4 border-sam-gray-light"></div>
+<!-- Spinner Component -->
+<div class="absolute top-0 left-0 w-16 h-16 rounded-full border-4 border-sam-red border-t-transparent animate-sam-spin"></div>
+</div>
+<span class="font-caption text-caption text-sam-red font-semibold uppercase tracking-widest">Loading...</span>
+</div>
+</div>
+<!-- Background Detail (Mascot Integration Reference) -->
+<div class="absolute bottom-10 left-0 right-0 flex justify-center opacity-10 pointer-events-none">
+<img class="w-full max-w-lg object-contain" data-alt="abstract playful education background with floating colorful geometric shapes like circles and triangles in soft pastel tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_FcmSefy3zo1CJ9saDCMoEFj-WHveB6__CFIrklBmIlSMhVKuJiRgCMJi4snpSi6l5iIJ-V-dCN5hLldCggnxdtrCNjgh5XOAQblBqM9YuFrthqryeW_DhcXlyhDdTvV92TO41Rm7TRt4AZAM08O6qjgvz9eeC2kn4o_N6PlQPyDJijgh4ykXa_wREngXERAuAimDYm1dwjV1C-rDodBkkzHb--awqSbGz02K6xhAl_RDvgkK9jExzNMqoTTdYk-7R-4igkwo-YnK"/>
+</div>
+</main>
+<!-- BottomNavBar (Suppressed for focused loading journey as per UX Goal) -->
+<!-- Navigation is hidden here to prioritize the focused loading state of the assessment. -->
+<!-- Toast / Notification Area (Optional for system feedback) -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-sm">
+<div class="bg-sam-navy text-white px-6 py-4 rounded-2xl flex items-center gap-4 shadow-xl border border-white/10">
+<span class="material-symbols-outlined text-sam-yellow" data-icon="auto_awesome" data-weight="fill">auto_awesome</span>
+<span class="font-caption text-caption">Nearly there! Preparing your personalized path.</span>
+</div>
+</div>
+</body></html>

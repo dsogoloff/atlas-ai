@@ -1,0 +1,195 @@
+<!-- Module B - 6: K-4 Encouragement -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.A.M. - Keep Going!</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "sam-yellow": "#FFD166",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "surface-container-high": "#e0e8ff",
+                        "tertiary-container": "#936f03",
+                        "sam-red": "#E63946",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "tertiary-fixed": "#ffdf9b",
+                        "tertiary": "#755700",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-tertiary-fixed": "#251a00",
+                        "surface-tint": "#bb152c",
+                        "sam-gray-light": "#E5E5E5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#edf0ff",
+                        "sam-teal": "#06A77D",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "background": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "sam-cream": "#FFF8F0",
+                        "white": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-primary-fixed-variant": "#92001c",
+                        "sam-gray-mid": "#777777",
+                        "inverse-primary": "#ffb3b1",
+                        "on-error-container": "#93000a",
+                        "on-background": "#001a40",
+                        "primary-container": "#db313f",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "surface-dim": "#cadaff",
+                        "secondary": "#8e4e14",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "outline": "#8f6f6e",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-navy": "#1B3A6B",
+                        "on-secondary-fixed": "#2f1400",
+                        "surface-container-low": "#f1f3ff",
+                        "on-surface-variant": "#5b403f",
+                        "surface-container": "#e8edff",
+                        "sam-orange": "#F4A261",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#410007",
+                        "primary-fixed": "#ffdad8",
+                        "on-tertiary-container": "#fffbff",
+                        "sam-gray-dark": "#333333",
+                        "outline-variant": "#e4bebc",
+                        "inverse-surface": "#0d2f60",
+                        "surface-variant": "#d7e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "unit": "4px",
+                        "container-max": "1440px",
+                        "margin-tablet": "32px",
+                        "stack-sm": "8px",
+                        "gutter": "24px",
+                        "report-width": "880px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "caption": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .confetti-pattern {
+            background-image: radial-gradient(#FFD166 2px, transparent 2px), radial-gradient(#06A77D 2px, transparent 2px), radial-gradient(#E63946 2px, transparent 2px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px, 10px 10px;
+            opacity: 0.15;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen flex flex-col font-body-regular overflow-hidden">
+<!-- Top Navigation Anchor - Suppressed visual but kept for structural consistency if needed, though hidden for this splash -->
+<header class="hidden md:flex items-center justify-between px-6 py-4 w-full bg-[#fdfcf8] dark:bg-slate-950 border-b border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none z-10">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#E63946] dark:text-red-400 cursor-pointer transition-all active:scale-95" data-icon="arrow_back">arrow_back</span>
+<h1 class="text-2xl font-black text-[#1b3a6b] dark:text-white tracking-tight font-['Plus_Jakarta_Sans']">S.A.M.</h1>
+</div>
+</header>
+<!-- Main Interstitial Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center relative p-gutter md:p-stack-lg">
+<!-- Playful Background Decoration -->
+<div class="absolute inset-0 confetti-pattern pointer-events-none"></div>
+<!-- Large Background Shapes for Playfulness -->
+<div class="absolute top-10 left-10 w-32 h-32 bg-sam-yellow/20 rounded-full blur-3xl"></div>
+<div class="absolute bottom-20 right-10 w-48 h-48 bg-sam-teal/10 rounded-full blur-3xl"></div>
+<div class="absolute top-1/2 left-1/4 w-16 h-16 bg-sam-red/10 rounded-lg rotate-12 blur-2xl"></div>
+<div class="z-10 w-full max-w-4xl flex flex-col items-center">
+<!-- Speech Bubble & Mascot Container -->
+<div class="relative mb-stack-lg flex flex-col items-center">
+<!-- Speech Bubble -->
+<div class="relative bg-white p-stack-md md:p-8 rounded-[32px] shadow-lg border-4 border-sam-navy mb-8 max-w-sm md:max-w-md">
+<p class="font-display-child text-display-child text-sam-navy text-center">
+                        Whoa, you're flying through these! Keep it up!
+                    </p>
+<!-- Speech Bubble Tail -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[24px] border-t-sam-navy"></div>
+<div class="absolute -bottom-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-t-[20px] border-t-white"></div>
+</div>
+<!-- Mascot: IMAGE_74 (Dachshund) -->
+<div class="relative h-64 md:h-80 w-auto group">
+<img alt="Dachshund mascot cheering" class="h-full w-auto object-contain drop-shadow-xl" data-alt="A cute, friendly dachshund cartoon mascot in a joyful cheering pose, standing on hind legs with paws up, bright and colorful educational style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZTPnU6YFJmwNtzUwUSceQAzqHUKatM2AkJdWdPLp0t5Z4rz-48HLxuMkK0N1jJPxVgludFGaRfEyjmPQIGAN0GvGHPQ1OkB1IUw6sB-8swLuSuoRmztjXGzPKM83ATLMBVkpTM_1s7_xcHuTB9ygjL-cB8RnOMiihQ9-CbYfHZ4fmkXJJYbD702B3sagENEn6lHxzlCMqaaLNCV4u1fxt_8y-vLg29ptYQF8j4qoHtfHr1zly1vl_fuD3xl6odnfxRN-hbFbrYtTW"/>
+<!-- Decorative Stars around Mascot -->
+<span class="absolute -top-4 -right-8 material-symbols-outlined text-sam-yellow text-5xl" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="absolute top-1/2 -left-12 material-symbols-outlined text-sam-teal text-4xl" data-icon="auto_awesome" data-weight="fill" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="absolute bottom-4 -right-10 material-symbols-outlined text-sam-red text-3xl" data-icon="favorite" data-weight="fill" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<!-- Action Button -->
+<div class="w-full flex justify-center mt-stack-md">
+<button class="bg-sam-red text-white font-display-child text-display-child px-12 py-6 rounded-[24px] shadow-[0_8px_0_0_#b7102a] active:shadow-none active:translate-y-2 transition-all hover:scale-105 min-w-[320px] flex items-center justify-center gap-4">
+                    Keep going
+                    <span class="material-symbols-outlined text-5xl" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<!-- Progress Milestone Context -->
+<div class="mt-stack-lg flex items-center gap-stack-sm opacity-80 bg-white/50 px-6 py-3 rounded-full border border-sam-gray-light">
+<span class="material-symbols-outlined text-sam-teal" data-icon="check_circle">check_circle</span>
+<p class="font-caption text-caption text-sam-navy">You just completed the "Number Sense" section!</p>
+</div>
+</div>
+</main>
+<!-- Navigation Shell suppressed for transactional focus (Interstitial) -->
+<!-- But if required, the BottomNavBar anchor structure would be here as per JSON rules. 
+         Rule: "suppress the navigation shell if the page intent is: Success/Confirmation splash screens" -->
+<!-- Optional Floating Mascot Accents for "Playful Celebration" -->
+<div class="fixed bottom-10 left-10 hidden lg:block transform -rotate-12 group opacity-50">
+<div class="bg-sam-orange p-4 rounded-2xl shadow-md text-white font-bold flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+            Fast!
+        </div>
+</div>
+<div class="fixed top-20 right-20 hidden lg:block transform rotate-12 group opacity-50">
+<div class="bg-sam-teal p-4 rounded-2xl shadow-md text-white font-bold flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="celebration">celebration</span>
+            Awesome!
+        </div>
+</div>
+</body></html>

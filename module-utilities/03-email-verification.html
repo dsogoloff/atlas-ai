@@ -1,0 +1,184 @@
+<!-- Utility - Email: Verification -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary-container": "#fffbff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "outline-variant": "#e4bebc",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "on-surface-variant": "#5b403f",
+                        "sam-yellow": "#FFD166",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "sam-gray-mid": "#777777",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-container": "#ffab69",
+                        "secondary-fixed": "#ffdcc4",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "white": "#FFFFFF",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "tertiary": "#755700",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface": "#f9f9ff",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "on-primary-fixed-variant": "#92001c",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1440px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "report-width": "880px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "stack-sm": "8px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Inter"],
+                        "body-regular": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "display-child": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-sam-cream font-body-regular text-sam-gray-dark antialiased">
+<div class="min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
+<header class="mb-stack-lg w-full max-w-[600px] text-center">
+<h1 class="font-display-child text-display-child text-sam-navy">
+                Atlas Assessment
+            </h1>
+</header>
+<main class="w-full max-w-[600px] bg-white rounded-xl shadow-[0_4px_12px_rgba(27,58,107,0.08)] overflow-hidden">
+<div class="h-3 bg-sam-red w-full"></div>
+<div class="p-stack-lg flex flex-col items-center">
+<div class="relative w-48 h-48 mb-stack-md flex justify-center">
+<img class="w-full h-full object-contain" data-alt="A friendly and expressive cartoon otter mascot character waving cheerfully in an educational setting with bright colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu2hmVB3EdG7UZ3OLbuYqXpf794llxjGA6ZAh5d8TF-FNgL-vVDql_5IyIQat81W8neCw4zctzyQQUHT9VCcVK4yb37xLS45sc8wKhe0ITrlS2BMzMifueDHmSpHlKVhR7RNObPGGP25jZMcTmU0c3GWMLUi9t7RZpnQcE0_5CKwIZOYX7l6Ee8Vu9j41IXl2Q9g1loFSAOlgMqADXBRmcYmPCdJzI7mcbCwoLAIAawHE7Z1YGeqlvHZ7vtEoS4DxouAksckgtfKp1"/>
+</div>
+<div class="text-center mb-stack-lg">
+<h2 class="font-headline-adult text-headline-adult text-sam-navy mb-stack-sm">
+                        Welcome to the S.A.M. Family!
+                    </h2>
+<p class="font-body-regular text-body-regular text-sam-gray-mid">
+                        You're just one step away from unlocking your child's mathematical journey. Please verify your email to get started with Atlas Assessment.
+                    </p>
+</div>
+<div class="w-full bg-surface-container-low rounded-xl p-stack-md mb-stack-lg border border-sam-gray-light flex flex-col items-center">
+<span class="font-caption text-caption text-sam-navy uppercase tracking-wider mb-stack-sm">Verification Code</span>
+<div class="flex gap-2">
+<span class="font-math-numeral text-math-numeral text-sam-red bg-white px-3 py-2 rounded-lg border-2 border-sam-red">4</span>
+<span class="font-math-numeral text-math-numeral text-sam-red bg-white px-3 py-2 rounded-lg border-2 border-sam-red">9</span>
+<span class="font-math-numeral text-math-numeral text-sam-red bg-white px-3 py-2 rounded-lg border-2 border-sam-red">2</span>
+<span class="font-math-numeral text-math-numeral text-sam-red bg-white px-3 py-2 rounded-lg border-2 border-sam-red">8</span>
+</div>
+</div>
+<div class="w-full mb-stack-lg">
+<button class="w-full bg-sam-red text-white font-headline-adult py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all duration-200">
+                        Verify Account Now
+                    </button>
+</div>
+<div class="w-full border-t border-sam-gray-light pt-stack-md text-left">
+<h3 class="font-caption text-caption text-sam-navy mb-stack-sm">Quick Instructions:</h3>
+<ul class="space-y-2">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-sam-teal shrink-0" style="font-size: 20px;">check_circle</span>
+<span class="font-caption text-caption text-sam-gray-mid">Click the red button above to go to the verification page.</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-sam-teal shrink-0" style="font-size: 20px;">check_circle</span>
+<span class="font-caption text-caption text-sam-gray-mid">Enter the 4-digit code shown above when prompted.</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-sam-teal shrink-0" style="font-size: 20px;">check_circle</span>
+<span class="font-caption text-caption text-sam-gray-mid">Complete your profile to schedule your child's first assessment.</span>
+</li>
+</ul>
+</div>
+</div>
+</main>
+<footer class="mt-stack-lg w-full max-w-[600px] text-center">
+<p class="font-caption text-caption text-sam-gray-mid mb-stack-sm">
+                If you didn't create an account with S.A.M. Atlas Assessment, you can safely ignore this email.
+            </p>
+<div class="flex justify-center gap-stack-md mb-stack-md">
+<a class="font-caption text-caption text-sam-navy underline decoration-sam-red underline-offset-4" href="#">Privacy Policy</a>
+<a class="font-caption text-caption text-sam-navy underline decoration-sam-red underline-offset-4" href="#">Terms of Service</a>
+<a class="font-caption text-caption text-sam-navy underline decoration-sam-red underline-offset-4" href="#">Help Center</a>
+</div>
+<p class="font-caption text-caption text-sam-gray-mid opacity-75">
+                © 2024 S.A.M Atlas Assessment. All rights reserved.
+            </p>
+</footer>
+</div>
+</body></html>

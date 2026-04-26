@@ -1,0 +1,212 @@
+<!-- Module C - 7: 5-8 Fraction Visualizer -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>S.A.M. Assessment - Fraction Visualizer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .fraction-segment {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary": "#b7102a",
+                      "sam-cream": "#FFF8F0",
+                      "surface-container-high": "#e0e8ff",
+                      "secondary-container": "#ffab69",
+                      "on-surface-variant": "#5b403f",
+                      "surface": "#f9f9ff",
+                      "on-tertiary-fixed-variant": "#5b4300",
+                      "on-error-container": "#93000a",
+                      "error": "#ba1a1a",
+                      "outline-variant": "#e4bebc",
+                      "tertiary-container": "#936f03",
+                      "on-secondary-container": "#783d01",
+                      "sam-navy": "#1B3A6B",
+                      "on-background": "#001a40",
+                      "surface-container-highest": "#d7e2ff",
+                      "surface-dim": "#cadaff",
+                      "tertiary-fixed-dim": "#edc157",
+                      "on-error": "#ffffff",
+                      "inverse-primary": "#ffb3b1",
+                      "background": "#f9f9ff",
+                      "on-secondary-fixed": "#2f1400",
+                      "outline": "#8f6f6e",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#f9f9ff",
+                      "on-tertiary-fixed": "#251a00",
+                      "primary-fixed-dim": "#ffb3b1",
+                      "secondary-fixed-dim": "#ffb780",
+                      "sam-red": "#E63946",
+                      "on-primary-fixed": "#410007",
+                      "surface-tint": "#bb152c",
+                      "sam-gray-mid": "#777777",
+                      "on-primary-fixed-variant": "#92001c",
+                      "on-tertiary": "#ffffff",
+                      "surface-variant": "#d7e2ff",
+                      "sam-yellow": "#FFD166",
+                      "white": "#FFFFFF",
+                      "on-secondary": "#ffffff",
+                      "sam-orange": "#F4A261",
+                      "on-surface": "#001a40",
+                      "secondary": "#8e4e14",
+                      "primary-fixed": "#ffdad8",
+                      "surface-container": "#e8edff",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-container": "#fffbff",
+                      "surface-container-low": "#f1f3ff",
+                      "primary-container": "#db313f",
+                      "sam-gray-light": "#E5E5E5",
+                      "on-primary": "#ffffff",
+                      "tertiary-fixed": "#ffdf9b",
+                      "inverse-on-surface": "#edf0ff",
+                      "secondary-fixed": "#ffdcc4",
+                      "inverse-surface": "#0d2f60",
+                      "on-secondary-fixed-variant": "#6f3800",
+                      "tertiary": "#755700",
+                      "sam-gray-dark": "#333333",
+                      "sam-teal": "#06A77D",
+                      "on-primary-container": "#fffbff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "math-numeral": ["Plus Jakarta Sans"],
+                      "headline-adult": ["Inter"],
+                      "body-regular": ["Inter"],
+                      "display-child": ["Plus Jakarta Sans"],
+                      "caption": ["Inter"]
+              },
+              "fontSize": {
+                      "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                      "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen flex flex-col font-body-regular text-on-surface">
+<!-- Top Navigation Shell (Injected from JSON) -->
+<header class="bg-stone-50 dark:bg-slate-950 border-b border-stone-200 dark:border-slate-800 shadow-sm dark:shadow-none flex justify-between items-center w-full px-6 h-16 sticky top-0 z-40">
+<div class="flex items-center gap-3">
+<div class="p-2 rounded-lg hover:bg-red-50 transition-colors active:scale-95 duration-150 cursor-pointer">
+<span class="material-symbols-outlined text-red-600" data-icon="menu">menu</span>
+</div>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-red-600 dark:text-red-500">S.A.M. Assessment</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border-2 border-white shadow-sm active:scale-95 duration-150 transition-transform cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="close up of a cheerful young student avatar with a bright friendly face against a soft pastel background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCottnZ124Who7X_zm9eYyML5QNsfPlOrhptvUTrJnmFHpZjFcWLlhJ6B5bLdzuBIAuBzM9UOsfvU5Gi-NL4AjwKxNldcv0pAm5C5HMGbMuI8wUn9WaliOPr4jrQns2XTgrD2pcyLOisefs2Vzpn6gX80-sIRkuHhughJaVUTTA7uR-OAWnZxKIjY1KsW5hG54S0QUAcBfTaHaWoqhPVcXP0wpksSTkvUhvVVmpw-IFCpIJ-qs7EYfsUThMUJjmdsBxRDyyg43_Rnjf"/>
+</div>
+</header>
+<!-- Main Assessment Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center px-6 pt-4 pb-24">
+<!-- Journey Map Progress Indicator -->
+<div class="w-full max-w-md mb-12">
+<div class="flex items-center justify-between px-2 mb-3">
+<span class="font-display-child text-caption text-sam-navy">Fraction Land</span>
+<span class="font-display-child text-caption text-sam-gray-mid">Step 4 of 6</span>
+</div>
+<div class="relative h-4 bg-white rounded-full border-2 border-sam-gray-light overflow-hidden flex items-center">
+<!-- Progress Path -->
+<div class="absolute left-0 top-0 h-full bg-sam-teal w-4/6 transition-all duration-500 rounded-r-full"></div>
+<!-- Milestones -->
+<div class="absolute w-full flex justify-around px-4">
+<div class="w-2 h-2 rounded-full bg-white/60"></div>
+<div class="w-2 h-2 rounded-full bg-white/60"></div>
+<div class="w-2 h-2 rounded-full bg-white/60"></div>
+<div class="w-3 h-3 rounded-full bg-white ring-4 ring-sam-teal shadow-lg z-10"></div>
+<div class="w-2 h-2 rounded-full bg-sam-gray-light"></div>
+<div class="w-2 h-2 rounded-full bg-sam-gray-light"></div>
+</div>
+</div>
+</div>
+<!-- Question Section -->
+<div class="text-center max-w-xs mb-10">
+<h2 class="font-display-child text-display-child text-sam-navy mb-4 leading-tight">
+                Shade <span class="text-sam-red border-b-4 border-sam-red">3/4</span> of the circle below.
+            </h2>
+<p class="font-body-regular text-body-regular text-sam-gray-mid">Tap the segments to color them in!</p>
+</div>
+<!-- Visualizer: Segmented Circle Interaction -->
+<div class="relative w-72 h-72 mb-12">
+<div class="absolute inset-0 bg-white rounded-full shadow-xl border-4 border-sam-navy overflow-hidden">
+<!-- SVG Circle for Segments -->
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<!-- Quarter 1 (Shaded) -->
+<path class="fraction-segment fill-sam-red stroke-white stroke-[0.5] cursor-pointer" d="M 50 50 L 50 0 A 50 50 0 0 1 100 50 Z"></path>
+<!-- Quarter 2 (Shaded) -->
+<path class="fraction-segment fill-sam-red stroke-white stroke-[0.5] cursor-pointer" d="M 50 50 L 100 50 A 50 50 0 0 1 50 100 Z"></path>
+<!-- Quarter 3 (Active Selection/Half-Shaded) -->
+<path class="fraction-segment fill-sam-orange stroke-white stroke-[0.5] cursor-pointer ring-inset ring-4 ring-white" d="M 50 50 L 50 100 A 50 50 0 0 1 0 50 Z"></path>
+<!-- Quarter 4 (Unshaded) -->
+<path class="fraction-segment fill-sam-cream stroke-sam-gray-light stroke-[0.5] cursor-pointer" d="M 50 50 L 0 50 A 50 50 0 0 1 50 0 Z"></path>
+<!-- Center Dot -->
+<circle cx="50" cy="50" fill="#1B3A6B" r="1.5"></circle>
+</svg>
+</div>
+<!-- Contextual Status Badge -->
+<div class="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-sam-navy text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg">
+                3 / 4
+            </div>
+</div>
+<!-- Primary Action -->
+<div class="w-full max-w-xs space-y-4">
+<button class="w-full h-16 bg-sam-red text-white rounded-2xl font-display-child text-xl shadow-lg hover:bg-primary transition-all active:scale-95 flex items-center justify-center gap-3">
+<span>Check Answer</span>
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</button>
+<button class="w-full py-3 bg-transparent text-sam-navy font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+<span>Reset Circle</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation Shell (Injected from JSON) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-white dark:bg-slate-900 border-t border-stone-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-2xl">
+<a class="flex flex-col items-center justify-center text-red-600 dark:text-red-400 scale-110 font-['Plus_Jakarta_Sans'] text-[12px] font-medium transition-transform duration-200 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="map" data-weight="fill" style="font-variation-settings: 'FILL' 1;">map</span>
+<span>Journey</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 font-['Plus_Jakarta_Sans'] text-[12px] font-medium hover:text-red-500 dark:hover:text-red-300" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="calculate">calculate</span>
+<span>Practice</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 font-['Plus_Jakarta_Sans'] text-[12px] font-medium hover:text-red-500 dark:hover:text-red-300" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="bar_chart">bar_chart</span>
+<span>Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 font-['Plus_Jakarta_Sans'] text-[12px] font-medium hover:text-red-500 dark:hover:text-red-300" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</body></html>

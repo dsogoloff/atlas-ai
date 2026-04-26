@@ -1,0 +1,185 @@
+<!-- Utility - Email: Report Ready -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary-container": "#fffbff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "on-surface": "#001a40",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "outline-variant": "#e4bebc",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "on-surface-variant": "#5b403f",
+                        "sam-yellow": "#FFD166",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "sam-gray-mid": "#777777",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-container": "#ffab69",
+                        "secondary-fixed": "#ffdcc4",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "white": "#FFFFFF",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "tertiary": "#755700",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface": "#f9f9ff",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "primary": "#b7102a",
+                        "on-secondary-container": "#783d01",
+                        "on-primary-fixed-variant": "#92001c",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Inter"],
+                        "body-regular": ["Inter"],
+                        "headline-adult": ["Inter"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "display-child": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-sam-cream min-h-screen flex items-center justify-center p-4 md:p-8">
+<!-- Email Container -->
+<div class="max-w-[600px] w-full bg-white rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(27,58,107,0.08)]">
+<!-- Top App Bar (Mocked for Email Header) -->
+<header class="flex justify-between items-center w-full px-6 py-6 bg-white border-b border-slate-100">
+<span class="text-xl font-bold text-slate-900 font-display-child">Atlas Assessment</span>
+<div class="flex gap-4 text-sam-gray-mid">
+<span class="material-symbols-outlined">notifications</span>
+<span class="material-symbols-outlined">settings</span>
+</div>
+</header>
+<!-- Hero Content Section -->
+<main class="px-8 py-12 text-center">
+<!-- Mascot Integration: Dash the Dachshund -->
+<div class="mb-8 relative inline-block">
+<div class="w-48 h-48 mx-auto rounded-full bg-sam-orange/10 flex items-center justify-center overflow-hidden border-4 border-white shadow-sm">
+<img alt="Dash the Dachshund mascot wearing a small red tie and graduation cap, smiling enthusiastically" class="w-40 h-40 object-contain" data-alt="Illustration of a cute friendly dachshund mascot wearing a scholar cap, sitting proudly with a bright friendly expression in a soft 3D style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC35FZTb-VC4ozQIglUVqwNyU6j7BVl2iSHUYbBBiD-jIKctxqn8SfsrTLsmW40YhxNGBf5SROxA8580rCB6rXodzeR7-QeQgutnygdh9aMxQ4Oed8KjRHne03XavkBBDWCpdii7bOC9b8UYtb0yirv3VWRjr0tOjZawbi3N-DNs36FMIB-Qq6PNVLqExDeBiJojFsQglVBtJhiDi1KzxcjIbZmMmTrBcb0L9UGcrl_Pc7pbNFME1ad3190MpQGNVfHD-tft-WL5Ha"/>
+</div>
+<!-- Speech Bubble -->
+<div class="absolute -top-4 -right-12 bg-sam-navy text-white px-4 py-2 rounded-2xl rounded-bl-none shadow-md">
+<p class="font-caption text-caption">Great news!</p>
+</div>
+</div>
+<h1 class="font-display-child text-display-child text-sam-navy mb-4">Diagnostic Ready!</h1>
+<p class="font-body-regular text-body-regular text-sam-gray-dark mb-10 max-w-[400px] mx-auto">
+                Hello! We're excited to share that your child's mathematics diagnostic report is now available for review.
+            </p>
+<!-- Bento Grid Preview of Report Highlights -->
+<div class="grid grid-cols-2 gap-4 mb-10 text-left">
+<div class="bg-surface-container-low p-4 rounded-xl border border-white">
+<span class="material-symbols-outlined text-sam-teal mb-2">trending_up</span>
+<p class="font-caption text-caption text-sam-navy">Performance</p>
+<p class="font-headline-adult text-headline-adult text-sam-teal">Excellent</p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-white">
+<span class="material-symbols-outlined text-sam-orange mb-2">psychology</span>
+<p class="font-caption text-caption text-sam-navy">Key Strength</p>
+<p class="font-headline-adult text-headline-adult text-sam-orange">Logic</p>
+</div>
+</div>
+<!-- Primary Action -->
+<div class="mb-12">
+<a class="inline-flex items-center justify-center bg-sam-red text-white font-headline-adult px-10 py-5 rounded-2xl shadow-lg hover:bg-primary transition-all active:scale-95" href="#">
+                    View Dashboard
+                    <span class="material-symbols-outlined ml-2">arrow_forward</span>
+</a>
+</div>
+<div class="border-t border-slate-100 pt-8">
+<p class="font-caption text-caption text-sam-gray-mid">
+                    Want to see how these results compare to previous sessions? Visit the <a class="text-sam-red underline" href="#">History</a> tab in your dashboard.
+                </p>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-stone-50 py-8 px-6 text-center border-t border-slate-200">
+<div class="mb-4">
+<span class="font-display-child font-bold text-slate-800">S.A.M Atlas Assessment</span>
+</div>
+<div class="flex flex-wrap justify-center gap-4 mb-6">
+<a class="font-caption text-slate-500 hover:text-slate-800 underline decoration-red-600 underline-offset-4 transition-all" href="#">Privacy Policy</a>
+<a class="font-caption text-slate-500 hover:text-slate-800 underline decoration-red-600 underline-offset-4 transition-all" href="#">Terms of Service</a>
+<a class="font-caption text-slate-500 hover:text-slate-800 underline decoration-red-600 underline-offset-4 transition-all" href="#">Help Center</a>
+</div>
+<p class="font-caption text-slate-400">© 2024 S.A.M Atlas Assessment. All rights reserved.</p>
+</footer>
+</div>
+<!-- Mobile Navigation Bar (Mocked for context, though less relevant in an email) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-white shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-xl">
+<div class="flex flex-col items-center justify-center text-slate-500 font-['Plus_Jakarta_Sans'] text-xs font-semibold">
+<span class="material-symbols-outlined">home</span>
+<span>Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-red-600 bg-red-50 rounded-xl px-3 py-1 font-['Plus_Jakarta_Sans'] text-xs font-semibold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span>Insights</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 font-['Plus_Jakarta_Sans'] text-xs font-semibold">
+<span class="material-symbols-outlined">person</span>
+<span>Profile</span>
+</div>
+</nav>
+</body></html>

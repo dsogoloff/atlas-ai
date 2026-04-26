@@ -1,0 +1,214 @@
+<!-- Module C - 5: 5-8 Drag & Drop Journey -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.A.M. Assessment - Journey</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#b7102a",
+                        "sam-cream": "#FFF8F0",
+                        "surface-container-high": "#e0e8ff",
+                        "secondary-container": "#ffab69",
+                        "on-surface-variant": "#5b403f",
+                        "surface": "#f9f9ff",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#e4bebc",
+                        "tertiary-container": "#936f03",
+                        "on-secondary-container": "#783d01",
+                        "sam-navy": "#1B3A6B",
+                        "on-background": "#001a40",
+                        "surface-container-highest": "#d7e2ff",
+                        "surface-dim": "#cadaff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#ffb3b1",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed": "#2f1400",
+                        "outline": "#8f6f6e",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "secondary-fixed-dim": "#ffb780",
+                        "sam-red": "#E63946",
+                        "on-primary-fixed": "#410007",
+                        "surface-tint": "#bb152c",
+                        "sam-gray-mid": "#777777",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#d7e2ff",
+                        "sam-yellow": "#FFD166",
+                        "white": "#FFFFFF",
+                        "on-secondary": "#ffffff",
+                        "sam-orange": "#F4A261",
+                        "on-surface": "#001a40",
+                        "secondary": "#8e4e14",
+                        "primary-fixed": "#ffdad8",
+                        "surface-container": "#e8edff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f1f3ff",
+                        "primary-container": "#db313f",
+                        "sam-gray-light": "#E5E5E5",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffdf9b",
+                        "inverse-on-surface": "#edf0ff",
+                        "secondary-fixed": "#ffdcc4",
+                        "inverse-surface": "#0d2f60",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "tertiary": "#755700",
+                        "sam-gray-dark": "#333333",
+                        "sam-teal": "#06A77D",
+                        "on-primary-container": "#fffbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "body-regular": ["Inter"],
+                        "display-child": ["Plus Jakarta Sans"],
+                        "caption": ["Inter"]
+                    },
+                    "fontSize": {
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .journey-line {
+            background-image: radial-gradient(circle, #E5E5E5 2px, transparent 2px);
+            background-size: 12px 12px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-sam-cream min-h-screen flex flex-col font-body-regular">
+<!-- TopAppBar Shell -->
+<header class="bg-stone-50 dark:bg-slate-950 border-b border-stone-200 dark:border-slate-800 shadow-sm dark:shadow-none flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-red-600 dark:text-red-500 cursor-pointer transition-transform active:scale-95 duration-150">menu</span>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-red-600 dark:text-red-500 tracking-tight">S.A.M. Assessment</h1>
+</div>
+<div class="h-10 w-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Stylized avatar of a friendly student with short dark hair and a bright smile on a clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBY8R5LeN3rkztxat1pOQ8gMRlL6aToNqDHnNxsvzdCIEsuYX6PH5wdUtiR6-p6J2CzplZUW9yPDZchVcLaRO92Yn6k4S4Ost-__Jqq7Rb93RaOQaqjGrLGbZqMBbRGbPU-waH17VTSVQvkw1hvGlXNze_Jr3hOXCqyrDpxL5EnUK3_un2SoJnrpx85i9p44EB8q_HmdmPVlPfF0i5zPLkf9k5TiWL0xxHxcYnTCntLn87hxgDNof8PtuP-DH5dGLCb8wmbsUjq5Dm7"/>
+</div>
+</header>
+<!-- Journey Progress Header (Contextual Addition) -->
+<div class="bg-white px-6 py-4 flex flex-col gap-3 shadow-sm relative overflow-hidden">
+<div class="flex justify-between items-center z-10">
+<span class="text-caption font-semibold text-sam-navy">Level 4: Additive Logic</span>
+<span class="text-caption font-bold text-sam-red">Stage 8/12</span>
+</div>
+<div class="relative h-4 w-full bg-sam-gray-light rounded-full z-10">
+<div class="absolute top-0 left-0 h-full w-[66%] bg-sam-red rounded-full shadow-[0_0_8px_rgba(230,57,70,0.4)]"></div>
+<!-- Journey Dots -->
+<div class="absolute inset-0 flex justify-between items-center px-1">
+<div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
+</div>
+</div>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center p-6 mb-20">
+<div class="w-full max-w-md flex flex-col gap-8">
+<!-- Instruction Text -->
+<div class="text-center">
+<h2 class="font-display-child text-display-child text-sam-navy mb-2">Fill the Bar</h2>
+<p class="text-body-regular text-sam-gray-dark">Drag the correct number into the missing piece.</p>
+</div>
+<!-- Bar Model Section -->
+<div class="flex flex-col gap-2 w-full">
+<!-- Total Bar (30) -->
+<div class="w-full h-16 bg-sam-navy rounded-xl flex items-center justify-center shadow-lg transform transition-all">
+<span class="font-math-numeral text-math-numeral text-white">30</span>
+</div>
+<!-- Parts Bar (12 + ?) -->
+<div class="flex gap-2 h-24">
+<!-- Known Part -->
+<div class="w-[40%] bg-white border-2 border-sam-gray-light rounded-xl flex items-center justify-center shadow-sm">
+<span class="font-math-numeral text-math-numeral text-sam-navy">12</span>
+</div>
+<!-- Drop Target -->
+<div class="flex-grow bg-sam-cream border-2 border-dashed border-sam-gray-mid rounded-xl flex items-center justify-center relative overflow-hidden group">
+<div class="absolute inset-0 bg-white opacity-40"></div>
+<span class="material-symbols-outlined text-sam-gray-mid text-4xl opacity-50">add_circle</span>
+</div>
+</div>
+</div>
+<!-- Draggable Number Tiles (Options) -->
+<div class="grid grid-cols-2 gap-4 mt-4">
+<div class="aspect-square bg-white border-2 border-sam-gray-light rounded-2xl flex items-center justify-center shadow-sm active:scale-95 active:border-sam-red transition-all cursor-pointer group">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-active:text-sam-red">15</span>
+</div>
+<div class="aspect-square bg-white border-2 border-sam-red rounded-2xl flex items-center justify-center shadow-md active:scale-95 transition-all cursor-pointer group ring-4 ring-sam-red/10">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-active:text-sam-red">18</span>
+</div>
+<div class="aspect-square bg-white border-2 border-sam-gray-light rounded-2xl flex items-center justify-center shadow-sm active:scale-95 active:border-sam-red transition-all cursor-pointer group">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-active:text-sam-red">20</span>
+</div>
+<div class="aspect-square bg-white border-2 border-sam-gray-light rounded-2xl flex items-center justify-center shadow-sm active:scale-95 active:border-sam-red transition-all cursor-pointer group">
+<span class="font-math-numeral text-math-numeral text-sam-navy group-active:text-sam-red">22</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Shell -->
+<nav class="bg-white dark:bg-slate-900 fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe border-t border-stone-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-2xl">
+<!-- Journey Tab (Active) -->
+<a class="flex flex-col items-center justify-center text-red-600 dark:text-red-400 scale-110 transform transition-transform duration-200 ease-out font-['Plus_Jakarta_Sans'] text-[12px] font-medium" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+<span>Journey</span>
+</a>
+<!-- Practice Tab -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-300 transition-colors font-['Plus_Jakarta_Sans'] text-[12px] font-medium" href="#">
+<span class="material-symbols-outlined">calculate</span>
+<span>Practice</span>
+</a>
+<!-- Reports Tab -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-300 transition-colors font-['Plus_Jakarta_Sans'] text-[12px] font-medium" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span>Reports</span>
+</a>
+<!-- Settings Tab -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-300 transition-colors font-['Plus_Jakarta_Sans'] text-[12px] font-medium" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<!-- Floating Action Background Decorative Elements -->
+<div class="fixed top-24 -left-12 w-48 h-48 bg-sam-yellow opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="fixed bottom-32 -right-12 w-64 h-64 bg-sam-orange opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+</body></html>

@@ -1,0 +1,294 @@
+<!-- Module D - 8: Instructor Roster (Mobile) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Instructor Roster - Atlas Assessment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#936f03",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f1f3ff",
+                        "sam-navy": "#1B3A6B",
+                        "on-surface": "#001a40",
+                        "secondary-fixed-dim": "#ffb780",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#edc157",
+                        "inverse-on-surface": "#edf0ff",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5b403f",
+                        "surface-dim": "#cadaff",
+                        "inverse-surface": "#0d2f60",
+                        "sam-yellow": "#FFD166",
+                        "on-error-container": "#93000a",
+                        "sam-gray-dark": "#333333",
+                        "surface-container": "#e8edff",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e0e8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "sam-gray-mid": "#777777",
+                        "on-background": "#001a40",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "surface-tint": "#bb152c",
+                        "secondary": "#8e4e14",
+                        "sam-red": "#E63946",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#410007",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-highest": "#d7e2ff",
+                        "secondary-fixed": "#ffdcc4",
+                        "secondary-container": "#ffab69",
+                        "white": "#FFFFFF",
+                        "on-secondary-fixed-variant": "#6f3800",
+                        "sam-orange": "#F4A261",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdf9b",
+                        "surface-variant": "#d7e2ff",
+                        "tertiary": "#755700",
+                        "sam-cream": "#FFF8F0",
+                        "on-secondary-fixed": "#2f1400",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "surface-bright": "#f9f9ff",
+                        "sam-gray-light": "#E5E5E5",
+                        "sam-teal": "#06A77D",
+                        "surface": "#f9f9ff",
+                        "primary": "#b7102a",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-secondary-container": "#783d01",
+                        "outline": "#8f6f6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "report-width": "880px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-max": "1440px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "display-child": ["Plus Jakarta Sans"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "caption": ["Inter"],
+                        "body-regular": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream foundation */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body-regular text-body-regular text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-slate-900 sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 shadow-sm flex justify-between items-center w-full px-6 py-4">
+<div class="text-xl font-bold text-slate-900 dark:text-white font-['Plus_Jakarta_Sans']">Atlas Assessment</div>
+<div class="flex items-center gap-4">
+<button class="cursor-pointer active:opacity-80 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
+<img alt="Instructor profile avatar" class="w-full h-full object-cover" data-alt="professional headshot of a female educator smiling warmly in a bright modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC667d9Fl1zUAHY42Wnydp30PX97jdMnl6Do0QdBihuEcSUKH4ELwPXz9cdMnYOIMATmxtGIDXyPeyRwLJtHEiiIyBxIyUgkHu0qHwsaErD2TwdT49CHUdNLYee3W0gAX6BCmqKlR9VEk_VAt1d1if1jZxnQTZzUymSBQTr6n045gSExk4bY-03Kwph7DZjg2B4c5RKkcQmSyAP28sHIJlhW6Z3-YErOau8kSKva_MSbz9RX8N26NgRXzD0OfJad8xkmOj0rNRW3a9e"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<main class="flex-1 pb-24">
+<!-- Dashboard Header -->
+<section class="px-6 pt-8 pb-4">
+<h1 class="font-headline-adult text-headline-adult text-sam-navy mb-2">Student Roster</h1>
+<p class="font-body-regular text-body-regular text-sam-gray-dark">Manage your K-4 mathematics students and track assessment progress.</p>
+</section>
+<!-- Search & Filter Area -->
+<section class="px-6 mb-6">
+<div class="bg-white rounded-xl shadow-sm p-2 flex items-center border border-sam-gray-light">
+<span class="material-symbols-outlined text-sam-gray-mid px-2" data-icon="search">search</span>
+<input class="w-full border-none focus:ring-0 text-sm font-body-regular py-2" placeholder="Search students..." type="text"/>
+<button class="bg-sam-cream p-2 rounded-lg text-sam-navy">
+<span class="material-symbols-outlined text-xl" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</section>
+<!-- Roster Bento Grid / List -->
+<section class="px-6 space-y-4">
+<!-- Student Card 1 -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-teal">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center border border-sam-gray-light overflow-hidden">
+<img alt="Student avatar" class="w-full h-full object-cover" data-alt="close up portrait of a cheerful young boy with curly hair in a classroom setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEDlvt3_74J48cJDVG829pitr-rnmfsSaiIVEt4yltGy0vs84ll8bCP4owvqCLHlH5prHqMu08WKsHKvE1QtMBerRZ3NkMl9awFta-vNOwgg8tOuDVzoZFIUawgP71A2kiscyQ4u3Ac4cOhmuDGIX2p7hX3vf3KRAfDsZ0wcnTBfBckFyztJgZdWNou8xJ_wh2Wrut71eytL2wzGqhX2rWy7rxeKt-tz68ol3f3dCiYkkbTNO_T1EeViM5n13Jz4AorPDD5JAACF-6"/>
+</div>
+<div>
+<h3 class="font-semibold text-sam-navy">Leo Archer</h3>
+<span class="font-caption text-caption text-sam-gray-mid">Grade 2 • Primary A</span>
+</div>
+</div>
+<span class="bg-teal-50 text-sam-teal text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Complete</span>
+</div>
+<div class="grid grid-cols-2 gap-4 border-t border-stone-50 pt-3">
+<div>
+<p class="text-[10px] text-sam-gray-mid uppercase font-bold tracking-tight">Last Score</p>
+<p class="text-xl font-math-numeral text-sam-navy">88%</p>
+</div>
+<div class="flex flex-col items-end">
+<button class="text-sam-red font-semibold text-sm flex items-center gap-1 active:scale-95 transition-transform">
+                            View Report
+                            <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Student Card 2 -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-orange">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center border border-sam-gray-light overflow-hidden">
+<img alt="Student avatar" class="w-full h-full object-cover" data-alt="close up portrait of a young girl with braids smiling at the camera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDWvELnOLz6Kf-E4mknlF_vSsOMt50jkaEuPCD2DDdwATpG_bHrFdu7MDc99xqjxmHQ8hY_uEidRyzozecNytwAYd_3DXRGgPL-6egdMiz0DWMSD3IivS5bgl0YYnLoq3wnfIkq7y6kpbbu2yQ6cTTSZvU99honAoBI5zyTWLtZ5bexZHCZZvC5wLidWdfakJeAKXedlNqArVPfycpz7wuNIYFRdus_akYTsV2lqLQDpaPUsjW9nQ07fZtojm85BQtP3bxAOHUDlGE"/>
+</div>
+<div>
+<h3 class="font-semibold text-sam-navy">Maya Patel</h3>
+<span class="font-caption text-caption text-sam-gray-mid">Grade 1 • Junior B</span>
+</div>
+</div>
+<span class="bg-orange-50 text-sam-orange text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">In Progress</span>
+</div>
+<div class="grid grid-cols-1 gap-2 border-t border-stone-50 pt-3">
+<div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+<div class="bg-sam-orange h-full w-[65%] rounded-full"></div>
+</div>
+<div class="flex justify-between items-center">
+<p class="text-[10px] text-sam-gray-mid">12/18 Questions</p>
+<button class="text-sam-navy font-semibold text-sm flex items-center gap-1 active:scale-95 transition-transform">
+                            Resume
+                            <span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Student Card 3 -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-gray-light">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center border border-sam-gray-light overflow-hidden text-sam-gray-mid">
+<span class="material-symbols-outlined text-3xl" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-semibold text-sam-navy">Lucas Grant</h3>
+<span class="font-caption text-caption text-sam-gray-mid">Grade 3 • Primary C</span>
+</div>
+</div>
+<span class="bg-slate-50 text-sam-gray-mid text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Pending</span>
+</div>
+<div class="flex justify-between items-center border-t border-stone-50 pt-3">
+<p class="text-xs text-sam-gray-mid italic">No assessment data available</p>
+<button class="bg-sam-red text-white font-semibold text-sm px-4 py-1.5 rounded-full active:scale-95 transition-transform">
+                        Assign
+                    </button>
+</div>
+</div>
+<!-- Student Card 4 -->
+<div class="bg-white rounded-xl p-4 shadow-[0_4px_12px_rgba(27,58,107,0.08)] border-l-4 border-sam-teal">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center border border-sam-gray-light overflow-hidden">
+<img alt="Student avatar" class="w-full h-full object-cover" data-alt="portrait of a young elementary school student smiling shyly" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx9YbEe_lb-jNn9NUXifgTfS95AVyIx6m-0_9fm0dyWPHihRz5gb1Xg8wrmv0L33BwTueqqCn-SDZM5vWej1iGwUUUC-GSP7HNtuDEv17kno3wzqf-DwU42fagOxy9tfF8BUP5mIOehwrKWFCm3sk5HkXyFUsUjI1frchoemQ-jLbk2HWqf8kU4jTuMH1hjV2gyVQoX0bLeeHvuu906M1rmPlJDWR0h4zIAvbZbcA-8kiz_X7bQ6GRQICinlhwfQIA9eR7abxqx_ft"/>
+</div>
+<div>
+<h3 class="font-semibold text-sam-navy">Chloe Wu</h3>
+<span class="font-caption text-caption text-sam-gray-mid">Grade 4 • Master A</span>
+</div>
+</div>
+<span class="bg-teal-50 text-sam-teal text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Complete</span>
+</div>
+<div class="grid grid-cols-2 gap-4 border-t border-stone-50 pt-3">
+<div>
+<p class="text-[10px] text-sam-gray-mid uppercase font-bold tracking-tight">Last Score</p>
+<p class="text-xl font-math-numeral text-sam-navy">94%</p>
+</div>
+<div class="flex flex-col items-end">
+<button class="text-sam-red font-semibold text-sm flex items-center gap-1 active:scale-95 transition-transform">
+                            View Report
+                            <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Add Student FAB -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-sam-red text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined text-3xl" data-icon="person_add">person_add</span>
+</button>
+<!-- Footer -->
+<footer class="bg-stone-50 dark:bg-slate-950 w-full border-t border-slate-200 dark:border-slate-800 mt-12 mb-8">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center py-8 px-6 space-y-4 md:space-y-0">
+<div class="font-bold text-slate-800 dark:text-slate-200 font-['Plus_Jakarta_Sans']">© 2024 S.A.M Atlas Assessment. All rights reserved.</div>
+<nav class="flex flex-wrap justify-center gap-4">
+<a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 hover:text-slate-800 transition-all duration-200 underline decoration-red-600 underline-offset-4" href="#">Privacy Policy</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 hover:text-slate-800 transition-all duration-200 underline decoration-red-600 underline-offset-4" href="#">Terms of Service</a>
+</nav>
+</div>
+</footer>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-transform hover:bg-slate-50 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-red-600 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-1 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="edit_document">edit_document</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Assess</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-transform hover:bg-slate-50 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-transform hover:bg-slate-50 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-xs font-semibold">Profile</span>
+</a>
+</nav>
+</body></html>

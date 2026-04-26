@@ -1,0 +1,194 @@
+<!-- Module A - 4: Add Child (Desktop) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add Child - Atlas Assessment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "sam-navy": "#1B3A6B",
+                        "sam-cream": "#FFF8F0",
+                        "sam-red": "#E63946",
+                        "sam-teal": "#06A77D",
+                        "sam-yellow": "#FFD166",
+                        "sam-orange": "#F4A261",
+                        "sam-gray-dark": "#333333",
+                        "sam-gray-mid": "#777777",
+                        "sam-gray-light": "#E5E5E5",
+                        "primary": "#b7102a",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#db313f",
+                        "on-primary-container": "#fffbff",
+                        "surface": "#f9f9ff",
+                        "on-surface": "#001a40",
+                        "outline": "#8f6f6e",
+                        "white": "#FFFFFF"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "stack-md": "16px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px",
+                        "report-width": "880px",
+                        "stack-sm": "8px",
+                        "margin-desktop": "40px",
+                        "container-max": "1440px",
+                        "stack-lg": "32px"
+                    },
+                    fontFamily: {
+                        "display-child": ["Plus Jakarta Sans"],
+                        "body-regular": ["Inter"],
+                        "math-numeral": ["Plus Jakarta Sans"],
+                        "headline-adult": ["Inter"],
+                        "caption": ["Inter"]
+                    },
+                    fontSize: {
+                        "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                        "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream foundation */
+        }
+    </style>
+</head>
+<body class="font-body-regular text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-[#FEFBF6] dark:bg-slate-950 font-['Plus_Jakarta_Sans'] font-semibold docked full-width top-0 z-40 border-b border-[#F2EDE4] dark:border-slate-800 shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black text-[#1B3A6B] dark:text-slate-100">Atlas Assessment</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 hover:text-[#E63946] transition-colors" href="#">Students</a>
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 hover:text-[#E63946] transition-colors" href="#">Reports</a>
+<a class="text-[#E63946] border-b-2 border-[#E63946] pb-1" href="#">Add Child</a>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-[#1B3A6B]/60 hover:text-[#E63946] transition-colors scale-95 active:duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-[#1B3A6B]/60 hover:text-[#E63946] transition-colors scale-95 active:duration-150">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+<img alt="Instructor or Parent Profile" data-alt="professional portrait of a friendly male educator smiling warmly in a bright office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgjBkuKh0Rf6dBtvUwuk-AFpvCIMYsAIHnGh3Cx-vTyLMYDsqDCnhvyWpdfDKMI6MxW--OEVvcdH3o7OXCbiyhBZt8e6FPdCnxjK6KXyeA_XMkeOINdk6NzvHR7Pvi-VVDgxHApuxCHslAxPVK4sMhU26aXpFGYtyscRScb5Td9lnmppxAjQYmTtScF68bkdtuo-d3DhAgW_P_8D0VpwmLDKv-_qD7o5YYmBIQTm29RIb3aV1t7cTbQ7gLEpKdYRLLIq-P7h7dx-TU"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-gutter py-stack-lg relative overflow-hidden">
+<!-- Decorative Background Elements -->
+<div class="absolute top-10 left-10 w-32 h-32 bg-sam-yellow/20 rounded-full blur-3xl"></div>
+<div class="absolute bottom-10 right-10 w-48 h-48 bg-sam-teal/10 rounded-full blur-3xl"></div>
+<!-- Add Child Card -->
+<div class="w-full max-w-[540px] bg-white rounded-3xl shadow-[0px_4px_24px_rgba(27,58,107,0.08)] p-10 relative z-10 border border-sam-gray-light/30">
+<!-- Mascot Integration -->
+<div class="flex justify-center -mt-24 mb-6">
+<div class="w-32 h-32 relative">
+<img alt="Sammy the Otter" class="w-full h-full object-contain" data-alt="friendly cartoon otter character with warm eyes and a playful expression wearing a small graduation cap" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNmqesPNpSjs3fA4aP9Jkr18aCT8kEPUq_FpyiXOxuHwkDYuc6hswRulTS_gpFty9dk1Yrx52ezdYxvJSgOC9Pv7MlgFU0rDCNVBbeN_CeL1qrl-ks2VTmz4uhiJLu-qDOlz_qEqHTfQhMgARtbEIAKykYlVv-_Rei6FDgmSZ1KMdlH_bKl3Q3i51OIpwBiRb5_8zC-Cjo-CiM_-l7IBby7EBOOSS-Fe2gz9Ll8yY8K5xID8JZSsG_StfFBym1riY9IOa6pvq07Pjf"/>
+</div>
+</div>
+<div class="text-center mb-8">
+<h1 class="font-display-child text-display-child text-sam-navy mb-2">Welcome!</h1>
+<p class="text-sam-gray-mid font-headline-adult text-lg">Let's start your child's learning journey.</p>
+</div>
+<form class="space-y-6">
+<!-- Child Name -->
+<div class="space-y-2">
+<label class="block font-headline-adult text-sm font-semibold text-sam-navy ml-1">Child's Name</label>
+<div class="relative">
+<input class="w-full px-5 py-4 bg-sam-cream border-2 border-transparent focus:border-sam-red focus:ring-0 rounded-2xl text-sam-navy placeholder-sam-gray-mid/60 transition-all font-medium outline-none" placeholder="e.g. Alex" type="text"/>
+<span class="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-sam-gray-mid" data-icon="person">person</span>
+</div>
+</div>
+<!-- Dual Row for Birth Year and Grade -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="block font-headline-adult text-sm font-semibold text-sam-navy ml-1">Birth Year</label>
+<div class="relative">
+<select class="w-full px-5 py-4 bg-sam-cream border-2 border-transparent focus:border-sam-red focus:ring-0 rounded-2xl text-sam-navy appearance-none cursor-pointer transition-all font-medium outline-none">
+<option disabled="" selected="" value="">Select</option>
+<option value="2014">2014</option>
+<option value="2015">2015</option>
+<option value="2016">2016</option>
+<option value="2017">2017</option>
+<option value="2018">2018</option>
+<option value="2019">2019</option>
+</select>
+<span class="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-sam-gray-mid pointer-events-none" data-icon="calendar_month">calendar_month</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-headline-adult text-sm font-semibold text-sam-navy ml-1">Current Grade</label>
+<div class="relative">
+<select class="w-full px-5 py-4 bg-sam-cream border-2 border-transparent focus:border-sam-red focus:ring-0 rounded-2xl text-sam-navy appearance-none cursor-pointer transition-all font-medium outline-none">
+<option disabled="" selected="" value="">Select</option>
+<option value="K">Kindergarten</option>
+<option value="1">Grade 1</option>
+<option value="2">Grade 2</option>
+<option value="3">Grade 3</option>
+<option value="4">Grade 4</option>
+<option value="5">Grade 5</option>
+</select>
+<span class="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-sam-gray-mid pointer-events-none" data-icon="school">school</span>
+</div>
+</div>
+</div>
+<!-- Help Tip -->
+<div class="bg-sam-yellow/10 border border-sam-yellow/30 p-4 rounded-2xl flex gap-3">
+<span class="material-symbols-outlined text-sam-orange shrink-0" data-icon="info" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="text-caption font-caption text-sam-navy/80 leading-snug">
+                        Providing the correct grade helps Sammy tailor the diagnostic questions to your child's level.
+                    </p>
+</div>
+<!-- Action Buttons -->
+<div class="pt-4 space-y-4">
+<button class="w-full py-5 bg-sam-red text-white font-display-child text-xl rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2" type="button">
+                        Add Child
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="w-full py-3 bg-transparent text-sam-navy/60 font-headline-adult text-sm font-semibold hover:text-sam-navy transition-colors" type="button">
+                        Cancel and Go Back
+                    </button>
+</div>
+</form>
+</div>
+</main>
+<!-- Success Feedback (Hidden by default, used for interaction concept) -->
+<div class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-sam-teal text-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-32 opacity-0 transition-all pointer-events-none">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-headline-adult">Profile created successfully!</span>
+</div>
+<!-- Footer Meta -->
+<footer class="p-6 text-center text-sam-gray-mid/50 text-caption font-caption">
+        © 2024 Atlas Assessment Diagnostic Suite. All rights reserved.
+    </footer>
+</body></html>

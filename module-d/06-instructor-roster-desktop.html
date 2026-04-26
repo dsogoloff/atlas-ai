@@ -1,0 +1,429 @@
+<!-- Module D - 6: Instructor Roster (Desktop) -->
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Instructor Student Roster | Atlas Assessment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#936f03",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-navy": "#1B3A6B",
+                    "on-surface": "#001a40",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-primary-container": "#fffbff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#5b403f",
+                    "surface-dim": "#cadaff",
+                    "inverse-surface": "#0d2f60",
+                    "sam-yellow": "#FFD166",
+                    "on-error-container": "#93000a",
+                    "sam-gray-dark": "#333333",
+                    "surface-container": "#e8edff",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e0e8ff",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-gray-mid": "#777777",
+                    "on-background": "#001a40",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "surface-tint": "#bb152c",
+                    "secondary": "#8e4e14",
+                    "sam-red": "#E63946",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#410007",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-highest": "#d7e2ff",
+                    "secondary-fixed": "#ffdcc4",
+                    "secondary-container": "#ffab69",
+                    "white": "#FFFFFF",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "sam-orange": "#F4A261",
+                    "background": "#f9f9ff",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-variant": "#d7e2ff",
+                    "tertiary": "#755700",
+                    "sam-cream": "#FFF8F0",
+                    "on-secondary-fixed": "#2f1400",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "surface-bright": "#f9f9ff",
+                    "sam-gray-light": "#E5E5E5",
+                    "sam-teal": "#06A77D",
+                    "surface": "#f9f9ff",
+                    "primary": "#b7102a",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-secondary-container": "#783d01",
+                    "outline": "#8f6f6e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "report-width": "880px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "container-max": "1440px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "display-child": ["Plus Jakarta Sans"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "caption": ["Inter"],
+                    "body-regular": ["Inter"]
+            },
+            "fontSize": {
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream foundation */
+        }
+    </style>
+</head>
+<body class="font-body-regular text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm font-['Plus_Jakarta_Sans'] text-sm antialiased fixed top-0 z-50 w-full flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Atlas Assessment</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden md:block">
+<input class="pl-10 pr-4 py-2 rounded-full border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#E63946] focus:border-transparent outline-none transition-all w-64" placeholder="Search assessments..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 rounded-full">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 rounded-full">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-slate-200">
+<img alt="Instructor Profile Avatar" data-alt="close up professional headshot of a friendly educator smiling warmly, soft studio lighting, blurred classroom background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1acgtf94Wu793egCXK8VK6umemLw_lyPSdvR7DthJ1FS880kPrp4_S6Wr5mn_d0TWBCJv-lh2dpoXtN3haVywZwg1nmeCtxhc-JhWQo4XXusZvofKVbF27yRE-XWIYjsgSilawDm4sZwr5nW2IcCcA_LG9fQvA3yodFLE-0Jc5wZBlV_ZDqqdyKBCdQCA93vVFc1dTCypEuw2-LfbwdshClGZCPQTFtF6xo6tx2jhFzo6-d8SeEQi7NMJhcdYtKu8-GAuGjlAThjQ"/>
+</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="bg-slate-50 dark:bg-slate-950 h-screen w-64 fixed left-0 top-0 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full pt-20 pb-6 z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 bg-[#E63946] rounded-lg flex items-center justify-center text-white font-bold">A</div>
+<h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Instructor Portal</h2>
+</div>
+<p class="text-[14px] font-medium text-slate-500 dark:text-slate-400">Diagnostic Dashboard</p>
+</div>
+<div class="flex-1 space-y-1 px-3">
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 text-[#E63946] border-r-4 border-[#E63946] shadow-sm font-['Plus_Jakarta_Sans'] text-[14px] font-medium transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Student Roster</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 font-['Plus_Jakarta_Sans'] text-[14px] font-medium transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Cohort Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 font-['Plus_Jakarta_Sans'] text-[14px] font-medium transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span>Diagnostic Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 font-['Plus_Jakarta_Sans'] text-[14px] font-medium transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Resources</span>
+</a>
+</div>
+<div class="mt-auto pt-6 space-y-1 border-t border-slate-200 dark:border-slate-800 px-3">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 font-['Plus_Jakarta_Sans'] text-[14px] font-medium transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 font-['Plus_Jakarta_Sans'] text-[14px] font-medium transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-64 pt-24 px-8 pb-12">
+<div class="max-w-report-width mx-auto">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-headline-adult text-headline-adult text-sam-navy mb-2">Student Roster</h1>
+<p class="text-sam-gray-mid font-body-regular">Manage student enrollments and track real-time assessment progress for Grade 3 - Maplewood Elementary.</p>
+</div>
+<button class="bg-sam-red hover:bg-primary-container text-white px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-md active:opacity-80">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person_add</span>
+                    Add Student
+                </button>
+</div>
+<!-- Dashboard Stats Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+<div class="bg-white p-6 rounded-2xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-slate-100">
+<p class="text-caption font-caption text-sam-gray-mid mb-1">Total Students</p>
+<p class="text-3xl font-bold text-sam-navy">28</p>
+<div class="mt-2 flex items-center text-sam-teal text-sm font-medium">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>+2 this month</span>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-slate-100">
+<p class="text-caption font-caption text-sam-gray-mid mb-1">Assessment Complete</p>
+<p class="text-3xl font-bold text-sam-teal">18</p>
+<div class="mt-2 w-full bg-slate-100 h-1.5 rounded-full">
+<div class="bg-sam-teal h-full w-[64%] rounded-full"></div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-slate-100">
+<p class="text-caption font-caption text-sam-gray-mid mb-1">In Progress</p>
+<p class="text-3xl font-bold text-sam-orange">7</p>
+<div class="mt-2 w-full bg-slate-100 h-1.5 rounded-full">
+<div class="bg-sam-orange h-full w-[25%] rounded-full"></div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-slate-100">
+<p class="text-caption font-caption text-sam-gray-mid mb-1">Average Score</p>
+<p class="text-3xl font-bold text-sam-navy">74%</p>
+<div class="mt-2 flex items-center text-sam-red text-sm font-medium">
+<span class="material-symbols-outlined text-sm">trending_down</span>
+<span>-3% vs last cohort</span>
+</div>
+</div>
+</div>
+<!-- Roster Table Container -->
+<div class="bg-white rounded-2xl shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-slate-100 overflow-hidden">
+<div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+<div class="flex items-center gap-4">
+<div class="relative">
+<input class="pl-9 pr-4 py-1.5 rounded-lg border border-slate-200 text-sm focus:ring-1 focus:ring-sam-red outline-none" placeholder="Filter roster..." type="text"/>
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-sm">filter_list</span>
+</div>
+<button class="text-sm font-medium text-sam-navy hover:text-sam-red flex items-center gap-1 transition-colors">
+<span>Status: All</span>
+<span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+</button>
+</div>
+<button class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-400">more_vert</span>
+</button>
+</div>
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50/50 text-caption font-caption text-sam-gray-mid uppercase tracking-wider">
+<th class="px-6 py-4 font-semibold">Student Name</th>
+<th class="px-6 py-4 font-semibold">Assigned Date</th>
+<th class="px-6 py-4 font-semibold">Status</th>
+<th class="px-6 py-4 font-semibold text-right">Performance</th>
+<th class="px-6 py-4 font-semibold text-center">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Student Row 1 -->
+<tr class="hover:bg-slate-50/80 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">AB</div>
+<div>
+<p class="font-semibold text-sam-navy">Alex Bennett</p>
+<p class="text-xs text-sam-gray-mid">ID: #AM-3842</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-sam-gray-dark">Oct 12, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-sam-teal">
+                                    Complete
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="font-bold text-sam-navy">92%</span>
+<div class="w-24 ml-auto mt-1 bg-slate-100 h-1 rounded-full">
+<div class="bg-sam-teal h-full w-[92%] rounded-full"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<button class="text-sam-navy hover:text-sam-red p-1 rounded-md transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Student Row 2 -->
+<tr class="hover:bg-slate-50/80 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border border-orange-200">CC</div>
+<div>
+<p class="font-semibold text-sam-navy">Chloe Chen</p>
+<p class="text-xs text-sam-gray-mid">ID: #AM-3855</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-sam-gray-dark">Oct 14, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-sam-orange">
+                                    In Progress
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="text-xs text-sam-gray-mid italic">8 / 20 items</span>
+<div class="w-24 ml-auto mt-1 bg-slate-100 h-1 rounded-full">
+<div class="bg-sam-orange h-full w-[40%] rounded-full"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<button class="text-sam-navy hover:text-sam-red p-1 rounded-md transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+<!-- Student Row 3 -->
+<tr class="hover:bg-slate-50/80 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold border border-purple-200">DL</div>
+<div>
+<p class="font-semibold text-sam-navy">David Lu</p>
+<p class="text-xs text-sam-gray-mid">ID: #AM-3901</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-sam-gray-dark">Oct 15, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-sam-gray-mid">
+                                    Not Started
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="text-xs text-slate-300">--</span>
+</td>
+<td class="px-6 py-4 text-center">
+<button class="text-sam-navy hover:text-sam-red p-1 rounded-md transition-colors">
+<span class="material-symbols-outlined">send</span>
+</button>
+</td>
+</tr>
+<!-- Student Row 4 -->
+<tr class="hover:bg-slate-50/80 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold border border-red-200">ER</div>
+<div>
+<p class="font-semibold text-sam-navy">Emma Rodriguez</p>
+<p class="text-xs text-sam-gray-mid">ID: #AM-3912</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-sam-gray-dark">Oct 11, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-sam-teal">
+                                    Complete
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="font-bold text-sam-navy">65%</span>
+<div class="w-24 ml-auto mt-1 bg-slate-100 h-1 rounded-full">
+<div class="bg-sam-orange h-full w-[65%] rounded-full"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<button class="text-sam-navy hover:text-sam-red p-1 rounded-md transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Student Row 5 -->
+<tr class="hover:bg-slate-50/80 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">JM</div>
+<div>
+<p class="font-semibold text-sam-navy">James Miller</p>
+<p class="text-xs text-sam-gray-mid">ID: #AM-3950</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-sam-gray-dark">Oct 15, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-sam-orange">
+                                    In Progress
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="text-xs text-sam-gray-mid italic">19 / 20 items</span>
+<div class="w-24 ml-auto mt-1 bg-slate-100 h-1 rounded-full">
+<div class="bg-sam-teal h-full w-[95%] rounded-full"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<button class="text-sam-navy hover:text-sam-red p-1 rounded-md transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 border-t border-slate-100 flex justify-between items-center text-caption font-caption text-sam-gray-mid">
+<p>Showing 5 of 28 students</p>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-sm align-middle">chevron_left</span>
+</button>
+<button class="px-3 py-1.5 bg-sam-navy text-white rounded-lg">1</button>
+<button class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50">2</button>
+<button class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50">3</button>
+<button class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50">
+<span class="material-symbols-outlined text-sm align-middle">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Mascot Callout -->
+<div class="mt-10 flex items-center gap-6 p-6 bg-white rounded-3xl border border-sam-cream shadow-sm relative overflow-hidden">
+<div class="absolute right-0 top-0 w-32 h-32 bg-sam-cream rounded-full -mr-16 -mt-16 opacity-50"></div>
+<div class="w-24 h-24 flex-shrink-0">
+<img alt="Sammy the Otter Mascot" class="w-full h-full object-contain" data-alt="a friendly cartoon otter character wearing a red bowtie, waving cheerfully, clean vector style, bright colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgp0ZFbqLtDs9frmOGNuHtX-f9HpikkZ6P5dI0jJr8ZdmU97_PIWDns5Hz6pfC8hKglnTf6ljiOoyr2wKXZCyKXPrAEH83dz2qktjuvrDiaLWixVpM04yZ0BYYZCFunlObOCBywOSJKfxDIHmgLRvgJssLqsbLnN_LP_Pv8_un0JIcTYOufN0cmLrp1NwyDwZmxoxKHUYpaAMQ8byKCPPfZYYurpVM0MAJRVJiGdOUxcnFKgneZ2webgy-BoDLkr1mQdJudKkta9cD"/>
+</div>
+<div class="flex-1 relative z-10">
+<p class="font-headline-adult text-lg text-sam-navy mb-1">Great progress with the Grade 3 cohort!</p>
+<p class="text-sam-gray-mid font-body-regular">It looks like most students have completed their initial Number Sense diagnostic. You can now generate the <a class="text-sam-red font-semibold hover:underline" href="#">Strategic Growth Report</a> for this group.</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

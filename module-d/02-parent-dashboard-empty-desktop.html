@@ -1,0 +1,229 @@
+<!-- Module D - 2: Parent Dashboard - Empty (Desktop) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Parent Dashboard | Atlas Assessment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#936f03",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f1f3ff",
+                    "sam-navy": "#1B3A6B",
+                    "on-surface": "#001a40",
+                    "secondary-fixed-dim": "#ffb780",
+                    "on-primary-container": "#fffbff",
+                    "tertiary-fixed-dim": "#edc157",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#5b403f",
+                    "surface-dim": "#cadaff",
+                    "inverse-surface": "#0d2f60",
+                    "sam-yellow": "#FFD166",
+                    "on-error-container": "#93000a",
+                    "sam-gray-dark": "#333333",
+                    "surface-container": "#e8edff",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e0e8ff",
+                    "surface-container-lowest": "#ffffff",
+                    "sam-gray-mid": "#777777",
+                    "on-background": "#001a40",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "surface-tint": "#bb152c",
+                    "secondary": "#8e4e14",
+                    "sam-red": "#E63946",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#410007",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-highest": "#d7e2ff",
+                    "secondary-fixed": "#ffdcc4",
+                    "secondary-container": "#ffab69",
+                    "white": "#FFFFFF",
+                    "on-secondary-fixed-variant": "#6f3800",
+                    "sam-orange": "#F4A261",
+                    "background": "#f9f9ff",
+                    "tertiary-fixed": "#ffdf9b",
+                    "surface-variant": "#d7e2ff",
+                    "tertiary": "#755700",
+                    "sam-cream": "#FFF8F0",
+                    "on-secondary-fixed": "#2f1400",
+                    "on-tertiary-fixed-variant": "#5b4300",
+                    "surface-bright": "#f9f9ff",
+                    "sam-gray-light": "#E5E5E5",
+                    "sam-teal": "#06A77D",
+                    "surface": "#f9f9ff",
+                    "primary": "#b7102a",
+                    "on-primary-fixed-variant": "#92001c",
+                    "on-secondary-container": "#783d01",
+                    "outline": "#8f6f6e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "report-width": "880px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "margin-tablet": "32px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "container-max": "1440px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "display-child": ["Plus Jakarta Sans"],
+                    "math-numeral": ["Plus Jakarta Sans"],
+                    "headline-adult": ["Inter"],
+                    "caption": ["Inter"],
+                    "body-regular": ["Inter"]
+            },
+            "fontSize": {
+                    "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                    "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #FFF8F0; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-body-regular text-sam-navy min-h-screen flex flex-col">
+<!-- TopAppBar Navigation -->
+<header class="bg-[#FDFBF7] dark:bg-slate-950 border-b border-gray-200 dark:border-slate-800 fixed top-0 left-0 w-full z-50">
+<div class="flex justify-between items-center w-full px-4 py-3 h-16 max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="transition-colors duration-200 active:scale-95 text-[#1B3A6B] hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-[#1B3A6B] dark:text-slate-100 font-extrabold text-xl font-['Plus_Jakarta_Sans']">Atlas Assessment</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="font-['Plus_Jakarta_Sans'] font-bold text-lg tracking-tight text-[#E63946]" href="#">Roster</a>
+<a class="font-['Plus_Jakarta_Sans'] font-bold text-lg tracking-tight text-[#1B3A6B] hover:bg-gray-100 dark:hover:bg-slate-800 px-2 rounded" href="#">Cohort</a>
+<a class="font-['Plus_Jakarta_Sans'] font-bold text-lg tracking-tight text-[#1B3A6B] hover:bg-gray-100 dark:hover:bg-slate-800 px-2 rounded" href="#">Reports</a>
+<a class="font-['Plus_Jakarta_Sans'] font-bold text-lg tracking-tight text-[#1B3A6B] hover:bg-gray-100 dark:hover:bg-slate-800 px-2 rounded" href="#">Settings</a>
+</nav>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-sam-red shadow-sm">
+<img alt="Parent Avatar" data-alt="professional portrait of a smiling parent in a soft focus domestic setting, warm lighting, approachable and friendly appearance" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA34h4JnaI5SIRW2-FWMRoCwMYRhSvWainjwDk2XurTIvQJUm3FR035XlF5O82YF8CdbINgAx9F-zaiS7zT2ej-UY7f4mOoKUiRYOFyuzelI0lCUMWtR_ZEkb6LUhiBOQYBcqB-CIsbGzsQMlA3DqNa-0shjboZ3dmACYjW8RsaLIHMPypXvXWomIVLjSh6SpCcZ8-YLixDxhJDuGBcqP1fbo-IC0_Trjj4GUTd_405rgNyA7xsfhE_0kQn0HGmYTF69eEiHk-lb04O"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-32 px-4 md:px-8 max-w-screen-report-width mx-auto w-full flex flex-col items-center justify-center">
+<!-- Empty State Hero Card -->
+<div class="w-full bg-white rounded-[32px] shadow-[0_4px_12px_rgba(27,58,107,0.08)] p-8 md:p-16 text-center border border-sam-gray-light relative overflow-hidden">
+<!-- Mascot Integration: Sammy the Otter -->
+<div class="mb-10 flex justify-center">
+<div class="relative w-64 h-64">
+<img alt="Sammy the Otter Mascot" class="w-full h-full object-contain" data-alt="playful and friendly cartoon otter mascot wearing a small red bowtie, waving warmly, clean 2D vector style, vibrant colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByPETD9mqnFFQltWaUrE7n298tepu9tpWJOpAmtTSDwGRgFmKEjy84eKJ1NNKP_HnfGxfnGwZyZdd7dZEFidlQxKGwam_Sfmp5XvRkoeap3dtho_9O-IKYoi6BsIV8V1-H85_4wH0v1FV5qbpDROId4-KlQbO_eXct1u2prlz-8N5ATKy1TKGUpYiLRgo_AgguGNfbOsm0Q1ZWLFkTHuwHPXrGetk8AcclkzKrcflX9bUyTFRORoJ0NchHzT47Q6Q1ZwoRf6-CW1ft"/>
+<!-- Speech Bubble -->
+<div class="absolute -top-4 -right-12 bg-sam-cream border-2 border-sam-navy p-4 rounded-2xl shadow-md max-w-[200px]">
+<p class="font-display-child text-sm text-sam-navy leading-tight">Ready to discover your child's math journey?</p>
+<div class="absolute -bottom-2 left-6 w-4 h-4 bg-sam-cream border-b-2 border-r-2 border-sam-navy transform rotate-45"></div>
+</div>
+</div>
+</div>
+<!-- Content -->
+<h2 class="font-headline-adult text-sam-navy mb-4">Welcome to the Atlas Family!</h2>
+<p class="font-body-regular text-sam-gray-dark mb-10 max-w-lg mx-auto">
+                You haven't added any students to your roster yet. Start by creating a profile for your child to begin their diagnostic mathematical journey.
+            </p>
+<!-- Primary CTA -->
+<button class="bg-sam-red text-white font-['Plus_Jakarta_Sans'] font-bold py-5 px-12 rounded-[16px] text-lg shadow-lg hover:bg-[#D62E3B] transition-all transform active:scale-95 flex items-center gap-3 mx-auto">
+<span class="material-symbols-outlined">person_add</span>
+                Add Your First Child
+            </button>
+<!-- Secondary Path Indicators (Visual Flourish) -->
+<div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-60">
+<div class="flex flex-col items-center p-4">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center text-sam-navy mb-3">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<span class="text-caption font-semibold">Track Progress</span>
+</div>
+<div class="flex flex-col items-center p-4">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center text-sam-navy mb-3">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<span class="text-caption font-semibold">Identify Gaps</span>
+</div>
+<div class="flex flex-col items-center p-4">
+<div class="w-12 h-12 rounded-full bg-sam-cream flex items-center justify-center text-sam-navy mb-3">
+<span class="material-symbols-outlined">emoji_events</span>
+</div>
+<span class="text-caption font-semibold">Celebrate Wins</span>
+</div>
+</div>
+</div>
+<!-- Quick Help Section -->
+<div class="mt-12 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white/50 p-6 rounded-2xl border border-sam-gray-light flex items-start gap-4">
+<div class="text-sam-orange">
+<span class="material-symbols-outlined text-3xl">play_circle</span>
+</div>
+<div>
+<h4 class="font-bold text-sam-navy">How it works</h4>
+<p class="text-sm text-sam-gray-mid">A 3-minute guide to setting up your dashboard.</p>
+</div>
+</div>
+<div class="bg-white/50 p-6 rounded-2xl border border-sam-gray-light flex items-start gap-4">
+<div class="text-sam-teal">
+<span class="material-symbols-outlined text-3xl">help_outline</span>
+</div>
+<div>
+<h4 class="font-bold text-sam-navy">Support Center</h4>
+<p class="text-sm text-sam-gray-mid">Got questions about the assessment? We're here.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(27,58,107,0.08)] rounded-t-2xl">
+<a class="flex flex-col items-center justify-center text-[#E63946] dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/30 rounded-xl px-3 py-1 scale-100 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#E63946] scale-100 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Cohort</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#E63946] scale-100 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#E63946] scale-100 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Settings</span>
+</a>
+</nav>
+</body></html>
