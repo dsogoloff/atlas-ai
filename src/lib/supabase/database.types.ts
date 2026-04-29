@@ -35,6 +35,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tenants"]["Insert"]>;
+        Relationships: [];
       };
 
       centers: {
@@ -53,6 +54,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["centers"]["Insert"]>;
+        Relationships: [];
       };
 
       parents: {
@@ -77,6 +79,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["parents"]["Insert"]>;
+        Relationships: [];
       };
 
       children: {
@@ -105,6 +108,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["children"]["Insert"]>;
+        Relationships: [];
       };
 
       instructors: {
@@ -129,6 +133,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["instructors"]["Insert"]>;
+        Relationships: [];
       };
 
       pedagogical_notes: {
@@ -151,6 +156,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["pedagogical_notes"]["Insert"]>;
+        Relationships: [];
       };
 
       misconceptions: {
@@ -173,6 +179,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["misconceptions"]["Insert"]>;
+        Relationships: [];
       };
 
       curriculum_recommendations: {
@@ -199,6 +206,7 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["curriculum_recommendations"]["Insert"]
         >;
+        Relationships: [];
       };
 
       questions: {
@@ -231,6 +239,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["questions"]["Insert"]>;
+        Relationships: [];
       };
 
       assessment_sessions: {
@@ -257,6 +266,7 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["assessment_sessions"]["Insert"]
         >;
+        Relationships: [];
       };
 
       responses: {
@@ -283,6 +293,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["responses"]["Insert"]>;
+        Relationships: [];
       };
 
       vpc_audit_log: {
@@ -309,6 +320,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["vpc_audit_log"]["Insert"]>;
+        Relationships: [];
       };
 
       question_access_log: {
@@ -333,9 +345,11 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["question_access_log"]["Insert"]
         >;
+        Relationships: [];
       };
     };
 
+    Views: { [_ in never]: never };
     Functions: {
       app_current_parent_id: {
         Args: Record<string, never>;
@@ -400,6 +414,7 @@ export type Database = {
         | "center_removed"
         | "center_grace_expired";
     };
+    CompositeTypes: { [_ in never]: never };
   };
 };
 
