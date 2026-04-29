@@ -69,11 +69,13 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
     email: data.email,
     password: data.password,
     options: {
-      // Where Supabase sends the parent after they click the verify link.
-      // /coppa is the consent-confirmation surface for now; later cycles
-      // will swap this to a /verify-callback handler that writes the
-      // verification_succeeded audit row and forwards to /add-child.
-      emailRedirectTo: origin ? `${origin}/coppa` : undefined,
+      // After the parent clicks the email link, Supabase redirects them
+      // to /auth/callback, which exchanges the code for a session,
+      // writes the verification_clicked + verification_succeeded audit
+      // rows, then forwards to /coppa.
+      emailRedirectTo: origin
+        ? `${origin}/auth/callback?next=/coppa`
+        : undefined,
     },
   });
   if (signupErr || !signup.user) {

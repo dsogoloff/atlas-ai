@@ -20,8 +20,29 @@
 //    with the real S.A.M. / Inspirea Labs privacy contact before launch.
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function CoppaPage() {
+// Force dynamic so Next.js doesn't statically prerender — we read
+// searchParams to forward stale email-link `?code=` values to the
+// /auth/callback Route Handler (where cookies can be set).
+export const dynamic = "force-dynamic";
+
+interface Props {
+  searchParams: Promise<{ code?: string }>;
+}
+
+export default async function CoppaPage({ searchParams }: Props) {
+  const { code } = await searchParams;
+
+  // Old verification emails (sent before the /auth/callback handler
+  // existed) point directly here with `?code=`. Forward them to the
+  // proper callback so the session cookie gets set and audit rows
+  // get written. After the handler does its work it redirects back
+  // here with a clean URL.
+  if (code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/coppa`);
+  }
+
   return (
     <main className="flex items-center justify-center min-h-[calc(100vh-80px)] p-6 md:p-12 relative overflow-hidden flex-1">
       {/* Background mascot decoration */}
