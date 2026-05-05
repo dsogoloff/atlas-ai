@@ -30,7 +30,7 @@ Atlas Assessment replaces this with an AI-adaptive, interactive experience that 
 - Question bank must cover **6 strands**: Number Sense, Operations (add/sub/mult/div), Word Problems, Fractions/Decimals, Geometry, Measurement & Data.
 - Termination criteria: confidence threshold on placement level (e.g., 90% posterior probability) OR max 25 questions, whichever comes first.
 - Target session length: **~15 minutes** for a child.
-- The engine should track response time per question (useful for Phase 2 fluency analysis).
+- The engine tracks response time per question. V1 uses this for response time flagging (§2); Phase 2 will additionally use it for fluency analysis (see Phase 2 table below).
 
 **Question bank requirements**:
 - Minimum 10 items per strand per half-grade level = ~10 × 6 × 24 levels = **~1,440 items** for full K-8 coverage.
@@ -50,7 +50,12 @@ Question {
   format: enum [MULTIPLE_CHOICE, NUMERIC_ENTRY, DRAG_DROP]
   content: QuestionContent  // text, images, answer options, correct answer
   misconception_tags: string[]  // e.g., ["no_regrouping", "place_value_confusion"]
-  time_expected_seconds: int
+  // Time-norm tags — see §2 Response Time Flagging. Blocking: items missing
+  // any of these cannot be served by the engine.
+  word_count: int             // stem only, exclude answer choices
+  operation_type: enum        // see §2 for full enumeration
+  num_operations: int         // discrete operations the student must perform (≥1)
+  representation: enum [SYMBOLIC, PICTORIAL, BAR_MODEL_REQUIRED, WORD_PROBLEM_SINGLE, WORD_PROBLEM_MULTI]
 }
 
 AssessmentSession {
@@ -66,8 +71,12 @@ Response {
   question_id: string
   answer_given: string
   is_correct: boolean
-  time_taken_seconds: int
+  time_taken_sec: numeric       // sub-second precision required for §2 invalid floor
   timestamp: timestamp
+  // Time-flag fields — see §2 Response Time Flagging
+  expected_time_sec: numeric
+  time_ratio: numeric
+  time_flag: enum [INVALID, TOO_FAST, TOO_SLOW, NORMAL]
 }
 
 PlacementEstimate {
@@ -76,25 +85,35 @@ PlacementEstimate {
   confidence: float
 }
 ```
+
 ### 2. Response Time Flagging
 
-Location: `src/lib/timeFlagging/`
+**What it does**: Captures elapsed time per response and flags suspicious patterns — both at the item level (accidental tap, guess, struggle) and at the session level (rushed, struggling, mixed, unreliable). Used as a **secondary signal** that caveats the parent report and feeds the misconception detector. Does **not** adjust correctness scores in v1.
 
-Every response captures elapsed time and is flagged via `flagResponseTime()`:
-- `invalid` (< 1.0s) — accidental tap, excluded from session metrics
-- `too_fast` (< 40% expected) — possible guess
-- `too_slow` (> 250% expected) — possible struggle
-- `normal` — within tolerance
+**Implementation notes**:
+- Module location: `src/lib/timeFlagging/` — see the module README for full API, calibration plan, and the synthetic norm table.
+- **Per-response flags** via `flagResponseTime()`:
+  - `INVALID` — `< 1.0s`. Sub-second response, almost certainly an accidental tap or double-submit. Excluded from session-level rushed/struggling computations so a single stray tap doesn't dilute genuine patterns.
+  - `TOO_FAST` — `< 40%` of expected time. Possible guess / pattern-match. Surfaced to misconception detector as a confidence-lowering signal on correct answers (§3).
+  - `TOO_SLOW` — `> 250%` of expected time. Possible struggle, distraction, or interruption.
+  - `NORMAL` — within tolerance.
+- **Session-level rollup** via `aggregateSessionFlags()` at session close:
+  - `unreliable` — ≥20% invalid items. Recommend re-take; do not surface diagnostic results to the parent.
+  - `rushed` — ≥30% too_fast over valid items. Caveat the report ("completed quickly; consider re-take to confirm").
+  - `struggling` — ≥25% too_slow over valid items. Caveat differently ("engaged thoughtfully but found the material challenging — placement may underestimate ceiling").
+  - `mixed` — both thresholds met. Recommend re-take.
+  - `normal` — surface results without time-based caveat.
+- **Expected time formula**: `T_expected = T_read + T_solve + T_input`, computed per item from the four time-norm tags on `Question` (§1) plus `level` (mapped to half-grade) and `format` (mapped to input format). Synthetic norms grounded in published reading-fluency (Hasbrouck & Tindal 2017) and math-computation (AIMSweb / easyCBM) data; bar-model and Singapore-Math-specific multipliers are expert-estimated and flagged as the first calibration target.
+- **Norm config is versioned and swappable**: `DEFAULT_CONFIG` in the module is synthetic. Once ≥200–300 responses per item exist, replace with an empirical config of the same shape — no callsite changes. Store config `version` on every response row for audit / re-analysis.
+- **Hard rule (v1)**: time is a SECONDARY signal. Score-adjustment from time is explicitly out of scope. Per `architecture.md` LLM-discipline pattern, the flagger is pure deterministic TypeScript — never LLM-driven.
+- **Accessibility**: extended-time accommodations must be handled upstream by skipping flagging for flagged accounts. Schema for accommodations TBD; until then, flagging is universal.
 
-Sessions are rolled up via `aggregateSessionFlags()` at session close, producing `unreliable` / `rushed` / `struggling` / `mixed` / `normal`.
+**Item tagging contract**: every question must carry the four time-norm tag fields added to the `Question` data model in §1 (`word_count`, `operation_type`, `num_operations`, `representation`). These are **blocking** — items missing any of them cannot be served by the engine. The S.A.M. content authoring workflow must enforce this at item-creation time; this is a prerequisite for the licensing handoff (per `architecture.md` decision #5).
 
-**Hard rule:** time is a SECONDARY signal. Do NOT adjust correctness scores based on time in V1. Time flags only caveat the parent report and feed the misconception detector.
+**Data model**: see schema additions to `Question` and `Response` in §1. Supabase migration: `supabase/migrations/<timestamp>_add_response_time_flags.sql`. Per `architecture.md` guardrail #1, the new columns inherit `tenant_id`-based RLS via the parent `responses` row; no separate policy work needed.
 
-**Item tagging contract:** every question in the bank must carry all 6 fields in `ItemTags` (`half_grade`, `word_count`, `operation_type`, `num_operations`, `representation`, `input_format`). This is blocking — items missing tags cannot be served.
+**Relationship to Phase 2 Fluency Analysis**: this section ships flagging only — using time to caveat results and detect suspicious patterns. Using time to inform the placement decision itself (distinguishing "knows it cold" from "figured it out slowly") is the Phase 2 fluency feature listed below.
 
-**Supabase:** `responses` table has `time_flag`, `expected_time_sec`, `time_ratio` columns. Migration: `supabase/migrations/<timestamp>_add_response_time_flags.sql`.
-
-**Calibration:** `DEFAULT_CONFIG` is synthetic. Swap to empirical config once ≥200–300 responses per item exist. See module README for details.
 ### 3. Misconception Detection
 
 **What it does**: When a child answers incorrectly, the system identifies *which* misconception likely caused the error — not just that the answer was wrong.
@@ -207,7 +226,7 @@ Child {
 
 **What it does**: Lets a S.A.M. instructor view assessment results for the children whose parents have selected the instructor's center as their home center, surface pedagogical recommendations, and track cohort-level patterns.
 
-**Access model**: Center-based, not per-child assignment. An instructor is associated with a center; the instructor sees children whose `home_center_id` matches the instructor's `center_id`. This aligns with the school-operator consent extension in §5 — parents have already consented to disclosure to instructors at their selected center, so no per-child approval step is required.
+**Access model**: Center-based, not per-child assignment. An instructor is associated with a center; the instructor sees children whose `home_center_id` matches the instructor's `center_id`. This aligns with the school-operator consent extension in §6 — parents have already consented to disclosure to instructors at their selected center, so no per-child approval step is required.
 
 **Scope (v1)**:
 - **Login** — separate entry point from parent signup. Instructor accounts are provisioned by S.A.M. (no self-signup in v1).
@@ -215,7 +234,7 @@ Child {
 - **Individual student report** — same diagnostic report parents see, plus a **Pedagogical Notes** section (suggested first lesson focus, recommended S.A.M. worksheets, instructor-authored notes after first session).
 - **Cohort view** — placement distribution chart, top-5 misconceptions across the center's children, summary stats (avg placement, avg time to complete, children needing attention).
 
-**Data model (additive on top of §5)**:
+**Data model (additive on top of §6)**:
 ```
 Instructor {
   id: string                   // domain UUID
@@ -240,7 +259,7 @@ PedagogicalNote {
 ```
 
 **Implementation notes**:
-- RLS: an instructor can read a child's assessment data when (a) `instructor.tenant_id == child.tenant_id` and (b) `instructor.status == ACTIVE` and (c) either `instructor.center_id == child.home_center_id` (active enrollment) **or** `instructor.center_id == child.prior_center_id` AND the prior-center revocation is within the 30-day grace window (read-only access; see §5 *Revocation with 30-day grace*). After day 30 of revocation, prior-center access is hard-revoked. The Compliance Agent must produce explicit RLS test cases for: (i) instructor cannot see children at other centers, (ii) deactivated instructors cannot read any data, (iii) prior-center instructors retain read-only access during the 30-day grace and lose all access after, (iv) a child whose parent set `home_center_id` to null is invisible to all instructors after the grace expires.
+- RLS: an instructor can read a child's assessment data when (a) `instructor.tenant_id == child.tenant_id` and (b) `instructor.status == ACTIVE` and (c) either `instructor.center_id == child.home_center_id` (active enrollment) **or** `instructor.center_id == child.prior_center_id` AND the prior-center revocation is within the 30-day grace window (read-only access; see §6 *Revocation with 30-day grace*). After day 30 of revocation, prior-center access is hard-revoked. The Compliance Agent must produce explicit RLS test cases for: (i) instructor cannot see children at other centers, (ii) deactivated instructors cannot read any data, (iii) prior-center instructors retain read-only access during the 30-day grace and lose all access after, (iv) a child whose parent set `home_center_id` to null is invisible to all instructors after the grace expires.
 - Pedagogical notes are visible to instructors at the child's current `home_center_id` and follow the child to a new center on a center change (continuity of care). Authorship (`instructor_id` and the authoring center, captured at write time) is preserved on each note so the new-center instructor knows the source. Notes are never visible to parents.
 - Cohort view aggregates only over the instructor's own `center_id`'s active children — children in the 30-day prior-center grace window do not appear in the new center's cohort stats until grace expires (avoids double-counting).
 - A `Phase 2` finer-grained model (`InstructorChildAssignment` for per-child instructor pairing within a center) can be added later as an additive table without schema changes to `Instructor` or `Child`.
@@ -254,9 +273,9 @@ These are **not** in scope for the initial build but should be considered in arc
 | Feature | Description |
 |---------|-------------|
 | **Growth Tracking** | Compare assessment results over time. Dashboard showing level progression per strand across multiple sessions (e.g., 3-month intervals). |
-| **Fluency Analysis** | Use response time data to distinguish "knows it" from "can figure it out slowly." Report fluency vs. accuracy separately. |
+| **Fluency Analysis** | Use response time data to inform the placement decision itself — distinguish "knows it cold" from "figured it out slowly," reporting fluency vs. accuracy as separate dimensions. (V1 uses time only for flagging suspicious patterns per §2; this Phase 2 feature uses it as a primary signal in placement.) |
 | **Curriculum-Agnostic Mode** | Support placement into Primary Mathematics and other Singapore Math series, not just Dimensions Math. |
-| **School Customer Tier** | Multi-school / multi-classroom administration, FERPA layer, school-as-data-controller consent model. (The single-instructor view ships in v1 per §6 above; this is the multi-org wrapper around it.) |
+| **School Customer Tier** | Multi-school / multi-classroom administration, FERPA layer, school-as-data-controller consent model. (The single-instructor view ships in v1 per §7 above; this is the multi-org wrapper around it.) |
 | **Embeddable Widget** | Allow homeschool bloggers and curriculum sites to embed Atlas assessment via iframe/SDK. |
 
 ---
@@ -289,4 +308,5 @@ These are **not** in scope for the initial build but should be considered in arc
 2. ~~**LLM provider**~~ — Resolved (`architecture.md` #3): Anthropic Claude. Haiku 4.5 for high-volume misconception classification (<2s budget), Sonnet for report narrative (5–10s budget acceptable).
 3. ~~**Pricing model**~~ — Resolved (`architecture.md` #8): no paywall in v1, free pilot. Schema includes `subscription_tier` field set to `pilot` so tiers can be introduced later as a data migration.
 4. **Pilot plan**: How many families for beta? Suggest 50–100 homeschool families via Singapore Math community forums for initial validation. (S.A.M. parent network as alternative source — see `architecture.md` open question #3.)
-5. ~~**Instructor-COPPA consent model**~~ — Resolved: blanket "school operator" consent at signup. The parent selects a `home_center_id` during signup; the consent text explicitly covers ongoing disclosure of the child's assessment data to instructors at the selected center. Revocation is handled by changing `home_center_id` in account settings — RLS stops returning the child's data to prior-center instructors on the next request. See §5 *School operator consent*. Privacy notice text covering this disclosure must be reviewed by counsel before launch (a `compliance.md` §2 update is also pending).
+5. ~~**Instructor-COPPA consent model**~~ — Resolved: blanket "school operator" consent at signup. The parent selects a `home_center_id` during signup; the consent text explicitly covers ongoing disclosure of the child's assessment data to instructors at the selected center. Revocation is handled by changing `home_center_id` in account settings — RLS stops returning the child's data to prior-center instructors on the next request. See §6 *School operator consent*. Privacy notice text covering this disclosure must be reviewed by counsel before launch (a `compliance.md` §2 update is also pending).
+
