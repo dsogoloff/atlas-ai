@@ -76,8 +76,26 @@ PlacementEstimate {
   confidence: float
 }
 ```
+### 2. Response Time Flagging
 
-### 2. Misconception Detection
+Location: `src/lib/timeFlagging/`
+
+Every response captures elapsed time and is flagged via `flagResponseTime()`:
+- `invalid` (< 1.0s) — accidental tap, excluded from session metrics
+- `too_fast` (< 40% expected) — possible guess
+- `too_slow` (> 250% expected) — possible struggle
+- `normal` — within tolerance
+
+Sessions are rolled up via `aggregateSessionFlags()` at session close, producing `unreliable` / `rushed` / `struggling` / `mixed` / `normal`.
+
+**Hard rule:** time is a SECONDARY signal. Do NOT adjust correctness scores based on time in V1. Time flags only caveat the parent report and feed the misconception detector.
+
+**Item tagging contract:** every question in the bank must carry all 6 fields in `ItemTags` (`half_grade`, `word_count`, `operation_type`, `num_operations`, `representation`, `input_format`). This is blocking — items missing tags cannot be served.
+
+**Supabase:** `responses` table has `time_flag`, `expected_time_sec`, `time_ratio` columns. Migration: `supabase/migrations/<timestamp>_add_response_time_flags.sql`.
+
+**Calibration:** `DEFAULT_CONFIG` is synthetic. Swap to empirical config once ≥200–300 responses per item exist. See module README for details.
+### 3. Misconception Detection
 
 **What it does**: When a child answers incorrectly, the system identifies *which* misconception likely caused the error — not just that the answer was wrong.
 
@@ -94,7 +112,7 @@ PlacementEstimate {
 - Fractions: treating numerator/denominator independently, fraction-as-two-numbers misconception, common denominator errors
 - Geometry: perimeter/area confusion, shape property errors
 
-### 3. Strand-Level Diagnostic Report (Parent-Facing)
+### 4. Strand-Level Diagnostic Report (Parent-Facing)
 
 **What it does**: After the assessment, generates a visual report for the parent showing the child's level across each math strand, detected misconceptions, and specific recommendations.
 
@@ -110,7 +128,7 @@ PlacementEstimate {
 - Report should be saveable/shareable as PDF.
 - The curriculum recommendation engine needs a mapping of: strand + level → specific Dimensions Math chapters/sections + supplementary material suggestions.
 
-### 4. Child-Facing Assessment UI
+### 5. Child-Facing Assessment UI
 
 **What it does**: An engaging, interactive interface the child actually uses to take the assessment.
 
@@ -124,7 +142,7 @@ PlacementEstimate {
 
 **Tech stack suggestion**: React (Next.js or Vite), Tailwind CSS, Framer Motion for animations. Mobile-first responsive.
 
-### 5. User Accounts & Session Persistence
+### 6. User Accounts & Session Persistence
 
 **What it does**: Parent creates an account, adds child profiles, assessment sessions are saved.
 
@@ -185,7 +203,7 @@ Child {
 - For MVP, support one assessment per child at a time (can be retaken after completion).
 - Center list is bootstrapped server-side (S.A.M. provides the v1 center roster); no parent-driven center creation in v1.
 
-### 6. Instructor Portal
+### 7. Instructor Portal
 
 **What it does**: Lets a S.A.M. instructor view assessment results for the children whose parents have selected the instructor's center as their home center, surface pedagogical recommendations, and track cohort-level patterns.
 
