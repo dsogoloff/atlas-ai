@@ -416,7 +416,48 @@ The Compliance Agent has authority to halt the cycle. The founder is the only on
 
 ---
 
-## 12. Open Items Pending Resolution
+## 12. Audit Trail and Config-Version Logging
+
+Derived classifications persisted alongside user data must record the version of the algorithm that produced them. This is what makes responses re-analyzable when the algorithm is recalibrated, and what protects the audit trail when classifications change over time.
+
+This applies to time-flagging in v1 and generalizes to misconception detection and placement-engine outputs as those land. The Compliance Agent enforces the version-on-row pattern on every new derived classifier.
+
+### v1 scope — time-flagging
+
+Every response row stores the four flagger-computed fields plus the config version active at write time:
+
+| Column | Purpose |
+|---|---|
+| `responses.expected_time_sec` | Computed T_expected for the (level, format, tags) combination |
+| `responses.time_ratio` | `actualTimeSec / expectedTimeSec` |
+| `responses.time_flag` | Per-response classification: `INVALID` / `TOO_FAST` / `TOO_SLOW` / `NORMAL` |
+| `responses.time_flag_config_version` | `TimeFlagConfig.version` active at flag-time |
+| `responses.used_fallback` | True iff the row's tags came via `withFallbackTags` rather than DB-backed columns |
+
+Session-level rollup (`assessment_sessions.session_time_flag` + `assessment_sessions.time_flag_summary` JSONB) carries the same `time_flag_config_version` so historical sessions stay coherent under newer norms.
+
+### The version-on-row pattern
+
+For any classifier whose outputs are persisted on user data:
+
+1. Outputs include the algorithm version that produced them.
+2. Versions are stamped per-row at write time, never derived from the environment (build hash, git SHA) at read time.
+3. Newer algorithm versions don't overwrite older outputs; they produce new outputs alongside the old ones, or the parent row records both.
+4. Per §4 retention: classifier outputs follow the same 24-month retention as the response data they're derived from.
+
+### Fallback observability
+
+The `used_fallback` field on responses, and the `fallback_count` / `fallback_ratio` aggregates on the session summary, are **diagnostic audit fields**, not user-facing data. They surface when the system has substituted defaults for missing item-tag data — a content-pipeline quality signal the Compliance Agent monitors during pilot to flag upstream tagging gaps.
+
+In production the fallback path should rarely fire: Migration A1 enforces the four norm tags as NOT NULL on the `questions` table, so content reaching the system at all has been tagged. A persistent non-zero `fallback_ratio` across sessions indicates a code path that bypasses the row read — investigate as a content-pipeline bug rather than dismissing as edge-case telemetry.
+
+### Re-analysis and recalibration
+
+When synthetic norms are replaced with empirical norms (≥200–300 responses per item), historical rows are **not** silently re-flagged. They remain stamped with the synthetic version. New responses receive the empirical version. Re-analysis is an explicit audit operation: query the relevant rows by `time_flag_config_version`, re-run the flagger under the new config, and produce a comparison report. Original rows are not modified; the audit trail is preserved.
+
+---
+
+## 13. Open Items Pending Resolution
 
 These are not blockers for engine/schema work but must be resolved before public launch:
 

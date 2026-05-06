@@ -220,7 +220,10 @@ export type Database = {
           format: Database["public"]["Enums"]["question_format"];
           content: Json;
           misconception_tags: string[];
-          time_expected_seconds: number | null;
+          word_count: number;
+          operation_type: Database["public"]["Enums"]["operation_type"];
+          num_operations: number;
+          representation: Database["public"]["Enums"]["representation_kind"];
           is_active: boolean;
           created_at: string;
         };
@@ -234,7 +237,10 @@ export type Database = {
           format: Database["public"]["Enums"]["question_format"];
           content: Json;
           misconception_tags?: string[];
-          time_expected_seconds?: number | null;
+          word_count: number;
+          operation_type: Database["public"]["Enums"]["operation_type"];
+          num_operations: number;
+          representation: Database["public"]["Enums"]["representation_kind"];
           is_active?: boolean;
           created_at?: string;
         };
@@ -251,6 +257,10 @@ export type Database = {
           started_at: string;
           completed_at: string | null;
           current_estimate: Json | null;
+          session_time_flag:
+            | Database["public"]["Enums"]["session_time_flag"]
+            | null;
+          time_flag_summary: Json | null;
           created_at: string;
         };
         Insert: {
@@ -261,6 +271,10 @@ export type Database = {
           started_at?: string;
           completed_at?: string | null;
           current_estimate?: Json | null;
+          session_time_flag?:
+            | Database["public"]["Enums"]["session_time_flag"]
+            | null;
+          time_flag_summary?: Json | null;
           created_at?: string;
         };
         Update: Partial<
@@ -278,6 +292,11 @@ export type Database = {
           answer_given: string;
           is_correct: boolean;
           time_taken_seconds: number;
+          expected_time_sec: number;
+          time_ratio: number;
+          time_flag: Database["public"]["Enums"]["time_flag"];
+          time_flag_config_version: string;
+          used_fallback: boolean;
           detected_misconceptions: string[];
           created_at: string;
         };
@@ -289,6 +308,11 @@ export type Database = {
           answer_given: string;
           is_correct: boolean;
           time_taken_seconds: number;
+          expected_time_sec: number;
+          time_ratio: number;
+          time_flag: Database["public"]["Enums"]["time_flag"];
+          time_flag_config_version: string;
+          used_fallback: boolean;
           detected_misconceptions?: string[];
           created_at?: string;
         };
@@ -401,6 +425,33 @@ export type Database = {
         | "6A" | "6B"
         | "7A" | "7B"
         | "8A" | "8B";
+      operation_type:
+        | "ADDITION"
+        | "SUBTRACTION"
+        | "MULTIPLICATION"
+        | "DIVISION"
+        | "FRACTION_OP"
+        | "DECIMAL_OP"
+        | "PERCENT_OP"
+        | "GEOMETRY"
+        | "MEASUREMENT"
+        | "PATTERN"
+        | "ALGEBRA"
+        | "COUNTING"
+        | "IDENTIFY";
+      representation_kind:
+        | "SYMBOLIC"
+        | "PICTORIAL"
+        | "BAR_MODEL_REQUIRED"
+        | "WORD_PROBLEM_SINGLE"
+        | "WORD_PROBLEM_MULTI";
+      time_flag: "INVALID" | "TOO_FAST" | "TOO_SLOW" | "NORMAL";
+      session_time_flag:
+        | "unreliable"
+        | "rushed"
+        | "struggling"
+        | "mixed"
+        | "normal";
       vpc_event_type:
         | "consent_initiated"
         | "verification_sent"

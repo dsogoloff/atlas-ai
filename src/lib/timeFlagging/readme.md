@@ -1,123 +1,97 @@
-# Response Time Flagging
+# `timeFlagging` — response-time flagging
 
-Synthetic time norms for flagging suspicious response patterns in Atlas AI. **Used as a secondary signal — does not adjust scores in V1.**
+Implements **features.md §2 — Response Time Flagging**.
 
-## Approach
+## Hard rule
 
-Per item, expected time is computed as:
+Time is a **secondary signal**. v1 NEVER adjusts the placement score from time. The flagger produces:
+
+- **Per-response flags** — `INVALID | TOO_FAST | TOO_SLOW | NORMAL`
+- **Session-level rollup** — `unreliable | rushed | struggling | mixed | normal`
+
+Both caveat the parent report and feed misconception detection. Score-as-fluency is **Phase 2** (features.md "Fluency Analysis"), out of scope here.
+
+## Module layout
+
+| File | Purpose |
+|---|---|
+| `types.ts` | Shape types + schema-aligned enums (`TimeFlag`, `SessionTimeFlag`, `OperationType`, `RepresentationKind`, `ItemNormTags`, `FlagInput`, `FlagResult`, `SessionFlagResult`, `SessionSummaryJson`) |
+| `norms.ts` | `TimeFlagConfig` shape + synthetic `DEFAULT_CONFIG` covering K-8 + `DEFAULT_FALLBACK_TAGS` + `TIME_FLAG_CONFIG_VERSION` |
+| `flagger.ts` | Pure functions: `expectedTimeSec`, `flagResponseTime`, `aggregateSessionFlags` |
+| `serialization.ts` | Boundary translation: `withFallbackTags`, `assertFallbackStillNeeded`, `toSessionSummaryJson`, `fromSessionSummaryJson` |
+| `index.ts` | Public barrel |
+| `INTEGRATION.md` | Contract for the response-submit caller (read this if you're wiring the flagger into an API route) |
+
+## Public API at a glance
+
+```ts
+import {
+  flagResponseTime,
+  aggregateSessionFlags,
+  expectedTimeSec,
+  toSessionSummaryJson,
+  fromSessionSummaryJson,
+  withFallbackTags,
+  DEFAULT_CONFIG,
+  TIME_FLAG_CONFIG_VERSION,
+  type FlagInput,
+  type FlagResult,
+  type SessionFlagResult,
+  type ItemNormTags,
+} from "@/lib/timeFlagging";
+```
+
+For end-to-end call shapes (per-response + session-close + how to persist into Postgres), see **`INTEGRATION.md`** in this directory.
+
+## The expected-time formula
 
 ```
 T_expected = T_read + T_solve + T_input
+
+T_read  = (word_count / (oralWcpm[level] × silentReadingMultiplier)) × 60
+T_solve = secondsPerOperation[op_type][level] × num_operations × representation_multiplier
+T_input = inputSecondsByFormat[format]
 ```
 
-Where:
-- `T_read = word_count × seconds_per_word(half_grade)`
-- `T_solve = base_solve_time(operation, half_grade) × num_operations × representation_multiplier`
-- `T_input = input_format_seconds(input_format, half_grade)`
+Reading rates are stored as Hasbrouck & Tindal (2017) **oral** WCPM; the flagger applies `silentReadingMultiplier` (default 1.3) to convert to silent-reading rate. Word-problem reading is silent in normal use, so converting at flag-time keeps the source values traceable to H&T.
 
-Then:
-- `actual < 1.0s` → flag `invalid` (likely accidental tap / double-submit, not a real attempt — checked before ratio bands)
-- `actual / expected < 0.4` → flag `too_fast` (likely guess / pattern-match)
-- `actual / expected > 2.5` → flag `too_slow` (struggle / distraction / interruption)
-- Otherwise → `normal`
+`(op × level)` cells may be `null` to mark off-curriculum combinations (e.g. `ALGEBRA` at `KA`). Hitting a null cell throws in non-production and error-logs in production with a high sentinel — designed to surface content-tagging errors instead of silently producing a normal-looking expected time.
 
-Norms are derived from:
-- **Hasbrouck & Tindal (2017)** silent reading fluency norms
-- **AIMSweb / easyCBM** curriculum-based math computation fluency
-- **Expert estimates** for Singapore Math representation costs (bar model, pictorial)
+## Schema dependencies
 
-## Usage
+- **Migration `20260507000000`** — adds the four NOT NULL norm-tag columns to `questions` (`word_count`, `operation_type`, `num_operations`, `representation`).
+- **Migration `20260507000100`** — drops the unused `questions.time_expected_seconds`.
+- **Migration `20260507000200`** — adds `expected_time_sec`, `time_ratio`, `time_flag`, `time_flag_config_version`, `used_fallback` to `responses` (all NOT NULL); type-widens `responses.time_taken_seconds` to `numeric(10,3)` for sub-second precision; adds `session_time_flag` + `time_flag_summary` to `assessment_sessions`.
 
-```ts
-import { flagResponseTime, ItemTags } from './time-flagging';
+## Calibration plan
 
-const tags: ItemTags = {
-  half_grade: '3.0',
-  word_count: 22,
-  operation_type: 'multi_digit_add_sub_regroup',
-  num_operations: 1,
-  representation: 'word_problem_single',
-  input_format: 'numeric_entry',
-};
+`DEFAULT_CONFIG` is **synthetic**:
 
-const result = flagResponseTime(tags, /* actual_time_sec */ 4.2);
-// {
-//   expected_time_sec: 24.7,
-//   actual_time_sec: 4.2,
-//   ratio: 0.17,
-//   flag: 'too_fast',
-//   components: { t_read: 11.0, t_solve: 11.7, t_input: 4.5 },
-//   reason: 'Answered in 4.2s vs 24.7s expected (17%). Possible guess or pattern-match.'
-// }
-```
+- Reading WCPM grounded in Hasbrouck & Tindal (2017)
+- Per-operation seconds approximated from AIMSweb / easyCBM medians (K-5) and NAEP grade-level proficiency curves (6-8)
+- Bar-model + Singapore-Math representation multipliers expert-estimated
 
-## Item authoring requirements
+Recalibration priority (once ≥200–300 responses per item):
 
-Every question in the bank must be tagged with all 6 fields in `ItemTags`. Add this to the question authoring spec — it's blocking for any item that should be subject to time analysis.
+1. `BAR_MODEL_REQUIRED` multiplier — least-confident parameter
+2. Grades 6A–8B per-operation seconds — extrapolated, not measured
+3. `silentReadingMultiplier` — default 1.3, conservative end of research range
+4. Per-response thresholds (0.4× / 2.5×) — verify against actual response distributions
 
-| Tag | Notes |
-|---|---|
-| `half_grade` | Target placement level, not the student's actual grade |
-| `word_count` | Stem only — exclude answer choices |
-| `operation_type` | Pick the *primary* operation; multi-step problems use the dominant one and bump `num_operations` |
-| `num_operations` | Discrete operations the student must perform (≥1) |
-| `representation` | `bar_model_required` only when student must construct/interpret |
-| `input_format` | UI-determined |
+To swap in empirical norms: build a same-shape `TimeFlagConfig`, bump `version` (e.g. `"empirical-v1.2026-Q3"`), pass it as the optional `config` argument. Every response row stores the `time_flag_config_version` it was scored against, so historical responses can be re-analyzed under newer norms without losing audit trail. See **`compliance.md` §12** for the version-on-row audit policy.
 
-## Supabase integration
+## Escape hatch — `withFallbackTags` and `DEFAULT_FALLBACK_TAGS`
 
-Recommended additions to your `responses` table:
+Production reads NOT NULL columns from `questions` and constructs `ItemNormTags` directly — no fallback. The fallback path exists for tests, ETL probes, and manual tooling that flag without DB-backed tags.
 
-```sql
-ALTER TABLE responses
-  ADD COLUMN time_flag TEXT,                  -- 'invalid' | 'too_fast' | 'too_slow' | 'normal'
-  ADD COLUMN expected_time_sec NUMERIC,
-  ADD COLUMN time_ratio NUMERIC;
+`withFallbackTags(partial)` fills missing fields from `DEFAULT_FALLBACK_TAGS` and fires `assertFallbackStillNeeded` (throws in non-prod, error-logs in prod). The mechanism self-decommissions: when content authoring is fully enforced upstream and the assert no longer fires anywhere, delete `withFallbackTags` and `DEFAULT_FALLBACK_TAGS`. Grep for `REMOVE-WHEN-TAGS-LAND`.
 
-CREATE INDEX idx_responses_time_flag ON responses(time_flag) WHERE time_flag != 'normal';
-```
+## Accessibility
 
-Compute and store on each response submission. Aggregate at session close using `aggregateSessionFlags()`.
+Extended-time accommodations are **not** wired in v1. They must be handled upstream by skipping flagging for accommodated accounts. Schema for accommodations TBD; until then, flagging is universal.
 
-## Session-level aggregation
+## What this module is NOT
 
-Single-item flags are noisy; don't surface them individually to parents. The `aggregateSessionFlags()` helper rolls them up:
-
-- `pct_invalid ≥ 20%` → session flag `unreliable` → recommend re-take; **do not surface diagnostic results** (the data isn't trustworthy). Rushed/struggling are not computed in this case.
-- `pct_too_fast ≥ 30%` (over valid items) → session flag `rushed` → caveat the diagnostic report ("the assessment was completed quickly; consider a re-take to confirm results")
-- `pct_too_slow ≥ 25%` (over valid items) → session flag `struggling` → caveat differently ("your child engaged thoughtfully but found the material challenging — placement may underestimate ceiling")
-- Both rushed and struggling thresholds met → `mixed` → recommend re-take
-
-Note: rushed/struggling percentages are computed over **valid items only** (excluding sub-second responses). This way a single accidental tap doesn't dilute a 6-of-19 rushed pattern down to 6-of-20.
-
-Thresholds (`20% / 30% / 25%`) are starting points. Revisit once you have ~50 sessions of empirical data.
-
-## Versioning & swap-out
-
-`DEFAULT_CONFIG` is the synthetic norm table. When you have ≥200–300 responses per item, replace it with empirical p25/p50/p75 by producing a new `TimeNormConfig` with `source: 'empirical'`. Same code path — no callsite changes.
-
-```ts
-import { flagResponseTime } from './time-flagging';
-import { EMPIRICAL_CONFIG_V2 } from './configs/empirical-2026-q3';
-
-flagResponseTime(tags, actualSec, EMPIRICAL_CONFIG_V2);
-```
-
-Store `version` on every response row so you can re-analyze under newer configs without losing audit trail.
-
-## Calibration TODOs
-
-In rough priority order for empirical refinement:
-
-1. **`bar_model_required` multiplier (1.5)** — least-confident parameter; very specific to Singapore Math and not directly grounded in published norms. First candidate for empirical replacement.
-2. **K-grade norms generally** — sparser research base; expect more drift from synthetic estimates.
-3. **Tolerance bands (0.4× / 2.5×)** — verify against actual response distributions; the lognormal response-time literature suggests these will need to widen for high-difficulty items and tighten for fluency items.
-4. **Multi-step word problem multiplier (1.85)** — likely too coarse; may need to split into 2-step vs 3+ step.
-5. **Grade × operation interactions** — e.g., long division at grade 4.0 may have much higher variance than the point estimate suggests.
-
-## What this does NOT do
-
-- Does not adjust correctness scores (V1 design decision).
-- Does not detect cheating, copying, or external help.
-- Does not account for accessibility needs (extended time accommodations) — handle upstream by skipping flagging for flagged accounts.
-- Does not handle items with no operation (pure recall, definitions) — extend `OperationType` if needed.
+- Not a placement decision input. The IRT/Bayesian engine reads `is_correct` only; flags don't enter placement math. Phase 2's "Fluency Analysis" feature changes that.
+- Not an LLM caller. Per `architecture.md` decision #3, the flagger is pure deterministic TypeScript.
+- Not a cheating detector. It identifies suspicious *patterns* (rushed, struggling, accidental tap) but cannot identify *external help* or *answer-sharing*.
