@@ -90,6 +90,8 @@ PlacementEstimate {
 
 **What it does**: Captures elapsed time per response and flags suspicious patterns — both at the item level (accidental tap, guess, struggle) and at the session level (rushed, struggling, mixed, unreliable). Used as a **secondary signal** that caveats the parent report and feeds the misconception detector. Does **not** adjust correctness scores in v1.
 
+**Implementation status (2026-05-07)**: The flagging library (`src/lib/timeFlagging/`) and the schema columns it depends on (migrations `20260507000000`, `20260507000100`, `20260507000200`) have landed and are fully tested. Integration into the response-submit API and session-close logic is **not** implemented — this branch has no response-submit route yet. The contract for that future caller is documented in `src/lib/timeFlagging/INTEGRATION.md`.
+
 **Implementation notes**:
 - Module location: `src/lib/timeFlagging/` — see the module README for full API, calibration plan, and the synthetic norm table.
 - **Per-response flags** via `flagResponseTime()`:

@@ -147,44 +147,55 @@ from t,
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into questions
   (tenant_id, external_id, strand, level, difficulty, format,
-   content, misconception_tags, time_expected_seconds, is_active)
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active)
 select t.id, external_id, strand::strand, level::half_grade_level,
        difficulty, format::question_format,
-       content::jsonb, misconception_tags, expected, true
+       content::jsonb, misconception_tags,
+       word_count, operation_type::operation_type, num_operations,
+       representation::representation_kind,
+       true
 from t,
   (values
-    -- KA / Number Sense / Multiple Choice
+    -- KA / Number Sense / Multiple Choice — symbolic addition
     ('PLACEHOLDER-Q-001', 'NUMBER_SENSE', 'KA', -2.0, 'MULTIPLE_CHOICE',
        '{"stem":"PLACEHOLDER — 1 + 1 = ?","options":["1","2","3"],'
        '"correct_index":1,'
        '"distractor_misconceptions":{"0":"NS_COUNTING_ERROR",'
                                     '"2":"NS_COUNTING_ERROR"}}',
-       array['NS_COUNTING_ERROR'], 20),
-    -- 2B / Operations / Multiple Choice (with classic regrouping distractor)
+       array['NS_COUNTING_ERROR'],
+       0, 'ADDITION', 1, 'SYMBOLIC'),
+    -- 2B / Operations / Multiple Choice — symbolic subtraction with regrouping
     ('PLACEHOLDER-Q-002', 'OPERATIONS', '2B', 0.0, 'MULTIPLE_CHOICE',
        '{"stem":"PLACEHOLDER — 47 - 19 = ?","options":["28","38","26","32"],'
        '"correct_index":0,'
        '"distractor_misconceptions":{"1":"OP_NO_REGROUPING",'
                                     '"2":"OP_SUBTRACTION_DIRECTION",'
                                     '"3":"OP_NO_REGROUPING"}}',
-       array['OP_NO_REGROUPING','OP_SUBTRACTION_DIRECTION'], 30),
-    -- 3A / Word Problems / Numeric Entry
+       array['OP_NO_REGROUPING','OP_SUBTRACTION_DIRECTION'],
+       0, 'SUBTRACTION', 1, 'SYMBOLIC'),
+    -- 3A / Word Problems / Numeric Entry — single-step word problem
     ('PLACEHOLDER-Q-003', 'WORD_PROBLEMS', '3A', 0.4, 'NUMERIC_ENTRY',
        '{"stem":"PLACEHOLDER — Maya has 24 stickers. She gives 8 to her '
        'brother. How many does she have left?","correct_answer":"16"}',
-       array['WP_OPERATION_SELECTION'], 60),
-    -- 4A / Fractions / Drag & Drop (visual stub)
+       array['WP_OPERATION_SELECTION'],
+       16, 'SUBTRACTION', 1, 'WORD_PROBLEM_SINGLE'),
+    -- 4A / Fractions / Drag & Drop — pictorial fraction ordering
     ('PLACEHOLDER-Q-004', 'FRACTIONS_DECIMALS', '4A', 1.0, 'DRAG_DROP',
        '{"stem":"PLACEHOLDER — Drag the fractions in order from smallest '
        'to largest.","items":["1/2","1/4","3/4","1/3"],'
        '"correct_order":["1/4","1/3","1/2","3/4"]}',
-       array['FR_FRACTION_AS_TWO_NUMS'], 90),
+       array['FR_FRACTION_AS_TWO_NUMS'],
+       9, 'FRACTION_OP', 1, 'PICTORIAL'),
     -- 6A / Geometry / Multiple Choice (extends past MVP-spec K-5B
     -- to exercise the K-8 enum)
     ('PLACEHOLDER-Q-005', 'GEOMETRY', '6A', 1.5, 'MULTIPLE_CHOICE',
        '{"stem":"PLACEHOLDER — A 5x3 rectangle. What is its perimeter?",'
        '"options":["8","15","16","30"],"correct_index":2,'
        '"distractor_misconceptions":{"1":"GE_PERIMETER_AREA"}}',
-       array['GE_PERIMETER_AREA'], 45)
+       array['GE_PERIMETER_AREA'],
+       7, 'GEOMETRY', 1, 'SYMBOLIC')
   ) as v(external_id, strand, level, difficulty, format,
-         content, misconception_tags, expected);
+         content, misconception_tags,
+         word_count, operation_type, num_operations, representation);
