@@ -84,5 +84,11 @@ export interface TerminationDecision {
   reason:
     | "confidence-threshold-met"
     | "max-questions-reached"
-    | "in-progress";
+    | "in-progress"
+    // Set by the response-submit handler (NOT by shouldTerminate) when the
+    // question picker reports the requested strand has no unserved items
+    // left. Bubbled into this enum so wire-format consumers see one
+    // consistent termination_reason regardless of who closed the session.
+    // See src/lib/questionPicker/picker.ts and src/lib/responseSubmit/handler.ts.
+    | "bank-exhausted";
 }

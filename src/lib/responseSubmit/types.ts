@@ -18,6 +18,7 @@ import type {
   PlacementEstimate,
   Strand,
 } from "@/lib/engine/types";
+import type { ClientQuestion } from "@/lib/questionPicker/types";
 import type { TimeFlag } from "@/lib/timeFlagging";
 
 // ---------------------------------------------------------------------------
@@ -52,15 +53,29 @@ export interface PlacementEstimateJson {
   confidence: number;
 }
 
+/** Wire-shape termination reasons. Narrower than engine's
+ *  TerminationDecision.reason — drops 'in-progress' (only ever emitted
+ *  while done === false, never on a terminal response). */
+export type TerminationReasonWire =
+  | "confidence-threshold-met"
+  | "max-questions-reached"
+  | "bank-exhausted";
+
 export interface SubmitResponseBody {
   is_correct: boolean;
   time_flag: TimeFlag;
   done: boolean;
-  /** Present iff done === false. Strand + difficulty band the engine wants
-   *  next. The actual question pick is a separate route (planned). */
+  /** Present iff done === false. Strand + difficulty band the engine
+   *  wants next — diagnostic alongside next_question. */
   next_request?: NextRequestJson;
+  /** Present iff done === false. The actual picked question (already
+   *  audit-logged server-side); the client renders this directly without
+   *  a follow-up fetch. compliance.md §8 — content is allowlist-stripped. */
+  next_question?: ClientQuestion;
   /** Present iff done === true. Mirror of assessment_sessions.current_estimate. */
   placement?: PlacementEstimateJson;
+  /** Present iff done === true. Why the session closed. */
+  termination_reason?: TerminationReasonWire;
 }
 
 // ---------------------------------------------------------------------------
