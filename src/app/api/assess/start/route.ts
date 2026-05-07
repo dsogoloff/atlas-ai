@@ -1,21 +1,20 @@
-// POST /api/assess/submit
+// POST /api/assess/start
 //
-// Thin shell over `submitResponseHandler` (lib/responseSubmit/handler.ts).
-// All real logic — auth, ownership, idempotency, engine update, time
-// flagging, persistence, session-close aggregation — lives in the handler
-// so it can be unit-tested without spinning up Next.js.
+// Thin shell over `sessionStartHandler` (lib/sessionStart/handler.ts).
+// All real logic — auth, ownership, existing-session resume, picker,
+// audit logging, rollback on first-pick exhaustion — lives in the
+// handler so it can be unit-tested without spinning up Next.js.
 //
-// Wire format and error semantics: see lib/responseSubmit/types.ts.
+// Wire format and error semantics: see lib/sessionStart/types.ts.
 
 import { NextResponse, type NextRequest } from "next/server";
 
 import { extractClientIp } from "@/lib/questionAccessLog/log";
-import { submitResponseHandler } from "@/lib/responseSubmit/handler";
-import { SubmitRequestSchema } from "@/lib/responseSubmit/types";
+import { sessionStartHandler } from "@/lib/sessionStart/handler";
+import { StartRequestSchema } from "@/lib/sessionStart/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
-  // Body parsing — JSON syntax errors and Zod validation both map to 400.
   let raw: unknown;
   try {
     raw = await request.json();
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = SubmitRequestSchema.safeParse(raw);
+  const parsed = StartRequestSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
       { error: { code: "invalid_body", message: parsed.error.message } },
@@ -38,20 +37,20 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceClient();
   const ip = extractClientIp(request.headers);
 
-  // The handler returns SubmitHandlerResult for all known error paths.
-  // The catch is defensive — judgeAnswer can throw on malformed
-  // questions.content (a content-authoring bug); we log and return a
-  // generic 500 so the stack trace doesn't leak in the response body.
+  // Defensive catch: the handler returns StartHandlerResult for known
+  // error paths, but pickQuestion's content-type guards (and any future
+  // unexpected throws) can leak. Map to a generic 500 without exposing
+  // the stack trace.
   let result;
   try {
-    result = await submitResponseHandler({
+    result = await sessionStartHandler({
       request: parsed.data,
       rlsClient,
       serviceClient,
       ip,
     });
   } catch (e) {
-    console.error("[submit] unhandled error", e);
+    console.error("[start] unhandled error", e);
     return NextResponse.json(
       { error: { code: "internal", message: "internal error" } },
       { status: 500 },
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (result.ok) {
-    return NextResponse.json(result.body, { status: 200 });
+    return NextResponse.json(result.body, { status: result.status });
   }
 
   return NextResponse.json(

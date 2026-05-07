@@ -48,6 +48,11 @@
 //       (c1) UPDATE assessment_sessions.status='COMPLETED' + completed_at
 //       (c2) Re-read responses, aggregateSessionFlags, UPDATE
 //            assessment_sessions.session_time_flag + time_flag_summary
+//   (d) ELSE pick the next question (Layer 1.5 picker), write
+//       question_access_log, attach next_question to response body.
+//       If the picker reports strand-exhausted, run (c1)+(c2) with a
+//       'bank-exhausted' termination reason and return placement
+//       instead of next_question.
 //
 // Pragmatic, NOT transactional. Partial-failure modes:
 //
@@ -65,6 +70,32 @@
 //     as a 500; on retry the idempotency path re-attempts (c2) (which is
 //     why we don't gate it on session.status — see the existing-response
 //     handling below).
+//
+//   * Failure between (b) and (d): response is in DB; current_estimate
+//     is fresh; no next_question was picked or logged. Idempotent retry
+//     finds the existing response, sees no outstanding audit-log entry,
+//     re-runs the picker, and writes a fresh log row. Audit log stays
+//     accurate (one row per actual serve).
+//
+// =============================================================================
+// Idempotent retry semantics
+// =============================================================================
+//
+// On retry of an already-submitted (session, question), the existing-
+// response branch returns the SAME wire shape the original successful
+// call would have. Specifically, for the non-terminal case:
+//
+//   * findOutstandingQuestion locates the question the original call
+//     already picked + audit-logged (its log row has no matching response
+//     yet). We return that as next_question with NO new log row.
+//   * If no outstanding row exists (the original call crashed between (b)
+//     and (d) before logging), we re-run the picker and write a fresh
+//     audit log. Per compliance.md §8 every actual serve gets exactly
+//     one log row; a network retry of a successful response is NOT a
+//     new serve.
+//
+// This is "Option A" from the design memo — idempotent on the wire,
+// audit-log-accurate, one extra cheap query per retry.
 //
 // =============================================================================
 // Concurrency
@@ -90,7 +121,13 @@ import {
 import type {
   EngineQuestion,
   EngineResponse,
+  TerminationDecision,
 } from "@/lib/engine/types";
+import { logQuestionServe } from "@/lib/questionAccessLog/log";
+import { pickQuestion } from "@/lib/questionPicker/picker";
+import { toClientQuestion } from "@/lib/questionPicker/serialize";
+import type { PickedQuestionRow } from "@/lib/questionPicker/types";
+import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import {
   aggregateSessionFlags,
@@ -109,18 +146,24 @@ import {
   type SubmitHandlerResult,
   type SubmitRequest,
   type SubmitResponseBody,
+  type TerminationReasonWire,
 } from "./types";
 
 interface HandlerInput {
   request: SubmitRequest;
   rlsClient: SupabaseClient<Database>;
   serviceClient: SupabaseClient<Database>;
+  /** Client IP from extractClientIp(); null if no trusted header was
+   *  present. Forwarded to question_access_log inserts when a new
+   *  question is served. */
+  ip: string | null;
 }
 
 export async function submitResponseHandler({
   request,
   rlsClient,
   serviceClient,
+  ip,
 }: HandlerInput): Promise<SubmitHandlerResult> {
   // ---------------------------------------------------------------------------
   // 1. Auth — server-validated user, then the calling parent's row.
@@ -204,13 +247,65 @@ export async function submitResponseHandler({
     // returns the same shape as the first call.
     const state = await replayEngineState(serviceClient, request.session_id);
     const term = shouldTerminate(state);
+
+    if (term.done) {
+      return success({
+        is_correct: existing.is_correct,
+        time_flag: existing.time_flag,
+        done: true,
+        placement: toPlacementEstimateJson(placementEstimate(state)),
+        termination_reason: toWireReason(term.reason),
+      });
+    }
+
+    // Non-terminal retry: prefer the outstanding question (already
+    // picked and logged by the original call) over re-picking. See
+    // "Idempotent retry semantics" in the file header.
+    const outstanding = await findOutstandingQuestion(
+      serviceClient,
+      request.session_id,
+    );
+    if (outstanding) {
+      return success({
+        is_correct: existing.is_correct,
+        time_flag: existing.time_flag,
+        done: false,
+        next_request: toNextRequestJson(nextQuestionRequest(state)),
+        next_question: toClientQuestion(outstanding),
+      });
+    }
+
+    // No outstanding row — the original call crashed between (b) and
+    // (d). Fall through to the same pick-and-log path as a fresh
+    // non-terminal submit.
+    const retryPick = await pickAndMaybeClose(
+      serviceClient,
+      {
+        sessionId: request.session_id,
+        tenantId: parent.tenant_id,
+        childId: session.child_id,
+        ip,
+      },
+      state,
+    );
+    if (retryPick.kind === "error") {
+      return fail("internal", 500, retryPick.message);
+    }
+    if (retryPick.kind === "exhausted") {
+      return success({
+        is_correct: existing.is_correct,
+        time_flag: existing.time_flag,
+        done: true,
+        placement: toPlacementEstimateJson(placementEstimate(state)),
+        termination_reason: "bank-exhausted",
+      });
+    }
     return success({
       is_correct: existing.is_correct,
       time_flag: existing.time_flag,
-      done: term.done,
-      ...(term.done
-        ? { placement: toPlacementEstimateJson(placementEstimate(state)) }
-        : { next_request: toNextRequestJson(nextQuestionRequest(state)) }),
+      done: false,
+      next_request: toNextRequestJson(nextQuestionRequest(state)),
+      next_question: toClientQuestion(retryPick.question),
     });
   }
 
@@ -336,43 +431,55 @@ export async function submitResponseHandler({
     return fail("internal", 500, `estimate update failed: ${estErr.message}`);
   }
 
-  // (c) Termination side-effects.
+  // (c) Engine-driven termination side-effects.
   const term = shouldTerminate(postState);
   if (term.done) {
-    // (c1) Mark session closed. CHECK constraint requires status and
-    //      completed_at to be set together — do both in one UPDATE.
-    const { error: closeErr } = await serviceClient
-      .from("assessment_sessions")
-      .update({
-        status: "COMPLETED",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", request.session_id);
+    const closeMsg = await closeSession(serviceClient, request.session_id);
+    if (closeMsg) return fail("internal", 500, closeMsg);
 
-    if (closeErr) {
-      return fail("internal", 500, `session close failed: ${closeErr.message}`);
-    }
-
-    // (c2) Aggregate + persist summary.
-    const summaryErrMsg = await persistSessionSummary(
-      serviceClient,
-      request.session_id,
-    );
-    if (summaryErrMsg) {
-      return fail("internal", 500, summaryErrMsg);
-    }
+    return success({
+      is_correct: isCorrect,
+      time_flag: flag.flag,
+      done: true,
+      placement: toPlacementEstimateJson(placement),
+      termination_reason: toWireReason(term.reason),
+    });
   }
 
   // ---------------------------------------------------------------------------
-  // 11. Build response body.
+  // (d) Pick next question. If the bank is exhausted in the requested
+  //     strand, treat as a 'bank-exhausted' termination: close the
+  //     session, return placement, and DO NOT write an audit-log row.
   // ---------------------------------------------------------------------------
+  const pickResult = await pickAndMaybeClose(
+    serviceClient,
+    {
+      sessionId: request.session_id,
+      tenantId: parent.tenant_id,
+      childId: session.child_id,
+      ip,
+    },
+    postState,
+  );
+  if (pickResult.kind === "error") {
+    return fail("internal", 500, pickResult.message);
+  }
+  if (pickResult.kind === "exhausted") {
+    return success({
+      is_correct: isCorrect,
+      time_flag: flag.flag,
+      done: true,
+      placement: toPlacementEstimateJson(placement),
+      termination_reason: "bank-exhausted",
+    });
+  }
+
   return success({
     is_correct: isCorrect,
     time_flag: flag.flag,
-    done: term.done,
-    ...(term.done
-      ? { placement: toPlacementEstimateJson(placement) }
-      : { next_request: toNextRequestJson(nextQuestionRequest(postState)) }),
+    done: false,
+    next_request: toNextRequestJson(nextQuestionRequest(postState)),
+    next_question: toClientQuestion(pickResult.question),
   });
 }
 
@@ -432,4 +539,113 @@ function fail(
   message: string,
 ): SubmitHandlerResult {
   return { ok: false, error: { code, status, message } };
+}
+
+// ---------------------------------------------------------------------------
+// Picker integration helpers
+// ---------------------------------------------------------------------------
+
+interface PickContext {
+  sessionId: string;
+  tenantId: string;
+  childId: string;
+  ip: string | null;
+}
+
+type PickAndMaybeCloseResult =
+  | { kind: "picked"; question: PickedQuestionRow }
+  | { kind: "exhausted" }
+  | { kind: "error"; message: string };
+
+/**
+ * Run the picker against `postState`. On success, write the audit log
+ * and return the picked row. On strand-exhaustion, close the session
+ * with bank-exhausted (mirrors the engine-terminate (c1)+(c2) sequence)
+ * and signal to the caller. Errors bubble up as { kind: 'error' }.
+ *
+ * Idempotent retry note: if the session is ALREADY COMPLETED (e.g., a
+ * prior call hit bank-exhausted), the close UPDATE here re-stamps
+ * completed_at to a fresh now(). Acceptable v1 drift; readers shouldn't
+ * rely on completed_at being the moment of first-close. Reading
+ * session.status first to skip would add a query for a corner case.
+ */
+async function pickAndMaybeClose(
+  serviceClient: SupabaseClient<Database>,
+  ctx: PickContext,
+  postState: ReturnType<typeof applyResponse>,
+): Promise<PickAndMaybeCloseResult> {
+  const req = nextQuestionRequest(postState);
+
+  let pick;
+  try {
+    pick = await pickQuestion(serviceClient, req, {
+      tenantId: ctx.tenantId,
+      servedQuestionIds: postState.servedQuestionIds,
+    });
+  } catch (e) {
+    return { kind: "error", message: errorMessage(e) };
+  }
+
+  if (!pick.ok) {
+    // bank-exhausted: run the close sequence and signal exhaustion.
+    const closeMsg = await closeSession(serviceClient, ctx.sessionId);
+    if (closeMsg) return { kind: "error", message: closeMsg };
+    return { kind: "exhausted" };
+  }
+
+  try {
+    await logQuestionServe(serviceClient, {
+      tenantId: ctx.tenantId,
+      sessionId: ctx.sessionId,
+      childId: ctx.childId,
+      questionId: pick.question.id,
+      ip: ctx.ip,
+    });
+  } catch (e) {
+    return { kind: "error", message: errorMessage(e) };
+  }
+
+  return { kind: "picked", question: pick.question };
+}
+
+/**
+ * Close the session: (c1) status=COMPLETED + completed_at, then (c2)
+ * aggregate time-flag summary. Returns null on success, an error string
+ * on failure (caller maps to 500).
+ */
+async function closeSession(
+  serviceClient: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<string | null> {
+  const { error: closeErr } = await serviceClient
+    .from("assessment_sessions")
+    .update({
+      status: "COMPLETED",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", sessionId);
+
+  if (closeErr) return `session close failed: ${closeErr.message}`;
+
+  return persistSessionSummary(serviceClient, sessionId);
+}
+
+function toWireReason(
+  r: TerminationDecision["reason"],
+): TerminationReasonWire {
+  switch (r) {
+    case "confidence-threshold-met":
+    case "max-questions-reached":
+    case "bank-exhausted":
+      return r;
+    case "in-progress":
+      // Defensive: shouldTerminate only returns 'in-progress' alongside
+      // done=false. Reaching here means a caller mistakenly mapped a
+      // non-terminal state to a wire response.
+      throw new Error("[submit] cannot serialize 'in-progress' reason");
+  }
+}
+
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : "unknown";
 }

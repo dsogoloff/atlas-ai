@@ -264,21 +264,35 @@ function expectedInsertFor(timeMs: number, isCorrect = true): ResponseInsertRow 
 // ===========================================================================
 
 describe("submitResponseHandler — happy path mid-session", () => {
-  it("inserts response with all 12 columns, updates current_estimate, returns next_request", async () => {
+  it("inserts response, updates current_estimate, picks next question, writes audit log, returns next_question", async () => {
+    const nextPick = {
+      id: "next-q-1",
+      external_id: "EXT-NEXT",
+      strand: "OPERATIONS",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "next?", options: ["x", "y"] },
+    };
     const svc = makeServiceClient({
       responses: [
         { data: null, error: null }, // existence check
         { data: [], error: null }, // replay responses (empty -> no questions read)
         { data: null, error: null }, // insert response
       ],
-      questions: [{ data: QUESTION, error: null }],
+      questions: [
+        { data: QUESTION, error: null }, // initial question fetch
+        { data: [nextPick], error: null }, // picker
+      ],
       assessment_sessions: [{ data: null, error: null }], // estimate update
+      question_access_log: [{ data: null, error: null }], // log insert
     });
 
     const result = await submitResponseHandler({
       request: makeRequest(),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: "203.0.113.7",
     });
 
     expect(result.ok).toBe(true);
@@ -286,17 +300,34 @@ describe("submitResponseHandler — happy path mid-session", () => {
     expect(result.body.is_correct).toBe(true);
     expect(result.body.done).toBe(false);
     expect(result.body.next_request).toBeDefined();
+    expect(result.body.next_question).toBeDefined();
+    expect(result.body.next_question?.id).toBe(nextPick.id);
+    expect(result.body.next_question?.content).toEqual({
+      stem: "next?",
+      options: ["x", "y"],
+    });
     expect(result.body.placement).toBeUndefined();
+    expect(result.body.termination_reason).toBeUndefined();
 
-    expect(svc.inserts).toHaveLength(1);
-    expect(svc.inserts[0].table).toBe("responses");
-    expect(svc.inserts[0].row).toEqual(expectedInsertFor(5000));
+    // responses INSERT plus question_access_log INSERT.
+    const responseInsert = svc.inserts.find((i) => i.table === "responses");
+    expect(responseInsert?.row).toEqual(expectedInsertFor(5000));
+
+    const logInsert = svc.inserts.find(
+      (i) => i.table === "question_access_log",
+    );
+    expect(logInsert?.row).toMatchObject({
+      tenant_id: PARENT.tenant_id,
+      session_id: SESSION_ID,
+      child_id: CHILD_ID,
+      question_id: nextPick.id,
+      ip_address: "203.0.113.7",
+    });
 
     // current_estimate UPDATE happened.
-    expect(svc.updates).toHaveLength(1);
-    expect(svc.updates[0].table).toBe("assessment_sessions");
-    const estPatch = svc.updates[0].patch as Record<string, unknown>;
-    expect(estPatch.current_estimate).toBeDefined();
+    const estUpdate = svc.updates.find((u) => u.table === "assessment_sessions");
+    expect(estUpdate).toBeDefined();
+    expect((estUpdate!.patch as Record<string, unknown>).current_estimate).toBeDefined();
   });
 });
 
@@ -325,6 +356,7 @@ describe("submitResponseHandler — happy path terminating", () => {
       request: makeRequest(),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: null,
     });
 
     expect(result.ok).toBe(true);
@@ -332,6 +364,9 @@ describe("submitResponseHandler — happy path terminating", () => {
     expect(result.body.done).toBe(true);
     expect(result.body.placement).toBeDefined();
     expect(result.body.next_request).toBeUndefined();
+    expect(result.body.next_question).toBeUndefined();
+    // 24 priors + 1 current = 25 = MAX_QUESTIONS.
+    expect(result.body.termination_reason).toBe("max-questions-reached");
 
     expect(svc.inserts).toHaveLength(1);
     expect(svc.inserts[0].row).toEqual(expectedInsertFor(5000));
@@ -352,13 +387,43 @@ describe("submitResponseHandler — happy path terminating", () => {
 });
 
 describe("submitResponseHandler — idempotent retry", () => {
-  it("returns body computed from post-state and skips the insert", async () => {
+  it("non-terminal retry with outstanding question: returns it as next_question, NO new audit-log row", async () => {
+    // Scenario: original submit succeeded, picked next question, wrote
+    // log row for it, response sent — but the client retried before
+    // receiving the response. On retry, findOutstandingQuestion locates
+    // the already-served-but-unanswered question and we return it
+    // without re-running the picker or writing a duplicate log row.
+    const outstandingQ = {
+      id: "outstanding-q",
+      external_id: "EXT-OUT",
+      strand: "OPERATIONS",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "outstanding?", options: ["o", "p"] },
+    };
     const svc = makeServiceClient({
       responses: [
         { data: { is_correct: true, time_flag: "NORMAL" }, error: null }, // existence hits
-        { data: [], error: null }, // replay responses (empty: handler ran before any insert in test fixture)
+        { data: [], error: null }, // replay responses (empty)
+        { data: [], error: null }, // findOutstanding responses read
       ],
-      questions: [],
+      question_access_log: [
+        // findOutstanding logs read — one outstanding row
+        {
+          data: [
+            {
+              question_id: outstandingQ.id,
+              created_at: "2026-05-07T10:00:00Z",
+            },
+          ],
+          error: null,
+        },
+      ],
+      questions: [
+        // findOutstanding materialises the outstanding row
+        { data: outstandingQ, error: null },
+      ],
       assessment_sessions: [],
     });
 
@@ -366,16 +431,69 @@ describe("submitResponseHandler — idempotent retry", () => {
       request: makeRequest(),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: null,
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.body.is_correct).toBe(true);
     expect(result.body.time_flag).toBe("NORMAL");
+    expect(result.body.done).toBe(false);
+    expect(result.body.next_question?.id).toBe(outstandingQ.id);
 
-    // No insert, no update.
+    // Critical: no new INSERT into responses or question_access_log.
+    // Compliance §8 — retransmissions don't count as new serves.
     expect(svc.inserts).toHaveLength(0);
     expect(svc.updates).toHaveLength(0);
+  });
+
+  it("non-terminal retry without outstanding row: re-runs picker and writes a fresh log", async () => {
+    // Scenario: original submit's response insert succeeded but the
+    // picker/log step crashed before logging. On retry, findOutstanding
+    // returns null, so the handler re-runs the picker and writes a
+    // fresh audit-log row.
+    const freshPick = {
+      id: "fresh-q",
+      external_id: "EXT-FRESH",
+      strand: "OPERATIONS",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "fresh?", options: ["m", "n"] },
+    };
+    const svc = makeServiceClient({
+      responses: [
+        { data: { is_correct: true, time_flag: "NORMAL" }, error: null }, // existence
+        { data: [], error: null }, // replay
+        { data: [], error: null }, // findOutstanding responses
+      ],
+      question_access_log: [
+        { data: [], error: null }, // findOutstanding logs (empty)
+        { data: null, error: null }, // log insert for fresh pick
+      ],
+      questions: [{ data: [freshPick], error: null }], // picker
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: "203.0.113.7",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.next_question?.id).toBe(freshPick.id);
+
+    // No response insert (it already existed), but a fresh log insert.
+    expect(svc.inserts.some((i) => i.table === "responses")).toBe(false);
+    const logInsert = svc.inserts.find(
+      (i) => i.table === "question_access_log",
+    );
+    expect(logInsert?.row).toMatchObject({
+      question_id: freshPick.id,
+      ip_address: "203.0.113.7",
+    });
   });
 });
 
@@ -386,6 +504,7 @@ describe("submitResponseHandler — auth failures", () => {
       request: makeRequest(),
       rlsClient: makeRlsClient({ user: null }),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -402,6 +521,7 @@ describe("submitResponseHandler — auth failures", () => {
         parent: { data: null, error: null },
       }),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -419,6 +539,7 @@ describe("submitResponseHandler — ownership failures", () => {
         session: { data: null, error: null },
       }),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -440,6 +561,7 @@ describe("submitResponseHandler — ownership failures", () => {
         },
       }),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -462,6 +584,7 @@ describe("submitResponseHandler — session/question state errors", () => {
         session: { data: SESSION_COMPLETED, error: null },
       }),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -479,6 +602,7 @@ describe("submitResponseHandler — session/question state errors", () => {
       request: makeRequest(),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -505,6 +629,7 @@ describe("submitResponseHandler — flagger errors", () => {
       request: makeRequest(),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -518,26 +643,40 @@ describe("submitResponseHandler — flagger errors", () => {
 
 describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
   it("persists time_flag=INVALID on the response when time_ms < 1000", async () => {
+    const nextPick = {
+      id: "next-after-invalid",
+      external_id: "EXT-NEXT",
+      strand: "OPERATIONS",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "n?", options: ["a"] },
+    };
     const svc = makeServiceClient({
       responses: [
         { data: null, error: null },
         { data: [], error: null },
         { data: null, error: null },
       ],
-      questions: [{ data: QUESTION, error: null }],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: [nextPick], error: null }, // picker
+      ],
       assessment_sessions: [{ data: null, error: null }],
+      question_access_log: [{ data: null, error: null }], // log insert
     });
     const result = await submitResponseHandler({
       request: makeRequest({ time_ms: 500 }),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.body.time_flag).toBe("INVALID");
 
-    expect(svc.inserts).toHaveLength(1);
-    const row = svc.inserts[0].row as ResponseInsertRow;
+    const respInsert = svc.inserts.find((i) => i.table === "responses");
+    const row = respInsert?.row as ResponseInsertRow;
     expect(row.time_flag).toBe("INVALID");
     expect(row.time_taken_seconds).toBe(0.5);
   });
@@ -565,10 +704,12 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
       request: makeRequest({ time_ms: 500 }),
       rlsClient: makeRlsClient(rlsHappy()),
       serviceClient: svc.client,
+      ip: null,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.body.done).toBe(true);
+    expect(result.body.termination_reason).toBe("max-questions-reached");
 
     const summaryUpdate = svc.updates.find(
       (u) =>
@@ -581,5 +722,59 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
     expect(summary.invalid).toBe(1);
     expect(summary.total).toBe(25);
     expect(summary.normal).toBe(24);
+  });
+});
+
+// ===========================================================================
+// Bank exhaustion mid-session
+// ===========================================================================
+
+describe("submitResponseHandler — bank exhausted mid-session", () => {
+  it("closes the session with bank-exhausted, returns placement, NO audit-log row, NO next_question", async () => {
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null }, // existence
+        { data: [], error: null }, // replay (empty)
+        { data: null, error: null }, // insert response
+        { data: aggRows(1, 0), error: null }, // close summary aggregation
+      ],
+      questions: [
+        { data: QUESTION, error: null }, // initial fetch
+        { data: [], error: null }, // picker → strand-exhausted
+      ],
+      assessment_sessions: [
+        { data: null, error: null }, // estimate update
+        { data: null, error: null }, // close UPDATE
+        { data: null, error: null }, // summary UPDATE
+      ],
+      question_access_log: [], // MUST NOT be written
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: "203.0.113.7",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(true);
+    expect(result.body.termination_reason).toBe("bank-exhausted");
+    expect(result.body.placement).toBeDefined();
+    expect(result.body.next_question).toBeUndefined();
+
+    // Compliance §8 — no audit-log row when no question was served.
+    expect(
+      svc.inserts.some((i) => i.table === "question_access_log"),
+    ).toBe(false);
+
+    // Session closed: status=COMPLETED + completed_at update happened.
+    const closeUpdate = svc.updates.find(
+      (u) =>
+        u.table === "assessment_sessions" &&
+        (u.patch as Record<string, unknown>).status === "COMPLETED",
+    );
+    expect(closeUpdate).toBeDefined();
   });
 });
