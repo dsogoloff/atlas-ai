@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // No-op stub: see vitest.shims/server-only.ts for why.
+      "server-only": path.resolve(__dirname, "./vitest.shims/server-only.ts"),
     },
   },
   test: {

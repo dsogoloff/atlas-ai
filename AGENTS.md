@@ -190,7 +190,7 @@ Prefer single-file or single-test runs during iteration. Full suites are for the
 
 When the user corrects your approach, append a one-line rule here before ending the session. Write it concretely ("Always use X for Y"), never abstractly ("be careful with Y"). If an existing line already covers the correction, tighten it instead of adding a new one. Remove lines when the underlying issue goes away (model upgrades, refactors, process changes).
 
-- (empty)
+- Always paste failure output before proposing a fix. When a typecheck, test, or build fails, the failure message goes into the response first, then the proposed remediation. Do not silently apply a fix while presenting a different rationale, even if the fix is correct. The reviewer needs the failure to validate the diagnosis. (Discovered via Item #2: TS2339 on Supabase .select() concatenation; vitest export-condition mismatch on server-only.)
 
 ---
 
