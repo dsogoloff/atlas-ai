@@ -146,13 +146,14 @@ const SESSION_COMPLETED = {
 };
 
 // A simple KA-level question: ADDITION, SYMBOLIC, no words, MC with answer "A".
+// Content mirrors real seed shape (supabase/seed.sql:162-168): options + correct_index.
 const QUESTION = {
   id: QUESTION_ID,
   strand: "OPERATIONS" as Enums<"strand">,
   level: "KA" as Enums<"half_grade_level">,
   difficulty: 0,
   format: "MULTIPLE_CHOICE" as Enums<"question_format">,
-  content: { correct_answer: "A" } as Json,
+  content: { stem: "1+1=?", options: ["A", "B", "C"], correct_index: 0 } as Json,
   word_count: 0,
   operation_type: "ADDITION" as Enums<"operation_type">,
   num_operations: 1,
