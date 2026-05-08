@@ -152,7 +152,7 @@ Repo name: `atlas-ai`. Product: **Atlas Assessment**, a K-12 adaptive-assessment
 
 ### Stack
 - Language and version: TypeScript 5 (strict)
-- Framework(s): Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4
+- Framework(s): Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4, framer-motion 12 (K-4 question/transition animations; gate with `useReducedMotion`)
 - Package manager: pnpm 10 (Node 20+)
 - Runtime / deployment target: TBD (Next.js default is Vercel)
 
@@ -191,6 +191,8 @@ Prefer single-file or single-test runs during iteration. Full suites are for the
 When the user corrects your approach, append a one-line rule here before ending the session. Write it concretely ("Always use X for Y"), never abstractly ("be careful with Y"). If an existing line already covers the correction, tighten it instead of adding a new one. Remove lines when the underlying issue goes away (model upgrades, refactors, process changes).
 
 - Always paste failure output before proposing a fix. When a typecheck, test, or build fails, the failure message goes into the response first, then the proposed remediation. Do not silently apply a fix while presenting a different rationale, even if the fix is correct. The reviewer needs the failure to validate the diagnosis. (Discovered via Item #2: TS2339 on Supabase .select() concatenation; vitest export-condition mismatch on server-only.)
+- Use `pnpm add -w <pkg>` to add dependencies, not `pnpm add <pkg>`. The repo has a `pnpm-workspace.yaml` (used only for `ignoredBuiltDependencies`) with no `packages` field, which trips pnpm 10.33.3's recursive install path with `Cannot destructure property 'manifest' of 'manifestsByPath[rootDir]' as it is undefined`. The `-w` flag (workspace-root) bypasses the recursive resolver. (Discovered via Item #5: `pnpm add framer-motion`.)
+- When referencing schema enums, route shapes, or any other contract surface, read the source of truth (`database.types.ts`, the relevant `types.ts`, the route handler) rather than inferring from surrounding code or memory. Reasoning from context produces fabricated values that ship past the gate. (Discovered via Item #1: sam-placement schema divergence; recurred in Item #5: fabricated `NUMBER_OPERATIONS` / `ALGEBRAIC_THINKING` strand names instead of reading the enum from `database.types.ts:411-417`.)
 
 ---
 

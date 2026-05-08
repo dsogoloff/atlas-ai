@@ -1,0 +1,246 @@
+// Tests for the /start and /submit fetch wrappers.
+// fetch is stubbed via vi.stubGlobal — vitest config runs in node environment
+// so the global is replaceable. Each test installs a fresh mock implementation.
+
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type { StartResponseBody } from "@/lib/sessionStart/types";
+import type { SubmitResponseBody } from "@/lib/responseSubmit/types";
+
+import {
+  startSession,
+  submitResponse,
+  type ApiErrorKind,
+} from "./api";
+
+const startBody: StartResponseBody = {
+  session_id: "00000000-0000-4000-8000-000000000001",
+  question: {
+    id: "00000000-0000-4000-8000-000000000002",
+    strand: "OPERATIONS",
+    level: "3A",
+    format: "MULTIPLE_CHOICE",
+    content: { stem: "1+1?", options: ["1", "2", "3", "4"] },
+  },
+  next_request: { strand: "OPERATIONS", target_difficulty: 0, width: 0.5 },
+};
+
+const submitBodyNext: SubmitResponseBody = {
+  is_correct: true,
+  time_flag: "NORMAL",
+  done: false,
+  next_request: { strand: "OPERATIONS", target_difficulty: 0.2, width: 0.5 },
+  next_question: {
+    id: "00000000-0000-4000-8000-000000000003",
+    strand: "OPERATIONS",
+    level: "3A",
+    format: "NUMERIC_ENTRY",
+    content: { stem: "2+2?" },
+  },
+};
+
+const submitBodyDone: SubmitResponseBody = {
+  is_correct: true,
+  time_flag: "NORMAL",
+  done: true,
+  placement: {
+    overall_level: "3A",
+    strand_levels: {
+      OPERATIONS: "3A",
+      NUMBER_SENSE: "3A",
+      WORD_PROBLEMS: "2B",
+      FRACTIONS_DECIMALS: "2B",
+      GEOMETRY: "2B",
+      MEASUREMENT_DATA: "2B",
+    },
+    confidence: 0.85,
+  },
+  termination_reason: "confidence-threshold-met",
+};
+
+function mockFetchOnce(status: number, body: unknown): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "content-type": "application/json" },
+      }),
+    ),
+  );
+}
+
+function mockFetchThrows(): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw new TypeError("network down");
+    }),
+  );
+}
+
+function mockFetchMalformed(status: number): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      new Response("not-json{", {
+        status,
+        headers: { "content-type": "application/json" },
+      }),
+    ),
+  );
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("startSession", () => {
+  it("200 → ok with status 200 and body", async () => {
+    mockFetchOnce(200, startBody);
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.status).toBe(200);
+      expect(r.body.session_id).toBe(startBody.session_id);
+    }
+  });
+
+  it("409 (resume) → ok with status 409 and body (NOT an error)", async () => {
+    const resumeBody: StartResponseBody = {
+      ...startBody,
+      error: { code: "session_in_progress", message: "resumed" },
+    };
+    mockFetchOnce(409, resumeBody);
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.status).toBe(409);
+      expect(r.body.error?.code).toBe("session_in_progress");
+    }
+  });
+
+  it.each<[number, ApiErrorKind]>([
+    [401, "unauthorized"],
+    [403, "forbidden"],
+    [404, "not_found"],
+    [422, "unavailable"],
+    [500, "server"],
+    [502, "server"],
+  ])("%i → kind: %s", async (status, kind) => {
+    mockFetchOnce(status, { error: { code: "x", message: "x" } });
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.kind).toBe(kind);
+  });
+
+  it("network failure → kind: network", async () => {
+    mockFetchThrows();
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.kind).toBe("network");
+  });
+
+  it("malformed JSON on 200 → kind: server with status 200", async () => {
+    mockFetchMalformed(200);
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.kind).toBe("server");
+      expect(r.error.status).toBe(200);
+    }
+  });
+
+  it("malformed JSON on 409 → kind: server with status 409", async () => {
+    mockFetchMalformed(409);
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.kind).toBe("server");
+      expect(r.error.status).toBe(409);
+    }
+  });
+});
+
+describe("submitResponse", () => {
+  const args = {
+    sessionId: "00000000-0000-4000-8000-000000000001",
+    questionId: "00000000-0000-4000-8000-000000000002",
+    answerGiven: "2",
+    timeMs: 5000,
+  };
+
+  it("200 with done:false → ok with next_question body", async () => {
+    mockFetchOnce(200, submitBodyNext);
+    const r = await submitResponse(args);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.body.done).toBe(false);
+      expect(r.body.next_question?.id).toBe(submitBodyNext.next_question?.id);
+    }
+  });
+
+  it("200 with done:true → ok with placement body", async () => {
+    mockFetchOnce(200, submitBodyDone);
+    const r = await submitResponse(args);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.body.done).toBe(true);
+      expect(r.body.placement?.overall_level).toBe("3A");
+    }
+  });
+
+  it.each<[number, ApiErrorKind]>([
+    [401, "unauthorized"],
+    [403, "forbidden"],
+    [404, "not_found"],
+    [409, "session_completed"], // submit-specific: NOT a resume signal
+    [500, "server"],
+    [502, "server"],
+  ])("%i → kind: %s", async (status, kind) => {
+    mockFetchOnce(status, { error: { code: "x", message: "x" } });
+    const r = await submitResponse(args);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.kind).toBe(kind);
+  });
+
+  it("network failure → kind: network", async () => {
+    mockFetchThrows();
+    const r = await submitResponse(args);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.kind).toBe("network");
+  });
+
+  it("malformed JSON on 200 → kind: server with status 200", async () => {
+    mockFetchMalformed(200);
+    const r = await submitResponse(args);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.kind).toBe("server");
+      expect(r.error.status).toBe(200);
+    }
+  });
+
+  it("posts the snake_case wire shape", async () => {
+    let captured: { body: string } | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        captured = { body: String(init?.body ?? "") };
+        return new Response(JSON.stringify(submitBodyNext), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
+    await submitResponse(args);
+    expect(captured).not.toBeNull();
+    const parsed = JSON.parse(captured!.body);
+    expect(parsed).toEqual({
+      session_id: args.sessionId,
+      question_id: args.questionId,
+      answer_given: args.answerGiven,
+      time_ms: args.timeMs,
+    });
+  });
+});
