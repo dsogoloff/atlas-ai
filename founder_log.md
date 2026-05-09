@@ -790,4 +790,210 @@ Items #1, #2, #3, #5, #5a complete. Tests: 225/225 passing across the repo. The 
   three rules now; rule #4 is a strong candidate after this round's
   two-instance pattern.
 
+2026-05-09 — Item #8.5 complete (radar chart visualization on the diagnostic report)
+
+  Item #8.5 ships the radar visualization the founder flagged during Item
+  #8's visual gate as worth deferring. A hand-rolled SVG hexagonal radar
+  now sits above the existing strand bars in Branch 7 of the diagnostic
+  report. Same StrandMastery[] array that already feeds StrandMap — no new
+  data path, no new helpers, no schema changes. The radar gives the parent
+  a gestalt view of strengths vs. focus areas; the bars below carry the
+  precise per-strand percentages and band labels. Branch 6 (unreliable /
+  mixed) correctly suppresses the radar alongside the other scores —
+  isPlacementEstimateJson narrowing already gates everything below it.
+
+  What shipped
+
+  Seven file edits in src/app/(parent)/report/:
+
+    strand-labels.ts        (new) — STRAND_LABELS extracted from the inline
+                              copies previously in strand-map.tsx and
+                              recommendations-card.tsx. SHORT_STRAND_LABELS
+                              added alongside ("Numbers" not "Number Sense"
+                              etc.) for tight visual surfaces.
+    strand-radar.tsx        (new) — hand-rolled SVG hexagonal radar. 6 axes
+                              60° apart starting at -90° (up), 4 concentric
+                              grid hexagons at 25/50/75/100%, sam-teal
+                              polygon fill at 25% opacity + stroke + vertex
+                              dots. Two pure helpers exported
+                              (pointAtDistance, pointOnAxis) for testability.
+    strand-radar.test.ts    (new) — 11 tests across pointAtDistance and
+                              pointOnAxis. Tests assert axis-0-points-up,
+                              opposite-axis reflection through center,
+                              6-axis equidistance invariant, and percentage
+                              clamping at 0 and 100.
+    page.tsx                (edit) — single render hook: import
+                              StrandRadar, render <StrandRadar
+                              rows={strandMastery} /> above <StrandMap> in
+                              Branch 7 only.
+    strand-map.tsx          (edit) — drop inline STRAND_LABELS, import from
+                              strand-labels.ts. Drop now-unused Strand
+                              import.
+    recommendations-card.tsx (edit) — same: drop inline, import. Strand
+                              import preserved (still used by Recommendation
+                              interface).
+
+  Locked decisions of substance
+
+  Hand-rolled SVG over a charting library (RD1). Recharts would have added
+  ~150KB to the bundle for one chart; hand-rolled is ~80 lines including
+  math, grid, labels. Matches the placement-card gauge precedent (also
+  hand-rolled circle math). For a single-chart use case, the math is
+  genuinely cheaper than the dependency.
+
+  Layout: radar above bars (RD2). Gestalt-then-detail. Eye scans the
+  polygon shape first, drops to the bars for precise numbers. Standard
+  data-viz convention.
+
+  Single sam-teal color (RD3). Avoids visual noise; doesn't conflict with
+  strand-bar band colors (per-strand) or misconception card rank colors
+  (red/orange/teal). Tier-aware (yellow K_4 / teal G5_8) was an option but
+  would have introduced a new visual axis the parent has to learn —
+  placement card differentiates K_4/G5_8 by COPY only today.
+
+  Two label maps for two audiences (SR2). SHORT_STRAND_LABELS for visual
+  surfaces (radar axes — "Fractions" not "Fractions & Decimals" because
+  long names overflow the SVG viewBox at small viewports). Full
+  STRAND_LABELS for screen-reader aria summary so AT users get unambiguous
+  names. Sighted users get tight axis labels; AT users get unabbreviated
+  strands. No single-source-of-truth ambiguity — they're literally
+  different audiences with different constraints.
+
+  no_data renders polygon vertex at center with greyed axis label (RD6).
+  Visually honest "hexagon with a notch" — parent sees one strand wasn't
+  measured. Skipping the axis would have produced an irregular polygon
+  (5 vertices) that breaks the visual symmetry across reports.
+
+  No section title (SR1). Radar pairs with StrandMap's "Mathematical
+  Strengths" header below. Two visualizations of the same data, one shared
+  label, no structural disruption to page.tsx. Adding an "At a Glance"
+  header for the radar would have created two section titles back-to-back
+  for what reads as one logical section.
+
+  Print stylesheet: prints alongside bars (RD8). Useful for handoff to
+  instructor or tutor; small visual, doesn't bloat the printed page. The
+  bars carry the precise data; the radar adds a gestalt the third party
+  can scan.
+
+  Process notes
+
+  First test file in the repo to import from a .tsx source. Worked without
+  any vitest config change — vitest 4.1.5 parses the JSX file cleanly to
+  resolve the non-JSX exports (pointAtDistance, pointOnAxis). Worth knowing
+  for future test work that wants to colocate logic tests with components
+  rather than splitting the math into a separate .ts file.
+
+  STRAND_LABELS extraction was on Item #8's deferred punch list (rule-of-
+  three threshold once the radar joins). Bundling the extraction with #8.5
+  was the natural moment — the third consumer dropping the inline copy is
+  exactly when the abstraction earns its keep. Closes one Item #8 deferred
+  item alongside the new feature work.
+
+  Test-doubles principle on the test file: CENTER and RADIUS constants
+  duplicated rather than imported. Tests as contract — if the radar's
+  geometry changes, the test should fail loudly, not silently track the
+  change. Standard testing pattern; worth being explicit about.
+
+  Failure modes / process observations
+
+  Background-runner pnpm dev pattern recurred for the FOURTH time across
+  Items #6/#7/#8/#8.5. Each instance: assistant starts pnpm dev in a
+  background runner that locks port 3000; founder gets confused about
+  which port to visit. Consistent fix: kill the runner, founder runs pnpm
+  dev in own terminal. Worth elevating to AGENTS.md as a hard rule:
+  assistant never runs pnpm dev in background. Four-time recurrence is the
+  signal that "remember not to do this" isn't holding without a written
+  rule.
+
+  Visual gate this time was unusually clean — three URLs, zero findings.
+  Item #8.5's small scope (single new component, no new data path) meant
+  fewer surface areas for cosmetic issues to surface. Counter-evidence to
+  "every visual gate finds 5+ issues" — but also expected for tightly-
+  scoped work where the new thing is one chart sharing the established
+  data path. Items #6, #7, #8 each touched many surfaces; #8.5 touched
+  one.
+
+  Pre-existing issues surfaced or carried forward
+
+  Item #8.5 deferred punch list (five items, four carried from Item #8):
+
+    1. STRAND_ORDER now duplicated across strand-mastery.ts, page.tsx,
+       and strand-radar.tsx — third instance, joins the v1.x cleanup pass
+       alongside the STRAND_LABELS extraction that just landed.
+
+    2. Performance-blind copy carries forward from Item #8 (PlacementCard
+       flavor sentence, StrandMap title, MisconceptionList empty state,
+       RecommendationsCard title, mascot quote — all render the same
+       friendly framing regardless of how the child performed). v2 if
+       pilot families surface tonal mismatch.
+
+    3. Tier-aware radar chrome — currently single sam-teal. Could
+       differentiate K_4 (yellow) vs G5_8 (teal). Deferred to v2; the
+       placement card's tier differentiation is COPY-only today and adding
+       a color axis to the radar would introduce a new visual
+       differentiator the parent has to learn.
+
+    4. Tests for isPlacementEstimateJson + fromPlacementEstimateJson
+       (Item #8 carryover — trivial pure functions, natural addition to
+       a future responseSubmit/types.test.ts block).
+
+    5. TopAppBar duplication between dashboard + report (Item #8 carryover
+       — extract to (parent)/_components/parent-header.tsx if a third
+       parent route lands).
+
+  Technical lessons worth holding onto
+
+  Hand-rolled SVG vs charting library. For a single-chart use case, ~80
+  lines of math is genuinely cheaper than a ~150KB dependency. Don't
+  reflexively reach for recharts/chart.js when the math is straightforward
+  and the chart is one-off. The placement-card gauge already established
+  this precedent in Item #8; the radar reinforces it. If a second or third
+  chart with similar shape lands later, revisit — but YAGNI today.
+
+  Two label maps for two audiences. Visual surfaces have layout
+  constraints; screen-reader summaries have clarity constraints. Solving
+  both with one map means compromising one audience. Two maps with the
+  same key set (Record<Strand, string>) cost almost nothing and serve both
+  audiences cleanly. Reusable pattern any time visual abbreviation
+  diverges from screen-reader needs.
+
+  Symmetry tests for geometric invariants. The 6-axis-equidistance and
+  opposite-axis-reflection tests catch sin/cos sign errors that per-axis
+  spot-checks miss — a flipped sign on one axis still matches its
+  hardcoded expected value but breaks the symmetry invariant. Pattern
+  reusable for any radial visualization (gauge, polar chart, pie segment
+  geometry, future radial visualizations).
+
+  Status update
+
+  Items #1, #2, #3, #5, #5a, #6, #7, #8, #8.5 complete. Tests: 287/287
+  passing (added 11 in this item). Build clean. The parent-facing
+  diagnostic report now carries both gestalt (radar) and detail (bars)
+  views of strand mastery alongside the placement card, top-3
+  misconceptions, and per-strand recommendations.
+
+  Missing for MVP: Item #9 (misconception classifier service — currently
+  detected_misconceptions on responses comes from the engine's per-question
+  distractor mapping, not a real classifier), Item #10 (cold-start engine
+  priors — MVP-blocker the moment Item #11 lands real content), Item #11
+  (real S.A.M. content — blocked on Sam Chia, internal exploration
+  parked), plus the 12-item Item #7 deferred punch list, the 5-item
+  updated Item #8/#8.5 deferred punch list, and the Next.js 16 middleware
+  → proxy framework housekeeping.
+
+  Default forward
+
+  Item #9 (misconception classifier) is the next coding-only item with
+  real scope — bigger lift than #8.5, surfaces the meaningful misconception
+  data the report's MisconceptionList is currently rendering placeholder
+  text from. Item #10 (cold-start priors) is MVP-blocking the moment Item
+  #11 lands content but not before; can be built ahead but only verifiable
+  against real items. Item #11 is blocked on Sam Chia. PDF exploration is
+  parked (browser print stylesheet covers v1 per R8).
+
+  Founder's call. Same gate discipline. The four-time recurrence of the
+  background-runner pnpm dev pattern this round is the strongest §11 rule
+  candidate; rule #5 is "assistant never runs pnpm dev in background" if
+  no other framing comes up first.
+
 *(Subsequent entries below)*
