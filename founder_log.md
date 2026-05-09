@@ -449,4 +449,345 @@ Items #1, #2, #3, #5, #5a complete. Tests: 225/225 passing across the repo. The 
   Tier-aware chrome variant likely (mirroring Items #6 and #7). Same gate discipline. Don't accept silent fixes, access-control deferrals, or
   fabricated values. AGENTS.md §11 has three rules now; if a fourth is needed, write it concretely.
 
+2026-05-09 — Item #8 complete (parent diagnostic report at /report?child=<id>)
+
+  Item #8 ships the parent-facing diagnostic report — destination of Item #7's
+  child-card "View Report" CTA. A parent who completes a session for their
+  child can now navigate from the dashboard to a per-child report that surfaces
+  placement (S.A.M. Level [N] + proficiency gauge), strand-level mastery (six
+  horizontal bars with band-keyed colors + greyed-out "Not assessed" for strands
+  the engine never sampled), top-3 detected misconceptions (rank-colored cards
+  with strand-icon mapping), and per-strand curriculum recommendations sorted by
+  band priority (area_of_focus first). Sessions flagged unreliable or mixed
+  short-circuit to a re-take banner; rushed and struggling render the full
+  report with a caveat banner above. Page-level auth gate, two Supabase clients
+  (anon for parent-safe tables; service-role for the questions table per
+  compliance §8), seven render branches verified visually against SQL-seeded
+  test data spanning K_4 + G5_8 tiers and the time-flag spectrum.
+
+  What shipped
+
+  The 10-file plan + 1 boundary edit, all in src/ except the Stitch reorg:
+
+  Helpers (src/lib/report/) — strand-mastery.ts (per-strand correct/total/
+  percentage with mastery/progressing/area_of_focus/no_data band derivation;
+  always returns all 6 strands in canonical STRAND_ORDER) and
+  misconception-aggregate.ts (top-N aggregator with within-response Set dedup +
+  unknown-code drop+console.warn per R6/M2 lock). Plus colocated tests:
+  strand-mastery.test.ts (14 tests, boundary cases at 50/74/75 + no_data
+  discrimination) and misconception-aggregate.test.ts (17 tests, sort tiebreak
+  + warn-spy contract). Both helpers are pure functions; tests are
+  zero-dependency vitest.
+
+  Components (src/app/(parent)/report/) — placement-card.tsx (Overall Summary
+  with proficiency gauge + tier-aware K_4/G5_8 flavor sentence per PC2 lock),
+  strand-map.tsx (six bars with band-keyed colors + greyed no_data row),
+  misconception-list.tsx (top-3 cards with rank-based color rotation + strand
+  icons), recommendations-card.tsx (schema-joined per-strand recs sorted by
+  band priority, page.tsx owns the sort), time-flag-banner.tsx (broken-severity
+  red with re-take CTA vs caveat-severity orange; copy attributes failures to
+  response patterns, never the child).
+
+  Page server component (src/app/(parent)/report/page.tsx) — seven branches in
+  evaluation order, two Supabase clients (anon for parents/children/sessions/
+  responses/misconceptions/curriculum_recommendations; service-role for the
+  questions table because compliance §8 locks item content behind RLS, and the
+  page projects only id+strand from questions, never content). Inline helpers
+  TopAppBar (verbatim Phase 1 dashboard port pending parent-header.tsx
+  extraction), TopBackLink, BackLink, ReportHeader, MinimalError,
+  buildSubtitle, formatGradeLevel, ordinalSuffix.
+
+  Boundary edit (src/lib/responseSubmit/types.ts) — added isPlacementEstimateJson
+  runtime guard + fromPlacementEstimateJson hydrator companion to the existing
+  toPlacementEstimateJson serializer. Restores symmetry at the wire ↔ engine
+  shape boundary; see snake_case fix below for why this landed mid-item.
+
+  Mid-item: Stitch source regeneration (recurrence of Item #7's playbook)
+
+  At Phase 1 recon, the original module-d/04-diagnostic-report-desktop.html and
+  05-parent-report-mobile.html turned out to be instructor-facing despite the
+  parent-promising filenames — header nav showed Students/Reports/Settings, no
+  Family Dashboard or Parent Avatar alt text. Same shape as Item #7's module-d/
+  01 + 03 catch. Founder regenerated parent-audience versions in Stitch;
+  originals git-renamed under stitch/module-d/_archived-miscategorized/ for
+  paper trail. New filenames carry "parent-" prefix to prevent recurrence. Both
+  regenerated sources passed validation cleanly on the first try. Item #7's
+  catch-and-regenerate playbook works.
+
+  Mid-item: snake_case persistence fix
+
+  First visual-gate sighting blew up: every populated branch logged
+  [report] completed session missing valid placement {} and rendered the
+  MinimalError "Report unavailable" fallback instead of the actual report.
+  Diagnosis: page imported PlacementEstimate (the camelCase engine type from
+  src/lib/engine/types.ts) and assumed it matched what was in current_estimate.
+  Engine actually writes snake_case via the existing toPlacementEstimateJson
+  serializer (responseSubmit/types.ts) before persisting; visible only when
+  reading real engine-completed sessions. The runtime guard built against the
+  camelCase type rejected every real placement.
+
+  Fix: added isPlacementEstimateJson runtime guard and fromPlacementEstimateJson
+  hydrator companion to responseSubmit/types.ts, mirroring the existing
+  serializer. Page narrows + hydrates at the read boundary; downstream code
+  reads the camelCase engine shape unchanged. The fix lives at the wire ↔
+  engine boundary alongside its inverse, not inline in page.tsx, so future
+  readers (instructor view, exports) reuse the same hydrator.
+
+  The bug only surfaced because the visual gate ran against real engine-
+  completed sessions in the local DB. If the seed had been built first against
+  the spec rather than against the schema, this would have shipped silently
+  broken — automated tests pass cleanly because the test data uses synthesized
+  shapes that match the type, not real persisted shapes.
+
+  Visual gate — one round, six findings
+
+  Walking the four SQL-seeded URLs after the snake_case fix surfaced six issues
+  in ~30 minutes:
+
+  1. First-name truncation everywhere. childFirst = firstName(child.name) was
+     spreading the bug via copy-paste into every component prop named
+     childFirst: string. Fix: dropped the firstName helper, renamed prop to
+     childName across 5 components, page passes child.name (full) to every
+     consumer. The misnomer was the footgun — renaming the prop kills it.
+
+  2. Empty-state body "Testhasn't" missing space. JSX whitespace edge case in
+     a multi-line text node. Fix: rewrote as a single-line template literal,
+     eliminating the JSX-whitespace ambiguity rather than litigating React's
+     rules.
+
+  3. Empty-state Start Assessment CTA missing. Spec called for two buttons (red
+     Start + outlined Back); only Back was rendering. Fix: added red primary
+     button alongside the outlined back link, stacked responsively.
+
+  4. Grade level missing from subtitle. Spec was "{grade} • Completed {date}";
+     only date was rendering. Fix: new buildSubtitle helper composes grade +
+     completion date with graceful degradation. Triggered the late-game
+     grade-suffix follow-on (below).
+
+  5. Top BackLink missing across all three chrome-bearing branches. Pure
+     missing JSX — only the bottom outlined back button was implemented. Fix:
+     new TopBackLink helper (text-link style per Stitch source 04 line 154)
+     rendered above ReportHeader on all three branches.
+
+  6. MinimalError copy "Report not found" → "Child not found" per P-B lock.
+     Body refreshed to match.
+
+  Bundled into one atomic apply across page.tsx + the four child components
+  (rename prop). Single typecheck/lint/test/build cycle to verify all six.
+
+  Late-game grade-suffix follow-on
+
+  After the bundled apply, founder requested "2nd Grade" suffix in the subtitle
+  rather than bare "2nd". Required reading the actual add-child form
+  (src/app/(auth)/add-child/add-child-form.tsx) to write the formatter
+  correctly — the form is a closed-list <select> emitting K | 1 | 2 | … | 8.
+  The seed had been writing ordinals (2nd, 6th, 7th) because they read
+  naturally — same shape as the snake_case bug, second instance of "inferred
+  from what reads naturally instead of reading source-of-truth." Surfaced the
+  §11 rule #4 candidate (below).
+
+  Fix: formatGradeLevel + ordinalSuffix helpers expand the form's closed-list
+  values (K → Kindergarten, 1..8 → Nth Grade) with defensive pass-through for
+  non-form write paths (admin imports, CSV). Seed updated to match form output;
+  Test K4 Empty seeded as "K" to exercise the Kindergarten branch, Test K4
+  Normal as "2", G58 as "6"/"7".
+
+  Gate decisions of substance
+
+  Locked Q&A across recon and visual gate that future contributors should know:
+
+  - Scope = medium per features.md §4 (placement card + strand bars +
+    misconceptions + recommendations + time-flag caveats; no radar v1, no PDF
+    v1, no IRT explanations v1).
+  - Route = /report?child=<id> with most-recent COMPLETED resolved server-side.
+    Item #7's placeholder href shape kept stable. /report?session=<id> for
+    growth tracking is a future addition.
+  - §8 compliance: no question text surfaces anywhere on the report. Dropped
+    the "View Detailed Answer Log" CTA Stitch carried over from instructor
+    sources at the audience-validation step.
+  - R1 mastery scoring: hybrid — simple correct/attempted percentage on the
+    placement card + threshold-based tier bands (75 mastery / 50 progressing /
+    <50 area_of_focus) on strand bars.
+  - R2 placement format: "S.A.M. Level [N]" mapping (e.g., "S.A.M. Level 2A").
+    The S.A.M. curriculum's level numbering is intentionally opaque to the
+    parent — half-grade enum codes don't surface.
+  - R5 time-flag handling: honor all 5 per features.md §2. unreliable + mixed
+    hide all scores (data integrity broken); rushed + struggling render full
+    report with caveat banner above; normal renders no banner.
+  - R6 misconception count: top 3. Stitch implied 2; chose 3 for layout rhythm
+    and parent-attention spread.
+  - R7 curriculum recs: schema-joined per-strand at the per-strand placement
+    level (not the hand-written copy from Stitch). Recs come from
+    curriculum_recommendations table; only level "2B" is seeded today, so the
+    seed's strandLevels = "2B" across all 6 strands per session.
+  - R8 PDF: browser print stylesheet via Tailwind print: variants. No
+    server-side PDF infrastructure. TopAppBar + TopBackLink + BackLink + the
+    re-take CTA inside time-flag-banner all marked print:hidden.
+  - R9 visualization: bar chart only. No radar — deferred to Item #8.5 per
+    founder visual-gate request.
+  - R10 tier-aware report chrome: yes — K_4 vs G5_8 differentiation in
+    placement card flavor sentence (cheerful K_4 vs measured G5_8). Distinct
+    from strand-bar mastery-band colors.
+  - R11 auth gate: page-level (mirrors Phase 1 dashboard idiom).
+  - Misconception ranking color: rank-based (1st red, 2nd orange, 3rd teal),
+    deliberately NOT strand-color, to avoid collision with StrandMap's
+    band colors.
+  - Recommendations sort: page.tsx owns the band-priority sort (area_of_focus
+    > progressing > mastery > no_data, STRAND_ORDER as within-band
+    tiebreaker). Component is pure render.
+
+  Failure modes / process observations
+
+  Stitch source miscategorization recurred. Same pattern, same fix, same
+  playbook. Worth elevating to a recon-time check that's now codified by
+  precedent: read the HTML's audience signals (header nav, alt text) before
+  trusting the filename.
+
+  Snake_case persistence sighting only via real-data visual gate. The bug
+  existed in cycle-1 page.tsx code from the moment file 3 landed. Automated
+  gates passed cleanly because no real engine session existed in the test
+  environment until the seed ran, and the test fixtures used the type's
+  camelCase shape (which is what reads naturally from PlacementEstimate). The
+  bug only manifests when reading what the engine actually writes to the
+  persistent store. Lesson: visual gates against real data are not optional —
+  unit tests against synthesized shapes will miss persistence-shape mismatches
+  like this every time.
+
+  Visual-gate cadence: one round of six findings + one follow-on (grade
+  suffix) + one polish ask deferred (radar). The six findings were all
+  surfaced in the first 30 minutes; bundling into one atomic apply was
+  efficient. The defer-vs-bundle decision (Item #8.5 for radar) protected the
+  commit from scope drift.
+
+  Test-data seed snags: the seed had to be re-run twice — once with broken
+  camelCase shape pre-fix, once after — and required cleanup-and-re-seed each
+  time. The pattern is now established (DELETE FROM children + DELETE FROM
+  questions WHERE external_id = ... + cascade through sessions/responses) but
+  tedious. Future test-data work should consider a reset script paired with
+  the seed.
+
+  Founder password-loss interrupted the gate mid-walk. Workaround was creating
+  a fresh seed-test parent. The first parent's test children were cleaned but
+  the auth.users + parents row remain in the local DB. Local-DB hygiene noted
+  but not blocking.
+
+  Background-runner pnpm dev pattern recurred a third time across Items
+  #6/#7/#8. Each instance: assistant starts pnpm dev in a background runner
+  that locks port 3000; founder gets confused about which port to visit.
+  Consistent fix: kill the runner, founder runs pnpm dev in own terminal.
+  Worth elevating to AGENTS.md as a hard rule: assistant never runs pnpm dev
+  in background.
+
+  Pre-existing issues surfaced or carried forward
+
+  Item #8 deferred punch list (six items) for v1.x cleanup or v2:
+
+  1. STRAND_LABELS duplicated across strand-map / misconception-list /
+     recommendations-card. Past the rule-of-three abstraction threshold;
+     extract to (parent)/report/strand-labels.ts as a follow-on commit.
+
+  2. RecommendationsCard eyebrow stays neutral sam-gray-mid for v1; v2
+     candidate is band-color match for visual continuity with StrandMap.
+     Requires either prop expansion or parallel Map<Strand, MasteryBand>
+     prop.
+
+  3. Performance-blind copy across PlacementCard flavor sentence, StrandMap
+     section title ("Mathematical Strengths"), MisconceptionList empty state,
+     RecommendationsCard title ("Ways to Support {name} at Home"), mascot
+     quote — all render the same friendly framing regardless of how the
+     child performed. v2: band-aware copy when pilot families surface tonal
+     mismatch.
+
+  4. Item #8.5: radar chart visualization in addition to bars. Founder
+     visual-gate ask; deferred to keep Item #8's commit focused on bars.
+
+  5. Tests for isPlacementEstimateJson + fromPlacementEstimateJson — added
+     mid-item without test coverage. Trivial pure functions; natural
+     addition to a future responseSubmit/types.test.ts describe block.
+
+  6. TopAppBar duplication between dashboard + report. Already TODO-commented
+     at the top of report/page.tsx — extract to (parent)/_components/parent-
+     header.tsx if a third parent route lands.
+
+  Technical lessons worth holding onto
+
+  Two-client pattern in a single page — anon for RLS-scoped reads,
+  service-role for compliance-gated tables. Established here but reusable;
+  future report variants (instructor view, district aggregate) will need
+  similar splits. Critical detail: the service-role read of questions
+  projects ONLY id + strand, never content. Compliance §8 enforced at the
+  query shape, not just at the RLS boundary.
+
+  Symmetric serializer/deserializer pairs at persistence boundaries. The
+  toPlacementEstimateJson + isPlacementEstimateJson + fromPlacementEstimate-
+  Json triplet now lives together in responseSubmit/types.ts. Wire-shape ↔
+  engine-shape divergence is real; building both halves of the bridge
+  prevents the snake_case bug class entirely.
+
+  Pure helpers + pure components separated cleanly from the page server
+  component. computeStrandMastery and aggregateMisconceptions are pure,
+  unit-tested with 14 + 17 tests. The 5 presentation components are
+  render-only with prop-driven shape. The page server component is the only
+  file that touches Supabase. Easy to test, easy to reason about, easy to
+  mock when needed.
+
+  Test data seeded via SQL beats clicking through the engine. A single SQL
+  script populates 4 children + 3 sessions + 46 responses + 1 placeholder
+  question across all the band variants and time-flag values needed for the
+  visual gate. ~5 minutes to seed vs ~30+ minutes of carefully-tuned tapping.
+  Reusable pattern for future visual gates against complex data states.
+
+  Visual gate against real persisted data caught the snake_case bug. Without
+  the seed, this would have shipped silently broken. Argument for visual
+  gates against real data, not synthesized — automated tests verify code
+  correctness, but only real-data gates verify schema correctness.
+
+  AGENTS.md §11 rule #4 candidate. Two-instance pattern this round: read
+  source-of-truth at the WRITE PATH, not the type definition or "what reads
+  naturally." Two recurrences in Item #8: (1) current_estimate jsonb shape
+  — engine writes snake_case via toPlacementEstimateJson, but the camelCase
+  PlacementEstimate type "read naturally" and was assumed to match;
+  (2) grade_level format — form is closed-list emitting K | 1 | … | 8, but
+  seed used ordinals (2nd, etc.) because they "read naturally." Rule #3
+  (read database.types.ts + route handlers) catches one class of inference
+  bugs; rule #4 catches the other — type definitions are necessary but not
+  sufficient. The persisted shape is determined by the write-path code
+  (serializer functions, form value attributes), and that's the actual
+  source of truth for what reads will receive.
+
+  Status update
+
+  Items #1, #2, #3, #5, #5a, #6, #7, #8 complete. Tests: 276/276 passing
+  (added 31 in this item: 14 + 17). Build clean. /report registered as a
+  dynamic ƒ route (auth.getUser → no static prerender). The parent flow is
+  end-to-end with the report tier surfacing strand-level diagnostics for
+  completed assessments — a parent can sign up, add a child, complete an
+  assessment for them, and read the resulting report.
+
+  Missing for MVP: Item #9 (misconception classifier service — currently
+  detected_misconceptions on responses comes from the engine's per-question
+  distractor mapping, not a real classifier), Item #10 (cold-start engine
+  priors — MVP-blocker the moment real content lands), Item #11 (real
+  S.A.M. content — blocked on Sam Chia, internal exploration parked until
+  after Item #8.5), Item #8.5 (radar chart in addition to bars), plus the
+  12-item Item #7 deferred punch list, the 6-item Item #8 deferred punch
+  list, and the Next.js 16 middleware → proxy framework housekeeping.
+
+  Default forward for next item
+
+  Item #8.5 (radar chart) is the smallest unit of work next — adds a
+  complementary visualization to the existing strand bars without changing
+  the data path. computeStrandMastery already returns the right shape; only
+  a new component file + a render hook in page.tsx needed. Could be done as
+  a single sub-phase, single commit, single visual gate. Alternative paths:
+  Item #9 (misconception classifier — bigger lift, blocks real-data
+  meaningful misconception cards), Item #10 (cold-start priors — MVP-
+  blocking the moment Item #11 lands real content), the deferred-punch-list
+  cleanup (mostly tiny, suitable for batch-sweep later).
+
+  Founder's call when ready. Same gate discipline. Don't accept silent
+  fixes, schema fabrication, or write-path inference. AGENTS.md §11 has
+  three rules now; rule #4 is a strong candidate after this round's
+  two-instance pattern.
+
 *(Subsequent entries below)*
