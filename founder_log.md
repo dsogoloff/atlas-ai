@@ -114,4 +114,153 @@ Item #6 (5-8 chrome + tier derivation in page.tsx) is the natural next code item
 
 Items #1, #2, #3, #5, #5a complete. Tests: 225/225 passing across the repo. The backend can serve a complete assessment session against placeholder content; a child can complete one end-to-end via the new UI. What's missing for MVP is the parent-facing report (#8), real content (#11), and the 5-8 chrome variant (#6) — plus the still-deferred cold-start engine priors fix (#10) which becomes MVP-blocking the moment real content lands.
 
+ 2026-05-08 — Item #6 complete (5-8 tier-aware chrome + tier derivation)
+
+  Item #6 shipped clean. The 5-8 chrome variant exists, K-4 is unchanged from PR #6 baseline, and tier derivation is a
+  pure function with a calendar trip-wire. The implementation itself was uncomplicated; what consumed the session was
+  the visual verification detour — bringing local Supabase up on a fresh-clone laptop turned into a chain of infra
+  installs (Docker, Scoop, Supabase CLI, WSL2) before a single rendered pixel could be confirmed.
+
+  Item #6 — what shipped
+
+  Five-phase sequence, executed in order with verification at each gate:
+
+  1. Pure tier lib. src/lib/tier/derive.ts exports deriveTier(child) returning K_4 | G5_8. Primary path: parseGradeLevel
+   covers the half_grade_level enum, bare digits ("3", "5"), ordinals ("3rd", "5th"), word forms ("third", "fifth"),
+  Pre-K variants. Fallback: tierFromBirthYear with boundary at age 10 → G5_8, computed against hardcoded
+  CURRENT_ACADEMIC_YEAR_START = 2025. Hardcoding (vs. new Date()) keeps derivation pure for tests; a trip-wire test
+  fails when the constant drifts past the active academic year. 20 new tests in derive.test.ts.
+  2. Tier-aware chrome variants. QuestionShell (logo-only TopAppBar, sam-teal/orange decorative blurs, yellow underline
+  preserved on prompt for both tiers), MultipleChoiceInput (aspect-square cards, ring-radio dot bottom-right,
+  font-math-numeral on numerics, border-4 on selection), CompletionScreen ("Mathematical Journey Complete!",
+  workspace_premium icon, sam-teal accent, no Sammy mascot), QuestionTimer (forwards tier prop to MC).
+  3. Wiring. page.tsx fetches name, grade_level, birth_year (RLS-scoped) and calls deriveTier before rendering.
+  AssessmentClient takes a required tier: Tier prop and forwards to all three chrome callsites.
+  4. AGENTS.md cleanup. Four stale TODOs flipped (test scripts, tests location, testing pattern) now that vitest is
+  wired and 245 tests are co-located under src/.
+  5. Verification. 245/245 passing. Visual verification deferred to its own detour (below).
+
+  Gate decisions confirmed before implementation, in this order: 2-tier enum (K_4 | G5_8, no third bucket); Pre-K → K_4
+  (no special handling); ship without Sammy mascot (icon-only completion screen); brand palette only, no MD3 system
+  tokens lifted from stitch; keep yellow underline on prompt for both tiers; defer numeric on-screen keypad (system
+  numpad adequate for Chromebooks); defer two-card comparison layout (route through existing MC pipeline with ["<", "=",
+   ">"] options).
+
+  The visual verification detour
+
+  The visual check was supposed to be five minutes. It took most of the session.
+
+  The wrong port. Founder testing on localhost:3000 was actually sam-placement — the parallel design-reference repo from
+   Item #1's recovery — running on its own dev server. atlas-ai was on :3001. Every "how does the chrome look?" cycle
+  for the first stretch was reading screens from the wrong codebase. Lesson reinforced from Item #1: when two codebases
+  co-exist on disk, port confusion is silent and expensive. Worth a tmux/PowerShell-startup banner that prints the repo
+  name on pnpm dev.
+
+  Missing .env.local. Atlas-ai then refused to boot — fresh-clone gap, never populated, validated lazily, all four CI
+  gates passed because no code path exercised the env. The repo will silently install + build + lint + typecheck + run
+  all tests against a non-existent Supabase URL. Worth a pnpm dev preflight that errors loudly on missing .env.local
+  keys.
+
+  Local vs. remote Supabase. Atlas-assessment-2 (the remote project) had unverifiable schema drift risk — no clean way
+  to confirm migrations had been applied against it. Founder chose local Supabase, which forced the install chain.
+
+  Install chain. Docker Desktop via winget, Supabase CLI via Scoop (winget doesn't carry it), WSL2 via wsl --install +
+  reboot. Each was a discrete decision point with founder approval. None individually large; the cumulative wall-clock
+  was the cost.
+
+  Schema config drift. supabase/config.toml had [db].major_version = 16, which Supabase CLI 2.98.2 has dropped from the
+  local-dev allowlist. Bumped to 17 (matches hosted default). One-line fix; landed in the side-quest commit.
+
+  No working /add-child form. Two test children inserted directly via Supabase Studio because the /add-child route
+  renders but doesn't submit — header in page.tsx self-documents this as cycle-1 deferred. Manual SQL inserts were
+  faster than wiring the form for the visual check, but the gap is now confirmed.
+
+  Final visual confirmation. K-4 chrome (rectangular cards, "All done, [name]!" completion) and G5_8 chrome
+  (aspect-square cards with ring-radio dot bottom-right, "S.A.M. Assessment" logo top bar, "Mathematical Journey
+  Complete!" completion) confirmed visually distinct on rendered pages. The chrome variant works as designed.
+
+  Side-quest fixes (separate commit)
+
+  Two infra-only fixes surfaced during the visual detour, landed as c4f13b1:
+
+  - Material Symbols <link> move. @import url(...) in globals.css was being stripped by Tailwind v4 / Lightning CSS
+  during bundling — icons rendered as raw ligature names ("person", "arrow_forward", etc.). Moved to <link
+  rel="stylesheet"> in layout.tsx <head> with the canonical four-axis URL (opsz, wght, FILL, GRAD). Removed the dead
+  @import from globals.css.
+  - Postgres 16 → 17. Supabase CLI 2.98.2 dropped 16 from the local-dev allowlist. Bumped supabase/config.toml to 17.
+
+  Surfaced while bringing up local Supabase. Both fixes are infrastructure-only; no application logic touched. Committed
+   separately so Item #6's diff stays focused on chrome + tier.
+
+  Pre-existing issues surfaced (not fixed, tracked for future items)
+
+  The visual detour surfaced a punch list of cycle-1 gaps. None are Item #6's responsibility; logging here so they don't
+   fade:
+
+  - /add-child form: no submit handler, no validation, no Supabase wiring. Header self-documents as deferred.
+  - No signup link from landing page.
+  - Marketing landing's "Start Assessment" button is a plain <button> with no onClick or href — placeholder.
+  - K-4 hamburger top bar is an empty icon shell, no menu.
+  - Material Symbols rendering: side-quest fix covered the assessment route; signup / add-child / COPPA / confirmation
+  flows need a spot check — ligature-name leakage may still appear there.
+  - Results page: no nav back home, no "assess another child" CTA.
+  - Reports: shows only 4 answers (not the full session), missing prior radar-chart parameters, no S.A.M. placement
+  output (4A, 2B), no grade-equivalent indicator.
+
+  Item #8 (parent-facing diagnostic report) absorbs the reports-page items. The rest are smaller, more obviously cycle-1
+   holdovers.
+
+  Failure modes of the gate this session
+
+  The gate was light this session — Item #6 is mostly UI lift from stitch/module-c against a clean engine boundary, not
+  the integration-heavy work of #2/#3. Two things still showed up worth noting:
+
+  - The wrong-port discovery. Not a Code failure; a session-hygiene failure on the founder side. But it's the second
+  time the sam-placement parallel codebase has caused real lost time (first was Item #1's recovery). The right response
+  is a pnpm dev startup banner that prints the repo name, not just adding to the rule-pile in AGENTS.md §11.
+  - Lazy env validation. .env.local missing → all four gates pass → pnpm dev fails. The CI gate isn't catching real
+  fresh-clone breakage. Worth deciding: do we want the env loader to throw at module-load (eager), or accept that
+  .env.local validation is a pnpm dev concern? Either is defensible; the current state (silent acceptance everywhere)
+  isn't.
+
+  Technical lessons worth holding onto
+
+  - Pure derivation > time-aware derivation. CURRENT_ACADEMIC_YEAR_START as a hardcoded constant + a trip-wire test is
+  cleaner than reading new Date() and mocking it in tests. The trip-wire pattern (a test that fails on the right date)
+  is reusable for any constant that should age out.
+  - Tailwind v4 / Lightning CSS strips @import url(...). Remote stylesheet imports inside CSS files don't survive
+  bundling. Use <link> in the document <head> for fonts and external stylesheets. This isn't documented loudly in the v4
+   migration guide but is consistent across testing.
+  - Supabase CLI version drift. major_version in config.toml needs to match what the CLI's local-dev image supports, not
+   what the hosted project supports. Both happen to be 17 right now; that's coincidence, not a contract.
+  - Tier as a UI-only switching point. FSM, engine, picker, and API stayed tier-blind. Threading tier: Tier from
+  page.tsx through AssessmentClient to the four chrome components was the entire surface area. Resisted the temptation
+  to pass tier into the engine "for future use" — exactly the kind of speculative wiring AGENTS.md §2 rules out.
+
+  What this proved about the approach
+
+  Six items shipped now (#1, #2, #3, #5, #5a, #6). The gate worked even on a low-technical-risk item — the catches this
+  time were process-shaped (port confusion, missing env validation), not bug-shaped.
+
+  The detour reinforced that the bootstrap path is undertested: four CI gates that don't exercise the env loader, an
+  /add-child form that renders without submitting, a landing CTA that looks live but isn't. Worth a dedicated
+  bootstrap-audit pass before the first stakeholder demo.
+
+  Default forward for Item #7 / #8
+
+  Item #7 (parent dashboard) and Item #8 (diagnostic report UI) are next. #8 absorbs the reports-page punch list above
+  (4-answers truncation, missing radar params, no placement output, no grade-equivalent).
+
+  Same gate discipline. Don't accept silent fixes, access-control deferrals, or fabricated values. New rule worth
+  considering for AGENTS.md §11: verify the dev server is running against the right repo before reporting visual results
+   — concretely, paste the URL bar + repo path, not just "looks good."
+
+  Status updates
+
+  Items #1, #2, #3, #5, #5a, #6 complete. Tests: 245/245 passing. The backend serves complete sessions against
+  placeholder content; a K-4 child and a 5-8 child can each complete one end-to-end with tier-appropriate chrome. What's
+   missing for MVP: parent dashboard (#7), parent-facing diagnostic report (#8), real S.A.M. content (#11, blocked on
+  Sam Chia), cold-start engine priors (#10, MVP-blocking the moment real content lands), and the cycle-1 punch list
+  above (/add-child wiring, landing CTA, hamburger menu, results-page nav).
+
 *(Subsequent entries below)*
