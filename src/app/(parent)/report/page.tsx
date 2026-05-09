@@ -57,6 +57,7 @@ import { MisconceptionList } from "./misconception-list";
 import { PlacementCard } from "./placement-card";
 import { RecommendationsCard } from "./recommendations-card";
 import { StrandMap } from "./strand-map";
+import { StrandRadar } from "./strand-radar";
 import { TimeFlagBanner } from "./time-flag-banner";
 
 // Cookies + auth.getUser → no static prerender.
@@ -476,6 +477,8 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             overallPercentage={overallPercentage}
             tier={tier}
           />
+
+          <StrandRadar rows={strandMastery} />
 
           <StrandMap rows={strandMastery} />
 

@@ -21,6 +21,8 @@
 import type { Strand } from "@/lib/engine/types";
 import type { Database } from "@/lib/supabase/database.types";
 
+import { STRAND_LABELS } from "./strand-labels";
+
 type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 
 interface Recommendation {
@@ -37,15 +39,6 @@ interface RecommendationsCardProps {
   recommendations: Recommendation[];
   childName: string;
 }
-
-const STRAND_LABELS: Record<Strand, string> = {
-  NUMBER_SENSE: "Number Sense",
-  OPERATIONS: "Operations",
-  WORD_PROBLEMS: "Word Problems",
-  FRACTIONS_DECIMALS: "Fractions & Decimals",
-  GEOMETRY: "Geometry",
-  MEASUREMENT_DATA: "Measurement & Data",
-};
 
 export function RecommendationsCard({
   recommendations,

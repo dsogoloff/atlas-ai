@@ -12,24 +12,16 @@
 //
 // Bars are static (SM4 lock) — no Framer Motion, server component.
 
-import type { Strand } from "@/lib/engine/types";
 import type {
   MasteryBand,
   StrandMastery,
 } from "@/lib/report/strand-mastery";
 
+import { STRAND_LABELS } from "./strand-labels";
+
 interface StrandMapProps {
   rows: StrandMastery[]; // length always 6, fixed order, helper guarantee
 }
-
-const STRAND_LABELS: Record<Strand, string> = {
-  NUMBER_SENSE: "Number Sense",
-  OPERATIONS: "Operations",
-  WORD_PROBLEMS: "Word Problems",
-  FRACTIONS_DECIMALS: "Fractions & Decimals",
-  GEOMETRY: "Geometry",
-  MEASUREMENT_DATA: "Measurement & Data",
-};
 
 interface BandStyle {
   /** Tailwind class for the bar fill background. */
