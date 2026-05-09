@@ -1,4 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
+
 // Ported from stitch/module-a/01-landing-desktop.html (do not hand-edit
 // either this file or the Stitch source — re-port if the design changes).
 //
@@ -8,8 +10,12 @@
 //    `font-display-child` token so next/font/google self-hosting works.
 //  - Image src attributes swapped from broken Stitch CDN URLs to local
 //    placeholder SVGs in /public/img/. Real S.A.M. assets will replace them.
-//  - Top app bar shows notifications/help/avatar (logged-in chrome) — design.md
-//    Screen 1 calls for a public marketing landing without those.
+//
+// Phase 4a of Item #7: replaced the Stitch logged-in chrome (notifications/
+// help/avatar in the top app bar) with a "Sign in" link → /login, and wired
+// the hero + mascot-strip primary CTAs to /signup. Other unwired CTAs (View
+// Sample Reports, Explore Dashboard, Book a Demo) and # nav/footer links
+// remain pending real content.
 
 export default function LandingPage() {
   return (
@@ -42,18 +48,12 @@ export default function LandingPage() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-sam-navy/60 p-2 active:scale-95 active:duration-150">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button className="text-sam-navy/60 p-2 active:scale-95 active:duration-150">
-            <span className="material-symbols-outlined">help_outline</span>
-          </button>
-          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-sam-red/20">
-            <img
-              alt="Instructor Profile"
-              src="/img/placeholder-avatar.svg"
-            />
-          </div>
+          <Link
+            href="/login"
+            className="px-5 py-2 border-2 border-sam-navy text-sam-navy font-headline-adult rounded-xl hover:bg-sam-navy hover:text-white transition-all active:scale-95"
+          >
+            Sign in
+          </Link>
         </div>
       </header>
 
@@ -83,9 +83,12 @@ export default function LandingPage() {
               instructors.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
-              <button className="bg-sam-red text-white font-headline-adult px-8 py-4 rounded-[16px] shadow-lg hover:shadow-xl transition-all active:scale-95">
+              <Link
+                href="/signup"
+                className="bg-sam-red text-white font-headline-adult px-8 py-4 rounded-[16px] shadow-lg hover:shadow-xl transition-all active:scale-95"
+              >
                 Start Assessment
-              </button>
+              </Link>
               <button className="bg-white border-2 border-sam-navy text-sam-navy font-headline-adult px-8 py-4 rounded-[16px] hover:bg-sam-cream transition-all active:scale-95">
                 View Sample Reports
               </button>
@@ -259,9 +262,12 @@ export default function LandingPage() {
               education for every child.
             </p>
             <div className="flex justify-center gap-4">
-              <button className="bg-sam-red text-white px-10 py-4 rounded-[20px] font-bold shadow-xl">
+              <Link
+                href="/signup"
+                className="bg-sam-red text-white px-10 py-4 rounded-[20px] font-bold shadow-xl"
+              >
                 Get Started Now
-              </button>
+              </Link>
               <button className="bg-transparent border-2 border-white/30 text-white px-10 py-4 rounded-[20px] font-bold hover:bg-white/10 transition-colors">
                 Book a Demo
               </button>
