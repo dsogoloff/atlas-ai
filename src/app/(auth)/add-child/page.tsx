@@ -13,17 +13,37 @@
 //  - Help-tip wording: replaced "Sammy" with "the engine" (mascot name not
 //    yet locked).
 //
-// Spec gaps to address before launch (intentionally NOT fixed in this port):
-//  - Form has no submit handler, no validation, no Supabase wiring.
-//  - The `home_center_id` for the new child is inherited from the parent
-//    (per features.md §5) — not surfaced in the UI yet, but should appear
-//    once the signup flow captures the parent's center.
-//  - Cancel destination is hardcoded to /signup; real flow goes back to the
-//    referring page (signup vs dashboard) once router state is wired.
+// Phase 2 of Item #7 wired the form to Supabase. The interactive form
+// markup is now a client component, <AddChildForm /> in
+// ./add-child-form.tsx, validated by ./schema.ts and submitted via
+// ./actions.ts. Cycle-1 form-side deviations (Birth Year 2010-2022,
+// Grade K-8, help-tip wording) live in those files now.
+//
+// Spec gaps still to address (intentionally NOT fixed in Phase 2):
+//  - The inherited home_center_id is not surfaced visually on this form
+//    (the action copies it server-side from the parent's row). Surface
+//    in the dashboard child card when Phase 1 lands.
+//  - Cancel destination is hardcoded to /signup; real flow goes back to
+//    the referring page (signup vs dashboard) once router state is
+//    wired. (Phase 2 decision D5: out of #7 scope.)
 
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function AddChildPage() {
+import { createClient } from "@/lib/supabase/server";
+
+import { AddChildForm } from "./add-child-form";
+
+export default async function AddChildPage() {
+  // Page-level auth gate per Phase 2 decision D3. Defense-in-depth in
+  // addition to the auth check inside addChildAction.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/signup");
+  }
+
   return (
     <>
       {/* TopAppBar */}
@@ -103,120 +123,7 @@ export default function AddChildPage() {
             </p>
           </div>
 
-          <form className="space-y-6">
-            {/* Child name */}
-            <div className="space-y-2">
-              <label
-                className="block font-headline-adult text-sm font-semibold text-sam-navy ml-1"
-                htmlFor="child-name"
-              >
-                Child&rsquo;s Name
-              </label>
-              <div className="relative">
-                <input
-                  className="w-full px-5 py-4 bg-sam-cream border-2 border-transparent focus:border-sam-red focus:ring-0 rounded-2xl text-sam-navy placeholder:text-sam-gray-mid/60 transition-all font-medium outline-none"
-                  id="child-name"
-                  placeholder="e.g. Alex"
-                  type="text"
-                />
-                <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-sam-gray-mid">
-                  person
-                </span>
-              </div>
-            </div>
-
-            {/* Birth year + grade */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label
-                  className="block font-headline-adult text-sm font-semibold text-sam-navy ml-1"
-                  htmlFor="birth-year"
-                >
-                  Birth Year
-                </label>
-                <div className="relative">
-                  <select
-                    className="w-full px-5 py-4 bg-sam-cream border-2 border-transparent focus:border-sam-red focus:ring-0 rounded-2xl text-sam-navy appearance-none cursor-pointer transition-all font-medium outline-none"
-                    id="birth-year"
-                    defaultValue=""
-                  >
-                    <option disabled value="">
-                      Select
-                    </option>
-                    {Array.from({ length: 13 }, (_, i) => 2010 + i).map(
-                      (year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-sam-gray-mid pointer-events-none">
-                    calendar_month
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label
-                  className="block font-headline-adult text-sm font-semibold text-sam-navy ml-1"
-                  htmlFor="grade"
-                >
-                  Current Grade
-                </label>
-                <div className="relative">
-                  <select
-                    className="w-full px-5 py-4 bg-sam-cream border-2 border-transparent focus:border-sam-red focus:ring-0 rounded-2xl text-sam-navy appearance-none cursor-pointer transition-all font-medium outline-none"
-                    id="grade"
-                    defaultValue=""
-                  >
-                    <option disabled value="">
-                      Select
-                    </option>
-                    <option value="K">Kindergarten</option>
-                    {Array.from({ length: 8 }, (_, i) => i + 1).map((g) => (
-                      <option key={g} value={String(g)}>
-                        Grade {g}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-sam-gray-mid pointer-events-none">
-                    school
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Help tip */}
-            <div className="bg-sam-yellow/10 border border-sam-yellow/30 p-4 rounded-2xl flex gap-3">
-              <span
-                className="material-symbols-outlined text-sam-orange shrink-0"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                info
-              </span>
-              <p className="text-caption font-caption text-sam-navy/80 leading-snug">
-                Providing the correct grade helps the engine tailor diagnostic
-                questions to your child&rsquo;s level.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="pt-4 space-y-4">
-              <button
-                className="w-full py-5 bg-sam-red text-white font-display-child text-xl rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
-                type="button"
-              >
-                Add Child
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-              <Link
-                href="/signup"
-                className="block w-full py-3 bg-transparent text-sam-navy/60 font-headline-adult text-sm font-semibold hover:text-sam-navy transition-colors text-center"
-              >
-                Cancel and Go Back
-              </Link>
-            </div>
-          </form>
+          <AddChildForm />
         </div>
       </main>
 
