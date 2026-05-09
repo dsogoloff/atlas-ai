@@ -1,8 +1,3 @@
-/* Material Symbols Outlined — Google Fonts variable icon font.
- * Used by Stitch screens via `<span class="material-symbols-outlined">`.
- * Must precede the Tailwind import (Tailwind inlines its content here).
- * v1 loads from Google CDN; consider self-hosting in a follow-up cycle. */
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 @import "tailwindcss";
 
 /* =============================================================================
