@@ -33,3 +33,22 @@ export const env = {
 export function getServiceRoleKey(): string {
   return required("SUPABASE_SERVICE_ROLE_KEY");
 }
+
+// Server-only. Used by the misconception classifier (architecture.md #3).
+// Routed via the Vercel AI Gateway, not called against Anthropic directly.
+// Never import or call this from a client component.
+export function getAnthropicApiKey(): string {
+  return required("ANTHROPIC_API_KEY");
+}
+
+/**
+ * Feature flag gating real Anthropic API calls. False (default) means the
+ * classifier's LLM client returns a deterministic stub — wires stay testable
+ * while the Anthropic DPA is in flight (compliance.md §13.3). Flip to 'true'
+ * in Vercel env once the DPA lands. Any other value (unset, '', 'false',
+ * '0', etc.) reads as false; only the literal string 'true' enables live
+ * calls.
+ */
+export function isMisconceptionClassifierLive(): boolean {
+  return process.env.MISCONCEPTION_CLASSIFIER_LIVE === "true";
+}

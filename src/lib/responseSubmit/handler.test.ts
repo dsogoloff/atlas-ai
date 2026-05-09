@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
-import type { Database, Enums, Inserts, Json } from "@/lib/supabase/database.types";
+import type { Database, Enums, Json, TablesInsert } from "@/lib/supabase/database.types";
 import {
   TIME_FLAG_CONFIG_VERSION,
   flagResponseTime,
@@ -235,7 +235,7 @@ function aggRows(normal: number, invalid: number) {
   return rows;
 }
 
-type ResponseInsertRow = Inserts<"responses">;
+type ResponseInsertRow = TablesInsert<"responses">;
 
 function expectedInsertFor(timeMs: number, isCorrect = true): ResponseInsertRow {
   const flag = flagResponseTime({

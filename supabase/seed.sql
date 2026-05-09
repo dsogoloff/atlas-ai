@@ -101,7 +101,27 @@ from t,
     ('GE_SHAPE_PROPERTY',         'GEOMETRY',
        'Shape property error',
        'Misidentifies defining properties of a shape (e.g., counts a '
-       'rectangle with non-equal sides as a square).')
+       'rectangle with non-equal sides as a square).'),
+
+    -- Measurement & Data  (added in Item #9 to fill the features.md §3
+    -- starter-taxonomy gap; mirrors the migration in
+    -- 20260509000000_misconception_classifier_audit.sql)
+    ('MD_UNIT_CONFUSION',         'MEASUREMENT_DATA',
+       'Unit confusion',
+       'Mixes units when calculating, or omits the unit conversion when '
+       'needed (e.g., adds centimetres to metres without converting).'),
+    ('MD_RULER_ZERO_POINT',       'MEASUREMENT_DATA',
+       'Ruler zero-point error',
+       'Measures length starting from the 1 mark on the ruler instead of 0, '
+       'or aligns the object with the wrong end of the ruler.'),
+    ('MD_TIME_READING',           'MEASUREMENT_DATA',
+       'Time-reading error',
+       'Reads the wrong hand on an analog clock, or miscounts elapsed time '
+       'across hour boundaries.'),
+    ('MD_CHART_SCALE',            'MEASUREMENT_DATA',
+       'Chart scale misreading',
+       'Misreads the scale on a bar chart or pictogram (e.g., reads each '
+       'picture as 1 when each represents 5).')
   ) as v(code, strand, label, description);
 
 -- =============================================================================
