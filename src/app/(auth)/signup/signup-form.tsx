@@ -38,7 +38,10 @@ export function SignupForm({ centers }: Props) {
       lastName: "",
       email: "",
       password: "",
-      centerId: "",
+      // Auto-select when exactly one ACTIVE center exists (Phase 4b /
+      // Item #7). Otherwise the user picks via the multi-center <select>
+      // rendered below.
+      centerId: centers.length === 1 ? centers[0].id : "",
       consent: false as unknown as true,
     },
   });
@@ -200,36 +203,60 @@ export function SignupForm({ centers }: Props) {
         )}
       </div>
 
-      {/* Center selector — features.md §5 */}
-      <div className="space-y-2">
-        <label
-          className="font-caption text-caption text-sam-navy ml-1"
-          htmlFor="center"
-        >
-          Your S.A.M. Center
-        </label>
-        <select
-          className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all bg-white aria-[invalid=true]:border-sam-red"
-          id="center"
-          aria-invalid={!!errors.centerId}
-          defaultValue=""
-          {...register("centerId")}
-        >
-          <option value="" disabled>
-            Select your center
-          </option>
-          {centers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
+      {/* Center selector — features.md §5. When exactly one ACTIVE
+          center exists, auto-select it and render as a bordered chip
+          (Phase 4b / Item #7); the hidden input keeps the field
+          registered with react-hook-form so it's included in submission.
+          When > 1, render the existing <select>. */}
+      {centers.length === 1 ? (
+        <div className="space-y-2">
+          <label className="font-caption text-caption text-sam-navy ml-1">
+            Your S.A.M. Center
+          </label>
+          <div className="flex items-center gap-3 px-4 py-3 bg-sam-cream border border-sam-orange/20 rounded-2xl">
+            <span
+              className="material-symbols-outlined text-sam-orange"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              business
+            </span>
+            <span className="font-headline-adult text-sam-navy font-semibold">
+              {centers[0].name}
+            </span>
+          </div>
+          <input type="hidden" {...register("centerId")} />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <label
+            className="font-caption text-caption text-sam-navy ml-1"
+            htmlFor="center"
+          >
+            Your S.A.M. Center
+          </label>
+          <select
+            className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all bg-white aria-[invalid=true]:border-sam-red"
+            id="center"
+            aria-invalid={!!errors.centerId}
+            defaultValue=""
+            {...register("centerId")}
+          >
+            <option value="" disabled>
+              Select your center
             </option>
-          ))}
-        </select>
-        {errors.centerId && (
-          <p className="text-caption text-sam-red ml-1">
-            {errors.centerId.message}
-          </p>
-        )}
-      </div>
+            {centers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {errors.centerId && (
+            <p className="text-caption text-sam-red ml-1">
+              {errors.centerId.message}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* COPPA + school-operator consent — language tracks compliance.md §2 */}
       <div className="bg-sam-cream p-4 rounded-2xl border border-sam-orange/20 space-y-3">
