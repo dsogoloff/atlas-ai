@@ -210,7 +210,7 @@ export default async function ParentDashboardPage() {
               </div>
               <div className="pt-4">
                 <Link
-                  href="/add-child"
+                  href="/add-child?next=/dashboard"
                   className="bg-sam-red hover:bg-sam-red/90 text-white font-display-child font-bold text-lg px-10 py-5 rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all inline-flex items-center gap-3"
                 >
                   <span className="material-symbols-outlined">person_add</span>
@@ -271,7 +271,7 @@ export default async function ParentDashboardPage() {
               </div>
             </div>
             <Link
-              href="/add-child"
+              href="/add-child?next=/dashboard"
               className="flex items-center gap-2 px-8 py-4 border-2 border-sam-navy/20 rounded-2xl font-headline-adult text-sam-navy hover:bg-white hover:border-sam-red hover:text-sam-red transition-all group"
             >
               <span className="material-symbols-outlined text-sam-red group-hover:rotate-90 transition-transform">

@@ -44,7 +44,10 @@ export interface ScoredResponse {
 }
 
 // Stable display order matching features.md §1 strand listing.
-const STRAND_ORDER: readonly Strand[] = [
+// Exported because computeStrandMastery's contract guarantees rows in
+// this order, and other report components (strand-radar) iterate the
+// same canonical order. Single source of truth for strand iteration.
+export const STRAND_ORDER: readonly Strand[] = [
   "NUMBER_SENSE",
   "OPERATIONS",
   "WORD_PROBLEMS",

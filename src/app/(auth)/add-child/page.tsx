@@ -25,9 +25,12 @@
 //  - The inherited home_center_id is not surfaced visually on this form
 //    (the action copies it server-side from the parent's row). Surface
 //    in the dashboard child card when Phase 1 lands.
-//  - Cancel destination is hardcoded to /signup; real flow goes back to
-//    the referring page (signup vs dashboard) once router state is
-//    wired. (Phase 2 decision D5: out of #7 scope.)
+//
+// Cancel link routing: the Cancel target depends on entry path. From
+// /coppa (signup flow) it's /signup; from /dashboard's "Add Another
+// Child" CTA it's /dashboard. We mirror the /login?next= pattern —
+// callers pass ?next=/dashboard to override the default. Same-origin
+// validation matches login/page.tsx:36-39.
 
 import { redirect } from "next/navigation";
 
@@ -35,7 +38,11 @@ import { createClient } from "@/lib/supabase/server";
 
 import { AddChildForm } from "./add-child-form";
 
-export default async function AddChildPage() {
+interface Props {
+  searchParams: Promise<{ next?: string }>;
+}
+
+export default async function AddChildPage({ searchParams }: Props) {
   // Page-level auth gate per Phase 2 decision D3. Defense-in-depth in
   // addition to the auth check inside addChildAction.
   const supabase = await createClient();
@@ -45,6 +52,16 @@ export default async function AddChildPage() {
   if (!user) {
     redirect("/login?next=/add-child");
   }
+
+  // Validate ?next= same-origin (mirror login/page.tsx:36-39 + auth/
+  // callback/route.ts:30). Defaults to /signup, the cancel target for
+  // the signup → coppa → add-child path. /dashboard callers pass
+  // ?next=/dashboard explicitly.
+  const { next: nextRaw } = await searchParams;
+  const cancelHref =
+    nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
+      ? nextRaw
+      : "/signup";
 
   return (
     <>
@@ -125,7 +142,7 @@ export default async function AddChildPage() {
             </p>
           </div>
 
-          <AddChildForm />
+          <AddChildForm cancelHref={cancelHref} />
         </div>
       </main>
 

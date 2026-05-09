@@ -20,7 +20,13 @@ import {
   type AddChildInput,
 } from "./schema";
 
-export function AddChildForm() {
+interface Props {
+  /** Validated, same-origin path the page resolved from ?next= (or
+   *  defaulted to /signup). Wired into the "Cancel and Go Back" link. */
+  cancelHref: string;
+}
+
+export function AddChildForm({ cancelHref }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<AddChildResult | null>(null);
@@ -196,7 +202,7 @@ export function AddChildForm() {
           )}
         </button>
         <Link
-          href="/signup"
+          href={cancelHref}
           className="block w-full py-3 bg-transparent text-sam-navy/60 font-headline-adult text-sm font-semibold hover:text-sam-navy transition-colors text-center"
         >
           Cancel and Go Back

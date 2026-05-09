@@ -21,8 +21,7 @@
 // header below ("Mathematical Strengths"). Two visualizations of the
 // same data; one shared label.
 
-import type { Strand } from "@/lib/engine/types";
-import type { StrandMastery } from "@/lib/report/strand-mastery";
+import { STRAND_ORDER, type StrandMastery } from "@/lib/report/strand-mastery";
 
 import { SHORT_STRAND_LABELS, STRAND_LABELS } from "./strand-labels";
 
@@ -35,15 +34,6 @@ const CENTER = VIEWBOX_SIZE / 2; // 200
 const RADIUS = 130; // outer ring (100% mastery)
 const LABEL_DISTANCE = 165; // center → axis label baseline
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1.0] as const;
-
-const STRAND_ORDER: readonly Strand[] = [
-  "NUMBER_SENSE",
-  "OPERATIONS",
-  "WORD_PROBLEMS",
-  "FRACTIONS_DECIMALS",
-  "GEOMETRY",
-  "MEASUREMENT_DATA",
-] as const;
 
 // =============================================================================
 // Pure math — exported for test coverage (RD9). Tests assert axis
