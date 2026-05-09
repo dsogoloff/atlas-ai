@@ -17,6 +17,7 @@
 // Termination reason only nudges the subtitle copy.
 
 import { motion, useReducedMotion } from "framer-motion";
+import Link from "next/link";
 
 import type { TerminationReasonWire } from "@/lib/responseSubmit/types";
 import type { Tier } from "@/lib/tier/derive";
@@ -30,20 +31,18 @@ interface Props {
 }
 
 function k4Subtitle(reason: TerminationReasonWire): string {
-  // bank-exhausted gets gentler copy — "we ran out" shouldn't sound like
-  // the child failed to finish. The other two reasons look the same to
-  // the child.
+  // bank-exhausted gets a softer praise lead-in ("Great work!" vs the
+  // default's "You did an awesome job") to avoid implying the child
+  // failed to finish. The hand-back imperative is identical across
+  // reasons.
   if (reason === "bank-exhausted") {
-    return "Great work! Your grown-up will see your report.";
+    return "Great work! Please hand the screen back to your grown-up.";
   }
-  return "You did an awesome job. Hand the device back to your grown-up to see your report.";
+  return "You did an awesome job. Please hand the screen back to your grown-up.";
 }
 
-function g58Subtitle(reason: TerminationReasonWire, childName: string): string {
-  if (reason === "bank-exhausted") {
-    return `Great work, ${childName}! Show this to your grown-up.`;
-  }
-  return `Great work, ${childName}! Hand the device back to your grown-up to see your report.`;
+function g58Subtitle(childName: string): string {
+  return `Great work, ${childName}! Please hand the device back to your parent or guardian.`;
 }
 
 export function CompletionScreen({ childName, terminationReason, tier }: Props) {
@@ -121,8 +120,23 @@ export function CompletionScreen({ childName, terminationReason, tier }: Props) 
           transition={{ delay: 0.6 }}
           className="mt-4 max-w-md text-center text-lg text-sam-gray-dark/80"
         >
-          {g58Subtitle(terminationReason, childName)}
+          {g58Subtitle(childName)}
         </motion.p>
+
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.4 }}
+          className="mt-8"
+        >
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-2xl border-2 border-sam-teal px-8 py-4 font-headline-adult text-sam-navy transition-all hover:bg-sam-teal hover:text-white active:scale-95"
+          >
+            <span className="material-symbols-outlined">arrow_back</span>
+            Back to dashboard
+          </Link>
+        </motion.div>
       </div>
     );
   }
@@ -198,6 +212,21 @@ export function CompletionScreen({ childName, terminationReason, tier }: Props) 
       >
         {k4Subtitle(terminationReason)}
       </motion.p>
+
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.4 }}
+        className="mt-8"
+      >
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-2xl border-2 border-sam-yellow px-8 py-4 font-headline-adult text-sam-navy transition-all hover:bg-sam-yellow active:scale-95"
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+          Back to dashboard
+        </Link>
+      </motion.div>
     </div>
   );
 }
