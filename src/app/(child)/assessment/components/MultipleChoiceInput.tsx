@@ -1,11 +1,19 @@
 "use client";
 
-// MULTIPLE_CHOICE input. Adapted from sam-placement MultipleChoice:
-//   * Explicit Submit (sam-placement auto-advances 1.5s after click; per
-//     Item #5 ambiguity #5 resolution, all formats use explicit Submit).
-//   * sam-* tokens.
-//   * Submits the option's display text — server reads correct_index and
-//     compares against options[correct_index].trim() (correctness.ts:39-46).
+// MULTIPLE_CHOICE input. Tier-aware option-card variants:
+//
+//   * K_4: rectangular cards (min-h-[88px]), hover-scale, font-display-child
+//     for text labels and a larger numeric variant. Adapted from
+//     sam-placement MultipleChoice.
+//
+//   * G5_8: aspect-square cards with a ring-radio dot bottom-right;
+//     selected state thickens the border to border-4 and fills the dot
+//     with a check icon. font-math-numeral for numeric options. Adapted
+//     from stitch/module-c/03-g58-mc-journey.html.
+//
+// Wire format identical across tiers — submits the option's display text;
+// the server reads correct_index and compares against options[correct_index]
+// (correctness.ts:39-46).
 //
 // Per-question state reset: caller wraps with `<MultipleChoiceInput key={
 // question.id} ... />` so React remounts on question change. No internal
@@ -15,6 +23,8 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
+import type { Tier } from "@/lib/tier/derive";
+
 interface Props {
   /** From question.content.options. */
   options: string[];
@@ -22,9 +32,13 @@ interface Props {
   onSubmit: (answerGiven: string) => void;
   /** True while the submit network call is in flight. */
   disabled?: boolean;
+  /** Drives option-card variant. K_4 vs G5_8. */
+  tier: Tier;
 }
 
-export function MultipleChoiceInput({ options, onSubmit, disabled }: Props) {
+const NUMERIC_RE = /^\s*-?\d+(?:[.,]\d+)?\s*$/;
+
+export function MultipleChoiceInput({ options, onSubmit, disabled, tier }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
 
@@ -44,7 +58,65 @@ export function MultipleChoiceInput({ options, onSubmit, disabled }: Props) {
       >
         {options.map((opt, i) => {
           const isSelected = selectedIndex === i;
-          const isNumeric = /^\s*-?\d+(?:[.,]\d+)?\s*$/.test(opt);
+          const isNumeric = NUMERIC_RE.test(opt);
+
+          if (tier === "G5_8") {
+            return (
+              <motion.button
+                key={i}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                disabled={disabled}
+                onClick={() => setSelectedIndex(i)}
+                whileHover={
+                  disabled || reduceMotion ? undefined : { scale: 1.02 }
+                }
+                whileTap={
+                  disabled || reduceMotion ? undefined : { scale: 0.95 }
+                }
+                className={
+                  "relative flex aspect-square items-center justify-center rounded-3xl bg-white p-6 transition-colors duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-sam-red/30 disabled:cursor-not-allowed " +
+                  (isSelected
+                    ? "border-4 border-sam-red shadow-lg"
+                    : "border-2 border-sam-gray-light shadow-[0_4px_12px_rgba(27,58,107,0.08)] hover:border-sam-red")
+                }
+              >
+                <span
+                  className={
+                    "transition-colors " +
+                    (isNumeric
+                      ? "font-math-numeral text-4xl font-semibold md:text-5xl"
+                      : "font-display-child text-xl font-semibold md:text-2xl") +
+                    " " +
+                    (isSelected ? "text-sam-red" : "text-sam-navy")
+                  }
+                >
+                  {opt}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={
+                    "absolute bottom-4 right-4 flex h-6 w-6 items-center justify-center rounded-full transition-colors " +
+                    (isSelected
+                      ? "border-2 border-sam-red bg-sam-red"
+                      : "border-2 border-sam-gray-light")
+                  }
+                >
+                  {isSelected ? (
+                    <span
+                      className="material-symbols-outlined text-sm text-white"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      check
+                    </span>
+                  ) : null}
+                </span>
+              </motion.button>
+            );
+          }
+
+          // K_4
           return (
             <motion.button
               key={i}

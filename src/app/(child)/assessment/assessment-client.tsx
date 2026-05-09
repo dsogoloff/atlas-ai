@@ -13,6 +13,7 @@ import { useEffect, useReducer } from "react";
 
 import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
+import type { Tier } from "@/lib/tier/derive";
 
 import { QuestionShell } from "./components/QuestionShell";
 import { QuestionTimer } from "./components/QuestionTimer";
@@ -23,9 +24,10 @@ import { ErrorPanel } from "./components/ErrorPanel";
 interface Props {
   childId: string;
   childName: string;
+  tier: Tier;
 }
 
-export function AssessmentClient({ childId, childName }: Props) {
+export function AssessmentClient({ childId, childName, tier }: Props) {
   const [state, dispatch] = useReducer(reduce, initialState);
 
   // Effect: startSession on every entry into 'starting'.
@@ -108,6 +110,7 @@ export function AssessmentClient({ childId, childName }: Props) {
       <CompletionScreen
         childName={childName}
         terminationReason={state.terminationReason}
+        tier={tier}
       />
     );
   }
@@ -126,7 +129,7 @@ export function AssessmentClient({ childId, childName }: Props) {
   return (
     <>
       {state.resumed && <ResumeBanner />}
-      <QuestionShell prompt={question.content.stem}>
+      <QuestionShell prompt={question.content.stem} tier={tier}>
         {/* key={question.id} remounts QuestionTimer per question, capturing
             a fresh start time and resetting any internal input state. */}
         <QuestionTimer
@@ -134,6 +137,7 @@ export function AssessmentClient({ childId, childName }: Props) {
           question={question}
           onSubmit={handleSubmit}
           disabled={state.submitting}
+          tier={tier}
         />
       </QuestionShell>
     </>

@@ -24,6 +24,7 @@ import type {
   ClientQuestion,
   ClientQuestionContent,
 } from "@/lib/questionPicker/types";
+import type { Tier } from "@/lib/tier/derive";
 
 import { MultipleChoiceInput } from "./MultipleChoiceInput";
 import { NumericInput } from "./NumericInput";
@@ -35,9 +36,13 @@ interface Props {
   onSubmit: (answerGiven: string, timeMs: number) => void;
   /** True while the parent's submit network call is in flight. */
   disabled?: boolean;
+  /** Forwarded to MultipleChoiceInput only. NumericInput and DragDropInput
+   *  are tier-invariant in v1 (Item #6 plan §3 — keypad and drop-into-target
+   *  variants deferred). */
+  tier: Tier;
 }
 
-export function QuestionTimer({ question, onSubmit, disabled }: Props) {
+export function QuestionTimer({ question, onSubmit, disabled, tier }: Props) {
   // useState initializer runs at mount only — not during render or on
   // re-renders. Captures the wall-clock at the moment React mounted this
   // QuestionTimer instance for the current question.
@@ -55,6 +60,7 @@ export function QuestionTimer({ question, onSubmit, disabled }: Props) {
           options={getOptions(question.content)}
           onSubmit={handleAnswer}
           disabled={disabled}
+          tier={tier}
         />
       );
     case "NUMERIC_ENTRY":

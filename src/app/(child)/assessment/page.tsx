@@ -5,20 +5,21 @@
 //      query string carries the child id).
 //   2. Auth check via supabase.auth.getUser() (per ambiguity #7: render
 //      an inline ErrorPanel with /signup link rather than redirect).
-//   3. Fetch children.name (RLS-scoped to the calling parent) — needed
-//      for the completion screen's "All done, [name]!" greeting.
-//   4. Render <AssessmentClient>.
+//   3. Fetch children.name, grade_level, birth_year (RLS-scoped to the
+//      calling parent) — name for the completion greeting, grade_level
+//      and birth_year for tier derivation.
+//   4. Derive tier via @/lib/tier/derive (grade_level first, birth_year
+//      fallback — see derive.ts header for precedence rationale).
+//   5. Render <AssessmentClient> with the derived tier so K-4 vs 5-8
+//      chrome variants can switch internally.
 //
 // Errors here render the same ErrorPanel surface as runtime errors from
 // AssessmentClient. We pass canRetry=false (server-rendered errors have
 // nothing to retry) and omit onRetry (functions don't cross the RSC
 // boundary).
-//
-// TODO(item-6): once 5-8 chrome lands, derive tier from children.grade_level
-// (with birth_year fallback — see Item #5 ambiguity #2 deferral) and
-// branch chrome. For Item #5 we render K-4 chrome for everyone.
 
 import { createClient } from "@/lib/supabase/server";
+import { deriveTier } from "@/lib/tier/derive";
 
 import { AssessmentClient } from "./assessment-client";
 import { ErrorPanel } from "./components/ErrorPanel";
@@ -53,12 +54,10 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
   }
 
   // RLS on `children` (per supabase/migrations/20260426000100_rls_policies.sql)
-  // restricts to rows whose parent_id maps to the calling auth user. We
-  // only need `name` for the completion screen — grade_level/birth_year
-  // are deferred to Item #6.
+  // restricts to rows whose parent_id maps to the calling auth user.
   const { data: child, error: childErr } = await supabase
     .from("children")
-    .select("name")
+    .select("name, grade_level, birth_year")
     .eq("id", childId)
     .maybeSingle();
 
@@ -69,5 +68,16 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
     return <ErrorPanel kind="not_found" canRetry={false} />;
   }
 
-  return <AssessmentClient childId={childId} childName={child.name} />;
+  const tier = deriveTier({
+    grade_level: child.grade_level,
+    birth_year: child.birth_year,
+  });
+
+  return (
+    <AssessmentClient
+      childId={childId}
+      childName={child.name}
+      tier={tier}
+    />
+  );
 }
