@@ -263,4 +263,190 @@ Items #1, #2, #3, #5, #5a complete. Tests: 225/225 passing across the repo. The 
   Sam Chia), cold-start engine priors (#10, MVP-blocking the moment real content lands), and the cycle-1 punch list
   above (/add-child wiring, landing CTA, hamburger menu, results-page nav).
 
+2026-05-09 — Item #7 complete (parent flow end-to-end + center auto-select + dashboard)
+
+  Item #7 shipped in five phases. The headline outcome: a parent can sign up → verify email → consent → add a child → land on a real dashboard →
+  start an assessment → complete it → land back on the dashboard, with a working login flow for the second visit and a ?next= round-trip that brings
+   them back to whatever they were trying to do. Center auto-select handles the production-launch state (one ACTIVE center) without burning the
+  multi-center path. The marketing landing's primary CTAs route to signup, and the misleading logged-in chrome that was sitting in the public
+  landing's top-right since cycle 1 is finally gone.
+
+  The phasing was unusual. Item #7 planning locked five phases in dependency order: 1 (dashboard) → 2 (add-child wiring) → 3 (login) → 4 (marketing
+  entry-points + center auto-select) → 5 (verification). Phase 1 was the headliner and the hardest. But at the start of recon, Code identified that
+  the Stitch sources for the parent dashboard (module-d/01 and 03) were miscategorized — the filenames promised parent surfaces, the content
+  delivered instructor cohort views and per-child reports. Real save: building from those sources would have produced the wrong dashboard. The fix
+  was a sub-phase reorder: ship Phases 2 → 3 → 4a → 4b first, defer Phase 1 until the founder regenerated the dashboard sources in Stitch with
+  correct audience semantics. The regeneration landed mid-item (commit 22e82ad), Phases 2/3/4 shipped against the unblocked surfaces, and Phase 1
+  came back as the final code item before verification.
+
+  What shipped, by phase
+
+  Phase 2 — /add-child wiring. Form was a static port from cycle 1; this turned it into a real flow. Schema + zod + RHF + server action + page-level
+   auth gate. Validates name (1-100), birth_year (2000-2030 to match the DB CHECK), grade_level (optional free-text). Action resolves the parent via
+   auth.getUser + RLS-scoped lookup, inherits tenant_id + parent_id + home_center_id from the parent row, inserts into children. Three-generic
+  useForm<TFieldValues, TContext, TTransformedValues> to handle zod's coerce + transform divergence cleanly. No audit row written — compliance.md §2
+   covers consent events only, not data additions.
+
+  Phase 3 — login flow + ?next= round-trip + verb normalization across the auth surface. Email + password sign-in via
+  supabase.auth.signInWithPassword. Anonymous-only gate (signed-in users redirect to /dashboard regardless of any ?next=). Generic error message
+  ("Email or password is incorrect.") collapses Supabase's "Invalid login credentials" and "Email not confirmed" — small infodisclosure win, single
+  error state in the UI. Same-origin ?next= validation mirrors the auth/callback/route.ts:30 one-liner pattern, single-sourced server-side, passed
+  as a validated prop to the form. Stub wiring batch normalized "Log in" → "Sign in" across signup-form, login button (idle + busy), and the four
+  ErrorPanel arms, and rewired add-child's unauth redirect from /signup to /login?next=/add-child so users land back where they were trying to go.
+
+  Phase 4a — marketing entry-points + header sign-in pill. Hero "Start Assessment" and mascot-strip "Get Started Now" CTAs route to /signup. The
+  header right-cluster (notifications + help + avatar — all dead, all implied a signed-in user on a public landing) was replaced with a single
+  outlined "Sign in" pill → /login. The header comment block had been documenting the misleading-chrome problem since cycle 0 ("Top app bar shows
+  notifications/help/avatar (logged-in chrome) — design.md Screen 1 calls for a public marketing landing without those"); Phase 4a closes that loop.
+
+  Phase 4b — center auto-select chip. When centers.length === 1 (the production launch state — S.A.M. starts with one NYC center for v1), the signup
+   form replaces the <select> with a bordered cream chip showing the center name + business icon. centerId is set in defaultValues at form
+  construction; a hidden input keeps the field registered with RHF so it submits. Multi-center path unchanged. No schema, action, or audit-log
+  changes — the auto-selected id flows through validation and writes the same center_selected audit row.
+
+  Phase 1 — parent dashboard with tier-colored child cards + completion-screen Back-to-dashboard CTA + subtitle copy strengthening. Server component
+   with auth gate + four sequential RLS-scoped queries (parent → children → most-recent COMPLETED session per child via single IN (...)). Renders
+  empty state (Sammy + "Add Your First Child" CTA → /add-child) or populated state (greeting + 2-col card grid + Sammy + "Add Another Child" CTA).
+  Each ChildCard is viewport-aware via Tailwind responsive utilities — single component, no separate mobile sub-component. Tier-derived color band
+  (yellow K_4 / teal G5_8) reuses src/lib/tier/derive.ts from Item #6. Avatar is a colored initials circle (compliance.md §3 data minimization — no
+  child portraits). View Report disabled with lock icon when no completion; link to /report?child=<id> placeholder when completion exists (Item #8
+  owns the actual route shape).
+
+  The completion screen visual gate caught a real gap: parents had no path back from "All done, [name]!" Added an outlined "Back to dashboard" CTA
+  in both tier branches with tier-aware accents (yellow border for K_4, teal border + white-on-hover-fill for G5_8), animation-sequenced after the
+  subtitle. Founder simultaneously flagged that the existing K_4 subtitle was passive — strengthened to "Please hand the screen back to your
+  grown-up" (K_4) / "Please hand the device back to your parent or guardian" (G5_8) with tier-appropriate language split. G5_8 helper collapsed
+  because both reasons converged on identical strings under the new copy.
+
+  Sub-items committed
+
+  Seven commits on ATLAS-ASSESSMENT since Item #6 docs:
+
+  - 0ea8033 — Phase 2 (/add-child Supabase wiring)
+  - 22e82ad — Stitch module-d reorganization (mid-item regeneration after miscategorization caught at recon)
+  - 569e6d1 — Phase 3 (login route + stub wiring)
+  - b800c30 — Phase 4a (marketing entry-points + header chrome replacement)
+  - ad60907 — Phase 4b (center auto-select chip)
+  - 5f54fae — chore: gitignore supabase studio snippets
+  - 37bc669 — Phase 1 (parent dashboard + completion-screen back-to-dashboard CTA)
+
+  Gate decisions of substance
+
+  Locked Q&A across phases that future contributors should know about:
+
+  - Tier-blind FSM/engine kept (Item #6 precedent). Phase 1 dashboard reads tier in the page server component and passes it as a prop to ChildCard;
+  engine, picker, FSM, and API stay tier-blind. No tier prop threaded through the assessment session machinery.
+  - Stitch-as-spec. All ports are faithful to the Stitch source unless we have a specific reason to deviate; deviations are documented in the file's
+   header comment block. The reorganization commit (22e82ad) preserves the miscategorized originals under _archived-miscategorized/ for paper trail.
+  - Page-level auth gates, not layout-level. Phase 1 Q5 explicitly: (parent)/dashboard/page.tsx runs the auth gate; (parent)/layout.tsx stays a
+  passthrough. AGENTS.md §2 against speculative abstraction — only one route under (parent) today, easy to promote when a second lands.
+  - Generic auth error message on login. Phase 3 D3: "Email or password is incorrect." for both bad-password and email-not-confirmed paths. No
+  registered-email disclosure. Schema-parse failure surfaces a separate "Form validation failed" message (Phase 2 pattern).
+  - No audit row on login or child-add. Compliance.md §2 covers VPC consent events only. Phase 2 add-child action and Phase 3 login action both
+  deliberately skip audit writes.
+  - ?next= same-origin validation single-sourced server-side. Phase 3 P2 + F1: page server component validates and passes the safe path as a prop to
+   the client form. No client-side useSearchParams or Suspense boundary. Mirrors the existing auth/callback/route.ts:30 pattern.
+  - Center auto-select preserves audit log behavior unchanged. Phase 4b: render-only conditional. centerId in defaultValues + hidden input
+  registration + existing action validation. The center_selected audit row writes the auto-selected id without code change to actions.ts.
+  - ChildCard tier color band reuses Item #6's deriveTier. Phase 1 Q10: K_4 → sam-yellow accents; G5_8 → sam-teal accents. Page calls
+  deriveTier(child) once per card and passes the result; ChildCard just maps tier → className object.
+  - Dashboard greeting first-name extraction by whitespace split. Phase 1 Q6: parents.name.trim().split(/\s+/)[0]. Works for 95%+ of names. Schema
+  change to add a first_name column to parents is out of #7 scope; flagged as a separate consideration if the split-on-whitespace edge cases
+  (mononyms, multi-word first names) become real complaints.
+
+  Failure modes / process observations
+
+  Stitch source miscategorization caught at Phase 1 recon. The original module-d/01-parent-dashboard-desktop.html and
+  03-parent-dashboard-mobile.html were parent dashboards in name only — content was instructor cohort and per-child report. Code spotted this during
+   recon and pushed back; founder regenerated in Stitch with correct audience semantics. Without the catch, Phase 1 would have built the wrong
+  dashboard end-to-end against the wrong sources, and the gap might not have surfaced until visual gate. The sub-phase split (defer 1, ship 2/3/4)
+  made the recovery clean — Phases 2/3/4 had no dashboard dependency and could proceed in parallel with the regeneration. Lesson: Stitch source
+  filename promises can diverge from content; always validate at recon time, not at port time.
+
+  Wrong-port confusion recurred in Phase 1 visual gate. Same shape as Item #6's port confusion (sam-placement vs atlas-ai). This time it was a stale
+   pnpm dev on PID 7328 still serving port 3000 while a fresh pnpm dev failed over to port 3001. Code's earlier message gave the wrong port (3001)
+  based on the failed fresh-server output, missing that the original PID 7328 was also serving atlas-ai on the canonical port 3000. Founder
+  corrected. The Item #6 lesson (Windows process management + orphaned dev servers) repeats; the right fix is still a pnpm dev startup banner that
+  prints PID + port + repo, not just adding rules to AGENTS.md §11.
+
+  Visual-gate copy iteration cadence. Each phase surfaced 1-2 small copy/cosmetic issues that needed in-phase fixes:
+  - Phase 2: select padding to clear icon zone
+  - Phase 3: tagline size on login branding column (text-lg → text-2xl after a +2px nothingburger first attempt)
+  - Phase 4a: surfaced + deferred the marketing punch list (trademark, branding, tagline, View Sample Reports)
+  - Phase 1: completion-screen back-to-dashboard CTA + subtitle imperative strengthening
+
+  Defaulting to "fix now" for tiny in-scope items kept the commit history clean — fewer one-line fixup commits, each phase commit captures the full
+  intended state. The cost was longer per-phase visual cycles, but founder confirmed each fix in the same gate cadence so the slippage was minimal.
+
+  "Account profile not found" surfaced when founder ran delete from parents between sessions. Real bug class — auth.users rows without a
+  corresponding parents row break the dashboard (and would break add-child too if not for Phase 2's similar fallback). Phase 1 added an
+  orphan-fallback render; Phase 2's add-child action already returned "Account profile not found. Contact support." for the same shape. The
+  underlying bug: signup writes auth.users (Supabase Auth) and parents (our table) non-atomically — a partial failure between the two leaves
+  orphans. Flagging as future hardening.
+
+  Pre-existing issues surfaced or carried forward
+
+  The Phase 5 deferred-punch-list audit captured these. Some were called out across phases; logging here so they don't fade:
+
+  1. "Atlas Family" → "S.A.M. Family" rename (broader brand naming pass)
+  2. Marketing landing punch list: trademark, "Powered by Inspirea Labs" footer, font sizing across bento panels, tagline rewrite, "View Sample
+  Reports" proprietary-content rethink
+  3. Logout flow — no current way for a parent to sign out; profile dropdown on dashboard TopAppBar is shape-only
+  4. K-4 hamburger menu (empty icon shell from Item #6)
+  5. Per-child detail page → Item #8 territory
+  6. Marketing nav links (Journey/Reports/Students), footer links — all # placeholders pending real content
+  7. Bottom mobile nav on dashboard — skipped per Phase 1 Q11 (routes don't exist)
+  8. Footer on dashboard — skipped per Phase 1 Q13
+  9. "Recent Mastery 82%" preview from Stitch source 01 card 2 — Item #8 territory
+  10. COPPA placeholder copy + counsel review (compliance.md territory)
+  11. "Need help setting up your account?" link on dashboard empty state — # placeholder
+  12. /add-child Cancel link still hardcoded to /signup regardless of entry path — Phase 2 D5 deferred; flagged in Phase 5 audit, not in original
+  Item #7 deferred list
+
+  Plus one framework-housekeeping item that surfaced in Phase 5 build output:
+
+  - Next.js 16 deprecation: middleware.ts convention is deprecated in favor of proxy.ts. Pre-existing in the sense that Item #7 didn't introduce it;
+   the Next.js 16 upgrade some time before #7 brought the deprecation. Build still compiles; middleware.ts still works. Future framework-upgrade
+  housekeeping.
+
+  Technical lessons worth holding onto
+
+  - z.input vs z.output divergence + three-generic useForm. When a zod schema has coerce or transform clauses, the input type (what RHF stores)
+  diverges from the output type (what the resolver hands to the submit handler). Standard useForm<SignupInput> breaks because RHF's internal
+  defaultValues typing requires the input shape, not the output. Workaround: useForm<TFieldValues = z.input, TContext = unknown, TTransformedValues
+  = z.output>(...) with three generics. Add-child does this cleanly (Phase 2). Signup avoids it by not using coerce (its centerId is already a
+  string at intake).
+  - ?next= same-origin one-liner pattern. nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : DEFAULT. Rejects absolute URLs
+   (https://evil.com/...) and protocol-relative URLs (//evil.com/...). Single-sourced server-side, zero client surface. Mirrors
+  auth/callback/route.ts:30. Reusable for any route that takes an external next param.
+  - Server-prop validation > client-side useSearchParams when both are options. Fewer code paths, simpler component, no Suspense boundary
+  requirement, validation single-sourced. Phase 3 F1 chose this; the win is a smaller form component with a guaranteed-safe next prop and no
+  client-side guard logic.
+  - Tier-derived UI conditionals collocated with deriveTier. Item #6 introduced the K_4/G5_8 chrome split for the assessment screens; Item #7 reused
+   the same deriveTier(child) to drive ChildCard color bands on the dashboard. Both call deriveTier at the page level (server) and pass the resolved
+   enum down as a prop. The lib stays a single source of truth for "what tier is this child"; the visual switching lives at the leaf component.
+  Clean reuse pattern; expect Item #8 to do the same for report-page chrome.
+  - Stitch source miscategorization is a real failure mode. Filename promises diverging from content slipped past the original cycle-1 ingestion.
+  Item #7's mid-stream regeneration worked because the sub-phase split insulated the dependency-free phases. Lesson: validate Stitch source content
+  at recon time (read enough of the HTML to confirm the audience matches the filename's promise), not at port time. The reorganization commit's
+  archived-misnamed-files convention is a useful paper trail when this happens again.
+
+  Status updates
+
+  Items #1, #2, #3, #5, #5a, #6, #7 complete. Tests: 245/245 passing. The backend serves complete sessions against placeholder content; the parent
+  flow is end-to-end (signup → email verify → COPPA → add-child → dashboard → start assessment → completion → back to dashboard, with login
+  round-trip on revisit and center auto-select for the v1 launch state). Build compiles cleanly under Next.js 16; deployed-state behavior verified
+  via local Supabase + dev-server visual gates.
+
+  Missing for MVP: Item #8 (parent-facing diagnostic report UI — owns the /report route shape Item #7's child-card placeholder anticipates), Item #9
+   (misconception classifier service), Item #10 (cold-start engine priors — MVP-blocker the moment real content lands), Item #11 (real S.A.M.
+  content — blocked on Sam Chia), plus the 12-item deferred punch list above and the Next.js 16 middleware → proxy framework housekeeping.
+
+  Default forward for Item #8
+
+  Diagnostic report UI is the next code item. Reads complete sessions, surfaces strand-level diagnostics on the same assessment_sessions +
+  assessment_responses schema Item #2 wired, owns the /report route shape that Item #7's child-card placeholder (/report?child=<id>) anticipates.
+  Tier-aware chrome variant likely (mirroring Items #6 and #7). Same gate discipline. Don't accept silent fixes, access-control deferrals, or
+  fabricated values. AGENTS.md §11 has three rules now; if a fourth is needed, write it concretely.
+
 *(Subsequent entries below)*
