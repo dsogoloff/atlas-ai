@@ -1,0 +1,257 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Atlas Assessment Parent Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-on-surface": "#edf0ff",
+                      "sam-cream": "#FFF8F0",
+                      "outline-variant": "#e4bebc",
+                      "sam-navy": "#1B3A6B",
+                      "on-tertiary": "#ffffff",
+                      "background": "#f9f9ff",
+                      "inverse-surface": "#0d2f60",
+                      "sam-red": "#E63946",
+                      "white": "#FFFFFF",
+                      "tertiary-container": "#936f03",
+                      "on-primary-fixed": "#410007",
+                      "tertiary-fixed": "#ffdf9b",
+                      "on-tertiary-fixed-variant": "#5b4300",
+                      "sam-gray-light": "#E5E5E5",
+                      "on-tertiary-fixed": "#251a00",
+                      "on-primary": "#ffffff",
+                      "surface-dim": "#cadaff",
+                      "surface-container-low": "#f1f3ff",
+                      "on-primary-container": "#fffbff",
+                      "surface-container-high": "#e0e8ff",
+                      "surface-bright": "#f9f9ff",
+                      "secondary-fixed-dim": "#ffb780",
+                      "outline": "#8f6f6e",
+                      "secondary-container": "#ffab69",
+                      "on-primary-fixed-variant": "#92001c",
+                      "sam-yellow": "#FFD166",
+                      "surface-container-lowest": "#ffffff",
+                      "sam-teal": "#06A77D",
+                      "tertiary-fixed-dim": "#edc157",
+                      "primary": "#b7102a",
+                      "on-surface-variant": "#5b403f",
+                      "on-secondary-container": "#783d01",
+                      "primary-fixed": "#ffdad8",
+                      "primary-container": "#db313f",
+                      "secondary": "#8e4e14",
+                      "surface-tint": "#bb152c",
+                      "on-error": "#ffffff",
+                      "surface": "#f9f9ff",
+                      "sam-gray-dark": "#333333",
+                      "error": "#ba1a1a",
+                      "primary-fixed-dim": "#ffb3b1",
+                      "on-surface": "#001a40",
+                      "surface-container": "#e8edff",
+                      "secondary-fixed": "#ffdcc4",
+                      "sam-gray-mid": "#777777",
+                      "tertiary": "#755700",
+                      "inverse-primary": "#ffb3b1",
+                      "on-error-container": "#93000a",
+                      "on-background": "#001a40",
+                      "sam-orange": "#F4A261",
+                      "on-tertiary-container": "#fffbff",
+                      "surface-variant": "#d7e2ff",
+                      "on-secondary-fixed-variant": "#6f3800",
+                      "on-secondary-fixed": "#2f1400",
+                      "surface-container-highest": "#d7e2ff",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-lg": "32px",
+                      "margin-desktop": "40px",
+                      "stack-sm": "8px",
+                      "margin-tablet": "32px",
+                      "unit": "4px",
+                      "report-width": "880px",
+                      "gutter": "24px",
+                      "stack-md": "16px",
+                      "container-max": "1440px"
+              },
+              "fontFamily": {
+                      "math-numeral": ["Plus Jakarta Sans"],
+                      "display-child": ["Plus Jakarta Sans"],
+                      "headline-adult": ["Inter"],
+                      "body-regular": ["Inter"],
+                      "caption": ["Inter"]
+              },
+              "fontSize": {
+                      "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                      "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0;
+        }
+    </style>
+</head>
+<body class="font-body-regular text-sam-navy antialiased">
+<!-- TopAppBar -->
+<header class="bg-[#FEFBF6] dark:bg-slate-950 docked full-width top-0 z-40 border-b border-[#F2EDE4] dark:border-slate-800 shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-[#1B3A6B] dark:text-slate-100 font-['Plus_Jakarta_Sans']">Atlas Assessment</span>
+</div>
+<div class="flex items-center space-x-6">
+<nav class="hidden md:flex space-x-8">
+<a class="text-[#E63946] border-b-2 border-[#E63946] pb-1 font-['Plus_Jakarta_Sans'] font-semibold transition-colors" href="#">Family Dashboard</a>
+<a class="text-[#1B3A6B]/60 dark:text-slate-400 font-['Plus_Jakarta_Sans'] font-semibold hover:text-[#E63946] transition-colors" href="#">Resources</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-[#1B3A6B]/60 hover:text-[#E63946] transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="flex items-center gap-2 cursor-pointer group">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-sam-teal">
+<img alt="Parent Profile" class="w-full h-full object-cover" data-alt="A professional and warm portrait of a mother in her late 30s with a kind expression. She is in a bright, modern home office setting with soft natural light streaming through a window. The overall aesthetic is clean, high-key, and premium, mirroring the warm cream and navy palette of the application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeEzdLqrmiV67XuvB_dWbUeUAdl41DNQ2GeT-LOIWwJ5AGSi-IOmcvKQ1YrytJp85HYmZ1HxssJTh8oSiQLOV4FYylIs3OtBRb2_NeVnKp1hijdXtRDao-ETwpxq03o_6etOkVQHpKFVGyRiVesHu5FREMhrUpjmUHGj0NvqdQ2UYkybulCLuSqm7gPOqI-aVdARlvtWOJ5C6jljf6JmXmUMIx7rBYF3EL6o9dVp2FNs8UlMZjEdjvkvRNbeQm1lKguMIHGiRuRfVh">
+</div>
+<span class="material-symbols-outlined text-sam-navy group-hover:text-sam-red transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-[1440px] mx-auto px-10 pt-16 pb-24">
+<!-- Header Section -->
+<div class="mb-12">
+<h1 class="font-display-child text-sam-navy text-[48px] tracking-tight mb-2">Welcome back, Sarah</h1>
+<p class="font-headline-adult text-sam-navy/60">Here's how your family is doing.</p>
+</div>
+<!-- Child Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Card 1: Leo -->
+<div class="bg-white rounded-[32px] p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30 flex flex-col transition-all hover:shadow-[0px_8px_32px_rgba(27,58,107,0.1)] relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-sam-yellow/10 rounded-bl-[100px] -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex items-start gap-6 mb-8 relative">
+<div class="w-24 h-24 rounded-3xl overflow-hidden bg-sam-cream border-4 border-sam-yellow">
+<img alt="Leo" class="w-full h-full object-cover" data-alt="A portrait of a cheerful 7-year-old boy named Leo with an energetic and curious expression. He is wearing a colorful polo shirt, and the background is a soft-focus playroom with educational posters. The lighting is warm and joyful, consistent with the playful-professional educational brand style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL_ccVjMCV5kCEvNkZ2UJtt4LlMYQDx-PBGpRw1yB6XKoz0gHjqBn7vdZuSoN48WTPi2WMUoz61siRQt_uobA2xCFVJAXTeVlHFppxw6fQddDoqZ5lgYX89WKX2XGtlZA-9FY2_hZd3EZhG_obryQmr3TUubo5NuOetIAc_PjUDeg0mYKTg0wum9IEQ14cHfTIqU365FKVxe0sADcRKJMYiyGPNJFodIsbXF8jcue0kL1fc49yLo7ffz0yDPUZPEgI-1l9WaYfpuKU">
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h2 class="font-display-child text-3xl text-sam-navy">Leo</h2>
+<span class="bg-sam-yellow/20 text-sam-navy px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Grade 2</span>
+</div>
+<div class="flex items-center gap-2 text-sam-teal font-semibold">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-caption">Ready to start</span>
+</div>
+</div>
+</div>
+<div class="mt-auto space-y-4">
+<button class="w-full bg-sam-red text-white font-display-child text-xl py-4 rounded-2xl shadow-lg hover:translate-y-[-2px] active:translate-y-[1px] transition-all flex items-center justify-center gap-2 group">
+                        Start Assessment
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="w-full text-sam-gray-mid font-headline-adult text-base py-2 cursor-not-allowed flex items-center justify-center gap-1" disabled="">
+                        View Report
+                        <span class="material-symbols-outlined text-[18px]">lock</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Maya -->
+<div class="bg-white rounded-[32px] p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30 flex flex-col transition-all hover:shadow-[0px_8px_32px_rgba(27,58,107,0.1)] relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-sam-teal/10 rounded-bl-[100px] -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex items-start gap-6 mb-8 relative">
+<div class="w-24 h-24 rounded-3xl overflow-hidden bg-sam-cream border-4 border-sam-teal">
+<img alt="Maya" class="w-full h-full object-cover" data-alt="A thoughtful and bright 10-year-old girl named Maya with a confident smile. She is sitting in a light-filled classroom or home study area. The visual mood is encouraging and focused, using high-quality digital photography with a soft depth of field that emphasizes the warm, clean educational atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYP333aOXWTJM7PH-BXoJt6gAMNPfsthlXmxb3O9fo88MtDB20kws_oz4aBqQHIHXVi8N_2XrQPCg9TNSp2FVqIcNYL5s3LzKoKO4cvwy7n5fbI-u1KV2KeV6ChDPh3AqUYvnOZ9xDUL3x2T6UX9o1TDrjAJ7YwbJTyboSfIOLoFHLINr4ijGKZ14Bex5_m3sCtSfcreiYTV2wDIawX6K3VAPDG8bDHgDak1olBEoG1UN0NSgjVD4i8hzhs17TaQDcu1oQUTEgCtjG">
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h2 class="font-display-child text-3xl text-sam-navy">Maya</h2>
+<span class="bg-sam-teal/20 text-sam-teal px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Grade 5</span>
+</div>
+<div class="flex items-center gap-2 text-sam-navy/40 font-medium">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span class="text-caption">Last assessed Oct 24, 2023</span>
+</div>
+</div>
+</div>
+<!-- Small Progress Preview -->
+<div class="mb-8 p-4 bg-sam-cream/50 rounded-2xl border border-sam-gray-light/20">
+<div class="flex justify-between items-center mb-2">
+<span class="text-caption font-bold text-sam-navy/60 uppercase">Recent Mastery</span>
+<span class="text-sam-teal font-bold">82%</span>
+</div>
+<div class="w-full bg-sam-gray-light h-2.5 rounded-full overflow-hidden">
+<div class="bg-sam-teal h-full w-[82%] rounded-full"></div>
+</div>
+</div>
+<div class="mt-auto space-y-4">
+<button class="w-full bg-sam-red text-white font-display-child text-xl py-4 rounded-2xl shadow-lg hover:translate-y-[-2px] active:translate-y-[1px] transition-all flex items-center justify-center gap-2 group">
+                        Start Assessment
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="w-full text-sam-navy font-headline-adult text-base py-2 hover:text-sam-red transition-colors flex items-center justify-center gap-1">
+                        View Report
+                        <span class="material-symbols-outlined text-[18px]">analytics</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Mascot & Footer CTA -->
+<div class="mt-20 flex flex-col items-center">
+<div class="relative mb-12">
+<div class="absolute -top-16 -left-20 bg-white p-4 rounded-2xl shadow-md border border-sam-gray-light/30 max-w-[200px] transform -rotate-3">
+<p class="text-sm font-medium leading-relaxed">Let's see what amazing things they can do today!</p>
+<div class="absolute -bottom-2 right-4 w-4 h-4 bg-white border-r border-b border-sam-gray-light/30 rotate-45"></div>
+</div>
+<div class="w-32 h-32 relative">
+<img alt="Sammy the Dachshund" class="w-full h-full object-contain" data-alt="A friendly and illustrative cartoon mini long-haired dachshund mascot sitting in a playful pose. The illustration is done in a clean, modern vector style with soft gradients. The dachshund has expressive eyes and a warm smile, and is integrated seamlessly into the high-end educational platform UI with a bright and encouraging mood." src="https://lh3.googleusercontent.com/aida/ADBb0ugVHle2v52bGzkm2922KaTreNqwq1CfrrcfrqUUhJ8h8ECIFiFnmobC01dcGipPI4Sjs1xjQvNlpB7E0rY57bZlYCY0AnaDPN5_7uirlqoSgDpiGZa8-zoye4EPuvU8kEVhCplB46TUgO4e3dVZ0YAumsEVzFsH_CuKknrjeAEJprRC_WdCKq3HrkSTZektU8PhWar9VoLMCjfZqkxEQsmzZj7-YqDAcLMrGMRLg7v2NJLgsgLaeogug2g">
+</div>
+</div>
+<button class="flex items-center gap-2 px-8 py-4 border-2 border-sam-navy/20 rounded-2xl font-headline-adult text-sam-navy hover:bg-white hover:border-sam-red hover:text-sam-red transition-all group">
+<span class="material-symbols-outlined text-sam-red group-hover:rotate-90 transition-transform">add</span>
+                Add Another Child
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Hidden on desktop as per rules, but included for structure if mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white dark:bg-slate-900 border-t border-[#F2EDE4] dark:border-slate-800 shadow-[0px_-8px_24px_rgba(27,58,107,0.08)] rounded-t-[32px]">
+<div class="flex flex-col items-center justify-center bg-[#E63946]/10 text-[#E63946] rounded-2xl px-5 py-2">
+<span class="material-symbols-outlined">map</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold uppercase tracking-wider">Journey</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#1B3A6B]/40 dark:text-slate-500 px-5 py-2 hover:bg-[#F2EDE4]">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold uppercase tracking-wider">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#1B3A6B]/40 dark:text-slate-500 px-5 py-2 hover:bg-[#F2EDE4]">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold uppercase tracking-wider">Students</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#1B3A6B]/40 dark:text-slate-500 px-5 py-2 hover:bg-[#F2EDE4]">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold uppercase tracking-wider">Settings</span>
+</div>
+</nav>
+
+
+</body></html>
