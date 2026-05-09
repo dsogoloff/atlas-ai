@@ -48,4 +48,7 @@ supabase/.temp/
 # Supabase CLI Studio state
 supabase/snippets/
 
+# Throwaway exploration scripts (seed scripts for visual gates, etc.)
+tmp/
+
 

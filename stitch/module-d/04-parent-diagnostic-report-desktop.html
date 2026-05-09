@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Leo's Diagnostic Report | Atlas Assessment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-high": "#e0e8ff",
+                      "sam-gray-light": "#E5E5E5",
+                      "on-tertiary": "#ffffff",
+                      "surface-bright": "#f9f9ff",
+                      "secondary-fixed-dim": "#ffb780",
+                      "sam-gray-dark": "#333333",
+                      "surface-container": "#e8edff",
+                      "on-secondary-fixed-variant": "#6f3800",
+                      "on-secondary-container": "#783d01",
+                      "tertiary-fixed-dim": "#edc157",
+                      "surface-tint": "#bb152c",
+                      "on-primary-fixed-variant": "#92001c",
+                      "secondary-container": "#ffab69",
+                      "secondary-fixed": "#ffdcc4",
+                      "on-primary": "#ffffff",
+                      "on-surface-variant": "#5b403f",
+                      "sam-teal": "#06A77D",
+                      "on-surface": "#001a40",
+                      "secondary": "#8e4e14",
+                      "on-tertiary-container": "#fffbff",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#fffbff",
+                      "inverse-surface": "#0d2f60",
+                      "on-secondary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "sam-gray-mid": "#777777",
+                      "surface-container-highest": "#d7e2ff",
+                      "sam-cream": "#FFF8F0",
+                      "primary-fixed-dim": "#ffb3b1",
+                      "surface-variant": "#d7e2ff",
+                      "sam-orange": "#F4A261",
+                      "on-primary-fixed": "#410007",
+                      "outline": "#8f6f6e",
+                      "surface-container-low": "#f1f3ff",
+                      "outline-variant": "#e4bebc",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed": "#2f1400",
+                      "white": "#FFFFFF",
+                      "surface-dim": "#cadaff",
+                      "surface": "#f9f9ff",
+                      "tertiary-container": "#936f03",
+                      "primary-fixed": "#ffdad8",
+                      "sam-yellow": "#FFD166",
+                      "inverse-on-surface": "#edf0ff",
+                      "sam-navy": "#1B3A6B",
+                      "primary-container": "#db313f",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-fixed": "#251a00",
+                      "sam-red": "#E63946",
+                      "tertiary": "#755700",
+                      "tertiary-fixed": "#ffdf9b",
+                      "on-background": "#001a40",
+                      "surface-container-lowest": "#ffffff",
+                      "primary": "#b7102a",
+                      "inverse-primary": "#ffb3b1",
+                      "background": "#f9f9ff",
+                      "on-tertiary-fixed-variant": "#5b4300"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px",
+                      "2xl": "1.5rem"
+              },
+              "spacing": {
+                      "report-width": "880px",
+                      "unit": "4px",
+                      "stack-md": "16px",
+                      "stack-lg": "32px",
+                      "margin-tablet": "32px",
+                      "margin-desktop": "40px",
+                      "stack-sm": "8px",
+                      "gutter": "24px",
+                      "container-max": "1440px"
+              },
+              "fontFamily": {
+                      "body-regular": ["Inter"],
+                      "math-numeral": ["Plus Jakarta Sans"],
+                      "display-child": ["Plus Jakarta Sans"],
+                      "caption": ["Inter"],
+                      "headline-adult": ["Inter"]
+              },
+              "fontSize": {
+                      "body-regular": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "math-numeral": ["32px", {"lineHeight": "1.0", "fontWeight": "600"}],
+                      "display-child": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "caption": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "headline-adult": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F0; /* sam-cream */
+            color: #1B3A6B; /* sam-navy */
+        }
+        .report-container {
+            max-width: 880px;
+        }
+        .custom-shadow {
+            box-shadow: 0px 4px 12px rgba(27, 58, 107, 0.08);
+        }
+    </style>
+</head>
+<body class="font-body-regular">
+<!-- Top Navigation Shell -->
+<header class="bg-white sticky top-0 z-50 shadow-sm border-b border-slate-200">
+<div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+<div class="flex items-center gap-8">
+<div class="text-xl font-bold text-slate-900 flex items-center gap-2">
+<span class="text-sam-red material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">architecture</span>
+<span class="font-display-child text-2xl tracking-tight">Atlas Assessment</span>
+</div>
+<nav class="hidden md:flex gap-6">
+<a class="font-medium text-slate-600 hover:text-sam-red transition-colors" href="#">Family Dashboard</a>
+<a class="font-medium text-slate-600 hover:text-sam-red transition-colors" href="#">Resources</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-sam-red transition-colors">notifications</span>
+<div class="flex items-center gap-2 cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden ring-2 ring-transparent group-hover:ring-sam-red/20 transition-all">
+<img alt="Parent Avatar" class="w-full h-full object-cover" data-alt="A professional and warm close-up portrait of a middle-aged woman with a friendly smile, representing a parent user. She has soft lighting on her face and a blurred, modern home office background. The color palette is natural and warm, matching a premium educational platform's aesthetic. High-quality digital photography with a shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDccDwQSwpqLD95_I5-I8x2gV11DkCvlxo7O4wK9tgUQ985khWdLLTVAq-49Yqd06V-loeLai5sPmw5I8TRfvQZsDkuNqyatoR8Lirv3xKzKTvwHKOI5lwobXrr870ARR3dffvTUl8mrN2f3CLJJBZGmZnY3AUD-kneYQWg4D9dPfYmmBDDplixYAm_hA7xnakaPUEIv1P7xOvZUZXLpnkF4K6rb758p0FcPIuw_Bz-tnQZ2ntmVnyKFELGywPMfowLCv1jjehAzuzc"/>
+</div>
+<span class="material-symbols-outlined text-slate-400">expand_more</span>
+</div>
+</div>
+</div>
+</header>
+<main class="report-container mx-auto px-6 py-12">
+<!-- Page Header -->
+<div class="mb-10">
+<button class="flex items-center gap-2 text-sam-navy hover:text-sam-red transition-colors mb-6 font-medium">
+<span class="material-symbols-outlined text-xl">arrow_back</span>
+<span>Back to Dashboard</span>
+</button>
+<h1 class="text-4xl font-display-child text-sam-navy mb-2">Leo's Diagnostic Report</h1>
+<p class="text-slate-500 font-medium">Grade 2 • Completed on Oct 25, 2024</p>
+</div>
+<!-- 1. Overall Summary Card -->
+<section class="mb-12">
+<div class="bg-white rounded-2xl p-8 custom-shadow flex flex-col md:flex-row items-center gap-10">
+<div class="flex-1 space-y-4">
+<h2 class="text-slate-500 uppercase tracking-widest text-sm font-bold">Recommended Placement</h2>
+<div class="text-5xl font-display-child text-sam-red">S.A.M. Level 2A</div>
+<p class="text-lg text-sam-navy font-body-regular opacity-90">
+                        Leo showed strong conceptual understanding today! He is ready to begin Level 2A.
+                    </p>
+</div>
+<div class="relative w-48 h-48 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle cx="96" cy="96" fill="transparent" r="88" stroke="#F1F3FF" stroke-width="12"></circle>
+<circle cx="96" cy="96" fill="transparent" r="88" stroke="#E63946" stroke-dasharray="552.92" stroke-dashoffset="82.93" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-display-child text-sam-navy leading-none">85%</span>
+<span class="text-xs font-bold text-slate-400 uppercase mt-1">Proficiency</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 2. Strand Breakdown -->
+<section class="mb-12">
+<h3 class="text-2xl font-display-child text-sam-navy mb-6">Mathematical Strengths</h3>
+<div class="bg-white rounded-2xl p-8 custom-shadow space-y-8">
+<!-- Strand Item -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-bold text-sam-navy">Number Sense</span>
+<span class="text-sm font-bold text-sam-teal">92% Mastery</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-sam-teal rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<!-- Strand Item -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-bold text-sam-navy">Operations</span>
+<span class="text-sm font-bold text-sam-teal">80% Mastery</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-sam-teal rounded-full" style="width: 80%"></div>
+</div>
+</div>
+<!-- Strand Item -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-bold text-sam-navy">Measurement</span>
+<span class="text-sm font-bold text-sam-orange">65% Progressing</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-sam-orange rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<!-- Strand Item -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-bold text-sam-navy">Logic &amp; Word Problems</span>
+<span class="text-sm font-bold text-sam-orange">70% Progressing</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-sam-orange rounded-full" style="width: 70%"></div>
+</div>
+</div>
+<!-- Strand Item Focus -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="font-bold text-sam-navy">Geometry</span>
+<span class="text-sm font-bold text-sam-red">45% Area of Focus</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-sam-red rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Detected Misconceptions -->
+<section class="mb-12">
+<h3 class="text-2xl font-display-child text-sam-navy mb-6">Areas for Growth</h3>
+<div class="grid md:grid-cols-2 gap-6">
+<!-- Misconception Card 1 -->
+<div class="bg-white rounded-2xl p-6 custom-shadow border border-slate-50">
+<div class="w-12 h-12 bg-sam-red/10 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-sam-red" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+</div>
+<h4 class="text-lg font-bold text-sam-navy mb-2">Regrouping Confusion</h4>
+<p class="text-slate-600 text-sm leading-relaxed">
+                        Leo sometimes forgets to carry over the 'ten' when adding two-digit numbers. This is a very common step in Grade 2 math!
+                    </p>
+</div>
+<!-- Misconception Card 2 -->
+<div class="bg-white rounded-2xl p-6 custom-shadow border border-slate-50">
+<div class="w-12 h-12 bg-sam-orange/10 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-sam-orange" style="font-variation-settings: 'FILL' 1;">schedule</span>
+</div>
+<h4 class="text-lg font-bold text-sam-navy mb-2">Time Interval Logic</h4>
+<p class="text-slate-600 text-sm leading-relaxed">
+                        Leo is great at telling time but finds it a bit tricky to calculate how much time has passed between two events.
+                    </p>
+</div>
+</div>
+</section>
+<!-- 4. Recommended Next Steps -->
+<section class="mb-12">
+<div class="bg-white rounded-2xl p-8 border-2 border-sam-navy/5 custom-shadow">
+<h3 class="text-xl font-bold text-sam-navy mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sam-teal">tips_and_updates</span>
+                    Ways to Support Leo at Home
+                </h3>
+<ul class="space-y-6">
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-sam-navy/30">check_circle</span>
+<p class="text-sam-navy/80">Use physical blocks or coins to practice <span class="font-bold text-sam-navy">'carrying over'</span> during addition.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-sam-navy/30">check_circle</span>
+<p class="text-sam-navy/80">Practice reading <span class="font-bold text-sam-navy">analog clocks</span> during daily routines like breakfast or bedtime.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-sam-navy/30">check_circle</span>
+<p class="text-sam-navy/80">Schedule a <span class="font-bold text-sam-navy">progress check-in</span> in 6 weeks with the S.A.M. instructor.</p>
+</li>
+</ul>
+</div>
+</section>
+<!-- 5. Mascot Touch -->
+<section class="mb-16 relative py-10">
+<div class="flex items-center gap-6">
+<div class="w-40 h-40 flex-shrink-0">
+<img alt="Sammy the Dachshund" class="w-full h-full object-cover rounded-full border-4 border-white shadow-lg" data-alt="A cute long-haired mini dachshund with expressive warm eyes looking directly at the camera, wearing a small red educational accessory or bandana. The dog is sitting in a brightly lit, clean nursery or classroom setting with soft bokeh background. The image has a joyful, encouraging, and friendly mood, styled like a high-quality children's brand mascot photo." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx0w8Xm5eLUiCn9RkBUoaWbz9OqcajnFaSEwWg_gANcpGt5ugBAFImV16qywpN87WGDOH1CXtwrk2vPN5AjDjBtytGRonU0idV_qotgFmFdFt0U9ThUiEn5FJqdfYjy46tCXYck_JwG1VBAYPqVtUl9nNukpAe3B5rXw3eOyresEWeTtarQa8J3UxAFucil6BanV00FL-vPBiIKj5SeTvhiQgPI124NFBEdua001nF4BnURO2c1lsBGqOkxFf2OUEQcoSU3PFNNAss"/>
+</div>
+<div class="relative bg-white p-6 rounded-3xl custom-shadow border-2 border-sam-red/10">
+<div class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-l-2 border-b-2 border-sam-red/10 rotate-45"></div>
+<p class="text-lg font-medium text-sam-navy italic">
+                        "Leo's making great progress! I loved seeing how hard he worked on those number puzzles today. Keep going, buddy!"
+                    </p>
+<p class="text-sam-red font-bold mt-2">— Sammy the Otter</p>
+</div>
+</div>
+</section>
+<!-- 6. Footer Actions -->
+<div class="flex flex-col md:flex-row justify-center items-center gap-4 mb-20">
+<button class="px-8 py-4 bg-sam-navy text-white rounded-2xl font-bold hover:bg-sam-navy/90 transition-all active:scale-95 shadow-md">
+                View Detailed Answer Log
+            </button>
+<button class="px-8 py-4 bg-transparent border-2 border-sam-navy/20 text-sam-navy rounded-2xl font-bold hover:border-sam-navy transition-all active:scale-95">
+                Back to Dashboard
+            </button>
+</div>
+</main>
+<footer class="bg-stone-50 border-t border-slate-200 py-12 px-6">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="font-bold text-slate-800 flex items-center gap-2">
+<span class="text-sam-red material-symbols-outlined">architecture</span>
+<span>S.A.M Atlas Assessment</span>
+</div>
+<div class="flex gap-8">
+<a class="text-slate-500 hover:text-sam-navy transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 hover:text-sam-navy transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 hover:text-sam-navy transition-colors" href="#">Help Center</a>
+<a class="text-slate-500 hover:text-sam-navy transition-colors" href="#">Contact</a>
+</div>
+<p class="text-slate-400 text-sm">© 2024 S.A.M Atlas Assessment. All rights reserved.</p>
+</div>
+</footer>
+</body></html>

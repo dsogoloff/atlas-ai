@@ -127,3 +127,33 @@ export function toPlacementEstimateJson(
     confidence: est.confidence,
   };
 }
+
+/** Runtime type guard for the persisted/wire shape. Use at any boundary
+ *  reading current_estimate from the DB (typed there as Json | null) —
+ *  callers should narrow with this guard before passing the value to
+ *  fromPlacementEstimateJson. */
+export function isPlacementEstimateJson(
+  value: unknown,
+): value is PlacementEstimateJson {
+  if (value === null || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.overall_level === "string" &&
+    typeof v.confidence === "number" &&
+    typeof v.strand_levels === "object" &&
+    v.strand_levels !== null
+  );
+}
+
+/** Inverse of toPlacementEstimateJson: hydrates the snake_case wire/DB
+ *  shape into the camelCase engine shape. Pure shape conversion — pass
+ *  values you've already narrowed with isPlacementEstimateJson. */
+export function fromPlacementEstimateJson(
+  json: PlacementEstimateJson,
+): PlacementEstimate {
+  return {
+    overallLevel: json.overall_level,
+    strandLevels: json.strand_levels,
+    confidence: json.confidence,
+  };
+}
