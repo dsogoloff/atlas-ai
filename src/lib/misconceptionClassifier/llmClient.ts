@@ -8,7 +8,8 @@
 // Two modes:
 //   * stub  (default; MISCONCEPTION_CLASSIFIER_LIVE != 'true'): returns
 //     the conservative-empty fixture without calling the LLM. Wires stay
-//     testable while the Anthropic DPA is in flight (compliance.md §13.3).
+//     testable while Anthropic K-8 educational ToS alignment is in flight
+//     (compliance.md §6 LLM-specific guardrails + §13.3).
 //   * live  (MISCONCEPTION_CLASSIFIER_LIVE === 'true'): calls generateObject
 //     against the Gateway with structured-output enforcement, 3s hard
 //     timeout (S3 lock), 1 retry on retryable failures (S4 lock; AI SDK

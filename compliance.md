@@ -237,13 +237,17 @@ Implications for the privacy notice:
 
 ### Data Processing Agreements (DPAs)
 
-A signed DPA must be in place with each sub-processor before launch. The Compliance Agent maintains a checklist of DPA status.
+DPA mechanics vary by provider. The Compliance Agent verifies each sub-processor's status before launch:
+
+- **Anthropic** — DPA is auto-incorporated into Commercial Terms of Service when Atlas accepts those Terms for API usage; no separate signing step. The actual pre-launch gate for Anthropic is **terms-of-service alignment for K-8 educational use**: Anthropic's Privacy Policy §7 currently excludes users under 18, so educational use cases serving K-8 require a sales conversation that produces additional terms beyond standard Commercial ToS. See §13.3 for current status.
+- **Supabase, Vercel, Resend** — verify DPA status per each provider's standard mechanics; checklist tracked by the Compliance Agent.
 
 ### LLM-specific guardrails
 
 - **No question content is sent to LLMs for training purposes.** Per S.A.M. licensing, S.A.M. content cannot be used to train AI models. Atlas's LLM provider settings must explicitly disable training-on-customer-data (Anthropic offers this by default for API customers, but it must be verified).
 - **No child names are sent to LLMs unless necessary.** For misconception classification, only the question, the correct answer, and the child's response are sent — not the child's name. For report narrative generation, the child's first name is included to personalize the report.
 - **No persistent identifiers (e.g., user IDs) are sent to LLMs.** Each LLM call is stateless from the LLM's perspective.
+- **K-8 educational LLM use requires explicit ToS alignment per provider.** Anthropic's Privacy Policy §7 currently excludes users under 18 from Claude by default; serving K-8 children requires a sales conversation that produces additional terms. Until that alignment lands, live LLM calls involving child responses are gated behind a feature flag (`MISCONCEPTION_CLASSIFIER_LIVE`, default off; classifier returns a deterministic stub when off). The architecture's AI Gateway abstraction (`'<provider>/<model>'` model strings via the AI SDK) means swapping providers is a one-line change if Anthropic terms don't ultimately work — OpenAI offers a similar K-8 pathway (zero data retention + sales conversation). This is deliberate compliance-resilience posture, not just routing convenience.
 
 ### No advertising or marketing data sharing
 
@@ -388,13 +392,13 @@ Before the v1 MVP launches publicly:
 3. Deletion flow tested end-to-end (including backup purging timeline).
 4. VPC flow tested with edge cases (expired token, replayed token, rate-limit boundary, multi-child window, center-change re-confirmation, day-30 hard-revocation cutover).
 5. Incident response runbook reviewed.
-6. DPAs in place with all sub-processors.
+6. Sub-processor terms-of-service status verified per §6 (DPA mechanics vary; Anthropic specifically requires K-8 educational ToS alignment, not just DPA signing).
 7. S.A.M. licensing agreement signed.
 
 ### Ongoing review
 
 - Monthly: review of audit logs for anomalies.
-- Quarterly: review of sub-processor list and DPA status.
+- Quarterly: review of sub-processor list and terms status (DPA + any provider-specific alignment per §6).
 - Annually: full compliance review with counsel.
 - On any material change: re-consent flow triggered for existing parents.
 
@@ -463,7 +467,7 @@ These are not blockers for engine/schema work but must be resolved before public
 
 1. **Final privacy policy text** — requires legal counsel review.
 2. **S.A.M. licensing agreement** — pending Sam Chia conversation.
-3. **DPAs with sub-processors** — Supabase, Vercel, Anthropic, Resend.
+3. **Sub-processor terms** — DPA status for Supabase, Vercel, Resend per standard mechanics. For Anthropic, DPA is auto-incorporated with Commercial ToS; the actual gate is K-8 educational ToS alignment via Anthropic sales (in flight as of 2026-05-09; expected 1–3 week turnaround).
 4. **Counsel selection** — identify qualified privacy counsel for pre-launch review.
 5. **Insurance** — cyber liability and E&O insurance scoped before public launch.
 6. **State-specific privacy laws** — California (CCPA/CPRA), Colorado (CPA), Connecticut (CTDPA), Virginia (VCDPA), and other state laws may impose additional requirements. Counsel review covers this.
