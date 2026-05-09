@@ -19,6 +19,8 @@
 // ./actions.ts. Cycle-1 form-side deviations (Birth Year 2010-2022,
 // Grade K-8, help-tip wording) live in those files now.
 //
+// Phase 3 of Item #7 (D6): unauth redirect now /login?next=/add-child (was /signup).
+//
 // Spec gaps still to address (intentionally NOT fixed in Phase 2):
 //  - The inherited home_center_id is not surfaced visually on this form
 //    (the action copies it server-side from the parent's row). Surface
@@ -41,7 +43,7 @@ export default async function AddChildPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect("/signup");
+    redirect("/login?next=/add-child");
   }
 
   return (

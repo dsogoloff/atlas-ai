@@ -296,9 +296,9 @@ export function SignupForm({ centers }: Props) {
         </button>
         <div className="flex items-center justify-center gap-2 font-caption text-caption text-sam-gray-mid">
           <span>Already have an account?</span>
-          <a className="text-sam-red font-bold hover:underline" href="#">
-            Log in
-          </a>
+          <Link className="text-sam-red font-bold hover:underline" href="/login">
+            Sign in
+          </Link>
         </div>
       </div>
     </form>

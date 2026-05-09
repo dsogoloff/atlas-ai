@@ -4,12 +4,12 @@
 // adjacent (short, no jargon) but addressed to the parent — by the time
 // this shows, the parent is likely the one looking at the screen.
 //
-// Per Item #5 ambiguity #7 resolution: no /login route exists in canonical
-// (signup-form.tsx:299 has the "Log in" link wired to "#" as a placeholder),
-// so the unauthenticated arm sends users to /signup. Same for forbidden /
-// not_found / session_completed: there's no parent dashboard yet either,
-// but /signup is the only existing auth surface, so it's the safe target
-// until those routes land.
+// Per Phase 3 of Item #7: /login now exists, so all four arms route there
+// (was /signup as a placeholder per the original Item #5 ambiguity #7
+// resolution). No ?next= plumbing — none of these arms benefits from
+// returning to /assessment after sign-in (the underlying error condition
+// would just recur), and /login defaults to /dashboard on success when
+// ?next= is absent. ErrorPanel is a leaf with no child_id context anyway.
 
 import Link from "next/link";
 
@@ -110,7 +110,7 @@ export function ErrorPanel({ kind, canRetry, onRetry }: Props) {
           </button>
         ) : (
           <Link
-            href="/signup"
+            href="/login"
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-2xl bg-sam-navy px-8 font-display-child text-lg font-bold text-white transition-opacity hover:opacity-90"
           >
             Go to sign in
