@@ -51,4 +51,7 @@ supabase/snippets/
 # Throwaway exploration scripts (seed scripts for visual gates, etc.)
 tmp/
 
+# Claude Code per-developer config
+.claude/
+
 

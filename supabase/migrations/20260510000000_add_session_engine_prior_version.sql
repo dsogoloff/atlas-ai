@@ -1,0 +1,49 @@
+-- Atlas Assessment — session-level engine prior version stamp.
+--
+-- Source-of-truth references:
+--   features.md §1 — Adaptive Question Engine (Phase 2 of Item #10 adds
+--     the prior-seed paragraph; this migration lands the storage shape).
+--   architecture.md — engine-state replay vs persist trade-off; cold-start
+--     priors decision row added in Item #10 cross-cutting docs pass.
+--   compliance.md §12 — version-on-row pattern for derived classifications.
+--     Engine priors are derived from (prior_config_version + grade + strand);
+--     stamping the version per-row makes historical sessions re-analyzable
+--     when the prior config is recalibrated.
+--   src/lib/engine/priors.ts — TS code that owns the active version string
+--     and the per-grade-per-strand map (lands alongside this migration in
+--     Item #10 Phase 2).
+--   src/lib/sessionStart/handler.ts — writes the column at session insert.
+--   src/lib/responseSubmit/replay.ts — reads the column to look up the
+--     active config in the repo and seed the replay engine state.
+--
+-- Single column on assessment_sessions:
+--   engine_prior_version — algorithm version stamp at session start.
+--
+-- The version itself is text (free-form) rather than an enum: prior configs
+-- ship as JSON files in the repo (priors-v1.json, priors-v2.json, ...) and
+-- a new version is added by adding a file, not by altering an enum. Mirrors
+-- responses.misconception_classifier_version (also text, also versioned by
+-- repo file rather than DB enum).
+
+-- =============================================================================
+-- assessment_sessions — add engine_prior_version.
+-- =============================================================================
+--
+-- NOT NULL with default 'v1' so:
+--   * Any existing rows (none expected per S1 founder confirmation; clean
+--     slate via supabase db reset is acceptable post-migration) backfill
+--     to 'v1' coherently — that's the only prior config that exists.
+--   * Future inserts that fail to specify the column still get 'v1' rather
+--     than a NULL value the replay path would have to special-case. The
+--     handler ALWAYS specifies the column explicitly; the default is a
+--     safety net, not a contract.
+--   * Pattern mirrors responses.misconception_classifier_method (also
+--     `not null default 'none'`) from migration 20260509000000.
+--
+-- No index. Query patterns filter by id (PK) on the read path; audit
+-- aggregates by version are full-table scans at v1 scale and don't justify
+-- the index cost. Mirrors the no-index posture on
+-- responses.misconception_classifier_version.
+
+alter table assessment_sessions
+  add column engine_prior_version text not null default 'v1';

@@ -15,6 +15,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           current_estimate: Json | null
+          engine_prior_version: string
           id: string
           session_time_flag:
             | Database["public"]["Enums"]["session_time_flag"]
@@ -29,6 +30,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           current_estimate?: Json | null
+          engine_prior_version?: string
           id?: string
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
@@ -43,6 +45,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           current_estimate?: Json | null
+          engine_prior_version?: string
           id?: string
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
