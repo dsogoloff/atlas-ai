@@ -1122,4 +1122,355 @@ Items #1, #2, #3, #5, #5a complete. Tests: 225/225 passing across the repo. The 
   using again whenever the deferred-punch-list backlog accumulates
   enough mechanical items to justify the bundling overhead.
 
+2026-05-09 — Item #9 complete (misconception classifier service, three-phase ship)
+
+  The biggest single item shipped to date. Three feature phases plus a docs
+  realignment, an external compliance dependency in flight (Anthropic
+  K-8 educational ToS), and the first LLM provider integration in the
+  codebase. Atlas now produces real misconception data on every response
+  insert — distractor-map for MC-with-mapped-distractor, conservative-
+  empty stub on the Haiku branch until the live flag flips, never empty
+  by hardcoded default. The diagnostic report's MisconceptionList card
+  transitions from "always empty state" (the prior reality, which Items
+  #8 / #8.5 status notes mistakenly framed as classifier output) to
+  "renders real cards" the moment a wrong MC with mapped distractor is
+  submitted.
+
+  What shipped, end-to-end
+
+    Phase 1 (commit 1770b58) — Schema foundation. New pg enum
+    misconception_classifier_method ('none' | 'distractor-map' | 'haiku'
+    | 'failed'); two columns on responses (method NOT NULL DEFAULT
+    'none'; version nullable text); 4 MEASUREMENT_DATA misconception
+    rows (MD_UNIT_CONFUSION, MD_RULER_ZERO_POINT, MD_TIME_READING,
+    MD_CHART_SCALE) filling features.md §3's silent slot.
+    ANTHROPIC_API_KEY + MISCONCEPTION_CLASSIFIER_LIVE env helpers
+    added to env.ts. Incidental: Supabase CLI 2.98.2 renamed types-gen
+    helpers (Inserts → TablesInsert) when database.types.ts
+    regenerated; one test file followed the upstream rename.
+
+    Phase 2 (commit 6a5d072) — Classifier service module. 11 new
+    files in src/lib/misconceptionClassifier/: types.ts, taxonomy.ts
+    (cached DB loader), distractorMap.ts (pure option-index lookup),
+    prompt.ts (zod schema + builder), llmClient.ts (gateway-routed
+    AI SDK call, stub default), classifier.ts (top-level router),
+    and 5 test files. `ai 6.0.177` installed (AI SDK v6, single
+    dependency, no @ai-sdk/anthropic). 58 new tests across the module:
+    14 (distractor map) + 8 (taxonomy) + 16 (prompt) + 11 (LLM client)
+    + 9 (classifier router). 296 → 354 tests, all green.
+
+    Docs realignment (commit 2d1a8e1) — landed between Phase 2 and
+    Phase 3 to fix a documentation misframing surfaced by the actual
+    Anthropic support exchange. Replaced "Anthropic DPA pending pre-
+    launch" framing across compliance.md (§6, §10, §13.3),
+    .env.example (the MISCONCEPTION_CLASSIFIER_LIVE comment), and
+    llmClient.ts header. Anthropic Privacy Policy §7 reference verified
+    against https://www.anthropic.com/legal/privacy on the same day.
+    Surgical diff: 13 insertions + 7 deletions across 3 files.
+
+    Phase 3 (commit 091d032) — Handler integration. classify() called
+    between applyResponse and the response insert in handler.ts (new
+    step 10 in the numbered handler flow); three new column values
+    flow through to the row. handler.test.ts gains vi.mock for the
+    classifier seam, expectedInsertFor() extended with optional
+    ClassifierOutput parameter, one new integration test verifying
+    column population. 354 → 355 tests. Visual gate confirmed
+    end-to-end against the placeholder bank.
+
+  The architecture in plain language
+
+  Hybrid router. MC with a mapped distractor in
+  content.distractor_misconceptions → static lookup, no LLM. MC
+  without a map / NUMERIC_ENTRY → Haiku (live mode) or conservative-
+  empty stub fixture (default). DRAG_DROP → no detection in v1
+  (deferred to v1.x once ordering-misconception taxonomy lands).
+  Correct response → no classification (R2 lock; only runs on
+  incorrect).
+
+  Inline in handler. The classifier call sits synchronously between
+  the engine's applyResponse step and the response insert. Stub mode:
+  ~0ms added. Live mode: 200-500ms per call (Haiku 4.5 typical p95).
+  Architecture.md's <2s budget honored. No async queue, no background
+  job — the row is written with classifier output already populated.
+
+  Failure-soft. Classifier never throws to the caller (S2 lock,
+  regression-tested in classifier.test.ts). Any internal failure
+  (taxonomy load, prompt build, LLM call) resolves to method='failed'
+  codes=[] on the row. The response insert always succeeds; one
+  classification miss never blocks a child's session. Forensically
+  observable post-hoc via the audit columns.
+
+  3-second hard timeout, 1 retry on retryable failures (S3 + S4 locks).
+  AI SDK's maxRetries:1 + AbortSignal.timeout(3000) covers 5xx/timeout
+  retry with exponential backoff and skips 4xx. Keeps live-mode tail
+  latency bounded.
+
+  AI Gateway routing. The model is a plain provider/model string —
+  'anthropic/claude-haiku-4-5-20251001' — passed to the AI SDK's
+  generateObject. The Vercel AI Gateway intercepts, providing
+  observability, zero-data-retention, and provider failover without
+  a separate client. Single dependency: the `ai` package alone, no
+  provider-specific @ai-sdk/anthropic.
+
+  Stub vs live. MISCONCEPTION_CLASSIFIER_LIVE='true' is the only value
+  that enables live mode; anything else (unset, empty, 'false', '0',
+  'TRUE', ' true ') reads as stub. The stub fixture is the conservative
+  empty: { codes: [], method: 'haiku', version: 'v1', tokens: { input:
+  0, output: 0 }, elapsedMs: 0 }. NE responses get empty arrays in
+  stub mode — honest about "we have no signal yet" — until the
+  Anthropic K-8 ToS conversation lands.
+
+  The Anthropic K-8 conversation, what we learned
+
+  Initial assumption (compliance.md §13.3 framing pre-realignment):
+  Anthropic DPA pending pre-launch as a separate signing step.
+
+  What Anthropic support actually clarified:
+
+  1. DPA mechanics: auto-incorporated into Commercial Terms of Service.
+     When Atlas accepts Commercial ToS for API usage, the DPA is
+     incorporated. There is no separate DPA-signing step. So the
+     "pending DPA" framing was wrong.
+
+  2. The actual gate: Anthropic's Privacy Policy §7 ("Children")
+     currently excludes users under 18 from Claude by default
+     ("Our Services are not directed towards, and we do not knowingly
+     collect... any information from children under the age of 18").
+     Educational use cases serving K-8 require a sales conversation
+     that produces additional terms beyond standard Commercial ToS.
+
+  Sales email sent 2026-05-09; expected 1-3 week turnaround. The
+  classifier ships behind MISCONCEPTION_CLASSIFIER_LIVE=false until
+  those terms land. The full Phase 1 → 2 → 3 build proceeded in
+  parallel; legal/compliance timeline did not block engineering.
+
+  Compliance posture realigned in commit 2d1a8e1 to reflect this
+  reality across compliance.md (§6 DPA section restructured, new §6
+  LLM-specific bullet documenting K-8 ToS alignment as the actual
+  gate, §10 pre-launch and ongoing review tweaked, §13.3 open item
+  rewritten), .env.example (MISCONCEPTION_CLASSIFIER_LIVE comment
+  block updated), and llmClient.ts header.
+
+  Backup path. The AI Gateway abstraction means switching LLM
+  providers is a one-line model-string change ('anthropic/...' →
+  'openai/gpt-4o-mini' for example). OpenAI has a similar K-8
+  pathway: zero data retention via API + sales conversation for
+  educational use. If Anthropic's terms don't ultimately work for
+  Atlas, the switching cost is one config string, not a refactor.
+  This is a deliberate compliance-resilience posture — the AI Gateway
+  is not just routing convenience, it's a moat against single-
+  provider compliance lock-in.
+
+  Cost forecast
+
+  Closes architecture.md open question #1 with a documented baseline
+  (real telemetry from the E2 cost-logging will validate at pilot):
+
+    Haiku 4.5 list pricing: $1 per million input tokens, $5 per
+      million output tokens.
+    Per call: ~600 input + ~30 output ≈ $0.00075.
+    Realistic 5 calls per assessment ≈ $3.75 per 1,000 assessments.
+    Upper bound 15 calls per assessment ≈ $11.25 per 1,000 assessments.
+    Prompt caching (deferred to v2 per architecture.md) would cut
+      this by ~50% at scale.
+
+  Cost is not a meaningful business concern at any plausible Atlas
+  scale. The cost-relevant levers for this product are S.A.M.
+  licensing + CAC + pricing strategy, not Haiku token spend. Worth
+  tracking the per-assessment number for cost attribution sanity but
+  not for forecasting decisions.
+
+  Process notes
+
+  Founder-log framing correction. Items #8 and #8.5 status notes
+  said "detected_misconceptions on responses comes from the engine's
+  per-question distractor mapping, not a real classifier." Reality
+  before Phase 3: the field was hardcoded [] on every response insert
+  (handler.ts line 414 in the pre-Phase-3 state). The engine itself
+  never touched misconceptions — engine/types.ts:38-43 explicitly
+  excludes misconceptions from EngineResponse with the comment
+  "Misconception detection happens elsewhere; the engine only needs
+  correctness." Phase 3 introduces population of detected_misconceptions
+  from cold start, not replacement of an existing classifier path.
+
+  This was a §11 rule #3 (read source-of-truth before referencing
+  schema or behavior) miss in earlier item entries — surface as a
+  candidate refinement of that rule. The current rule wording covers
+  schema enums and route shapes; broadening to cover "implementation
+  state" (what code currently does, not just what it could do) might
+  close the gap that produced two consecutive incorrect framings.
+
+  §11 rule #1 sighting in Phase 2 sub-step (c). vitest 4.1.5 spy quirk
+  on console.log produced a test failure during sub-step (c). Code
+  paused for founder direction (paste failure verbatim, halt before
+  fix) rather than silently remediating; rule held. Triggered four
+  times now across Items #2, #5, #8.6, #9 — consistently working
+  under pressure.
+
+  Vitest 4.1.5 vi.spyOn(console, "log") quirk. Doesn't reliably
+  intercept console.log calls in this project's vitest config.
+  Verified not a module-load capture issue (llmClient.ts calls
+  console.log inline at the call site, no captured reference).
+  Workaround: direct property replacement (const originalLog =
+  console.log; console.log = (...args) => logs.push(args); restore
+  in finally). Useful pattern for any future test that needs to
+  assert on log content. vi.spyOn still works fine for output
+  suppression (no .toHaveBeenCalled assertion).
+
+  DPA gating misframing. Surfaced via the actual Anthropic exchange —
+  the founder asked the right question (what's the K-8 path?) instead
+  of accepting the assumed "DPA pending" frame. Documentation
+  realigned before Phase 3 wired the handler, so the .env.example
+  flag comment and llmClient.ts header pointed to the real gating
+  reality from commit 091d032 onward. Surgical realignment scope:
+  ~13 line changes across compliance.md + .env.example + llmClient.ts.
+  Two prior commit bodies (Phase 1 and Phase 2) carry the outdated
+  framing — not amended because they're already pushed; the historical
+  record documents the gating "as believed at the time."
+
+  Cleanup of parent-dir CLAUDE.md (mentioned at the start of Item #9).
+  The 41K SAM Singapore Math spec at the workspace root was
+  auto-loading on every session and conflating with atlas-ai's actual
+  state. Replaced with a 2.4K orientation pointer; SAM spec preserved
+  as sam-original-spec.md (no longer auto-loads). This unblocked
+  Item #9 work but is its own meta-improvement worth crediting — the
+  framing-correction problem in the founder log entries (above) might
+  have been worse without this cleanup, since the SAM spec described
+  a different misconception-classifier shape (placement-tool buckets,
+  not adaptive-engine misconceptions).
+
+  Background-runner pnpm dev pattern did NOT recur in Item #9.
+  AGENTS.md §11 hard rule on this is holding (the Item #8.6
+  codification working as intended).
+
+  Failure modes / observations
+
+  Cosmetic backslash artifact in Phase 2 commit body. I escaped `$`
+  as `\$` in the heredoc body, expecting bash to interpret it. The
+  heredoc was single-quoted (<<'EOF'), which suppresses ALL shell
+  expansion — so the backslashes were preserved literally. Five
+  occurrences of `\$` in the cost forecast section of commit 6a5d072.
+  Not amended (would require force-push to overwrite a published
+  commit, which AGENTS.md cautions against absent explicit
+  authorization, and the cosmetic artifact doesn't warrant the
+  rewrite). Lesson applied to subsequent commits (Phase 3 commit body
+  has clean `$3.75` / `$11.25` / `$1/$5`).
+
+  Supabase CLI 2.98.2 surfaced an upstream rename. `Inserts` →
+  `TablesInsert` and `Updates` → `TablesUpdate` between the previous
+  types regen and Phase 1's. Not introduced by Item #9; surfaced by
+  it when database.types.ts regenerated against the new schema. One
+  test file (handler.test.ts, two lines) followed the rename. Worth
+  noting that Supabase CLI versioning can change generated-types API
+  surface; future regens may surface similar drift. The fix is always
+  small (renames don't affect semantics), but the typecheck-failed
+  signal at gate time is the catch — never "fix" by silently editing
+  the regenerated file (it gets overwritten).
+
+  Items closed off the deferred punch lists
+
+    None directly. Item #9 didn't bundle deferred-punch-list cleanup;
+    it shipped its own feature surface end-to-end.
+
+  Items remaining on punch lists. Same as before Item #9 started; no
+  additions, no deletions:
+
+    Item #7 list: 11 items (logout flow, marketing copy rewrites,
+    brand naming pass — all product/strategy decisions, not batchable
+    as mechanical work).
+
+    Item #8 / #8.5 combined list: 3 items (performance-blind copy
+    across the report; tier-aware radar chrome single sam-teal vs
+    K_4/G5_8 differentiated; TopAppBar duplication when a third
+    parent route lands).
+
+  Technical lessons worth holding onto
+
+  Stub-mode-by-default for external dependencies pending compliance.
+  The MISCONCEPTION_CLASSIFIER_LIVE flag let three full phases ship
+  while the Anthropic conversation runs in parallel. Reusable pattern
+  any time external compliance gates a build: ship the wires behind
+  a feature flag with a deterministic fixture; flip the flag when
+  legal/compliance lands. Better than blocking development on
+  external timelines that the team can't control.
+
+  AI Gateway abstraction = compliance resilience. The architecture
+  lets Atlas swap LLM providers with a one-line model-string change.
+  This isn't just routing convenience — it's a moat against
+  single-provider compliance lock-in. If Anthropic terms don't work
+  for K-8, OpenAI is one config string away (similar K-8 pathway).
+  Pattern applies any time a service has multiple comparable providers
+  and the choice has compliance / cost / quality tradeoffs that may
+  shift.
+
+  Failure-soft classifier (S2 lock). Classifier wraps all paths in
+  try/catch and surfaces failures as method='failed' on the row
+  rather than throwing to the handler. Means classifier failures are
+  never user-visible (response submit always succeeds) but are
+  forensically observable post-hoc. Pattern applies to any
+  non-essential derived data path — derived data should never block
+  the primary write.
+
+  Tests as contract for asymmetric error postures. distractorMap.ts
+  returns [] on malformed content (router fall-through branch);
+  prompt.ts throws (haiku-branch entry, no fallback within the branch).
+  Both file headers explain WHY. Future contributors who try to
+  "normalize" the postures will get failing tests + clear comments
+  pointing back to the design rationale. Tests-as-contract beats
+  tests-as-coverage when the design choice is non-obvious.
+
+  Visual gate as final integration check. Unit tests passed across
+  all 11 Phase 2 files (354 tests), but only the Phase 3 visual gate
+  confirmed the handler-to-report-to-Studio data path actually works
+  end-to-end. Never skip the visual gate on production-write-path
+  features, even if unit coverage is comprehensive. Unit tests verify
+  module behavior; visual gates verify integration.
+
+  Status update
+
+  Items #1, #2, #3, #5, #5a, #6, #7, #8, #8.5, #8.6, #9 complete.
+  Tests: 355/355 passing. Build clean.
+
+  Atlas now produces real misconception data:
+    * In stub mode (default): wrong MC with mapped distractor populates
+      method='distractor-map' + the mapped code; wrong NE / unmapped
+      MC populates method='haiku' + empty codes; correct or DD
+      populates method='none'.
+    * In live mode (when the K-8 ToS lands and the flag flips): wrong
+      NE and unmapped MC actually call Haiku 4.5 via the Vercel AI
+      Gateway and return real classifications.
+
+  The diagnostic report's MisconceptionList card transitions from
+  "always empty state" (the prior reality, mistakenly framed as
+  classifier output in Items #8 / #8.5) to "renders real cards" the
+  moment a wrong MC with mapped distractor is submitted. End-to-end
+  pipeline functional pending Anthropic K-8 ToS alignment for the
+  Haiku path.
+
+  Default forward — two parallel tracks
+
+  External (founder-only): Anthropic K-8 ToS sales conversation. 1-3
+  week clock; check inbox for response. If terms work, flip
+  MISCONCEPTION_CLASSIFIER_LIVE=true in Vercel env (preview/staging
+  /prod separately) and verify live mode produces real Haiku codes
+  on NE responses. Cost telemetry from the E2 structured logs will
+  validate the per-assessment cost forecast.
+
+  Code-only options:
+    * Item #10 (cold-start grade-seeded engine priors). Next coding
+      item with real scope. MVP-blocking the moment Item #11 lands
+      real S.A.M. content but buildable ahead — the engine work is
+      independent of content.
+    * Item #11 (real S.A.M. content). Blocked on Sam Chia conversation.
+    * Cleanup batch (Item #8.6 pattern). Viable if mechanical items
+      have accumulated. Currently 14 items across the three deferred
+      lists; most are product/strategy decisions, not batchable.
+
+  Founder's call when ready. Same gate discipline. The four-time
+  recurrence of AGENTS.md §11 rule #1 holding under pressure (most
+  recently in Phase 2 sub-step c) is genuine evidence that the rule
+  is doing real work. The §11 rule #3 broadening candidate (cover
+  "implementation state" not just schema/route shapes) is the
+  strongest §11 refinement candidate from this round.
+
 *(Subsequent entries below)*
