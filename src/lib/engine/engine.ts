@@ -15,18 +15,19 @@ import {
   confidenceWithin,
   meanLevelIndex,
   modeLevel,
-  uniformPosterior,
   updateStrandPosterior,
   varianceLevelIndex,
 } from "./bayesian";
 import { LEVELS, STRANDS, levelAt, levelTheta } from "./levels";
+import { PRIORS_V1, seedPosteriors } from "./priors";
 import type {
+  EnginePriorConfig,
   EngineQuestion,
   EngineResponse,
   EngineState,
+  GradeKey,
   NextQuestionRequest,
   PlacementEstimate,
-  Posteriors,
   Strand,
   TerminationDecision,
 } from "./types";
@@ -44,12 +45,31 @@ export const SELECTION_WIDTH = 0.3;
 // State construction
 // ---------------------------------------------------------------------------
 
-export function createEngineState(): EngineState {
-  const posteriors = STRANDS.reduce((acc, strand) => {
-    acc[strand] = uniformPosterior();
-    return acc;
-  }, {} as Posteriors);
+/**
+ * Options for createEngineState. Both fields optional — backward-compatible
+ * with the no-args call (which produces uniform priors, the v1 pre-Item-#10
+ * behaviour).
+ *
+ *   * `grade` — when provided and recognised, the engine seeds posteriors
+ *     from `config.byGrade[grade]`. Null/undefined/unknown grades fall
+ *     back to uniform via seedPosteriors (R3 + Q4 locks).
+ *   * `config` — optional override of the default PRIORS_V1. Phase 3's
+ *     replayEngineState passes the version-specific config from
+ *     getPriorConfigByVersion so historical sessions replay under the
+ *     EXACT prior config stamped on engine_prior_version at write time.
+ */
+export interface CreateEngineStateOptions {
+  grade?: GradeKey | null;
+  config?: EnginePriorConfig;
+}
 
+export function createEngineState(
+  options: CreateEngineStateOptions = {},
+): EngineState {
+  const posteriors = seedPosteriors(
+    options.grade,
+    options.config ?? PRIORS_V1,
+  );
   return {
     posteriors,
     responseCount: 0,

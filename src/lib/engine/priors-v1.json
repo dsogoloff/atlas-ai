@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "description": "Algorithmic placeholder per Item #10 R2 lock: per-grade-per-strand priors generated from a discrete Gaussian peaked at the grade's mid-of-band theta, std dev = 2 level-steps (where one step = 6/17 in theta-space). Same algorithm applied to all 6 strands within a grade — strand-specific divergence is a v2 concern. Replace with empirical priors (cf. roadmap/v2-progress-tracking.md feature 16) once approximately 200-300 responses per item exist. priors.ts validates this file with zod at module load and expands it into a full per-grade-per-strand EnginePriorConfig.",
+  "generator": "algorithmic-gaussian-discrete",
+  "params": {
+    "sigma_levels": 2,
+    "mu_strategy": "grade_band_midpoint"
+  }
+}

@@ -20,6 +20,41 @@ export type StrandPosterior = Record<HalfGradeLevel, number>;
 export type Posteriors = Record<Strand, StrandPosterior>;
 
 /**
+ * Grade keys for cold-start prior seeding (Item #10).
+ *
+ * The DB schema's `children.grade_level` is `text` and nullable (initial
+ * schema:122) — intentionally permissive at the parent /add-child UI
+ * level. The engine layer enforces this strict 9-key set: values outside
+ * this set, or a null grade, trigger the uniform-prior fallback in
+ * seedPosteriors (R3 lock; see priors.ts).
+ */
+export type GradeKey =
+  | "K"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8";
+
+/**
+ * Engine prior configuration — produced by priors.ts at module load from
+ * the on-disk spec file (priors-v1.json). Per-grade, per-strand starting
+ * posteriors used to seed createEngineState when a child's grade is known.
+ *
+ * Per compliance.md §12 the `version` field is stamped on
+ * assessment_sessions.engine_prior_version (migration 20260510000000) so
+ * historical sessions remain re-analyzable when the prior config is
+ * recalibrated.
+ */
+export interface EnginePriorConfig {
+  version: string;
+  byGrade: Record<GradeKey, Posteriors>;
+}
+
+/**
  * Minimal description of a question for the engine. The full content
  * field stays in the DB; the engine only needs the IRT inputs.
  */

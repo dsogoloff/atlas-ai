@@ -18,7 +18,14 @@ import {
   shouldTerminate,
 } from "./engine";
 import { LEVELS, STRANDS, levelAt, levelIndex, levelTheta } from "./levels";
-import type { EngineQuestion, EngineResponse, Strand } from "./types";
+import { PRIORS_V1, seedPosteriors } from "./priors";
+import type {
+  EnginePriorConfig,
+  EngineQuestion,
+  EngineResponse,
+  Posteriors,
+  Strand,
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Math primitives
@@ -307,5 +314,79 @@ describe("integration — simulated child at level 3A", () => {
     // Confidence is at least better than the uniform-prior baseline of
     // ~0.17 — the engine actually learned something.
     expect(est.confidence).toBeGreaterThan(0.17);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createEngineState — grade-aware seeding (Item #10)
+// ---------------------------------------------------------------------------
+
+describe("createEngineState — grade-aware seeding (Item #10)", () => {
+  it("grade-only call seeds posteriors matching seedPosteriors(grade, PRIORS_V1)", () => {
+    const state = createEngineState({ grade: "K" });
+    const expected = seedPosteriors("K", PRIORS_V1);
+    for (const strand of STRANDS) {
+      for (const level of LEVELS) {
+        expect(state.posteriors[strand][level]).toBe(expected[strand][level]);
+      }
+    }
+    expect(state.responseCount).toBe(0);
+    expect(state.servedQuestionIds).toEqual([]);
+  });
+
+  it("null grade produces uniform — matches no-args createEngineState()", () => {
+    const fromNoArgs = createEngineState();
+    const fromNullGrade = createEngineState({ grade: null });
+    for (const strand of STRANDS) {
+      for (const level of LEVELS) {
+        expect(fromNullGrade.posteriors[strand][level]).toBe(
+          fromNoArgs.posteriors[strand][level],
+        );
+      }
+    }
+  });
+
+  it("config-only call (no grade) produces uniform under the custom config", () => {
+    // Custom config (different version label) but the test asserts
+    // undefined-grade falls back to uniform regardless of config contents.
+    const customConfig: EnginePriorConfig = {
+      version: "test-custom",
+      byGrade: { ...PRIORS_V1.byGrade },
+    };
+    const state = createEngineState({ config: customConfig });
+    const expected = uniformPosterior();
+    for (const strand of STRANDS) {
+      for (const level of LEVELS) {
+        expect(state.posteriors[strand][level]).toBe(expected[level]);
+      }
+    }
+  });
+
+  it("grade + custom config seeds from the custom config, not PRIORS_V1", () => {
+    // Override grade-2's posteriors with all-uniform across strands.
+    // Distinguishable from PRIORS_V1.byGrade["2"] which peaks at 2A-2B.
+    const flatGrade2: Posteriors = STRANDS.reduce((acc, s) => {
+      acc[s] = uniformPosterior();
+      return acc;
+    }, {} as Posteriors);
+    const customConfig: EnginePriorConfig = {
+      version: "test-custom",
+      byGrade: {
+        ...PRIORS_V1.byGrade,
+        "2": flatGrade2,
+      },
+    };
+    const state = createEngineState({ grade: "2", config: customConfig });
+    const uniform = uniformPosterior();
+    for (const strand of STRANDS) {
+      for (const level of LEVELS) {
+        expect(state.posteriors[strand][level]).toBe(uniform[level]);
+      }
+    }
+    // Sanity: confirm we're NOT seeing PRIORS_V1's grade-2 shape (which
+    // would peak at 2A-2B with mass higher than the uniform 1/18).
+    expect(state.posteriors.NUMBER_SENSE["2A"]).not.toBe(
+      PRIORS_V1.byGrade["2"]["NUMBER_SENSE"]["2A"],
+    );
   });
 });
