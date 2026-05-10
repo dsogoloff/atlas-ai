@@ -123,6 +123,7 @@ import type {
   EngineResponse,
   TerminationDecision,
 } from "@/lib/engine/types";
+import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import { pickQuestion } from "@/lib/questionPicker/picker";
 import { toClientQuestion } from "@/lib/questionPicker/serialize";
@@ -394,11 +395,33 @@ export async function submitResponseHandler({
   const postState = applyResponse(preState, engineQ, engineR);
 
   // ---------------------------------------------------------------------------
-  // 10. Persist (write order documented in the file header).
+  // 10. Misconception classifier (Item #9 Phase 3) — populates the row's
+  //     detected_misconceptions[] + audit-version columns. R2 lock: only
+  //     runs on incorrect responses (correct → method='none' immediately).
+  //     R1 lock: DRAG_DROP returns method='none' (deferred to v1.x).
+  //     S2 lock: never throws — internal errors resolve to method='failed'
+  //     codes=[] on the row rather than blocking the insert. Stub mode
+  //     (default while Anthropic K-8 educational ToS alignment is in
+  //     flight per compliance.md §6) returns empty codes for any
+  //     haiku-bound input.
+  // ---------------------------------------------------------------------------
+  const classification = await classify(
+    {
+      format: question.format,
+      strand: question.strand,
+      content: question.content,
+      answerGiven: request.answer_given,
+      isCorrect,
+    },
+    serviceClient,
+    parent.tenant_id,
+  );
+
+  // ---------------------------------------------------------------------------
+  // 11. Persist (write order documented in the file header).
   // ---------------------------------------------------------------------------
 
-  // (a) INSERT response. detected_misconceptions stays empty for v1; the
-  //     misconception detector (features.md §3) plugs in here.
+  // (a) INSERT response.
   const { error: insertErr } = await serviceClient.from("responses").insert({
     tenant_id: parent.tenant_id,
     session_id: request.session_id,
@@ -411,7 +434,9 @@ export async function submitResponseHandler({
     time_flag: flag.flag,
     time_flag_config_version: flag.configVersion,
     used_fallback: flag.usedFallback,
-    detected_misconceptions: [],
+    detected_misconceptions: classification.codes,
+    misconception_classifier_method: classification.method,
+    misconception_classifier_version: classification.version,
   });
 
   if (insertErr) {

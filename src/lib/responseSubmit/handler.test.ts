@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/misconceptionClassifier/classifier", () => ({
+  classify: vi.fn(),
+}));
+
+import { classify } from "@/lib/misconceptionClassifier/classifier";
+import type { ClassifierOutput } from "@/lib/misconceptionClassifier/types";
 import type { Database, Enums, Json, TablesInsert } from "@/lib/supabase/database.types";
 import {
   TIME_FLAG_CONFIG_VERSION,
@@ -10,6 +16,22 @@ import {
 
 import { submitResponseHandler } from "./handler";
 import type { SubmitRequest } from "./types";
+
+const mockClassify = vi.mocked(classify);
+
+const DEFAULT_CLASSIFICATION: ClassifierOutput = {
+  codes: [],
+  method: "none",
+  version: null,
+};
+
+beforeEach(() => {
+  mockClassify.mockReset();
+  // Default: method='none' covers correct answers and DRAG_DROP. Tests
+  // that exercise classifier output (e.g., distractor-map hits) override
+  // per-test via mockResolvedValueOnce.
+  mockClassify.mockResolvedValue(DEFAULT_CLASSIFICATION);
+});
 
 // ===========================================================================
 // Mock infrastructure
@@ -237,7 +259,11 @@ function aggRows(normal: number, invalid: number) {
 
 type ResponseInsertRow = TablesInsert<"responses">;
 
-function expectedInsertFor(timeMs: number, isCorrect = true): ResponseInsertRow {
+function expectedInsertFor(
+  timeMs: number,
+  isCorrect = true,
+  classification: ClassifierOutput = DEFAULT_CLASSIFICATION,
+): ResponseInsertRow {
   const flag = flagResponseTime({
     level: QUESTION.level,
     format: QUESTION.format,
@@ -256,7 +282,9 @@ function expectedInsertFor(timeMs: number, isCorrect = true): ResponseInsertRow 
     time_flag: flag.flag,
     time_flag_config_version: flag.configVersion,
     used_fallback: flag.usedFallback,
-    detected_misconceptions: [],
+    detected_misconceptions: classification.codes,
+    misconception_classifier_method: classification.method,
+    misconception_classifier_version: classification.version,
   };
 }
 
@@ -777,5 +805,82 @@ describe("submitResponseHandler — bank exhausted mid-session", () => {
         (u.patch as Record<string, unknown>).status === "COMPLETED",
     );
     expect(closeUpdate).toBeDefined();
+  });
+});
+
+// ===========================================================================
+// Classifier integration (Item #9 Phase 3)
+// ===========================================================================
+
+describe("submitResponseHandler — classifier integration", () => {
+  it("populates the three classifier columns from the classify() result and forwards the input shape", async () => {
+    mockClassify.mockResolvedValueOnce({
+      codes: ["OP_NO_REGROUPING"],
+      method: "distractor-map",
+      version: "v1",
+    });
+
+    const nextPick = {
+      id: "next-q-1",
+      external_id: "EXT-NEXT",
+      strand: "OPERATIONS",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "next?", options: ["x", "y"] },
+    };
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null }, // existence check
+        { data: [], error: null }, // replay responses (empty)
+        { data: null, error: null }, // insert response
+      ],
+      questions: [
+        { data: QUESTION, error: null }, // initial question fetch
+        { data: [nextPick], error: null }, // picker
+      ],
+      assessment_sessions: [{ data: null, error: null }], // estimate update
+      question_access_log: [{ data: null, error: null }], // log insert
+    });
+
+    const result = await submitResponseHandler({
+      // Wrong answer ("B" vs correct_index 0 = "A") so isCorrect=false
+      // flows into the classifier input; the mock asserts on isCorrect.
+      request: makeRequest({ answer_given: "B" }),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: "203.0.113.7",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.is_correct).toBe(false);
+
+    // The three classifier columns flow through the insert as-returned
+    // by classify(); answer_given is "B" (overridden) not "A" (default).
+    const responseInsert = svc.inserts.find((i) => i.table === "responses");
+    expect(responseInsert?.row).toEqual({
+      ...expectedInsertFor(5000, false, {
+        codes: ["OP_NO_REGROUPING"],
+        method: "distractor-map",
+        version: "v1",
+      }),
+      answer_given: "B",
+    });
+
+    // classify() was called once with the expected ClassifierInput shape
+    // and the parent's tenant_id (architecture.md guardrail #6).
+    expect(mockClassify).toHaveBeenCalledTimes(1);
+    expect(mockClassify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        format: QUESTION.format,
+        strand: QUESTION.strand,
+        content: QUESTION.content,
+        answerGiven: "B",
+        isCorrect: false,
+      }),
+      svc.client,
+      PARENT.tenant_id,
+    );
   });
 });
