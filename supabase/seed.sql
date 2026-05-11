@@ -121,7 +121,20 @@ from t,
     ('MD_CHART_SCALE',            'MEASUREMENT_DATA',
        'Chart scale misreading',
        'Misreads the scale on a bar chart or pictogram (e.g., reads each '
-       'picture as 1 when each represents 5).')
+       'picture as 1 when each represents 5).'),
+
+    -- Added in Item #11 Phase 1 to support S.A.M. Level 2 content load;
+    -- mirrors the migration in 20260511000000_sam_l2_misconception_taxonomy.sql.
+    ('NS_ZERO_VALUE',             'NUMBER_SENSE',
+       'Zero placeholder error',
+       'Treats zero as absence-of-quantity rather than a placeholder digit. '
+       'Drops zero-tens or zero-hundreds positions when reading or writing '
+       'multi-digit numerals (e.g., reads 204 as 24, or writes 648 as 6048).'),
+    ('WP_KEYWORD_TRAP',           'WORD_PROBLEMS',
+       'Surface keyword operation trap',
+       'Picks an operation from a surface keyword in the problem text '
+       '(e.g., "gave" suggesting addition, "more" suggesting addition) rather '
+       'than from the relational structure of the problem.')
   ) as v(code, strand, label, description);
 
 -- =============================================================================
@@ -158,11 +171,22 @@ from t,
   ) as v(strand, primary_rec, supplementary, notes);
 
 -- =============================================================================
--- Placeholder questions
+-- S.A.M. Level 2 v1 content (11 founder-approved items from Item #11).
 -- =============================================================================
--- Architecture.md #5: "clearly fake placeholder content". These are NOT
--- valid Singapore Math items and must be replaced before any real
--- assessment runs.
+-- MIRRORED FROM: supabase/migrations/20260511000100_sam_l2_content_v1.sql
+--
+-- These INSERT rows are duplicated VERBATIM (same VALUES, same content
+-- payloads, same misconception_tags, same derived fields) from the migration.
+-- Both must stay in sync.
+--
+-- Why the duplication: `supabase db reset` runs migrations BEFORE seed.sql,
+-- so the migration's tenant-scoped INSERT is a no-op in dev (the
+-- inspirea_singapore_math tenant doesn't exist yet when the migration fires).
+-- The migration is the production-update path; seed.sql is the dev/CI path.
+-- See AGENTS.md §11 for the rule.
+--
+-- Both inserts use `ON CONFLICT (tenant_id, external_id) DO NOTHING` so neither
+-- duplicates rows if both ever effectively run against the same DB.
 
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into questions
@@ -178,44 +202,96 @@ select t.id, external_id, strand::strand, level::half_grade_level,
        true
 from t,
   (values
-    -- KA / Number Sense / Multiple Choice — symbolic addition
-    ('PLACEHOLDER-Q-001', 'NUMBER_SENSE', 'KA', -2.0, 'MULTIPLE_CHOICE',
-       '{"stem":"PLACEHOLDER — 1 + 1 = ?","options":["1","2","3"],'
-       '"correct_index":1,'
-       '"distractor_misconceptions":{"0":"NS_COUNTING_ERROR",'
-                                    '"2":"NS_COUNTING_ERROR"}}',
-       array['NS_COUNTING_ERROR'],
-       0, 'ADDITION', 1, 'SYMBOLIC'),
-    -- 2B / Operations / Multiple Choice — symbolic subtraction with regrouping
-    ('PLACEHOLDER-Q-002', 'OPERATIONS', '2B', 0.0, 'MULTIPLE_CHOICE',
-       '{"stem":"PLACEHOLDER — 47 - 19 = ?","options":["28","38","26","32"],'
-       '"correct_index":0,'
-       '"distractor_misconceptions":{"1":"OP_NO_REGROUPING",'
-                                    '"2":"OP_SUBTRACTION_DIRECTION",'
-                                    '"3":"OP_NO_REGROUPING"}}',
-       array['OP_NO_REGROUPING','OP_SUBTRACTION_DIRECTION'],
-       0, 'SUBTRACTION', 1, 'SYMBOLIC'),
-    -- 3A / Word Problems / Numeric Entry — single-step word problem
-    ('PLACEHOLDER-Q-003', 'WORD_PROBLEMS', '3A', 0.4, 'NUMERIC_ENTRY',
-       '{"stem":"PLACEHOLDER — Maya has 24 stickers. She gives 8 to her '
-       'brother. How many does she have left?","correct_answer":"16"}',
-       array['WP_OPERATION_SELECTION'],
-       16, 'SUBTRACTION', 1, 'WORD_PROBLEM_SINGLE'),
-    -- 4A / Fractions / Drag & Drop — pictorial fraction ordering
-    ('PLACEHOLDER-Q-004', 'FRACTIONS_DECIMALS', '4A', 1.0, 'DRAG_DROP',
-       '{"stem":"PLACEHOLDER — Drag the fractions in order from smallest '
-       'to largest.","items":["1/2","1/4","3/4","1/3"],'
-       '"correct_order":["1/4","1/3","1/2","3/4"]}',
-       array['FR_FRACTION_AS_TWO_NUMS'],
-       9, 'FRACTION_OP', 1, 'PICTORIAL'),
-    -- 6A / Geometry / Multiple Choice (extends past MVP-spec K-5B
-    -- to exercise the K-8 enum)
-    ('PLACEHOLDER-Q-005', 'GEOMETRY', '6A', 1.5, 'MULTIPLE_CHOICE',
-       '{"stem":"PLACEHOLDER — A 5x3 rectangle. What is its perimeter?",'
-       '"options":["8","15","16","30"],"correct_index":2,'
-       '"distractor_misconceptions":{"1":"GE_PERIMETER_AREA"}}',
-       array['GE_PERIMETER_AREA'],
-       7, 'GEOMETRY', 1, 'SYMBOLIC')
+    -- Q01 / 1A / Number Sense / Missing-addend number bond (1 + ? = 10).
+    ('SAM-L2-Q01', 'NUMBER_SENSE', '1A', -1.9, 'MULTIPLE_CHOICE',
+       '{"stem":"What is the missing number? 1 and ___ make 10.",'
+       '"options":["1","0","9","11"],"correct_index":2,'
+       '"distractor_misconceptions":{"1":"NS_ZERO_VALUE",'
+                                    '"3":"OP_SUBTRACTION_DIRECTION"}}',
+       array['NS_PLACE_VALUE_CONFUSION','OP_SUBTRACTION_DIRECTION'],
+       9, 'ADDITION', 1, 'SYMBOLIC'),
+
+    -- Q07 / 1B / Number Sense / Place-value decomposition (76 = ? tens 6 ones).
+    ('SAM-L2-Q07', 'NUMBER_SENSE', '1B', -1.6, 'MULTIPLE_CHOICE',
+       '{"stem":"What is the missing number? 76 = ___ tens 6 ones",'
+       '"options":["6","7","10","70"],"correct_index":1,'
+       '"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION",'
+                                    '"2":"NS_PLACE_VALUE_CONFUSION",'
+                                    '"3":"NS_PLACE_VALUE_CONFUSION"}}',
+       array['NS_PLACE_VALUE_CONFUSION'],
+       9, 'IDENTIFY', 1, 'SYMBOLIC'),
+
+    -- Q09 / 1A / Number Sense / Symbolic addition "3 more than 54".
+    ('SAM-L2-Q09', 'NUMBER_SENSE', '1A', -1.7, 'MULTIPLE_CHOICE',
+       '{"stem":"What is 3 more than 54?",'
+       '"options":["51","57","84","543"],"correct_index":1,'
+       '"distractor_misconceptions":{"0":"OP_SUBTRACTION_DIRECTION",'
+                                    '"2":"NS_PLACE_VALUE_CONFUSION"}}',
+       array['OP_SUBTRACTION_DIRECTION','NS_PLACE_VALUE_CONFUSION'],
+       6, 'ADDITION', 1, 'SYMBOLIC'),
+
+    -- Q10 / 1B / Number Sense / Order 3 numbers ascending.
+    ('SAM-L2-Q10', 'NUMBER_SENSE', '1B', -1.5, 'DRAG_DROP',
+       '{"stem":"Arrange the following numbers. Begin with the smallest. 68, 81, 9",'
+       '"items":["68","81","9"],"correct_order":["9","68","81"]}',
+       array['NS_PLACE_VALUE_CONFUSION'],
+       11, 'COUNTING', 1, 'SYMBOLIC'),
+
+    -- Q11 / 2A / Word Problems / Change-unknown apples (35 - 7).
+    ('SAM-L2-Q11', 'WORD_PROBLEMS', '2A', -1.1, 'NUMERIC_ENTRY',
+       '{"stem":"Jo had 7 apples. Her brother gave her some more apples. '
+       'She has 35 apples now. How many apples did her brother give her?",'
+       '"correct_answer":"28"}',
+       array['WP_OPERATION_SELECTION','WP_KEYWORD_TRAP','OP_NO_REGROUPING'],
+       24, 'SUBTRACTION', 1, 'WORD_PROBLEM_SINGLE'),
+
+    -- Q14 / 2A / Operations / Partitive division (12 birds, 3 cages).
+    ('SAM-L2-Q14', 'OPERATIONS', '2A', -1.1, 'MULTIPLE_CHOICE',
+       '{"stem":"Mrs Tan puts 12 birds into 3 cages. How many birds are '
+       'there in each cage?","options":["6","2","3","4"],"correct_index":3,'
+       '"distractor_misconceptions":{"0":"OP_DIV_REMAINDER",'
+                                    '"1":"OP_DIV_REMAINDER"}}',
+       array['WP_OPERATION_SELECTION','OP_DIV_REMAINDER'],
+       16, 'DIVISION', 1, 'WORD_PROBLEM_SINGLE'),
+
+    -- Q17 / 2A / Word Problems / Money subtraction with regrouping (45 - 29).
+    -- Strand reassigned from MEASUREMENT_DATA: money framing is incidental;
+    -- diagnostic is subtraction with regrouping in a word-problem frame.
+    ('SAM-L2-Q17', 'WORD_PROBLEMS', '2A', -1.0, 'NUMERIC_ENTRY',
+       '{"stem":"Larry has $45. He buys a school bag for $29. '
+       'How much money does he have left?","correct_answer":"16"}',
+       array['OP_NO_REGROUPING','WP_OPERATION_SELECTION'],
+       17, 'SUBTRACTION', 1, 'WORD_PROBLEM_SINGLE'),
+
+    -- Q19 / 2A / Number Sense / Expanded form to standard form (600+40+8).
+    ('SAM-L2-Q19', 'NUMBER_SENSE', '2A', -1.3, 'NUMERIC_ENTRY',
+       '{"stem":"What is the missing number? 600 + 40 + 8 = ___",'
+       '"correct_answer":"648"}',
+       array['NS_PLACE_VALUE_CONFUSION'],
+       8, 'ADDITION', 1, 'SYMBOLIC'),
+
+    -- Q20 / 2A / Number Sense / Hundreds-place increment with zero placeholder.
+    ('SAM-L2-Q20', 'NUMBER_SENSE', '2A', -1.2, 'NUMERIC_ENTRY',
+       '{"stem":"What is 100 more than 504?","correct_answer":"604"}',
+       array['NS_PLACE_VALUE_CONFUSION','NS_ZERO_VALUE'],
+       6, 'ADDITION', 1, 'SYMBOLIC'),
+
+    -- Q21 / 2B / Number Sense / Order 4 three-digit numbers descending.
+    ('SAM-L2-Q21', 'NUMBER_SENSE', '2B', -0.9, 'DRAG_DROP',
+       '{"stem":"Arrange the following numbers in order. Begin with the '
+       'greatest. 652, 716, 629, 708",'
+       '"items":["652","716","629","708"],'
+       '"correct_order":["716","708","652","629"]}',
+       array['NS_PLACE_VALUE_CONFUSION'],
+       14, 'COUNTING', 1, 'SYMBOLIC'),
+
+    -- Q22 / 2B / Number Sense / Skip-counting backward across hundreds boundary.
+    ('SAM-L2-Q22', 'NUMBER_SENSE', '2B', -0.7, 'NUMERIC_ENTRY',
+       '{"stem":"What comes next in the number pattern below? '
+       '860, 840, 820, 800, ?","correct_answer":"780"}',
+       array['NS_PLACE_VALUE_CONFUSION'],
+       12, 'PATTERN', 1, 'SYMBOLIC')
   ) as v(external_id, strand, level, difficulty, format,
          content, misconception_tags,
-         word_count, operation_type, num_operations, representation);
+         word_count, operation_type, num_operations, representation)
+on conflict (tenant_id, external_id) do nothing;
