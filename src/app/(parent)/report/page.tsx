@@ -317,6 +317,11 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   const questionStrandById = new Map<string, Strand>();
   if (questionIds.length > 0) {
     const adminClient = createServiceClient();
+    // NOTE: no `is_active` filter — these question_ids come from `responses`
+    // rows the child already answered. Filtering would silently drop
+    // answered questions from the strand-mastery histogram if any of them
+    // were deactivated since the response.
+    // See Item #11 Phase 3 enumeration.
     const { data: questionRows, error: questionsErr } = await adminClient
       .from("questions")
       .select("id, strand")

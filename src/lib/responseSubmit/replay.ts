@@ -146,6 +146,11 @@ export async function replayEngineState(
   // 6. Fetch questions referenced by responses, then apply each in order.
   // ---------------------------------------------------------------------------
   const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
+  // NOTE: no `is_active` filter — these question_ids come from `responses`
+  // rows that already exist. Filtering would silently drop responses from
+  // the posterior replay if their question was deactivated since the
+  // response, producing wrong placement estimates.
+  // See Item #11 Phase 3 enumeration.
   const { data: questionRows, error: qErr } = await supabase
     .from("questions")
     .select("id, strand, level, difficulty, format")

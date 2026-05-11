@@ -322,6 +322,12 @@ export async function submitResponseHandler({
   // ---------------------------------------------------------------------------
   // Single string literal (not concatenation) so Supabase's type parser
   // can infer the row shape — see TS2339 on question.* if you change this.
+  //
+  // NOTE: no `is_active` filter — this loads an already-served question by
+  // PK (request.question_id was returned by an earlier pickQuestion call
+  // and stamped on question_access_log). Filtering would break submit if
+  // the question was deactivated between serve and read.
+  // See Item #11 Phase 3 enumeration.
   const { data: question, error: qErr } = await serviceClient
     .from("questions")
     .select(`

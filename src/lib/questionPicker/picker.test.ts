@@ -41,6 +41,40 @@ function makeClient(result: QueryResult): SupabaseClient<Database> {
   } as unknown as SupabaseClient<Database>;
 }
 
+// Predicate-applying variant of makeClient.
+//
+// The default makeClient above ignores .eq() arguments and resolves to
+// pre-staged data regardless of predicate. That's fine for "given these
+// rows, what does the picker do with them" tests — but it can't verify
+// that the picker actually issued a specific WHERE clause.
+//
+// This variant filters the row set on every .eq(col, val), so a test
+// can stage [active, inactive] and assert that only active is returned,
+// which exercises the picker's `.eq("is_active", true)` call at
+// picker.ts:92. If that line is ever removed, the inactive row stops
+// being filtered and the test goes red.
+function makePredicateFilteringClient(
+  rows: ReadonlyArray<PickedQuestionRow & Record<string, unknown>>,
+): SupabaseClient<Database> {
+  let filtered: Array<PickedQuestionRow & Record<string, unknown>> = rows.slice();
+  const chain: Record<string, unknown> = {};
+  chain.select = () => chain;
+  chain.eq = (col: string, val: unknown) => {
+    filtered = filtered.filter((r) => r[col] === val);
+    return chain;
+  };
+  chain.then = (
+    onFulfilled?: ((r: QueryResult) => unknown) | null,
+    onRejected?: ((e: unknown) => unknown) | null,
+  ) =>
+    Promise.resolve({
+      data: filtered as unknown as PickedQuestionRow[],
+      error: null,
+    } as QueryResult).then(onFulfilled, onRejected);
+
+  return { from: () => chain } as unknown as SupabaseClient<Database>;
+}
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -236,6 +270,39 @@ describe("pickQuestion / DB errors", () => {
     await expect(pickQuestion(client, req(), ctx())).rejects.toThrow(
       /db down/,
     );
+  });
+});
+
+describe("pickQuestion / is_active filter", () => {
+  // Regression test for Item #11 Phase 3.
+  //
+  // Phase 2 deactivated 5 PLACEHOLDER questions via is_active=false. The
+  // picker must not serve inactive rows. picker.ts:92 carries the
+  // `.eq("is_active", true)` predicate; this test locks it in so a future
+  // edit that drops the predicate goes red.
+  //
+  // The fixture inverts the natural tiebreak so a missing-filter regression
+  // would be unambiguous: inactive sorts FIRST under the picker's
+  // external_id ASC tiebreak (A-INACTIVE < B-ACTIVE). If the filter is
+  // dropped, both rows enter the sort, A-INACTIVE wins, and the test fails
+  // on the assertion below.
+  it("excludes is_active=false rows even when they would otherwise sort first", async () => {
+    const active = {
+      ...row({ id: "id-active", external_id: "B-ACTIVE" }),
+      is_active: true,
+      tenant_id: TENANT,
+    };
+    const inactive = {
+      ...row({ id: "id-inactive", external_id: "A-INACTIVE" }),
+      is_active: false,
+      tenant_id: TENANT,
+    };
+    const client = makePredicateFilteringClient([active, inactive]);
+
+    const result = await pickQuestion(client, req(), ctx());
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe("id-active");
   });
 });
 

@@ -92,6 +92,10 @@ export async function findOutstandingQuestion(
   if (outstandingId === null) return null;
 
   // (4) Materialise the full question row for the picker contract.
+  // NOTE: no `is_active` filter — this loads an already-served question by
+  // PK (outstandingId came from question_access_log). Filtering would break
+  // resume if the question was deactivated between serve and read.
+  // See Item #11 Phase 3 enumeration.
   const { data: question, error: qErr } = await serviceClient
     .from("questions")
     .select(`id, external_id, strand, level, difficulty, format, content`)
