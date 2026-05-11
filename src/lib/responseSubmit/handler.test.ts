@@ -58,8 +58,26 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
 
   const client = {
     from(table: string) {
-      const next = (): MockResult =>
-        scripts[table]?.shift() ?? { data: null, error: null };
+      // Item #10 Phase 3: replay's new SELECT queries (assessment_sessions
+      // for engine_prior_version + child_id; children for grade_level) need
+      // defaults when tests don't stage anything explicitly. Defaults preserve
+      // pre-Phase-3 behavior — engine_prior_version='v1' resolves cleanly via
+      // getPriorConfigByVersion; grade_level=null triggers seedPosteriors'
+      // R3 fall-back to uniform priors.
+      const next = (): MockResult => {
+        const staged = scripts[table]?.shift();
+        if (staged !== undefined) return staged;
+        if (table === "assessment_sessions") {
+          return {
+            data: { engine_prior_version: "v1", child_id: CHILD_ID },
+            error: null,
+          };
+        }
+        if (table === "children") {
+          return { data: { grade_level: null }, error: null };
+        }
+        return { data: null, error: null };
+      };
 
       let pendingUpdate: unknown = undefined;
       const builder: Record<string, unknown> = {};
@@ -313,7 +331,11 @@ describe("submitResponseHandler — happy path mid-session", () => {
         { data: QUESTION, error: null }, // initial question fetch
         { data: [nextPick], error: null }, // picker
       ],
-      assessment_sessions: [{ data: null, error: null }], // estimate update
+      assessment_sessions: [
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null }, // estimate update
+      ],
       question_access_log: [{ data: null, error: null }], // log insert
     });
 
@@ -375,6 +397,8 @@ describe("submitResponseHandler — happy path terminating", () => {
         { data: p.questions, error: null }, // replay questions (in())
       ],
       assessment_sessions: [
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // estimate update
         { data: null, error: null }, // close update
         { data: null, error: null }, // summary update
@@ -691,7 +715,11 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
         { data: QUESTION, error: null },
         { data: [nextPick], error: null }, // picker
       ],
-      assessment_sessions: [{ data: null, error: null }],
+      assessment_sessions: [
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null }, // estimate update
+      ],
       question_access_log: [{ data: null, error: null }], // log insert
     });
     const result = await submitResponseHandler({
@@ -724,6 +752,8 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
         { data: p.questions, error: null },
       ],
       assessment_sessions: [
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // estimate
         { data: null, error: null }, // close
         { data: null, error: null }, // summary
@@ -772,6 +802,8 @@ describe("submitResponseHandler — bank exhausted mid-session", () => {
         { data: [], error: null }, // picker → strand-exhausted
       ],
       assessment_sessions: [
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // estimate update
         { data: null, error: null }, // close UPDATE
         { data: null, error: null }, // summary UPDATE
@@ -839,7 +871,11 @@ describe("submitResponseHandler — classifier integration", () => {
         { data: QUESTION, error: null }, // initial question fetch
         { data: [nextPick], error: null }, // picker
       ],
-      assessment_sessions: [{ data: null, error: null }], // estimate update
+      assessment_sessions: [
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null }, // estimate update
+      ],
       question_access_log: [{ data: null, error: null }], // log insert
     });
 

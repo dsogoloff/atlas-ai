@@ -77,6 +77,8 @@ import {
   nextQuestionRequest,
   shouldTerminate,
 } from "@/lib/engine/engine";
+import { ACTIVE_PRIOR_VERSION, PRIORS_V1 } from "@/lib/engine/priors";
+import type { GradeKey } from "@/lib/engine/types";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import { pickQuestion } from "@/lib/questionPicker/picker";
 import { toClientQuestion } from "@/lib/questionPicker/serialize";
@@ -134,7 +136,7 @@ export async function sessionStartHandler({
   // ---------------------------------------------------------------------------
   const { data: child, error: childErr } = await rlsClient
     .from("children")
-    .select("id")
+    .select("id, grade_level")
     .eq("id", request.child_id)
     .eq("parent_id", parent.id)
     .maybeSingle();
@@ -173,6 +175,7 @@ export async function sessionStartHandler({
       tenant_id: parent.tenant_id,
       child_id: child.id,
       status: "IN_PROGRESS",
+      engine_prior_version: ACTIVE_PRIOR_VERSION,
     })
     .select("id")
     .single();
@@ -210,7 +213,10 @@ export async function sessionStartHandler({
   // ---------------------------------------------------------------------------
   // 5. First pick on a fresh session (engine state = empty).
   // ---------------------------------------------------------------------------
-  const state = createEngineState();
+  const state = createEngineState({
+    grade: child.grade_level as GradeKey | null,
+    config: PRIORS_V1,
+  });
   const req = nextQuestionRequest(state);
 
   const pick = await pickQuestion(serviceClient, req, {

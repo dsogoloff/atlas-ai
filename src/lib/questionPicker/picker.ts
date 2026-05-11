@@ -14,20 +14,21 @@
 //     selects within a Layer-1-approved set.
 //
 // =============================================================================
-// Cold-start placement note (DOCUMENTED ISSUE — engine-level, not picker)
+// Cold-start placement note (Item #10 Phase 3 — engine asks grade-appropriate)
 // =============================================================================
 //
-// Today, every child currently starts on a NUMBER_SENSE 5A question
-// regardless of grade. This is an engine-level concern: the IRT engine
-// initialises every strand to a uniform posterior, so all strands have
-// identical variance on call #1 and the loop in engine.nextQuestionRequest
-// returns STRANDS[0] = NUMBER_SENSE; meanLevelIndex is 8.5 → levelAt(9) =
-// "5A". The picker faithfully serves whatever the engine asks for.
+// Pre-Item-#10: every child started on NUMBER_SENSE 5A (uniform priors →
+// max-variance loop picks STRANDS[0]; meanLevelIndex = 8.5 → levelAt(9) =
+// "5A"). Post-Item-#10 Phase 3: the engine seeds posteriors from the
+// child's grade via priors-v1.json; first question is now grade-appropriate.
 //
-// This is MVP-blocking once real S.A.M. content lands — a kindergartener
-// answering a 5A item is bad UX and wastes 1–3 items before the posterior
-// corrects. The fix (grade-seeded priors) is tracked in the founder log
-// roadmap as a separate engine cycle. Do not patch around it here.
+// The picker is unchanged — it still serves whatever the engine asks for.
+//
+// Remaining concern — bank coverage: the placeholder bank (seed.sql, 5
+// items) doesn't cover most (strand, difficulty) cells the grade-aware
+// engine will request. bank_unservable: 422 from pickQuestion on uncovered
+// strands is honest evidence the engine wants grade-appropriate content.
+// Resolves when Item #11 lands real S.A.M. content.
 //
 // =============================================================================
 // Width is advisory in v1

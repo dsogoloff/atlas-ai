@@ -35,8 +35,26 @@ function makeServiceClient(
 
   const client = {
     from(table: string) {
-      const next = (): MockResult =>
-        scripts[table]?.shift() ?? { data: null, error: null };
+      // Item #10 Phase 3: replay's new SELECT queries (assessment_sessions
+      // for engine_prior_version + child_id; children for grade_level) need
+      // defaults when tests don't stage anything explicitly. Defaults preserve
+      // pre-Phase-3 behavior — engine_prior_version='v1' resolves cleanly via
+      // getPriorConfigByVersion; grade_level=null triggers seedPosteriors'
+      // R3 fall-back to uniform priors.
+      const next = (): MockResult => {
+        const staged = scripts[table]?.shift();
+        if (staged !== undefined) return staged;
+        if (table === "assessment_sessions") {
+          return {
+            data: { engine_prior_version: "v1", child_id: CHILD_ID },
+            error: null,
+          };
+        }
+        if (table === "children") {
+          return { data: { grade_level: null }, error: null };
+        }
+        return { data: null, error: null };
+      };
 
       let pendingUpdate: unknown = undefined;
       let pendingDelete = false;
@@ -148,6 +166,13 @@ const PARENT_OK: MockResult = {
 };
 const CHILD_OK: MockResult = {
   data: { id: CHILD_ID },
+  error: null,
+};
+
+// Item #10 Phase 3 — child fixture with grade_level set, used by the
+// grade-aware-seeding describe block at the end of this file.
+const CHILD_GRADE_K: MockResult = {
+  data: { id: CHILD_ID, grade_level: "K" },
   error: null,
 };
 
@@ -539,6 +564,8 @@ describe("sessionStartHandler / resume half-state", () => {
     const svc = makeServiceClient({
       assessment_sessions: [
         { data: { id: SESSION_ID }, error: null }, // existing
+        // Item #10 Phase 3: replay's session SELECT.
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // close UPDATE
       ],
       question_access_log: [
@@ -660,5 +687,54 @@ describe("sessionStartHandler / audit-log failure", () => {
       ok: false,
       error: { code: "internal", status: 500 },
     });
+  });
+});
+
+// ===========================================================================
+// Item #10 Phase 3 — grade-aware seeding
+// ===========================================================================
+
+describe("sessionStartHandler / Item #10 Phase 3 grade-aware seeding", () => {
+  it("stamps engine_prior_version='v1' on the session insert (grade-K child)", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_GRADE_K,
+    });
+    const svc = makeServiceClient({
+      assessment_sessions: [
+        { data: null, error: null }, // existing-session check (none)
+        { data: { id: SESSION_ID }, error: null }, // INSERT...returning id
+      ],
+      questions: [
+        { data: [questionRow()], error: null }, // picker
+      ],
+      question_access_log: [{ data: null, error: null }], // log insert
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    // Primary: session insert payload stamps ACTIVE_PRIOR_VERSION.
+    // The mock controls what the picker returns regardless of the engine's
+    // targetDifficulty request, so a "first question level" assertion would
+    // be a tautology in this mock framework. Real-DB level-shift behavior
+    // is covered by the visual gate (see Phase 3 commit message).
+    const sessInsert = svc.inserts.find(
+      (i) => i.table === "assessment_sessions",
+    );
+    expect(sessInsert?.row).toMatchObject({
+      engine_prior_version: "v1",
+    });
+
+    // Secondary: the grade-aware path returns the success contract intact —
+    // status 200, session id present. Smoke-test that Phase 3's
+    // createEngineState options-object signature didn't crash the flow.
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.status).toBe(200);
+    expect(result.body.session_id).toBe(SESSION_ID);
   });
 });
