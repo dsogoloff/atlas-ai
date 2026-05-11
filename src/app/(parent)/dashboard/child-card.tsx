@@ -13,6 +13,7 @@
 
 import Link from "next/link";
 
+import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import type { Tier } from "@/lib/tier/derive";
 
 interface ChildCardProps {
@@ -42,7 +43,7 @@ function formatLastAssessed(iso: string): string {
 // field on /add-child).
 function gradeLabel(gradeLevel: string | null, tier: Tier): string {
   const trimmed = gradeLevel?.trim();
-  if (trimmed) return trimmed;
+  if (trimmed) return formatGradeLevel(trimmed);
   return tier === "K_4" ? "K-4" : "Grades 5-8";
 }
 

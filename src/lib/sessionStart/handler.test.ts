@@ -17,6 +17,9 @@ import type { StartRequest } from "./types";
 interface MockResult {
   data: unknown;
   error: ({ message: string; code?: string }) | null;
+  /** For Supabase head:true count queries — sessionHasResponses uses this
+   *  to drive the no-progress vs has-progress branch in resumeExisting. */
+  count?: number;
 }
 
 interface ServiceMock {
@@ -418,6 +421,12 @@ describe("sessionStartHandler / resume with outstanding", () => {
         { data: null, error: null },
       ],
       responses: [
+        // sessionHasResponses: count>0 → hasProgress=true → 409 branch.
+        // The downstream findOutstanding queue still says data: [] for
+        // narrative simplicity (one served, none answered). In a real DB
+        // this would be inconsistent, but each mock query is independent
+        // and the test cares about exercising the has-progress 409 branch.
+        { data: null, count: 1, error: null },
         // findOutstanding step (2): no responses
         { data: [], error: null },
         // logAndRespond.computeRequest → replayEngineState reads responses
@@ -480,6 +489,8 @@ describe("sessionStartHandler / resume with outstanding", () => {
         { data: null, error: null }, // log insert for resumed serve
       ],
       responses: [
+        // sessionHasResponses: 1 row (qA was answered) → hasProgress=true.
+        { data: null, count: 1, error: null },
         // step (2): A is answered
         { data: [{ question_id: qA.id }], error: null },
         // logAndRespond's replayEngineState — reads responses again
@@ -530,6 +541,8 @@ describe("sessionStartHandler / resume half-state", () => {
         { data: null, error: null },
       ],
       responses: [
+        // sessionHasResponses: 1 row (qA was answered) → hasProgress=true.
+        { data: null, count: 1, error: null },
         // findOutstanding step (2): A is answered → no outstanding
         { data: [{ question_id: qA.id }], error: null },
         // replay step
@@ -575,6 +588,8 @@ describe("sessionStartHandler / resume half-state", () => {
         },
       ],
       responses: [
+        // sessionHasResponses: 1 row → hasProgress=true.
+        { data: null, count: 1, error: null },
         { data: [{ question_id: qA.id }], error: null },
         { data: [{ question_id: qA.id }], error: null }, // replay
       ],
@@ -638,6 +653,11 @@ describe("sessionStartHandler / concurrent insert", () => {
         { data: null, error: null }, // log insert for resume
       ],
       responses: [
+        // sessionHasResponses: 0 rows → hasProgress=false → 200 (no-banner).
+        // The race-loss path is THE canonical zero-progress resume: the
+        // session row exists from a sibling /start whose first pick hasn't
+        // been answered yet (React Strict Mode double-invoke in dev).
+        { data: null, count: 0, error: null },
         { data: [], error: null },
         { data: [], error: null }, // replay (used by computeRequest)
       ],
@@ -651,8 +671,59 @@ describe("sessionStartHandler / concurrent insert", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.status).toBe(409);
+    expect(result.status).toBe(200);
     expect(result.body.session_id).toBe(SESSION_ID);
+    // No resume banner — the body must NOT carry an error field.
+    expect(result.body.error).toBeUndefined();
+  });
+
+  it("returns 200 (no resume banner) when the existing session has zero responses", async () => {
+    // The Strict-Mode dev-only repro: a prior /start created the session
+    // and served question #1; the parallel /start lands on the existing-
+    // session branch with hasProgress=false. UX-equivalent to "fresh
+    // session" — same status code, same body shape (no error field).
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const q1 = questionRow();
+
+    const svc = makeServiceClient({
+      assessment_sessions: [
+        // existing-session check — found
+        { data: { id: SESSION_ID }, error: null },
+      ],
+      question_access_log: [
+        {
+          data: [{ question_id: q1.id, created_at: "t" }],
+          error: null,
+        },
+        { data: null, error: null }, // log insert for resumed serve
+      ],
+      responses: [
+        // sessionHasResponses: 0 rows → hasProgress=false.
+        { data: null, count: 0, error: null },
+        // findOutstanding step (2): no responses → q1 outstanding
+        { data: [], error: null },
+        // logAndRespond.computeRequest → replay reads responses
+        { data: [], error: null },
+      ],
+      questions: [{ data: q1, error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.status).toBe(200);
+    expect(result.body.session_id).toBe(SESSION_ID);
+    expect(result.body.question.id).toBe(q1.id);
+    // Crucial: no error field, so the client does not show a resume banner.
+    expect(result.body.error).toBeUndefined();
   });
 });
 

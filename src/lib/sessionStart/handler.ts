@@ -42,8 +42,20 @@
 //      next question normally. If termination is reached or the picker
 //      exhausts, close the session and surface bank_unservable.
 //
-// All of this returns HTTP 409 (NOT 200) so the client can distinguish
-// "I created a fresh session" from "I reconnected to an old one".
+// Status code depends on whether the resumed session has any actual
+// progress (≥1 row in `responses` for the session):
+//
+//   * has-progress  → 409 + body.error.code "session_in_progress"
+//     (the client shows a "resumed your previous session" banner).
+//   * no-progress   → 200, no body.error field
+//     (the session row exists from a prior /start whose first question
+//     was served but never answered — often React Strict Mode's dev-only
+//     double-invocation of the start effect. Showing a resume banner
+//     here is visually wrong because nothing was actually attempted.)
+//
+// The boundary is `responses` count, not session age: a same-millisecond
+// resume of a zero-response session reads as "fresh" to the parent, and
+// a week-old session with one answered question reads as "resumed".
 //
 // =============================================================================
 // First-pick exhaustion rollback
@@ -288,6 +300,15 @@ interface ResumeArgs {
 }
 
 async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
+  // Determine real-progress status once, used by every branch below to
+  // decide between the 200 (no-banner) and 409 (resume-banner) shape.
+  let hasProgress: boolean;
+  try {
+    hasProgress = await sessionHasResponses(args.serviceClient, args.sessionId);
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+
   // (a) Outstanding question?
   let outstanding: PickedQuestionRow | null = null;
   try {
@@ -303,6 +324,7 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
     return logAndRespond({
       ...args,
       question: outstanding,
+      hasProgress,
       // For the outstanding case we don't have the engine's current
       // request, but the client still needs SOMETHING in next_request
       // for symmetry with the fresh-start response shape. Recompute
@@ -371,12 +393,16 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
   return logAndRespond({
     ...args,
     question: pick.question,
+    hasProgress,
     precomputedRequest: req,
   });
 }
 
 interface LogAndRespondArgs extends ResumeArgs {
   question: PickedQuestionRow;
+  /** True when the resumed session has ≥1 row in `responses`. Drives
+   *  the 200-vs-409 boundary documented in the file header. */
+  hasProgress: boolean;
   computeRequest?: boolean;
   precomputedRequest?: ReturnType<typeof nextQuestionRequest>;
 }
@@ -408,6 +434,21 @@ async function logAndRespond(
 
   if (!req) {
     return fail("internal", 500, "next_request not computable");
+  }
+
+  if (!args.hasProgress) {
+    // Zero-response resume — looks fresh to the parent. Return 200
+    // with the fresh-start shape so the client suppresses the resume
+    // banner. See file-header rationale.
+    return {
+      ok: true,
+      status: 200,
+      body: {
+        session_id: args.sessionId,
+        question: toClientQuestion(args.question),
+        next_request: toNextRequestJson(req),
+      },
+    };
   }
 
   return {
@@ -480,6 +521,27 @@ async function closeSessionWithReason(
       err: error.message,
     });
   }
+}
+
+/**
+ * Returns true when the session has ≥1 row in `responses`. Used to
+ * route between 200 (no-progress resume — looks fresh to the parent)
+ * and 409 (genuine resume of an in-flight session). The check is a
+ * cheap HEAD-style count; we don't need the row contents.
+ */
+async function sessionHasResponses(
+  serviceClient: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<boolean> {
+  const { count, error } = await serviceClient
+    .from("responses")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId);
+
+  if (error) {
+    throw new Error(`responses count failed: ${error.message}`);
+  }
+  return (count ?? 0) > 0;
 }
 
 function isUniqueViolation(err: { code?: string } | unknown): boolean {
