@@ -100,7 +100,7 @@ import {
   discoverEmptyBankStrands,
   pickQuestion,
 } from "@/lib/questionPicker/picker";
-import { toClientQuestion } from "@/lib/questionPicker/serialize";
+import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
 import { toNextRequestJson } from "@/lib/responseSubmit/types";
@@ -333,7 +333,7 @@ export async function sessionStartHandler({
     status: 200,
     body: {
       session_id: sessionId,
-      question: toClientQuestion(pickedQuestion),
+      question: await serveQuestion(serviceClient, pickedQuestion),
       next_request: toNextRequestJson(pickedRequest),
       response_count: 0,
     },
@@ -538,12 +538,17 @@ async function logAndRespond(
     // Zero-response resume — looks fresh to the parent. Return 200
     // with the fresh-start shape so the client suppresses the resume
     // banner. See file-header rationale.
+    //
+    // serveQuestion mints a FRESH signed URL even on resume — the URL
+    // from the prior /api/assess/start call may be stale or expired
+    // by now (TTL is 300s per Item #13a Phase 2). This is what makes
+    // long-pause resume work without broken images.
     return {
       ok: true,
       status: 200,
       body: {
         session_id: args.sessionId,
-        question: toClientQuestion(args.question),
+        question: await serveQuestion(args.serviceClient, args.question),
         next_request: toNextRequestJson(req),
         response_count: args.responseCount,
       },
@@ -555,7 +560,7 @@ async function logAndRespond(
     status: 409,
     body: {
       session_id: args.sessionId,
-      question: toClientQuestion(args.question),
+      question: await serveQuestion(args.serviceClient, args.question),
       next_request: toNextRequestJson(req),
       response_count: args.responseCount,
       error: {

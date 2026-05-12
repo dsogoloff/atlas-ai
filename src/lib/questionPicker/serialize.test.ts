@@ -152,4 +152,69 @@ describe("toClientQuestion / allowlist invariants", () => {
     );
     expect(Object.keys(out.content).sort()).toEqual(["options", "stem"]);
   });
+
+  it("never leaks image_path or image_alt even when present on row content", () => {
+    // The server-side image_path/image_alt fields must stay server-only.
+    // The client sees them only as content.image.{url,alt} when the
+    // caller supplies a pre-minted envelope; the raw bucket path never
+    // crosses to the browser.
+    const out = toClientQuestion(
+      row("MULTIPLE_CHOICE", {
+        stem: "s",
+        options: ["a"],
+        image_path: "secret-bucket-path.png",
+        image_alt: "alt",
+      }),
+    );
+    expect(Object.keys(out.content)).not.toContain("image_path");
+    expect(Object.keys(out.content)).not.toContain("image_alt");
+  });
+});
+
+describe("toClientQuestion / image arg propagation", () => {
+  const fakeImage = {
+    url: "https://example.com/signed?token=t",
+    alt: "Some image",
+  };
+
+  it("attaches image envelope on MULTIPLE_CHOICE when supplied", () => {
+    const out = toClientQuestion(
+      row("MULTIPLE_CHOICE", { stem: "s", options: ["a"] }),
+      fakeImage,
+    );
+    expect(out.content).toEqual({
+      stem: "s",
+      options: ["a"],
+      image: fakeImage,
+    });
+  });
+
+  it("attaches image envelope on NUMERIC_ENTRY when supplied", () => {
+    const out = toClientQuestion(
+      row("NUMERIC_ENTRY", { stem: "s" }),
+      fakeImage,
+    );
+    expect(out.content).toEqual({ stem: "s", image: fakeImage });
+  });
+
+  it("attaches image envelope on DRAG_DROP when supplied", () => {
+    const out = toClientQuestion(
+      row("DRAG_DROP", { stem: "s", items: ["a"] }),
+      fakeImage,
+    );
+    expect(out.content).toEqual({
+      stem: "s",
+      items: ["a"],
+      image: fakeImage,
+    });
+  });
+
+  it("omits the image key entirely when image arg is undefined", () => {
+    // Conditional-spread design: undefined image must not appear as
+    // an undefined-valued key on the output. Object.keys-clean.
+    const out = toClientQuestion(
+      row("MULTIPLE_CHOICE", { stem: "s", options: ["a"] }),
+    );
+    expect(Object.keys(out.content)).not.toContain("image");
+  });
 });

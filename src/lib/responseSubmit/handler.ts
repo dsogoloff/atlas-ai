@@ -131,7 +131,7 @@ import {
   discoverEmptyBankStrands,
   pickQuestion,
 } from "@/lib/questionPicker/picker";
-import { toClientQuestion } from "@/lib/questionPicker/serialize";
+import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -302,7 +302,7 @@ export async function submitResponseHandler({
         done: false,
         response_count: state.responseCount,
         next_request: toNextRequestJson(outstandingReq),
-        next_question: toClientQuestion(outstanding),
+        next_question: await serveQuestion(serviceClient, outstanding),
       });
     }
 
@@ -339,7 +339,7 @@ export async function submitResponseHandler({
       done: false,
       response_count: state.responseCount,
       next_request: toNextRequestJson(retryPick.request),
-      next_question: toClientQuestion(retryPick.question),
+      next_question: await serveQuestion(serviceClient, retryPick.question),
     });
   }
 
@@ -547,7 +547,7 @@ export async function submitResponseHandler({
     done: false,
     response_count: postState.responseCount,
     next_request: toNextRequestJson(pickResult.request),
-    next_question: toClientQuestion(pickResult.question),
+    next_question: await serveQuestion(serviceClient, pickResult.question),
   });
 }
 
