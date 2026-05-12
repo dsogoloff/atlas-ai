@@ -36,23 +36,36 @@ insert into tenants (slug, display_name) values
 
 -- 1. auth.users — the GoTrue identity row.
 --
--- GoTrue scan-time failure mode (LANDMINE — do not remove the empty
--- string defaults below): GoTrue's Go struct scans the following
--- columns as `string` (not `*string`). When the row has NULL in any
--- of them, every login attempt 500s with:
---   "Scan error on column index 3, name 'confirmation_token':
---    converting NULL to string is unsupported"
--- The Supabase auth.users schema does NOT default these to '' at the
--- DB level, so an INSERT that omits them leaves them as NULL and
--- silently breaks GoTrue. Fix: stamp '' explicitly.
---   - confirmation_token
---   - recovery_token
---   - email_change_token_new
---   - email_change
--- Other token columns (phone_change, phone_change_token,
--- email_change_token_current, reauthentication_token) DO have
--- ''::character varying defaults at the DB level and don't need
--- restating.
+-- Two seed-time landmines to be aware of (both bitten Item #12 Phase 7.5):
+--
+-- LANDMINE 1 — GoTrue scan-time failure on NULL string columns.
+--   GoTrue's Go struct scans the following columns as `string` (not
+--   `*string`). When the row has NULL in any of them, every login
+--   attempt 500s with:
+--     "Scan error on column index 3, name 'confirmation_token':
+--      converting NULL to string is unsupported"
+--   The Supabase auth.users schema does NOT default these to '' at the
+--   DB level, so an INSERT that omits them leaves them as NULL and
+--   silently breaks GoTrue. Fix: stamp '' explicitly.
+--     - confirmation_token
+--     - recovery_token
+--     - email_change_token_new
+--     - email_change
+--   Other token columns (phone_change, phone_change_token,
+--   email_change_token_current, reauthentication_token) DO have
+--   ''::character varying defaults at the DB level and don't need
+--   restating.
+--
+-- LANDMINE 2 — Zod's `.uuid()` enforces RFC 4122 (Postgres `uuid` does not).
+--   The UUIDs below intentionally look like obvious-seed-data
+--   (aaaa.../bbbb.../cccc...) but satisfy Zod's regex:
+--     /^...-[1-5][hex]{3}-[89ab][hex]{3}-.../
+--   Position 13 must be a version nibble (we use 4 = "random"). Position
+--   17 must be a variant nibble (we use 8 = RFC-4122 variant 10xx).
+--   All-N UUIDs (e.g., 11111111-...) fail Zod's check on POST
+--   /api/assess/start even though Postgres accepts them as `uuid`.
+--   When refreshing the seed UUIDs, KEEP the 4 and 8 nibbles in those
+--   positions or the dev assessment flow 400s out before the handler runs.
 insert into auth.users (
   id,
   instance_id,
