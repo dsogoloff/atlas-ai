@@ -35,6 +35,24 @@ insert into tenants (slug, display_name) values
 -- session) doesn't fail on the pkey.
 
 -- 1. auth.users — the GoTrue identity row.
+--
+-- GoTrue scan-time failure mode (LANDMINE — do not remove the empty
+-- string defaults below): GoTrue's Go struct scans the following
+-- columns as `string` (not `*string`). When the row has NULL in any
+-- of them, every login attempt 500s with:
+--   "Scan error on column index 3, name 'confirmation_token':
+--    converting NULL to string is unsupported"
+-- The Supabase auth.users schema does NOT default these to '' at the
+-- DB level, so an INSERT that omits them leaves them as NULL and
+-- silently breaks GoTrue. Fix: stamp '' explicitly.
+--   - confirmation_token
+--   - recovery_token
+--   - email_change_token_new
+--   - email_change
+-- Other token columns (phone_change, phone_change_token,
+-- email_change_token_current, reauthentication_token) DO have
+-- ''::character varying defaults at the DB level and don't need
+-- restating.
 insert into auth.users (
   id,
   instance_id,
@@ -48,7 +66,11 @@ insert into auth.users (
   created_at,
   updated_at,
   is_sso_user,
-  is_anonymous
+  is_anonymous,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change
 )
 values (
   '11111111-1111-1111-1111-111111111111',
@@ -63,7 +85,11 @@ values (
   now(),
   now(),
   false,
-  false
+  false,
+  '',
+  '',
+  '',
+  ''
 )
 on conflict (id) do nothing;
 
