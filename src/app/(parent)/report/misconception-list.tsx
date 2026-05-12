@@ -26,12 +26,12 @@ interface MisconceptionListProps {
 }
 
 const STRAND_ICONS: Record<Strand, string> = {
-  NUMBER_SENSE: "numbers",
-  OPERATIONS: "calculate",
-  WORD_PROBLEMS: "quiz",
-  FRACTIONS_DECIMALS: "pie_chart",
-  GEOMETRY: "category",
-  MEASUREMENT_DATA: "straighten",
+  number_sense: "numbers",
+  operations_algorithms: "calculate",
+  fractions_decimals: "pie_chart",
+  measurement: "straighten",
+  geometry: "category",
+  data_statistics: "bar_chart",
 };
 
 interface RankStyle {

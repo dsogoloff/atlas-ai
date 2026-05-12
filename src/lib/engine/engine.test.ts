@@ -184,33 +184,33 @@ describe("createEngineState", () => {
 describe("applyResponse", () => {
   it("only updates the strand of the question", () => {
     const s0 = createEngineState();
-    const q = makeQuestion({ id: "q1", strand: "OPERATIONS", level: "2B" });
+    const q = makeQuestion({ id: "q1", strand: "operations_algorithms", level: "2B" });
     const s1 = applyResponse(s0, q, answer(q, true));
 
     expect(s1.responseCount).toBe(1);
     expect(s1.servedQuestionIds).toEqual(["q1"]);
 
-    // OPERATIONS posterior changed; others did not.
-    expect(meanLevelIndex(s1.posteriors.OPERATIONS)).toBeGreaterThan(
-      meanLevelIndex(s0.posteriors.OPERATIONS),
+    // operations_algorithms posterior changed; others did not.
+    expect(meanLevelIndex(s1.posteriors.operations_algorithms)).toBeGreaterThan(
+      meanLevelIndex(s0.posteriors.operations_algorithms),
     );
-    expect(s1.posteriors.NUMBER_SENSE).toEqual(s0.posteriors.NUMBER_SENSE);
+    expect(s1.posteriors.number_sense).toEqual(s0.posteriors.number_sense);
   });
 
   it("rejects mismatched question and response", () => {
     const s0 = createEngineState();
-    const q = makeQuestion({ id: "q1", strand: "OPERATIONS", level: "2B" });
+    const q = makeQuestion({ id: "q1", strand: "operations_algorithms", level: "2B" });
     expect(() =>
       applyResponse(s0, q, { ...answer(q, true), questionId: "other" }),
     ).toThrow();
     expect(() =>
-      applyResponse(s0, q, { ...answer(q, true), strand: "GEOMETRY" }),
+      applyResponse(s0, q, { ...answer(q, true), strand: "geometry" }),
     ).toThrow();
   });
 
   it("does not duplicate a re-applied question id in servedQuestionIds", () => {
     const s0 = createEngineState();
-    const q = makeQuestion({ id: "q1", strand: "OPERATIONS", level: "2B" });
+    const q = makeQuestion({ id: "q1", strand: "operations_algorithms", level: "2B" });
     const s1 = applyResponse(s0, q, answer(q, true));
     const s2 = applyResponse(s1, q, answer(q, true));
     expect(s2.servedQuestionIds).toEqual(["q1"]);
@@ -230,13 +230,13 @@ describe("nextQuestionRequest", () => {
 
   it("after concentrating one strand, picks a different (less-resolved) one", () => {
     let s = createEngineState();
-    const q = makeQuestion({ id: "q1", strand: "OPERATIONS", level: "2B" });
-    // Many alternating responses near 2B drive OPERATIONS to low variance.
+    const q = makeQuestion({ id: "q1", strand: "operations_algorithms", level: "2B" });
+    // Many alternating responses near 2B drive operations_algorithms to low variance.
     for (let i = 0; i < 12; i++) {
       s = applyResponse(s, { ...q, id: `q${i}` }, answer({ ...q, id: `q${i}` }, i % 2 === 0));
     }
     const req = nextQuestionRequest(s);
-    expect(req.strand).not.toBe("OPERATIONS");
+    expect(req.strand).not.toBe("operations_algorithms");
   });
 });
 
@@ -251,7 +251,7 @@ describe("shouldTerminate", () => {
   it("terminates at the max-questions cap", () => {
     let s = createEngineState();
     for (let i = 0; i < MAX_QUESTIONS; i++) {
-      const q = makeQuestion({ id: `q${i}`, strand: "OPERATIONS", level: "2B" });
+      const q = makeQuestion({ id: `q${i}`, strand: "operations_algorithms", level: "2B" });
       s = applyResponse(s, q, answer(q, true));
     }
     expect(shouldTerminate(s).done).toBe(true);
@@ -385,8 +385,8 @@ describe("createEngineState — grade-aware seeding (Item #10)", () => {
     }
     // Sanity: confirm we're NOT seeing PRIORS_V1's grade-2 shape (which
     // would peak at 2A-2B with mass higher than the uniform 1/18).
-    expect(state.posteriors.NUMBER_SENSE["2A"]).not.toBe(
-      PRIORS_V1.byGrade["2"]["NUMBER_SENSE"]["2A"],
+    expect(state.posteriors.number_sense["2A"]).not.toBe(
+      PRIORS_V1.byGrade["2"]["number_sense"]["2A"],
     );
   });
 });

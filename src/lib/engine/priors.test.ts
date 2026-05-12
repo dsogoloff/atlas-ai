@@ -241,17 +241,17 @@ describe("seedPosteriors known-grade path", () => {
 
   it("returned posteriors are independent copies — mutation does not affect config", () => {
     const result = seedPosteriors("2");
-    const beforeMutation = PRIORS_V1.byGrade["2"]["NUMBER_SENSE"]["KA"];
+    const beforeMutation = PRIORS_V1.byGrade["2"]["number_sense"]["KA"];
 
     // Mutate the returned object aggressively.
-    result["NUMBER_SENSE"]["KA"] = -999;
+    result["number_sense"]["KA"] = -999;
 
     // Config registry must be unchanged.
-    expect(PRIORS_V1.byGrade["2"]["NUMBER_SENSE"]["KA"]).toBe(beforeMutation);
+    expect(PRIORS_V1.byGrade["2"]["number_sense"]["KA"]).toBe(beforeMutation);
 
     // A subsequent call returns a fresh copy with original values.
     const result2 = seedPosteriors("2");
-    expect(result2["NUMBER_SENSE"]["KA"]).toBe(beforeMutation);
+    expect(result2["number_sense"]["KA"]).toBe(beforeMutation);
   });
 
   it("config parameter defaults to PRIORS_V1 when omitted", () => {

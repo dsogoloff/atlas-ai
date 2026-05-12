@@ -17,7 +17,7 @@
 // Cold-start placement note (Item #10 Phase 3 — engine asks grade-appropriate)
 // =============================================================================
 //
-// Pre-Item-#10: every child started on NUMBER_SENSE 5A (uniform priors →
+// Pre-Item-#10: every child started on number_sense 5A (uniform priors →
 // max-variance loop picks STRANDS[0]; meanLevelIndex = 8.5 → levelAt(9) =
 // "5A"). Post-Item-#10 Phase 3: the engine seeds posteriors from the
 // child's grade via priors-v1.json; first question is now grade-appropriate.

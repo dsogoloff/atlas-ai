@@ -36,7 +36,7 @@ import {
 
 function mkRow(
   code: string,
-  strand: Strand = "NUMBER_SENSE",
+  strand: Strand = "number_sense",
 ): MisconceptionRow {
   return {
     code,
@@ -264,13 +264,13 @@ describe("aggregateMisconceptions", () => {
     it("preserves label, description, strand from lookup row", () => {
       const result = aggregateMisconceptions({
         codes: [["M1"]],
-        lookup: mkLookup(mkRow("M1", "GEOMETRY")),
+        lookup: mkLookup(mkRow("M1", "geometry")),
       });
       expect(result[0]).toEqual({
         code: "M1",
         label: "Label for M1",
         description: "Description for M1",
-        strand: "GEOMETRY",
+        strand: "geometry",
         occurrences: 1,
       });
     });

@@ -183,7 +183,7 @@ function questionRow(over: Partial<Record<string, unknown>> = {}) {
   return {
     id: "00000000-0000-0000-0000-0000000000q1",
     external_id: "EXT-Q1",
-    strand: "NUMBER_SENSE",
+    strand: "number_sense",
     level: "5A",
     difficulty: 0.176,
     format: "MULTIPLE_CHOICE",

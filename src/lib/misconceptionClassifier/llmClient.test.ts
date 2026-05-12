@@ -15,13 +15,13 @@ const mockGenerateObject = vi.mocked(generateObject);
 
 const TAXONOMY: TaxonomyMap = new Map([
   [
-    "OPERATIONS",
+    "operations_algorithms",
     [
       {
         code: "OP_NO_REGROUPING",
         label: "No regrouping",
         description: "Takes the smaller from the larger.",
-        strand: "OPERATIONS",
+        strand: "operations_algorithms",
       },
     ],
   ],
@@ -29,7 +29,7 @@ const TAXONOMY: TaxonomyMap = new Map([
 
 const INPUT: ClassifierInput = {
   format: "NUMERIC_ENTRY",
-  strand: "OPERATIONS",
+  strand: "operations_algorithms",
   content: { stem: "47-19=?", correct_answer: "28" },
   answerGiven: "38",
   isCorrect: false,
@@ -163,7 +163,7 @@ describe("callHaiku — live mode (flag = 'true', mocked AI SDK)", () => {
     expect(logs[0][0]).toBe("[classifier] haiku");
     expect(logs[0][1]).toMatchObject({
       tokens: { input: 50, output: 0 },
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       format: "NUMERIC_ENTRY",
     });
     expect(

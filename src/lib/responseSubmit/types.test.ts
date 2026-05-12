@@ -21,12 +21,12 @@ import {
 const validJson: PlacementEstimateJson = {
   overall_level: "3A",
   strand_levels: {
-    NUMBER_SENSE: "3A",
-    OPERATIONS: "2B",
-    WORD_PROBLEMS: "3A",
-    FRACTIONS_DECIMALS: "2A",
-    GEOMETRY: "3B",
-    MEASUREMENT_DATA: "3A",
+    number_sense: "3A",
+    operations_algorithms: "2B",
+    fractions_decimals: "2A",
+    measurement: "3A",
+    geometry: "3B",
+    data_statistics: "3A",
   },
   confidence: 0.72,
 };

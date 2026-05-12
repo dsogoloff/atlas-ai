@@ -16,12 +16,12 @@ const startBody: StartResponseBody = {
   session_id: "00000000-0000-4000-8000-000000000001",
   question: {
     id: "q1",
-    strand: "OPERATIONS",
+    strand: "operations_algorithms",
     level: "3A",
     format: "MULTIPLE_CHOICE",
     content: { stem: "1+1?", options: ["1", "2", "3", "4"] },
   },
-  next_request: { strand: "OPERATIONS", target_difficulty: 0, width: 0.5 },
+  next_request: { strand: "operations_algorithms", target_difficulty: 0, width: 0.5 },
 };
 
 const resumeBody: StartResponseBody = {
@@ -33,10 +33,10 @@ const submitNext: SubmitResponseBody = {
   is_correct: true,
   time_flag: "NORMAL",
   done: false,
-  next_request: { strand: "OPERATIONS", target_difficulty: 0.2, width: 0.5 },
+  next_request: { strand: "operations_algorithms", target_difficulty: 0.2, width: 0.5 },
   next_question: {
     id: "q2",
-    strand: "OPERATIONS",
+    strand: "operations_algorithms",
     level: "3A",
     format: "NUMERIC_ENTRY",
     content: { stem: "2+2?" },
@@ -50,12 +50,12 @@ const submitDone: SubmitResponseBody = {
   placement: {
     overall_level: "3A",
     strand_levels: {
-      OPERATIONS: "3A",
-      NUMBER_SENSE: "3A",
-      WORD_PROBLEMS: "2B",
-      FRACTIONS_DECIMALS: "2B",
-      GEOMETRY: "2B",
-      MEASUREMENT_DATA: "2B",
+      operations_algorithms: "3A",
+      number_sense: "3A",
+      fractions_decimals: "2B",
+      measurement: "2B",
+      geometry: "2B",
+      data_statistics: "2B",
     },
     confidence: 0.85,
   },

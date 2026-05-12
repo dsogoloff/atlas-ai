@@ -146,14 +146,14 @@ describe("replayEngineState", () => {
         questions: [
           {
             id: "q1",
-            strand: "OPERATIONS",
+            strand: "operations_algorithms",
             level: "3A",
             difficulty: 0,
             format: "MULTIPLE_CHOICE",
           },
           {
             id: "q2",
-            strand: "OPERATIONS",
+            strand: "operations_algorithms",
             level: "5A",
             difficulty: 1.5,
             format: "NUMERIC_ENTRY",
@@ -166,10 +166,10 @@ describe("replayEngineState", () => {
     expect(state.responseCount).toBe(2);
     expect(state.servedQuestionIds).toEqual(["q1", "q2"]);
     // After a correct on a mid-difficulty item and an incorrect on a hard
-    // item, the OPERATIONS posterior has shifted off uniform: mid-grade
+    // item, the operations_algorithms posterior has shifted off uniform: mid-grade
     // mass exceeds the bottom-end mass.
-    const opsKA = state.posteriors.OPERATIONS.KA;
-    const ops3A = state.posteriors.OPERATIONS["3A"];
+    const opsKA = state.posteriors.operations_algorithms.KA;
+    const ops3A = state.posteriors.operations_algorithms["3A"];
     expect(ops3A).toBeGreaterThan(opsKA);
   });
 
@@ -187,7 +187,7 @@ describe("replayEngineState", () => {
         questions: [
           {
             id: "q1",
-            strand: "OPERATIONS",
+            strand: "operations_algorithms",
             level: "3A",
             difficulty: 0,
             format: "MULTIPLE_CHOICE",
@@ -196,9 +196,9 @@ describe("replayEngineState", () => {
       }),
       "session-uuid",
     );
-    // GEOMETRY had no responses; should remain uniform.
-    expect(state.posteriors.GEOMETRY.KA).toBeCloseTo(
-      state.posteriors.GEOMETRY["8B"],
+    // geometry had no responses; should remain uniform.
+    expect(state.posteriors.geometry.KA).toBeCloseTo(
+      state.posteriors.geometry["8B"],
     );
   });
 
@@ -307,7 +307,7 @@ describe("replayEngineState — grade-aware seeding (Item #10 Phase 3)", () => {
         questions: [
           {
             id: "q1",
-            strand: "OPERATIONS",
+            strand: "operations_algorithms",
             level: "KA",
             difficulty: -2,
             format: "MULTIPLE_CHOICE",
@@ -316,18 +316,18 @@ describe("replayEngineState — grade-aware seeding (Item #10 Phase 3)", () => {
       }),
       "session-uuid",
     );
-    // FRACTIONS_DECIMALS had no responses — should retain the grade-K
+    // fractions_decimals had no responses — should retain the grade-K
     // seeded shape (peaked at KA-KB), NOT uniform, NOT clobbered by the
-    // OPERATIONS response.
+    // operations_algorithms response.
     const gradeK = seedPosteriors("K", PRIORS_V1);
     for (const level of LEVELS) {
-      expect(state.posteriors.FRACTIONS_DECIMALS[level]).toBe(
-        gradeK.FRACTIONS_DECIMALS[level],
+      expect(state.posteriors.fractions_decimals[level]).toBe(
+        gradeK.fractions_decimals[level],
       );
     }
-    // Sanity: OPERATIONS WAS touched — its KA mass changed from the seeded
+    // Sanity: operations_algorithms WAS touched — its KA mass changed from the seeded
     // value (the response updated this strand specifically).
-    expect(state.posteriors.OPERATIONS.KA).not.toBe(gradeK.OPERATIONS.KA);
+    expect(state.posteriors.operations_algorithms.KA).not.toBe(gradeK.operations_algorithms.KA);
   });
 
   it("unknown engine_prior_version propagates getPriorConfigByVersion throw", async () => {

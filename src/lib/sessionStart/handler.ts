@@ -62,8 +62,8 @@
 // =============================================================================
 //
 // When a brand-new session's first picker call returns strand-exhausted
-// (today: any first call into MEASUREMENT_DATA — bank has zero items
-// for that strand), we MUST roll back the just-inserted session row
+// (today: any first call into measurement or data_statistics — bank
+// has zero items for those strands), we MUST roll back the just-inserted session row
 // rather than leaving an orphaned IN_PROGRESS that would block all
 // future starts (the unique index forbids a second). Implemented as a
 // best-effort DELETE on the service client; if the DELETE fails we

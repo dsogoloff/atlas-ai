@@ -44,7 +44,7 @@ Atlas Assessment replaces this with an AI-adaptive, interactive experience that 
 ```
 Question {
   id: string
-  strand: enum [NUMBER_SENSE, OPERATIONS, WORD_PROBLEMS, FRACTIONS_DECIMALS, GEOMETRY, MEASUREMENT_DATA]
+  strand: enum [number_sense, operations_algorithms, fractions_decimals, measurement, geometry, data_statistics]
   level: enum [KA, KB, 1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B]
   difficulty: float  // IRT difficulty parameter
   format: enum [MULTIPLE_CHOICE, NUMERIC_ENTRY, DRAG_DROP]
@@ -81,7 +81,7 @@ Response {
 
 PlacementEstimate {
   overall_level: enum  // e.g., "2B"
-  strand_levels: Map<Strand, Level>  // e.g., {OPERATIONS: "3A", WORD_PROBLEMS: "2A"}
+  strand_levels: Map<Strand, Level>  // e.g., {operations_algorithms: "3A", number_sense: "2A"}
   confidence: float
 }
 ```

@@ -1,10 +1,9 @@
 // Strand Breakdown card for the parent diagnostic report.
 //
-// Stitch port from module-d/04 (lines 183-238) + 05. Two corrections
+// Stitch port from module-d/04 (lines 183-238) + 05. One correction
 // vs source, locked at port time:
 //   * Render all 6 strands, not 5 (no_data band shows "Not assessed"
 //     when the engine never sampled a strand).
-//   * Drop "Logic &" prefix from WORD_PROBLEMS — display "Word Problems".
 //
 // Section title is "Mathematical Strengths" (SM2 lock) — performance-
 // blind copy by design for v1, same class as the placement-card flavor

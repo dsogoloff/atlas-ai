@@ -49,7 +49,7 @@ function questionRow(id: string): PickedQuestionRow {
   return {
     id,
     external_id: `EXT-${id}`,
-    strand: "OPERATIONS",
+    strand: "operations_algorithms",
     level: "2B",
     difficulty: 0.0,
     format: "MULTIPLE_CHOICE",

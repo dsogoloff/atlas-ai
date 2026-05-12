@@ -8,12 +8,12 @@
 import type { HalfGradeLevel, Strand } from "./types";
 
 export const STRANDS = [
-  "NUMBER_SENSE",
-  "OPERATIONS",
-  "WORD_PROBLEMS",
-  "FRACTIONS_DECIMALS",
-  "GEOMETRY",
-  "MEASUREMENT_DATA",
+  "number_sense",
+  "operations_algorithms",
+  "fractions_decimals",
+  "measurement",
+  "geometry",
+  "data_statistics",
 ] as const satisfies readonly Strand[];
 
 /** All 18 half-grade levels in monotonically increasing ability order. */

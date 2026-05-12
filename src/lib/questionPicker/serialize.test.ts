@@ -8,7 +8,7 @@ import type { PickedQuestionRow } from "./types";
 const baseRow = {
   id: "11111111-1111-1111-1111-111111111111",
   external_id: "PLACEHOLDER-Q-001",
-  strand: "OPERATIONS" as const,
+  strand: "operations_algorithms" as const,
   level: "2B" as const,
   difficulty: 0.0,
 };
@@ -44,7 +44,7 @@ describe("toClientQuestion / MULTIPLE_CHOICE", () => {
       row("MULTIPLE_CHOICE", { stem: "s", options: ["a"] }),
     );
     expect(out.id).toBe(baseRow.id);
-    expect(out.strand).toBe("OPERATIONS");
+    expect(out.strand).toBe("operations_algorithms");
     expect(out.level).toBe("2B");
     expect(out.format).toBe("MULTIPLE_CHOICE");
   });

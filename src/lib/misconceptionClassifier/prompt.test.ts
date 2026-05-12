@@ -11,30 +11,30 @@ import type { ClassifierInput, TaxonomyMap } from "./types";
 
 const TAXONOMY: TaxonomyMap = new Map([
   [
-    "OPERATIONS",
+    "operations_algorithms",
     [
       {
         code: "OP_NO_REGROUPING",
         label: "No regrouping (subtraction)",
         description: "Takes the smaller from the larger.",
-        strand: "OPERATIONS",
+        strand: "operations_algorithms",
       },
       {
         code: "OP_SUBTRACTION_DIRECTION",
         label: "Subtraction direction error",
         description: "Subtracts in the wrong direction.",
-        strand: "OPERATIONS",
+        strand: "operations_algorithms",
       },
     ],
   ],
   [
-    "NUMBER_SENSE",
+    "number_sense",
     [
       {
         code: "NS_PLACE_VALUE_CONFUSION",
         label: "Place value confusion",
         description: "Treats digits as independent values.",
-        strand: "NUMBER_SENSE",
+        strand: "number_sense",
       },
     ],
   ],
@@ -42,7 +42,7 @@ const TAXONOMY: TaxonomyMap = new Map([
 
 const MC_INPUT: ClassifierInput = {
   format: "MULTIPLE_CHOICE",
-  strand: "OPERATIONS",
+  strand: "operations_algorithms",
   content: {
     stem: "47 - 19 = ?",
     options: ["28", "38", "26", "32"],
@@ -54,7 +54,7 @@ const MC_INPUT: ClassifierInput = {
 
 const NE_INPUT: ClassifierInput = {
   format: "NUMERIC_ENTRY",
-  strand: "OPERATIONS",
+  strand: "operations_algorithms",
   content: {
     stem: "What is 47 minus 19?",
     correct_answer: "28",
@@ -112,10 +112,10 @@ describe("buildClassifierPrompt", () => {
 
   it("filters taxonomy to input.strand only", () => {
     const { prompt } = buildClassifierPrompt(MC_INPUT, TAXONOMY);
-    // OPERATIONS codes appear
+    // operations_algorithms codes appear
     expect(prompt).toContain("OP_NO_REGROUPING");
     expect(prompt).toContain("OP_SUBTRACTION_DIRECTION");
-    // NUMBER_SENSE code does NOT appear
+    // number_sense code does NOT appear
     expect(prompt).not.toContain("NS_PLACE_VALUE_CONFUSION");
   });
 
@@ -191,7 +191,7 @@ describe("buildClassifierPrompt", () => {
   it("throws on DRAG_DROP (router bug catch)", () => {
     const input: ClassifierInput = {
       format: "DRAG_DROP",
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       content: {
         stem: "Order these",
         items: ["1/4", "1/2"],

@@ -27,7 +27,7 @@ const TENANT_ID = "tenant-uuid";
 
 const MC_INPUT_WITH_MAP: ClassifierInput = {
   format: "MULTIPLE_CHOICE",
-  strand: "OPERATIONS",
+  strand: "operations_algorithms",
   content: {
     stem: "47-19=?",
     options: ["28", "38", "26", "32"],
@@ -40,7 +40,7 @@ const MC_INPUT_WITH_MAP: ClassifierInput = {
 
 const MC_INPUT_NO_MAP: ClassifierInput = {
   format: "MULTIPLE_CHOICE",
-  strand: "OPERATIONS",
+  strand: "operations_algorithms",
   content: {
     stem: "Q",
     options: ["A", "B"],
@@ -52,7 +52,7 @@ const MC_INPUT_NO_MAP: ClassifierInput = {
 
 const NE_INPUT: ClassifierInput = {
   format: "NUMERIC_ENTRY",
-  strand: "OPERATIONS",
+  strand: "operations_algorithms",
   content: { stem: "Q", correct_answer: "X" },
   answerGiven: "Y",
   isCorrect: false,
@@ -60,7 +60,7 @@ const NE_INPUT: ClassifierInput = {
 
 const DD_INPUT: ClassifierInput = {
   format: "DRAG_DROP",
-  strand: "FRACTIONS_DECIMALS",
+  strand: "fractions_decimals",
   content: {
     stem: "Order",
     items: ["1/2", "1/4"],

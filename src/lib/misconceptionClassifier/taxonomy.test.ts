@@ -58,19 +58,19 @@ const TENANT_B = "tenant-b-uuid";
 const ROWS: MockResult["data"] = [
   {
     code: "OP_NO_REGROUPING",
-    strand: "OPERATIONS",
+    strand: "operations_algorithms",
     label: "No regrouping",
     description: "Takes the smaller from the larger.",
   },
   {
     code: "OP_SUBTRACTION_DIRECTION",
-    strand: "OPERATIONS",
+    strand: "operations_algorithms",
     label: "Subtraction direction",
     description: "Subtracts in the wrong direction.",
   },
   {
     code: "NS_PLACE_VALUE_CONFUSION",
-    strand: "NUMBER_SENSE",
+    strand: "number_sense",
     label: "Place value",
     description: "Treats digits as independent values.",
   },
@@ -90,15 +90,15 @@ describe("loadTaxonomy", () => {
 
     expect(queryCount.value).toBe(1);
     expect(lastTenantId.value).toBe(TENANT_A);
-    expect(map.get("OPERATIONS")).toHaveLength(2);
-    expect(map.get("NUMBER_SENSE")).toHaveLength(1);
+    expect(map.get("operations_algorithms")).toHaveLength(2);
+    expect(map.get("number_sense")).toHaveLength(1);
   });
 
   it("groups entries by strand correctly with preserved order", async () => {
     const { client } = makeStub({ data: ROWS, error: null });
     const map = await loadTaxonomy(client, TENANT_A);
 
-    const ops = map.get("OPERATIONS")!;
+    const ops = map.get("operations_algorithms")!;
     expect(ops.map((e) => e.code)).toEqual([
       "OP_NO_REGROUPING",
       "OP_SUBTRACTION_DIRECTION",
@@ -158,7 +158,7 @@ describe("loadTaxonomy", () => {
     const map = await loadTaxonomy(client, TENANT_A);
 
     expect(queryCount.value).toBe(2);
-    expect(map.get("OPERATIONS")).toHaveLength(2);
+    expect(map.get("operations_algorithms")).toHaveLength(2);
   });
 
   it("returns an empty Map when there are no rows for the tenant", async () => {

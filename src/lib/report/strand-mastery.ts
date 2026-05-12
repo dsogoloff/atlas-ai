@@ -48,12 +48,12 @@ export interface ScoredResponse {
 // this order, and other report components (strand-radar) iterate the
 // same canonical order. Single source of truth for strand iteration.
 export const STRAND_ORDER: readonly Strand[] = [
-  "NUMBER_SENSE",
-  "OPERATIONS",
-  "WORD_PROBLEMS",
-  "FRACTIONS_DECIMALS",
-  "GEOMETRY",
-  "MEASUREMENT_DATA",
+  "number_sense",
+  "operations_algorithms",
+  "fractions_decimals",
+  "measurement",
+  "geometry",
+  "data_statistics",
 ] as const;
 
 const THRESHOLDS = {

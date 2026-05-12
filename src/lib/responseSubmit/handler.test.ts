@@ -189,7 +189,7 @@ const SESSION_COMPLETED = {
 // Content mirrors real seed shape (supabase/seed.sql:162-168): options + correct_index.
 const QUESTION = {
   id: QUESTION_ID,
-  strand: "OPERATIONS" as Enums<"strand">,
+  strand: "operations_algorithms" as Enums<"strand">,
   level: "KA" as Enums<"half_grade_level">,
   difficulty: 0,
   format: "MULTIPLE_CHOICE" as Enums<"question_format">,
@@ -242,7 +242,7 @@ function priors(n: number) {
     });
     questions.push({
       id: qid,
-      strand: "OPERATIONS" as Enums<"strand">,
+      strand: "operations_algorithms" as Enums<"strand">,
       level: "3A" as Enums<"half_grade_level">,
       difficulty: 0,
       format: "MULTIPLE_CHOICE" as Enums<"question_format">,
@@ -315,7 +315,7 @@ describe("submitResponseHandler — happy path mid-session", () => {
     const nextPick = {
       id: "next-q-1",
       external_id: "EXT-NEXT",
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       level: "KA",
       difficulty: 0,
       format: "MULTIPLE_CHOICE",
@@ -449,7 +449,7 @@ describe("submitResponseHandler — idempotent retry", () => {
     const outstandingQ = {
       id: "outstanding-q",
       external_id: "EXT-OUT",
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       level: "KA",
       difficulty: 0,
       format: "MULTIPLE_CHOICE",
@@ -508,7 +508,7 @@ describe("submitResponseHandler — idempotent retry", () => {
     const freshPick = {
       id: "fresh-q",
       external_id: "EXT-FRESH",
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       level: "KA",
       difficulty: 0,
       format: "MULTIPLE_CHOICE",
@@ -699,7 +699,7 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
     const nextPick = {
       id: "next-after-invalid",
       external_id: "EXT-NEXT",
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       level: "KA",
       difficulty: 0,
       format: "MULTIPLE_CHOICE",
@@ -855,7 +855,7 @@ describe("submitResponseHandler — classifier integration", () => {
     const nextPick = {
       id: "next-q-1",
       external_id: "EXT-NEXT",
-      strand: "OPERATIONS",
+      strand: "operations_algorithms",
       level: "KA",
       difficulty: 0,
       format: "MULTIPLE_CHOICE",

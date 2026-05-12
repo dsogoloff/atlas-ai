@@ -86,7 +86,7 @@ function row(over: Partial<PickedQuestionRow>): PickedQuestionRow {
   return {
     id: "00000000-0000-0000-0000-000000000001",
     external_id: "EXT-001",
-    strand: "OPERATIONS",
+    strand: "operations_algorithms",
     level: "2B",
     difficulty: 0.0,
     format: "MULTIPLE_CHOICE",
@@ -107,7 +107,7 @@ function ctx(over: Partial<PickerContext> = {}): PickerContext {
 
 function req(over: Partial<PickerRequest> = {}): PickerRequest {
   return {
-    strand: over.strand ?? "OPERATIONS",
+    strand: over.strand ?? "operations_algorithms",
     targetDifficulty: over.targetDifficulty ?? 0.0,
     width: over.width ?? 0.3,
   };
