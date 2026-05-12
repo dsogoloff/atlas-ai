@@ -42,63 +42,63 @@ select t.id, code, strand::strand, label, description
 from t,
   (values
     -- Number Sense
-    ('NS_COUNTING_ERROR',         'NUMBER_SENSE',
+    ('NS_COUNTING_ERROR',         'number_sense',
        'Counting error',
        'Skips, double-counts, or miscounts items in a set.'),
-    ('NS_PLACE_VALUE_CONFUSION',  'NUMBER_SENSE',
+    ('NS_PLACE_VALUE_CONFUSION',  'number_sense',
        'Place value confusion',
        'Treats digits as independent values without regard to place.'),
-    ('NS_MAGNITUDE_MISJUDGE',     'NUMBER_SENSE',
+    ('NS_MAGNITUDE_MISJUDGE',     'number_sense',
        'Number magnitude misjudgement',
        'Misjudges relative size of multi-digit numbers.'),
 
     -- Operations
-    ('OP_NO_REGROUPING',          'OPERATIONS',
+    ('OP_NO_REGROUPING',          'operations_algorithms',
        'No regrouping (subtraction)',
        'In subtraction, takes the smaller from the larger digit in each '
        'column instead of borrowing.'),
-    ('OP_SUBTRACTION_DIRECTION',  'OPERATIONS',
+    ('OP_SUBTRACTION_DIRECTION',  'operations_algorithms',
        'Subtraction direction error',
        'Subtracts in the wrong direction (smaller minus larger).'),
-    ('OP_MULT_AS_REPEATED_ADD',   'OPERATIONS',
+    ('OP_MULT_AS_REPEATED_ADD',   'operations_algorithms',
        'Multiplication as repeated addition fails',
        'Treats multiplication as repeated addition but loses count or '
        'uses the wrong addend.'),
-    ('OP_DIV_REMAINDER',          'OPERATIONS',
+    ('OP_DIV_REMAINDER',          'operations_algorithms',
        'Division remainder errors',
        'Drops or misinterprets the remainder in long division.'),
 
     -- Word Problems
-    ('WP_OPERATION_SELECTION',    'WORD_PROBLEMS',
+    ('WP_OPERATION_SELECTION',    'operations_algorithms',
        'Operation selection error',
        'Picks the wrong operation (e.g., adds when the problem requires '
        'subtraction).'),
-    ('WP_IRRELEVANT_INFO',        'WORD_PROBLEMS',
+    ('WP_IRRELEVANT_INFO',        'operations_algorithms',
        'Irrelevant information distraction',
        'Uses an irrelevant number from the problem in the calculation.'),
-    ('WP_MULTI_STEP_SEQUENCE',    'WORD_PROBLEMS',
+    ('WP_MULTI_STEP_SEQUENCE',    'operations_algorithms',
        'Multi-step sequencing error',
        'In a multi-step problem, performs steps in the wrong order or '
        'omits a step.'),
 
     -- Fractions / Decimals
-    ('FR_NUM_DENOM_INDEPENDENT',  'FRACTIONS_DECIMALS',
+    ('FR_NUM_DENOM_INDEPENDENT',  'fractions_decimals',
        'Numerator/denominator treated independently',
        'Adds or subtracts numerators and denominators separately as if '
        'they were unrelated whole numbers.'),
-    ('FR_FRACTION_AS_TWO_NUMS',   'FRACTIONS_DECIMALS',
+    ('FR_FRACTION_AS_TWO_NUMS',   'fractions_decimals',
        'Fraction-as-two-numbers misconception',
        'Reads a fraction as two separate whole numbers rather than a '
        'single value.'),
-    ('FR_COMMON_DENOMINATOR',     'FRACTIONS_DECIMALS',
+    ('FR_COMMON_DENOMINATOR',     'fractions_decimals',
        'Common denominator errors',
        'Adds fractions without finding a common denominator.'),
 
     -- Geometry
-    ('GE_PERIMETER_AREA',         'GEOMETRY',
+    ('GE_PERIMETER_AREA',         'geometry',
        'Perimeter / area confusion',
        'Computes perimeter when asked for area, or vice versa.'),
-    ('GE_SHAPE_PROPERTY',         'GEOMETRY',
+    ('GE_SHAPE_PROPERTY',         'geometry',
        'Shape property error',
        'Misidentifies defining properties of a shape (e.g., counts a '
        'rectangle with non-equal sides as a square).'),
@@ -106,31 +106,31 @@ from t,
     -- Measurement & Data  (added in Item #9 to fill the features.md §3
     -- starter-taxonomy gap; mirrors the migration in
     -- 20260509000000_misconception_classifier_audit.sql)
-    ('MD_UNIT_CONFUSION',         'MEASUREMENT_DATA',
+    ('MD_UNIT_CONFUSION',         'measurement',
        'Unit confusion',
        'Mixes units when calculating, or omits the unit conversion when '
        'needed (e.g., adds centimetres to metres without converting).'),
-    ('MD_RULER_ZERO_POINT',       'MEASUREMENT_DATA',
+    ('MD_RULER_ZERO_POINT',       'measurement',
        'Ruler zero-point error',
        'Measures length starting from the 1 mark on the ruler instead of 0, '
        'or aligns the object with the wrong end of the ruler.'),
-    ('MD_TIME_READING',           'MEASUREMENT_DATA',
+    ('MD_TIME_READING',           'measurement',
        'Time-reading error',
        'Reads the wrong hand on an analog clock, or miscounts elapsed time '
        'across hour boundaries.'),
-    ('MD_CHART_SCALE',            'MEASUREMENT_DATA',
+    ('MD_CHART_SCALE',            'measurement',
        'Chart scale misreading',
        'Misreads the scale on a bar chart or pictogram (e.g., reads each '
        'picture as 1 when each represents 5).'),
 
     -- Added in Item #11 Phase 1 to support S.A.M. Level 2 content load;
     -- mirrors the migration in 20260511000000_sam_l2_misconception_taxonomy.sql.
-    ('NS_ZERO_VALUE',             'NUMBER_SENSE',
+    ('NS_ZERO_VALUE',             'number_sense',
        'Zero placeholder error',
        'Treats zero as absence-of-quantity rather than a placeholder digit. '
        'Drops zero-tens or zero-hundreds positions when reading or writing '
        'multi-digit numerals (e.g., reads 204 as 24, or writes 648 as 6048).'),
-    ('WP_KEYWORD_TRAP',           'WORD_PROBLEMS',
+    ('WP_KEYWORD_TRAP',           'operations_algorithms',
        'Surface keyword operation trap',
        'Picks an operation from a surface keyword in the problem text '
        '(e.g., "gave" suggesting addition, "more" suggesting addition) rather '
@@ -150,22 +150,27 @@ select t.id, strand::strand, '2B'::half_grade_level,
        primary_rec, supplementary, notes
 from t,
   (values
-    ('NUMBER_SENSE',       'PLACEHOLDER — Number Sense Pack 2B',
+    -- Six rows, one per Atlas diagnostic band (new taxonomy per Item #12).
+    -- The WORD_PROBLEMS placeholder from the prior taxonomy has no analog
+    -- here; word problems classify by underlying content. A data_statistics
+    -- placeholder is new since MEASUREMENT_DATA split into measurement +
+    -- data_statistics.
+    ('number_sense',          'PLACEHOLDER — Number Sense Pack 2B',
        array['PLACEHOLDER — Extra Practice 2A'],
        'Placeholder. Replace with S.A.M. mapping once licensing lands.'),
-    ('OPERATIONS',         'PLACEHOLDER — Dimensions Math 2B',
+    ('operations_algorithms', 'PLACEHOLDER — Dimensions Math 2B',
        array['PLACEHOLDER — Extra Practice 2A Chapter 5'],
        'Placeholder.'),
-    ('WORD_PROBLEMS',      'PLACEHOLDER — Challenging Word Problems 2',
+    ('fractions_decimals',    'PLACEHOLDER — Fractions & Decimals Pack 2B',
        array[]::text[],
        'Placeholder.'),
-    ('FRACTIONS_DECIMALS', 'PLACEHOLDER — Fractions Pack 2B',
+    ('measurement',           'PLACEHOLDER — Measurement Pack 2B',
        array[]::text[],
        'Placeholder.'),
-    ('GEOMETRY',           'PLACEHOLDER — Geometry Pack 2B',
+    ('geometry',              'PLACEHOLDER — Geometry Pack 2B',
        array[]::text[],
        'Placeholder.'),
-    ('MEASUREMENT_DATA',   'PLACEHOLDER — Measurement Pack 2B',
+    ('data_statistics',       'PLACEHOLDER — Data & Statistics Pack 2B',
        array[]::text[],
        'Placeholder.')
   ) as v(strand, primary_rec, supplementary, notes);
@@ -203,7 +208,7 @@ select t.id, external_id, strand::strand, level::half_grade_level,
 from t,
   (values
     -- Q01 / 1A / Number Sense / Missing-addend number bond (1 + ? = 10).
-    ('SAM-L2-Q01', 'NUMBER_SENSE', '1A', -1.9, 'MULTIPLE_CHOICE',
+    ('SAM-L2-Q01', 'number_sense', '1A', -1.9, 'MULTIPLE_CHOICE',
        '{"stem":"What is the missing number? 1 and ___ make 10.",'
        '"options":["1","0","9","11"],"correct_index":2,'
        '"distractor_misconceptions":{"1":"NS_ZERO_VALUE",'
@@ -212,7 +217,7 @@ from t,
        9, 'ADDITION', 1, 'SYMBOLIC'),
 
     -- Q07 / 1B / Number Sense / Place-value decomposition (76 = ? tens 6 ones).
-    ('SAM-L2-Q07', 'NUMBER_SENSE', '1B', -1.6, 'MULTIPLE_CHOICE',
+    ('SAM-L2-Q07', 'number_sense', '1B', -1.6, 'MULTIPLE_CHOICE',
        '{"stem":"What is the missing number? 76 = ___ tens 6 ones",'
        '"options":["6","7","10","70"],"correct_index":1,'
        '"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION",'
@@ -222,7 +227,7 @@ from t,
        9, 'IDENTIFY', 1, 'SYMBOLIC'),
 
     -- Q09 / 1A / Number Sense / Symbolic addition "3 more than 54".
-    ('SAM-L2-Q09', 'NUMBER_SENSE', '1A', -1.7, 'MULTIPLE_CHOICE',
+    ('SAM-L2-Q09', 'number_sense', '1A', -1.7, 'MULTIPLE_CHOICE',
        '{"stem":"What is 3 more than 54?",'
        '"options":["51","57","84","543"],"correct_index":1,'
        '"distractor_misconceptions":{"0":"OP_SUBTRACTION_DIRECTION",'
@@ -231,14 +236,14 @@ from t,
        6, 'ADDITION', 1, 'SYMBOLIC'),
 
     -- Q10 / 1B / Number Sense / Order 3 numbers ascending.
-    ('SAM-L2-Q10', 'NUMBER_SENSE', '1B', -1.5, 'DRAG_DROP',
+    ('SAM-L2-Q10', 'number_sense', '1B', -1.5, 'DRAG_DROP',
        '{"stem":"Arrange the following numbers. Begin with the smallest. 68, 81, 9",'
        '"items":["68","81","9"],"correct_order":["9","68","81"]}',
        array['NS_PLACE_VALUE_CONFUSION'],
        11, 'COUNTING', 1, 'SYMBOLIC'),
 
     -- Q11 / 2A / Word Problems / Change-unknown apples (35 - 7).
-    ('SAM-L2-Q11', 'WORD_PROBLEMS', '2A', -1.1, 'NUMERIC_ENTRY',
+    ('SAM-L2-Q11', 'operations_algorithms', '2A', -1.1, 'NUMERIC_ENTRY',
        '{"stem":"Jo had 7 apples. Her brother gave her some more apples. '
        'She has 35 apples now. How many apples did her brother give her?",'
        '"correct_answer":"28"}',
@@ -246,7 +251,7 @@ from t,
        24, 'SUBTRACTION', 1, 'WORD_PROBLEM_SINGLE'),
 
     -- Q14 / 2A / Operations / Partitive division (12 birds, 3 cages).
-    ('SAM-L2-Q14', 'OPERATIONS', '2A', -1.1, 'MULTIPLE_CHOICE',
+    ('SAM-L2-Q14', 'operations_algorithms', '2A', -1.1, 'MULTIPLE_CHOICE',
        '{"stem":"Mrs Tan puts 12 birds into 3 cages. How many birds are '
        'there in each cage?","options":["6","2","3","4"],"correct_index":3,'
        '"distractor_misconceptions":{"0":"OP_DIV_REMAINDER",'
@@ -257,27 +262,27 @@ from t,
     -- Q17 / 2A / Word Problems / Money subtraction with regrouping (45 - 29).
     -- Strand reassigned from MEASUREMENT_DATA: money framing is incidental;
     -- diagnostic is subtraction with regrouping in a word-problem frame.
-    ('SAM-L2-Q17', 'WORD_PROBLEMS', '2A', -1.0, 'NUMERIC_ENTRY',
+    ('SAM-L2-Q17', 'operations_algorithms', '2A', -1.0, 'NUMERIC_ENTRY',
        '{"stem":"Larry has $45. He buys a school bag for $29. '
        'How much money does he have left?","correct_answer":"16"}',
        array['OP_NO_REGROUPING','WP_OPERATION_SELECTION'],
        17, 'SUBTRACTION', 1, 'WORD_PROBLEM_SINGLE'),
 
     -- Q19 / 2A / Number Sense / Expanded form to standard form (600+40+8).
-    ('SAM-L2-Q19', 'NUMBER_SENSE', '2A', -1.3, 'NUMERIC_ENTRY',
+    ('SAM-L2-Q19', 'number_sense', '2A', -1.3, 'NUMERIC_ENTRY',
        '{"stem":"What is the missing number? 600 + 40 + 8 = ___",'
        '"correct_answer":"648"}',
        array['NS_PLACE_VALUE_CONFUSION'],
        8, 'ADDITION', 1, 'SYMBOLIC'),
 
     -- Q20 / 2A / Number Sense / Hundreds-place increment with zero placeholder.
-    ('SAM-L2-Q20', 'NUMBER_SENSE', '2A', -1.2, 'NUMERIC_ENTRY',
+    ('SAM-L2-Q20', 'number_sense', '2A', -1.2, 'NUMERIC_ENTRY',
        '{"stem":"What is 100 more than 504?","correct_answer":"604"}',
        array['NS_PLACE_VALUE_CONFUSION','NS_ZERO_VALUE'],
        6, 'ADDITION', 1, 'SYMBOLIC'),
 
     -- Q21 / 2B / Number Sense / Order 4 three-digit numbers descending.
-    ('SAM-L2-Q21', 'NUMBER_SENSE', '2B', -0.9, 'DRAG_DROP',
+    ('SAM-L2-Q21', 'number_sense', '2B', -0.9, 'DRAG_DROP',
        '{"stem":"Arrange the following numbers in order. Begin with the '
        'greatest. 652, 716, 629, 708",'
        '"items":["652","716","629","708"],'
@@ -286,7 +291,7 @@ from t,
        14, 'COUNTING', 1, 'SYMBOLIC'),
 
     -- Q22 / 2B / Number Sense / Skip-counting backward across hundreds boundary.
-    ('SAM-L2-Q22', 'NUMBER_SENSE', '2B', -0.7, 'NUMERIC_ENTRY',
+    ('SAM-L2-Q22', 'number_sense', '2B', -0.7, 'NUMERIC_ENTRY',
        '{"stem":"What comes next in the number pattern below? '
        '860, 840, 820, 800, ?","correct_answer":"780"}',
        array['NS_PLACE_VALUE_CONFUSION'],

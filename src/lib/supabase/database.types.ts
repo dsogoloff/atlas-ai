@@ -763,12 +763,12 @@ export type Database = {
         | "mixed"
         | "normal"
       strand:
-        | "NUMBER_SENSE"
-        | "OPERATIONS"
-        | "WORD_PROBLEMS"
-        | "FRACTIONS_DECIMALS"
-        | "GEOMETRY"
-        | "MEASUREMENT_DATA"
+        | "number_sense"
+        | "operations_algorithms"
+        | "fractions_decimals"
+        | "measurement"
+        | "geometry"
+        | "data_statistics"
       subscription_tier: "PILOT"
       time_flag: "INVALID" | "TOO_FAST" | "TOO_SLOW" | "NORMAL"
       vpc_event_type:
@@ -970,12 +970,12 @@ export const Constants = {
         "normal",
       ],
       strand: [
-        "NUMBER_SENSE",
-        "OPERATIONS",
-        "WORD_PROBLEMS",
-        "FRACTIONS_DECIMALS",
-        "GEOMETRY",
-        "MEASUREMENT_DATA",
+        "number_sense",
+        "operations_algorithms",
+        "fractions_decimals",
+        "measurement",
+        "geometry",
+        "data_statistics",
       ],
       subscription_tier: ["PILOT"],
       time_flag: ["INVALID", "TOO_FAST", "TOO_SLOW", "NORMAL"],
@@ -995,4 +995,3 @@ export const Constants = {
     },
   },
 } as const
-
