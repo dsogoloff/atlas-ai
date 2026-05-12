@@ -183,7 +183,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <h3 className="font-headline-adult text-sam-navy mb-2">
-                Spatial Reasoning
+                Geometry
               </h3>
               <p className="text-sam-gray-mid text-sm">
                 Evaluating visualization skills and geometric understanding
@@ -224,10 +224,11 @@ export default function LandingPage() {
                 </span>
               </div>
               <h3 className="font-headline-adult text-sam-navy mb-2">
-                Word Problems
+                Operations & Algorithms
               </h3>
               <p className="text-sam-gray-mid text-sm">
-                Assessing the bridge between literacy and mathematical logic.
+                Calculation fluency and applied problem-solving across
+                addition, subtraction, multiplication, and division.
               </p>
             </div>
             {/* Card 6 */}

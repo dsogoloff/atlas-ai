@@ -13,10 +13,7 @@
 // the StrandMap above.
 //
 // supplementary[] and notes are intentionally hidden in v1
-// (RC3+RC4) — surface in v2 if pilot families ask. Strand label map
-// is duplicated from misconception-list.tsx + strand-map.tsx; flag
-// for v1.x cleanup (extract to a shared strand-labels module after
-// the three consumers settle).
+// (RC3+RC4) — surface in v2 if pilot families ask.
 
 import type { Strand } from "@/lib/engine/types";
 import type { Database } from "@/lib/supabase/database.types";
