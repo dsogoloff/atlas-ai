@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
+import { STRANDS } from "@/lib/engine/levels";
 import type { Database } from "@/lib/supabase/database.types";
 
 import { sessionStartHandler } from "./handler";
@@ -35,6 +36,11 @@ function makeServiceClient(
   const inserts: Array<{ table: string; row: unknown }> = [];
   const updates: Array<{ table: string; patch: unknown }> = [];
   const deletes: Array<{ table: string }> = [];
+  // Item #12 Phase 7.5: the handler's first `questions` SELECT is the
+  // discoverEmptyBankStrands call. Inject a synthetic "bank populates
+  // every strand" default so emptyBankStrands is empty and legacy test
+  // scripts continue consuming their scripted entries in order.
+  let questionsDiscoverConsumed = false;
 
   const client = {
     from(table: string) {
@@ -45,6 +51,13 @@ function makeServiceClient(
       // getPriorConfigByVersion; grade_level=null triggers seedPosteriors'
       // R3 fall-back to uniform priors.
       const next = (): MockResult => {
+        if (table === "questions" && !questionsDiscoverConsumed) {
+          questionsDiscoverConsumed = true;
+          return {
+            data: STRANDS.map((s) => ({ strand: s })),
+            error: null,
+          };
+        }
         const staged = scripts[table]?.shift();
         if (staged !== undefined) return staged;
         if (table === "assessment_sessions") {
@@ -360,6 +373,43 @@ describe("sessionStartHandler / first-pick exhaustion", () => {
     expect(
       svc.inserts.some((i) => i.table === "question_access_log"),
     ).toBe(false);
+  });
+
+  // Item #12 Phase 7.5 — first-pick loop advances past exhausted strands.
+  it("Phase 7.5: first picker call exhausts, loop advances to second strand and serves (no rollback)", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      assessment_sessions: [
+        { data: null, error: null }, // existing check (no IN_PROGRESS)
+        { data: { id: SESSION_ID }, error: null }, // INSERT
+      ],
+      questions: [
+        // (auto-injected discover — all 6 strands populated)
+        { data: [], error: null }, // 1st picker → strand-exhausted
+        { data: [questionRow()], error: null }, // 2nd picker → serves
+      ],
+      question_access_log: [{ data: null, error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.status).toBe(200);
+    expect(result.body.question.id).toBe(questionRow().id);
+    // Session was NOT deleted — the loop found a servable strand.
+    expect(svc.deletes.some((d) => d.table === "assessment_sessions")).toBe(false);
+    // Exactly one audit-log INSERT for the served question.
+    expect(
+      svc.inserts.filter((i) => i.table === "question_access_log"),
+    ).toHaveLength(1);
   });
 
   it("still returns 422 even when the rollback DELETE fails (logs warning)", async () => {

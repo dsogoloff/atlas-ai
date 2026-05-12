@@ -121,11 +121,16 @@ import {
 import type {
   EngineQuestion,
   EngineResponse,
+  NextQuestionRequest,
+  Strand,
   TerminationDecision,
 } from "@/lib/engine/types";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import { pickQuestion } from "@/lib/questionPicker/picker";
+import {
+  discoverEmptyBankStrands,
+  pickQuestion,
+} from "@/lib/questionPicker/picker";
 import { toClientQuestion } from "@/lib/questionPicker/serialize";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
@@ -188,6 +193,20 @@ export async function submitResponseHandler({
     return fail("unauthorized", 401, "no parent row for caller");
   }
 
+  // Item #12 Phase 7.5: pre-discover strands the tenant's bank can't
+  // serve. Threaded into shouldTerminate (treat as terminal-confident)
+  // and pickAndMaybeClose (pre-seed the engine's excluded set). One
+  // cheap query per submit; reused across both code paths below.
+  let emptyBankStrands: Set<Strand>;
+  try {
+    emptyBankStrands = await discoverEmptyBankStrands(
+      serviceClient,
+      parent.tenant_id,
+    );
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+
   // ---------------------------------------------------------------------------
   // 2. Owned children — explicit eq filter narrows past the OR'd RLS.
   // ---------------------------------------------------------------------------
@@ -247,7 +266,7 @@ export async function submitResponseHandler({
     // post-submit state. Recompute done + next/placement so a retry
     // returns the same shape as the first call.
     const state = await replayEngineState(serviceClient, request.session_id);
-    const term = shouldTerminate(state);
+    const term = shouldTerminate(state, emptyBankStrands);
 
     if (term.done) {
       return success({
@@ -267,11 +286,20 @@ export async function submitResponseHandler({
       request.session_id,
     );
     if (outstanding) {
+      // next_request for the outstanding-question case is the engine's
+      // current ask, excluding empty-bank strands. Reaching null here
+      // would mean every strand is empty AND term.done was false — a
+      // contradiction (shouldTerminate would have fired bank-exhausted).
+      // Defensive 500 if it ever does.
+      const outstandingReq = nextQuestionRequest(state, emptyBankStrands);
+      if (outstandingReq === null) {
+        return fail("internal", 500, "next_request not computable on outstanding");
+      }
       return success({
         is_correct: existing.is_correct,
         time_flag: existing.time_flag,
         done: false,
-        next_request: toNextRequestJson(nextQuestionRequest(state)),
+        next_request: toNextRequestJson(outstandingReq),
         next_question: toClientQuestion(outstanding),
       });
     }
@@ -288,6 +316,7 @@ export async function submitResponseHandler({
         ip,
       },
       state,
+      emptyBankStrands,
     );
     if (retryPick.kind === "error") {
       return fail("internal", 500, retryPick.message);
@@ -305,7 +334,7 @@ export async function submitResponseHandler({
       is_correct: existing.is_correct,
       time_flag: existing.time_flag,
       done: false,
-      next_request: toNextRequestJson(nextQuestionRequest(state)),
+      next_request: toNextRequestJson(retryPick.request),
       next_question: toClientQuestion(retryPick.question),
     });
   }
@@ -463,7 +492,7 @@ export async function submitResponseHandler({
   }
 
   // (c) Engine-driven termination side-effects.
-  const term = shouldTerminate(postState);
+  const term = shouldTerminate(postState, emptyBankStrands);
   if (term.done) {
     const closeMsg = await closeSession(serviceClient, request.session_id);
     if (closeMsg) return fail("internal", 500, closeMsg);
@@ -491,6 +520,7 @@ export async function submitResponseHandler({
       ip,
     },
     postState,
+    emptyBankStrands,
   );
   if (pickResult.kind === "error") {
     return fail("internal", 500, pickResult.message);
@@ -509,7 +539,7 @@ export async function submitResponseHandler({
     is_correct: isCorrect,
     time_flag: flag.flag,
     done: false,
-    next_request: toNextRequestJson(nextQuestionRequest(postState)),
+    next_request: toNextRequestJson(pickResult.request),
     next_question: toClientQuestion(pickResult.question),
   });
 }
@@ -584,59 +614,89 @@ interface PickContext {
 }
 
 type PickAndMaybeCloseResult =
-  | { kind: "picked"; question: PickedQuestionRow }
+  | {
+      kind: "picked";
+      question: PickedQuestionRow;
+      /** The engine's request that produced this question. Item #12 Phase 7.5:
+       *  surfaced because the loop may have advanced past one or more exhausted
+       *  strands before finding a servable one — the caller can no longer
+       *  re-derive this by calling nextQuestionRequest(state) without the
+       *  exhausted-strand context. */
+      request: NextQuestionRequest;
+    }
   | { kind: "exhausted" }
   | { kind: "error"; message: string };
 
 /**
- * Run the picker against `postState`. On success, write the audit log
- * and return the picked row. On strand-exhaustion, close the session
- * with bank-exhausted (mirrors the engine-terminate (c1)+(c2) sequence)
- * and signal to the caller. Errors bubble up as { kind: 'error' }.
+ * Iterate engine → picker → engine until a strand serves OR every strand
+ * is exhausted. Pre-seeded with `initiallyExcluded` (typically the empty-
+ * bank strands from discoverEmptyBankStrands) so we don't waste picker
+ * round-trips on strands the bank can never serve. Each strand-exhausted
+ * result is added to a local working set and the engine re-asked for the
+ * next-best strand — bank-exhausted termination fires only when ALL
+ * strands have been excluded.
+ *
+ * Item #12 Phase 7.5: pre-Phase-7.5 this helper made one pick attempt
+ * and bank-exhausted on the first empty strand. With the engine collapse
+ * from Item #12 reducing populated strands from 3 → 2, that single-shot
+ * behaviour terminated sessions at Q2 once fractions_decimals (slot 3
+ * in STRAND_ORDER) was requested. The loop here is the fix.
  *
  * Idempotent retry note: if the session is ALREADY COMPLETED (e.g., a
  * prior call hit bank-exhausted), the close UPDATE here re-stamps
  * completed_at to a fresh now(). Acceptable v1 drift; readers shouldn't
- * rely on completed_at being the moment of first-close. Reading
- * session.status first to skip would add a query for a corner case.
+ * rely on completed_at being the moment of first-close.
  */
 async function pickAndMaybeClose(
   serviceClient: SupabaseClient<Database>,
   ctx: PickContext,
   postState: ReturnType<typeof applyResponse>,
+  initiallyExcluded: ReadonlySet<Strand>,
 ): Promise<PickAndMaybeCloseResult> {
-  const req = nextQuestionRequest(postState);
+  const excludedStrands = new Set<Strand>(initiallyExcluded);
 
-  let pick;
-  try {
-    pick = await pickQuestion(serviceClient, req, {
-      tenantId: ctx.tenantId,
-      servedQuestionIds: postState.servedQuestionIds,
-    });
-  } catch (e) {
-    return { kind: "error", message: errorMessage(e) };
+  // Bounded by STRANDS.length (6 in v1). The loop terminates when either
+  // the engine returns null (every strand excluded) or the picker succeeds.
+  while (true) {
+    const req = nextQuestionRequest(postState, excludedStrands);
+    if (req === null) {
+      // Every strand exhausted — close the session and signal.
+      const closeMsg = await closeSession(serviceClient, ctx.sessionId);
+      if (closeMsg) return { kind: "error", message: closeMsg };
+      return { kind: "exhausted" };
+    }
+
+    let pick;
+    try {
+      pick = await pickQuestion(serviceClient, req, {
+        tenantId: ctx.tenantId,
+        servedQuestionIds: postState.servedQuestionIds,
+      });
+    } catch (e) {
+      return { kind: "error", message: errorMessage(e) };
+    }
+
+    if (!pick.ok) {
+      // Strand-exhausted (zero candidates OR all candidates already
+      // served) — record and try the next-best strand.
+      excludedStrands.add(req.strand);
+      continue;
+    }
+
+    try {
+      await logQuestionServe(serviceClient, {
+        tenantId: ctx.tenantId,
+        sessionId: ctx.sessionId,
+        childId: ctx.childId,
+        questionId: pick.question.id,
+        ip: ctx.ip,
+      });
+    } catch (e) {
+      return { kind: "error", message: errorMessage(e) };
+    }
+
+    return { kind: "picked", question: pick.question, request: req };
   }
-
-  if (!pick.ok) {
-    // bank-exhausted: run the close sequence and signal exhaustion.
-    const closeMsg = await closeSession(serviceClient, ctx.sessionId);
-    if (closeMsg) return { kind: "error", message: closeMsg };
-    return { kind: "exhausted" };
-  }
-
-  try {
-    await logQuestionServe(serviceClient, {
-      tenantId: ctx.tenantId,
-      sessionId: ctx.sessionId,
-      childId: ctx.childId,
-      questionId: pick.question.id,
-      ip: ctx.ip,
-    });
-  } catch (e) {
-    return { kind: "error", message: errorMessage(e) };
-  }
-
-  return { kind: "picked", question: pick.question };
 }
 
 /**

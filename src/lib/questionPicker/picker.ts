@@ -61,6 +61,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { STRANDS } from "@/lib/engine/levels";
+import type { Strand } from "@/lib/engine/types";
 import type { Database } from "@/lib/supabase/database.types";
 
 import type {
@@ -127,6 +129,49 @@ export async function pickQuestion(
   }
 
   return { ok: true, question: chosen };
+}
+
+/**
+ * Item #12 Phase 7.5 — discover which strands have zero active questions
+ * in the tenant's bank. Called once per request entry by the
+ * sessionStart and responseSubmit handlers; the result is threaded into
+ * nextQuestionRequest's excludedStrands and shouldTerminate's
+ * exhaustedStrands so the engine skips strands the bank cannot serve
+ * instead of bank-exhausting on the first empty slot.
+ *
+ * Cheap query — one `SELECT strand` filtered by tenant + is_active. With
+ * v1 bank size (≤100 rows/tenant) and the picker only being invoked at
+ * most a handful of times per session, no caching is warranted.
+ *
+ * "Empty bank" is distinct from "all rows already served in this
+ * session" — the latter is discovered by the picker itself per-call and
+ * doesn't need pre-discovery (see pickAndMaybeClose for the served-out
+ * loop). Treating only zero-bank strands as terminal-confident in
+ * shouldTerminate is intentional: don't conflate with strands that
+ * have data but haven't been served yet.
+ */
+export async function discoverEmptyBankStrands(
+  serviceClient: SupabaseClient<Database>,
+  tenantId: string,
+): Promise<Set<Strand>> {
+  const { data, error } = await serviceClient
+    .from("questions")
+    .select("strand")
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true);
+
+  if (error) {
+    throw new Error(
+      `[picker] discoverEmptyBankStrands failed: ${error.message}`,
+    );
+  }
+
+  const populated = new Set<Strand>();
+  for (const row of data ?? []) populated.add(row.strand);
+
+  const empty = new Set<Strand>();
+  for (const s of STRANDS) if (!populated.has(s)) empty.add(s);
+  return empty;
 }
 
 function compareCandidates(target: number) {

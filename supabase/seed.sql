@@ -16,6 +16,109 @@ insert into tenants (slug, display_name) values
   ('inspirea_singapore_math', 'Inspirea Labs — Singapore Math (S.A.M. v1)');
 
 -- =============================================================================
+-- Local dev auth user + linked parent + test child (Item #12 Phase 7.5)
+-- =============================================================================
+-- `supabase db reset` wipes auth.users along with public tables. Without a
+-- seeded dev user, the founder must re-sign-up through /signup after every
+-- reset, which costs minutes and isn't reproducible across contributors.
+--
+-- Credentials (LOCAL DEV ONLY — never deploy this file to prod):
+--   email:    dev@atlas.local
+--   password: dev-password
+--
+-- This block lives in seed.sql (NOT a migration) because seed.sql is the
+-- dev/CI write path; production never runs it. The bcrypt hash is
+-- computed at seed time via pgcrypto's crypt() — pgcrypto is enabled by
+-- default in Supabase.
+--
+-- All conflicts no-op so a re-run (e.g., second `db reset` in the same
+-- session) doesn't fail on the pkey.
+
+-- 1. auth.users — the GoTrue identity row.
+insert into auth.users (
+  id,
+  instance_id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  is_sso_user,
+  is_anonymous
+)
+values (
+  '11111111-1111-1111-1111-111111111111',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'dev@atlas.local',
+  crypt('dev-password', gen_salt('bf', 10)),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"name":"Dev Parent"}'::jsonb,
+  now(),
+  now(),
+  false,
+  false
+)
+on conflict (id) do nothing;
+
+-- 2. auth.identities — required by GoTrue for password-based sign-in.
+--    provider_id is the user id for email-provider identities.
+insert into auth.identities (
+  id,
+  user_id,
+  provider_id,
+  provider,
+  identity_data,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+values (
+  gen_random_uuid(),
+  '11111111-1111-1111-1111-111111111111',
+  '11111111-1111-1111-1111-111111111111',
+  'email',
+  '{"sub":"11111111-1111-1111-1111-111111111111","email":"dev@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
+  now(),
+  now(),
+  now()
+)
+on conflict (provider_id, provider) do nothing;
+
+-- 3. public.parents — the app-domain row, FK-equivalent to auth_user_id.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into parents (id, auth_user_id, tenant_id, email, name)
+select
+  '22222222-2222-2222-2222-222222222222',
+  '11111111-1111-1111-1111-111111111111',
+  t.id,
+  'dev@atlas.local',
+  'Dev Parent'
+from t
+on conflict (auth_user_id) do nothing;
+
+-- 4. public.children — one test child so the founder can run an
+--    assessment immediately after login. grade_level='2' so the
+--    engine targets the populated 1A-2B levels of the v1 bank.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into children (id, parent_id, tenant_id, name, birth_year, grade_level)
+select
+  '33333333-3333-3333-3333-333333333333',
+  '22222222-2222-2222-2222-222222222222',
+  t.id,
+  'Dev Child',
+  2018,
+  '2'
+from t
+on conflict (id) do nothing;
+
+-- =============================================================================
 -- Placeholder centers
 -- =============================================================================
 -- Names are intentionally generic. Replace with the real S.A.M. roster

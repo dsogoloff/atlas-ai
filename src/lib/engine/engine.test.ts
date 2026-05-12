@@ -221,11 +221,12 @@ describe("applyResponse", () => {
 describe("nextQuestionRequest", () => {
   it("on a fresh state, all strand variances tie — picks the first", () => {
     const req = nextQuestionRequest(createEngineState());
-    expect(req.strand).toBe(STRANDS[0]);
-    expect(req.reason).toBe("max-variance-strand");
+    expect(req).not.toBeNull();
+    expect(req!.strand).toBe(STRANDS[0]);
+    expect(req!.reason).toBe("max-variance-strand");
     // Mean of uniform is the middle index = 8.5 → level 4B (idx 9).
     // Either side of the midpoint is acceptable.
-    expect(Math.abs(req.targetDifficulty)).toBeLessThan(0.5);
+    expect(Math.abs(req!.targetDifficulty)).toBeLessThan(0.5);
   });
 
   it("after concentrating one strand, picks a different (less-resolved) one", () => {
@@ -236,7 +237,33 @@ describe("nextQuestionRequest", () => {
       s = applyResponse(s, { ...q, id: `q${i}` }, answer({ ...q, id: `q${i}` }, i % 2 === 0));
     }
     const req = nextQuestionRequest(s);
-    expect(req.strand).not.toBe("operations_algorithms");
+    expect(req).not.toBeNull();
+    expect(req!.strand).not.toBe("operations_algorithms");
+  });
+
+  // Item #12 Phase 7.5 — skip-excluded behaviour.
+  it("skips strands in the excludedStrands set", () => {
+    const state = createEngineState();
+    const excluded = new Set<Strand>([STRANDS[0]]);
+    const req = nextQuestionRequest(state, excluded);
+    expect(req).not.toBeNull();
+    expect(req!.strand).not.toBe(STRANDS[0]);
+    expect(STRANDS).toContain(req!.strand);
+  });
+
+  it("returns null when every strand is excluded", () => {
+    const state = createEngineState();
+    const allExcluded = new Set<Strand>(STRANDS);
+    expect(nextQuestionRequest(state, allExcluded)).toBeNull();
+  });
+
+  it("with N-1 strands excluded, picks the one remaining strand", () => {
+    const state = createEngineState();
+    const onlyKeep: Strand = "data_statistics";
+    const excluded = new Set<Strand>(STRANDS.filter((s) => s !== onlyKeep));
+    const req = nextQuestionRequest(state, excluded);
+    expect(req).not.toBeNull();
+    expect(req!.strand).toBe(onlyKeep);
   });
 });
 
@@ -256,6 +283,60 @@ describe("shouldTerminate", () => {
     }
     expect(shouldTerminate(s).done).toBe(true);
     expect(shouldTerminate(s).reason).toBe("max-questions-reached");
+  });
+
+  // Item #12 Phase 7.5 — exhausted-strands behaviour.
+  it("treats exhausted strands as terminal-confident in the confidence loop", () => {
+    // Build a state where ONE strand has a peaked posterior at confidence
+    // ≥ threshold, with all others still uniform. Direct posterior
+    // construction avoids tripping MAX_QUESTIONS via applyResponse, which
+    // would force max-questions-reached before we can test the
+    // exhaustedStrands path.
+    const uniform = uniformPosterior();
+    const peakedNS: Posteriors["number_sense"] = { ...uniform };
+    for (const lv of LEVELS) peakedNS[lv] = 0.001;
+    peakedNS["4A"] = 0.33;
+    peakedNS["4B"] = 0.34;
+    peakedNS["5A"] = 0.33 - 17 * 0.001; // pad so sum stays at 1
+    // Normalise defensively.
+    const sum = LEVELS.reduce((acc, lv) => acc + peakedNS[lv], 0);
+    for (const lv of LEVELS) peakedNS[lv] = peakedNS[lv] / sum;
+
+    const allUniform = STRANDS.reduce((acc, st) => {
+      acc[st] = { ...uniform };
+      return acc;
+    }, {} as Posteriors);
+    allUniform.number_sense = peakedNS;
+
+    const s = { posteriors: allUniform, responseCount: 5, servedQuestionIds: [] };
+
+    // Without exhausted set: in-progress (other 5 strands still uniform).
+    expect(shouldTerminate(s).done).toBe(false);
+
+    // With the 5 other strands marked exhausted: terminates on
+    // confidence (number_sense is the only servable strand and it
+    // exceeds the threshold).
+    const allOthers = new Set<Strand>(STRANDS.filter((x) => x !== "number_sense"));
+    const term = shouldTerminate(s, allOthers);
+    expect(term.done).toBe(true);
+    expect(term.reason).toBe("confidence-threshold-met");
+  });
+
+  it("returns bank-exhausted when every strand is in exhaustedStrands", () => {
+    const s = createEngineState();
+    const allExhausted = new Set<Strand>(STRANDS);
+    const term = shouldTerminate(s, allExhausted);
+    expect(term).toEqual({ done: true, reason: "bank-exhausted" });
+  });
+
+  it("does NOT treat a not-yet-served strand as exhausted (default empty set preserves legacy behaviour)", () => {
+    // Pre-Phase-7.5 callers (no second arg) get the original
+    // "every strand must meet threshold" rule.
+    const s = createEngineState();
+    expect(shouldTerminate(s)).toEqual({
+      done: false,
+      reason: "in-progress",
+    });
   });
 });
 
@@ -281,7 +362,7 @@ describe("integration — simulated child at level 3A", () => {
     let i = 0;
 
     while (!shouldTerminate(s).done && i < MAX_QUESTIONS) {
-      const req = nextQuestionRequest(s);
+      const req = nextQuestionRequest(s)!;
       const q: EngineQuestion = {
         id: `sim-q${i}`,
         strand: req.strand,

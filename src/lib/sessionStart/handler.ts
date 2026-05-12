@@ -90,9 +90,16 @@ import {
   shouldTerminate,
 } from "@/lib/engine/engine";
 import { ACTIVE_PRIOR_VERSION, PRIORS_V1 } from "@/lib/engine/priors";
-import type { GradeKey } from "@/lib/engine/types";
+import type {
+  GradeKey,
+  NextQuestionRequest,
+  Strand,
+} from "@/lib/engine/types";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import { pickQuestion } from "@/lib/questionPicker/picker";
+import {
+  discoverEmptyBankStrands,
+  pickQuestion,
+} from "@/lib/questionPicker/picker";
 import { toClientQuestion } from "@/lib/questionPicker/serialize";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
@@ -143,6 +150,21 @@ export async function sessionStartHandler({
     return fail("unauthorized", 401, "no parent row for caller");
   }
 
+  // Item #12 Phase 7.5: pre-discover empty-bank strands once per request.
+  // Threaded into the first-pick loop AND through resumeExisting so the
+  // engine skips strands the bank cannot serve instead of bank-exhausting
+  // on the first empty slot. See pickAndMaybeStartLoop below + the
+  // mirror loop in responseSubmit/handler.ts.
+  let emptyBankStrands: Set<Strand>;
+  try {
+    emptyBankStrands = await discoverEmptyBankStrands(
+      serviceClient,
+      parent.tenant_id,
+    );
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+
   // ---------------------------------------------------------------------------
   // 2. Child — explicit parent_id eq closes the dual-role-bypass gap.
   // ---------------------------------------------------------------------------
@@ -175,6 +197,7 @@ export async function sessionStartHandler({
       childId: child.id,
       sessionId: existing.row.id,
       ip,
+      emptyBankStrands,
     });
   }
 
@@ -206,6 +229,7 @@ export async function sessionStartHandler({
           childId: child.id,
           sessionId: retry.row.id,
           ip,
+          emptyBankStrands,
         });
       }
       // Race winner deleted the session before we re-read — treat as
@@ -224,25 +248,51 @@ export async function sessionStartHandler({
 
   // ---------------------------------------------------------------------------
   // 5. First pick on a fresh session (engine state = empty).
+  //
+  // Item #12 Phase 7.5: loop instead of single-shot. Pre-seeded with
+  // empty-bank strands so the engine doesn't waste a picker round-trip
+  // on a strand the bank can never serve. Continues advancing until
+  // either (a) the picker serves OR (b) every strand is excluded
+  // (truly bank-unservable for this tenant).
   // ---------------------------------------------------------------------------
   const state = createEngineState({
     grade: child.grade_level as GradeKey | null,
     config: PRIORS_V1,
   });
-  const req = nextQuestionRequest(state);
 
-  const pick = await pickQuestion(serviceClient, req, {
-    tenantId: parent.tenant_id,
-    servedQuestionIds: state.servedQuestionIds,
-  });
+  const excludedStrands = new Set<Strand>(emptyBankStrands);
+  let pickedQuestion: PickedQuestionRow | null = null;
+  let pickedRequest: NextQuestionRequest | null = null;
+  let lastAttemptedStrand: Strand | null = null;
 
-  if (!pick.ok) {
-    // First-pick exhaustion — roll back the just-inserted session.
-    // Best-effort: DELETE failure leaves an orphaned IN_PROGRESS row
-    // that the unique index would block future starts on. Log loudly
-    // so an out-of-band sweep can find it; still return 422 to the
-    // client (a successful DELETE here doesn't change the user-facing
-    // outcome — they couldn't be served either way).
+  while (true) {
+    const req = nextQuestionRequest(state, excludedStrands);
+    if (req === null) {
+      // No strand can serve. Roll back and surface 422.
+      break;
+    }
+    lastAttemptedStrand = req.strand;
+
+    const pick = await pickQuestion(serviceClient, req, {
+      tenantId: parent.tenant_id,
+      servedQuestionIds: state.servedQuestionIds,
+    });
+
+    if (pick.ok) {
+      pickedQuestion = pick.question;
+      pickedRequest = req;
+      break;
+    }
+
+    excludedStrands.add(req.strand);
+  }
+
+  if (pickedQuestion === null || pickedRequest === null) {
+    // First-pick exhaustion across ALL strands — roll back the just-
+    // inserted session. Best-effort DELETE: a failure leaves an
+    // orphaned IN_PROGRESS row that the unique index would block
+    // future starts on. Log loudly so an out-of-band sweep can find
+    // it; still return 422 to the client.
     const { error: delErr } = await serviceClient
       .from("assessment_sessions")
       .delete()
@@ -256,7 +306,7 @@ export async function sessionStartHandler({
     return fail(
       "bank_unservable",
       422,
-      `bank exhausted on first pick (strand=${req.strand})`,
+      `bank exhausted on first pick (last strand=${lastAttemptedStrand ?? "none"})`,
     );
   }
 
@@ -268,7 +318,7 @@ export async function sessionStartHandler({
       tenantId: parent.tenant_id,
       sessionId,
       childId: child.id,
-      questionId: pick.question.id,
+      questionId: pickedQuestion.id,
       ip,
     });
   } catch (e) {
@@ -281,8 +331,8 @@ export async function sessionStartHandler({
     status: 200,
     body: {
       session_id: sessionId,
-      question: toClientQuestion(pick.question),
-      next_request: toNextRequestJson(req),
+      question: toClientQuestion(pickedQuestion),
+      next_request: toNextRequestJson(pickedRequest),
     },
   };
 }
@@ -297,6 +347,10 @@ interface ResumeArgs {
   childId: string;
   sessionId: string;
   ip: string | null;
+  /** Item #12 Phase 7.5: strands with zero active questions in the
+   *  tenant bank. Pre-seeded into the resume pick loop's excluded set
+   *  and threaded into shouldTerminate as exhaustedStrands. */
+  emptyBankStrands: ReadonlySet<Strand>;
 }
 
 async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
@@ -348,7 +402,7 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
   // results endpoint instead). We piggy-back the same status code as
   // first-pick exhaustion since the user-facing outcome is the same:
   // "this session can't continue".
-  const term = shouldTerminate(state);
+  const term = shouldTerminate(state, args.emptyBankStrands);
   if (term.done) {
     await closeSessionWithReason(
       args.serviceClient,
@@ -366,35 +420,57 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
     );
   }
 
-  const req = nextQuestionRequest(state);
-  let pick;
-  try {
-    pick = await pickQuestion(args.serviceClient, req, {
-      tenantId: args.tenantId,
-      servedQuestionIds: state.servedQuestionIds,
-    });
-  } catch (e) {
-    return fail("internal", 500, errorMessage(e));
+  // Item #12 Phase 7.5: resume pick loop — same shape as the first-pick
+  // loop above and the pickAndMaybeClose loop in responseSubmit/handler.ts.
+  // Skip empty-bank strands; iterate until a strand serves OR every
+  // strand is excluded.
+  const resumeExcluded = new Set<Strand>(args.emptyBankStrands);
+  let pickedQuestion: PickedQuestionRow | null = null;
+  let pickedRequest: NextQuestionRequest | null = null;
+  let lastAttemptedStrand: Strand | null = null;
+
+  while (true) {
+    const req = nextQuestionRequest(state, resumeExcluded);
+    if (req === null) break;
+    lastAttemptedStrand = req.strand;
+
+    let pick;
+    try {
+      pick = await pickQuestion(args.serviceClient, req, {
+        tenantId: args.tenantId,
+        servedQuestionIds: state.servedQuestionIds,
+      });
+    } catch (e) {
+      return fail("internal", 500, errorMessage(e));
+    }
+
+    if (pick.ok) {
+      pickedQuestion = pick.question;
+      pickedRequest = req;
+      break;
+    }
+
+    resumeExcluded.add(req.strand);
   }
 
-  if (!pick.ok) {
-    // Bank exhausted on resume — close with bank-exhausted, surface 422.
-    // Do NOT delete the session row: it has real responses and a
-    // current_estimate that the parent dashboard / instructor view
-    // should still see.
+  if (pickedQuestion === null || pickedRequest === null) {
+    // Bank exhausted across ALL strands on resume — close with
+    // bank-exhausted, surface 422. Do NOT delete the session row: it
+    // has real responses and a current_estimate that the parent
+    // dashboard / instructor view should still see.
     await closeSessionWithReason(args.serviceClient, args.sessionId, "bank-exhausted");
     return fail(
       "bank_unservable",
       422,
-      `bank exhausted on resume pick (strand=${req.strand})`,
+      `bank exhausted on resume pick (last strand=${lastAttemptedStrand ?? "none"})`,
     );
   }
 
   return logAndRespond({
     ...args,
-    question: pick.question,
+    question: pickedQuestion,
     hasProgress,
-    precomputedRequest: req,
+    precomputedRequest: pickedRequest,
   });
 }
 
@@ -422,11 +498,17 @@ async function logAndRespond(
     return fail("internal", 500, errorMessage(e));
   }
 
-  let req = args.precomputedRequest;
+  let req: NextQuestionRequest | null | undefined = args.precomputedRequest;
   if (!req && args.computeRequest) {
     try {
       const state = await replayEngineState(args.serviceClient, args.sessionId);
-      req = nextQuestionRequest(state);
+      // Item #12 Phase 7.5: exclude empty-bank strands so the
+      // informational next_request describes a strand the engine
+      // would actually serve from. Returning null here would mean
+      // every strand is empty AND the resume path served an
+      // outstanding question — a contradiction (we wouldn't have
+      // gotten here). Defensive 500 if it does.
+      req = nextQuestionRequest(state, args.emptyBankStrands);
     } catch (e) {
       return fail("internal", 500, errorMessage(e));
     }

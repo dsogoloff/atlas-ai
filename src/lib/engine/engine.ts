@@ -122,18 +122,30 @@ export function applyResponse(
  * variance — standard "max-information" item selection for adaptive testing).
  * Within that strand, target the difficulty closest to the strand's
  * posterior mean (the level the child is most likely at).
+ *
+ * `excludedStrands` (Item #12 Phase 7.5) — strands the caller has already
+ * determined cannot serve a question (empty bank, served-out, etc.). The
+ * engine skips them and picks the highest-variance strand among the rest.
+ * Returns `null` when every strand is excluded — the caller should treat
+ * this as bank-exhausted termination.
  */
-export function nextQuestionRequest(state: EngineState): NextQuestionRequest {
-  let chosenStrand: Strand = STRANDS[0];
+export function nextQuestionRequest(
+  state: EngineState,
+  excludedStrands: ReadonlySet<Strand> = new Set(),
+): NextQuestionRequest | null {
+  let chosenStrand: Strand | null = null;
   let chosenVariance = -1;
 
   for (const strand of STRANDS) {
+    if (excludedStrands.has(strand)) continue;
     const v = varianceLevelIndex(state.posteriors[strand]);
     if (v > chosenVariance) {
       chosenVariance = v;
       chosenStrand = strand;
     }
   }
+
+  if (chosenStrand === null) return null;
 
   const meanIdx = meanLevelIndex(state.posteriors[chosenStrand]);
   const meanLevel = levelAt(meanIdx);
@@ -153,22 +165,46 @@ export function nextQuestionRequest(state: EngineState): NextQuestionRequest {
 /**
  * Done when:
  *   * the response cap is hit (forces a stop), or
- *   * every strand is at or above the confidence threshold (90% mass within
- *     ±1 half-grade of the mode).
+ *   * every NON-EXHAUSTED strand is at or above the confidence threshold
+ *     (90% mass within ±1 half-grade of the mode), or
+ *   * every strand is exhausted (bank cannot serve any more questions).
  *
- * The "all strands" rule is conservative — we don't end early just because
- * one strand is well-resolved. Tightening per-strand thresholds is a
- * calibration question for later.
+ * `exhaustedStrands` (Item #12 Phase 7.5) — strands the caller has
+ * determined cannot serve any more questions (empty bank). Treated as
+ * terminal-confident: no additional data is achievable for them, so
+ * termination should not wait on their confidence threshold. Distinct
+ * from "strand has data but every row has been served this session";
+ * v1 callers conflate the two (both produce strand-exhausted from the
+ * picker), which is fine — the bank-exhausted termination reason
+ * captures both equally well.
+ *
+ * The "all NON-exhausted strands" rule is conservative — we don't end
+ * early just because one strand is well-resolved. Tightening per-strand
+ * thresholds is a calibration question for later.
  */
-export function shouldTerminate(state: EngineState): TerminationDecision {
+export function shouldTerminate(
+  state: EngineState,
+  exhaustedStrands: ReadonlySet<Strand> = new Set(),
+): TerminationDecision {
   if (state.responseCount >= MAX_QUESTIONS) {
     return { done: true, reason: "max-questions-reached" };
   }
+
+  let anyServableStrand = false;
   for (const strand of STRANDS) {
+    if (exhaustedStrands.has(strand)) continue;
+    anyServableStrand = true;
     const c = confidenceWithin(state.posteriors[strand], 1);
     if (c < CONFIDENCE_THRESHOLD) {
       return { done: false, reason: "in-progress" };
     }
+  }
+
+  // All non-exhausted strands met the threshold. If no servable strand
+  // exists at all (every strand is in exhaustedStrands), the session
+  // is bank-exhausted; otherwise it terminated on confidence.
+  if (!anyServableStrand) {
+    return { done: true, reason: "bank-exhausted" };
   }
   return { done: true, reason: "confidence-threshold-met" };
 }
