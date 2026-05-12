@@ -273,6 +273,7 @@ export async function submitResponseHandler({
         is_correct: existing.is_correct,
         time_flag: existing.time_flag,
         done: true,
+        response_count: state.responseCount,
         placement: toPlacementEstimateJson(placementEstimate(state)),
         termination_reason: toWireReason(term.reason),
       });
@@ -299,6 +300,7 @@ export async function submitResponseHandler({
         is_correct: existing.is_correct,
         time_flag: existing.time_flag,
         done: false,
+        response_count: state.responseCount,
         next_request: toNextRequestJson(outstandingReq),
         next_question: toClientQuestion(outstanding),
       });
@@ -326,6 +328,7 @@ export async function submitResponseHandler({
         is_correct: existing.is_correct,
         time_flag: existing.time_flag,
         done: true,
+        response_count: state.responseCount,
         placement: toPlacementEstimateJson(placementEstimate(state)),
         termination_reason: "bank-exhausted",
       });
@@ -334,6 +337,7 @@ export async function submitResponseHandler({
       is_correct: existing.is_correct,
       time_flag: existing.time_flag,
       done: false,
+      response_count: state.responseCount,
       next_request: toNextRequestJson(retryPick.request),
       next_question: toClientQuestion(retryPick.question),
     });
@@ -501,6 +505,7 @@ export async function submitResponseHandler({
       is_correct: isCorrect,
       time_flag: flag.flag,
       done: true,
+      response_count: postState.responseCount,
       placement: toPlacementEstimateJson(placement),
       termination_reason: toWireReason(term.reason),
     });
@@ -530,6 +535,7 @@ export async function submitResponseHandler({
       is_correct: isCorrect,
       time_flag: flag.flag,
       done: true,
+      response_count: postState.responseCount,
       placement: toPlacementEstimateJson(placement),
       termination_reason: "bank-exhausted",
     });
@@ -539,6 +545,7 @@ export async function submitResponseHandler({
     is_correct: isCorrect,
     time_flag: flag.flag,
     done: false,
+    response_count: postState.responseCount,
     next_request: toNextRequestJson(pickResult.request),
     next_question: toClientQuestion(pickResult.question),
   });

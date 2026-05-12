@@ -13,6 +13,7 @@ import { useEffect, useReducer } from "react";
 
 import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
+import { computeProgressDisplay } from "@/lib/display/progress";
 import type { Tier } from "@/lib/tier/derive";
 
 import { QuestionShell } from "./components/QuestionShell";
@@ -126,10 +127,15 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
   }
 
   const { question } = state;
+  const progress = computeProgressDisplay(state.responseCount);
   return (
     <>
       {state.resumed && <ResumeBanner />}
-      <QuestionShell prompt={question.content.stem} tier={tier}>
+      <QuestionShell
+        prompt={question.content.stem}
+        tier={tier}
+        progress={progress}
+      >
         {/* key={question.id} remounts QuestionTimer per question, capturing
             a fresh start time and resetting any internal input state. */}
         <QuestionTimer

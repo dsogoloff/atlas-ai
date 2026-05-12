@@ -22,10 +22,13 @@ const startBody: StartResponseBody = {
     content: { stem: "1+1?", options: ["1", "2", "3", "4"] },
   },
   next_request: { strand: "operations_algorithms", target_difficulty: 0, width: 0.5 },
+  response_count: 0,
 };
 
 const resumeBody: StartResponseBody = {
   ...startBody,
+  // Resume scenario: 3 responses already persisted from a prior tab/session.
+  response_count: 3,
   error: { code: "session_in_progress", message: "resumed" },
 };
 
@@ -33,6 +36,7 @@ const submitNext: SubmitResponseBody = {
   is_correct: true,
   time_flag: "NORMAL",
   done: false,
+  response_count: 1,
   next_request: { strand: "operations_algorithms", target_difficulty: 0.2, width: 0.5 },
   next_question: {
     id: "q2",
@@ -47,6 +51,7 @@ const submitDone: SubmitResponseBody = {
   is_correct: true,
   time_flag: "NORMAL",
   done: true,
+  response_count: 25,
   placement: {
     overall_level: "3A",
     strand_levels: {
@@ -66,6 +71,7 @@ const runningInitial: ViewState = {
   kind: "running",
   sessionId: startBody.session_id,
   question: startBody.question,
+  responseCount: 0,
   resumed: false,
   submitting: false,
 };
@@ -83,6 +89,7 @@ describe("START_OK / START_RESUME / START_ERR", () => {
       kind: "running",
       sessionId: startBody.session_id,
       question: startBody.question,
+      responseCount: 0,
       resumed: false,
       submitting: false,
     });
@@ -92,6 +99,20 @@ describe("START_OK / START_RESUME / START_ERR", () => {
     const next = reduce(initialState, { type: "START_RESUME", body: resumeBody });
     expect(next.kind).toBe("running");
     if (next.kind === "running") expect(next.resumed).toBe(true);
+  });
+
+  // Item #12 Phase 7.7 — responseCount plumbing for the progress chrome.
+  it("START_OK copies response_count from wire (fresh: 0)", () => {
+    const next = reduce(initialState, { type: "START_OK", body: startBody });
+    expect(next.kind).toBe("running");
+    if (next.kind === "running") expect(next.responseCount).toBe(0);
+  });
+
+  it("START_RESUME copies response_count from wire (resume: > 0)", () => {
+    const next = reduce(initialState, { type: "START_RESUME", body: resumeBody });
+    expect(next.kind).toBe("running");
+    // resumeBody is defined above with response_count: 3 (resume scenario).
+    if (next.kind === "running") expect(next.responseCount).toBe(3);
   });
 
   it("START_OK from running is a no-op (defensive)", () => {
@@ -176,6 +197,8 @@ describe("SUBMIT_OK_NEXT / SUBMIT_OK_DONE", () => {
       expect(next.submitting).toBe(false);
       expect(next.pending).toBeUndefined();
       expect(next.resumed).toBe(false);
+      // Item #12 Phase 7.7 — responseCount advances from the wire.
+      expect(next.responseCount).toBe(submitNext.response_count);
     }
   });
 
@@ -232,6 +255,7 @@ describe("SUBMIT_ERR", () => {
         kind: "submit",
         sessionId: submitting.sessionId,
         question: submitting.question,
+        responseCount: 0,
         answerGiven: "2",
         timeMs: 5000,
       });
@@ -280,6 +304,7 @@ describe("RETRY_FROM_ERROR", () => {
         kind: "submit",
         sessionId: "s1",
         question: startBody.question,
+        responseCount: 0,
         answerGiven: "2",
         timeMs: 5000,
       },

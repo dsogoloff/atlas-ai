@@ -34,6 +34,10 @@ export type ResumeContext =
       kind: "submit";
       sessionId: string;
       question: ClientQuestion;
+      /** Pre-submit responseCount — preserved so RETRY_FROM_ERROR
+       *  restores the same progress-chrome state the user saw before
+       *  the network failure. */
+      responseCount: number;
       answerGiven: string;
       timeMs: number;
     };
@@ -44,6 +48,12 @@ export type ViewState =
       kind: "running";
       sessionId: string;
       question: ClientQuestion;
+      /** Count of responses persisted on this session BEFORE `question`
+       *  is answered. Wire field `response_count` on /start and /submit.
+       *  Item #12 Phase 7.7 — drives the progress chrome. Fresh session
+       *  → 0; resume with 3 past answers → 3. The displayed question
+       *  number is `responseCount + 1`. */
+      responseCount: number;
       /** True iff this state was entered via START_RESUME (HTTP 409 on /start). */
       resumed: boolean;
       submitting: boolean;
@@ -82,6 +92,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
         kind: "running",
         sessionId: action.body.session_id,
         question: action.body.question,
+        responseCount: action.body.response_count,
         resumed: false,
         submitting: false,
       };
@@ -92,6 +103,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
         kind: "running",
         sessionId: action.body.session_id,
         question: action.body.question,
+        responseCount: action.body.response_count,
         resumed: true,
         submitting: false,
       };
@@ -126,6 +138,10 @@ export function reduce(state: ViewState, action: Action): ViewState {
         kind: "running",
         sessionId: state.sessionId,
         question: next,
+        // Server-stamped post-submit count. The displayed question
+        // number for `next` will be responseCount + 1, advancing the
+        // progress chrome by one.
+        responseCount: action.body.response_count,
         resumed: false,
         submitting: false,
       };
@@ -154,6 +170,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
           kind: "submit",
           sessionId: state.sessionId,
           question: state.question,
+          responseCount: state.responseCount,
           answerGiven: state.pending.answerGiven,
           timeMs: state.pending.timeMs,
         },
@@ -168,6 +185,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
         kind: "running",
         sessionId: state.resumeFrom.sessionId,
         question: state.resumeFrom.question,
+        responseCount: state.resumeFrom.responseCount,
         resumed: false,
         submitting: true,
         pending: {

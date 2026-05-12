@@ -1540,3 +1540,80 @@ Gate evidence (Phase 7.6, pre-commit):
   * 412/412 tests pass (402 → 412; +10 recommendation-lookup tests)
   * build succeeds; new `/report/answers` route appears in route table
 
+---
+
+## Item #12 Phase 7.7 — progress chrome + time-flag badges + Phase 2 Fluency punch-list
+
+Date: 2026-05-12
+
+Two visual-gate findings folded into a single sub-phase, plus a backlog
+entry for the Phase 2 Fluency Analysis scope re-confirmed in this round.
+
+Finding #1 — Child-facing progress chrome:
+  Standard CAT UX. "Question N of up to 25" copy + subtle progress bar
+  at the top of the assessment screen. The "up to" hedge is load-
+  bearing — sessions can terminate early on confidence-threshold-met
+  or bank-exhausted, so 25 is a ceiling, not a target. K-4 uses brand
+  red (cheerful); G5-8 uses muted neutral (measured), matching the
+  existing tier-aware chrome distinction.
+
+  Wire addition: `response_count: number` on both StartResponseBody
+  and SubmitResponseBody. Server-stamped from state.responseCount
+  (start: count BEFORE the served question; submit: count AFTER the
+  just-submitted response). Reducer derives the displayed question
+  number as `responseCount + 1`. On resume with 3 past answers, the
+  bar correctly shows "Question 4 of up to 25" instead of "Question 1"
+  (the alternative client-only-count design would have lied on resume).
+
+  Pure helper extracted to src/lib/display/progress.ts so the copy
+  policy can be tested in vitest without React Testing Library
+  (consistent with the repo's existing pure-logic test discipline).
+  10 new tests pin: fresh-session number, resume number, clamp at
+  MAX_QUESTIONS, defensive bounds, time-flag badge mappings.
+
+Finding #2 — Time-flag badge on /report/answers rows:
+  Plain English copy on the per-question answer log. TOO_FAST →
+  "Quick answer". TOO_SLOW → "Took longer than expected".
+  NORMAL → no badge (keep row uncluttered). INVALID → no badge
+  (sub-second; signal is noise).
+  No penalty math. Display only. features.md §2 v1 boundary
+  ("Score-adjustment from time is explicitly out of scope") respected.
+
+Phase 2 Fluency Analysis — DEFERRED PUNCH-LIST entry:
+  During this Phase 7.7 round, founder asked about a per-question
+  "80% partial credit when correct + TOO_SLOW" mechanic remembered
+  from earlier. Provenance investigation confirmed: that mechanic is
+  the Phase 2 Fluency Analysis feature specced in features.md §2 but
+  explicitly deferred from v1. It was specced, never built, and the
+  v1 boundary is documented:
+
+    "Hard rule (v1): time is a SECONDARY signal. Score-adjustment
+     from time is explicitly out of scope."
+    "Using time to inform the placement decision itself ... is the
+     Phase 2 fluency feature listed below."
+
+  Phase 2 Fluency scope (parked for Item #14 or later — decision
+  point at Item #13 prep):
+    1. 80% partial credit when correct + TOO_SLOW (deferred — engine
+       math change in applyResponse).
+    2. Time signal informs placement (deferred — placementEstimate
+       update + posterior weighting).
+    3. Misconception classifier handles TOO_SLOW + correct →
+       partial-credit path (deferred — currently NORMAL on correct
+       → method='none'; would need a fluency-aware variant).
+    4. Aggregated average-time-per-question display on answer log
+       (deferred — requires a cross-session aggregation query +
+       privacy/compliance review of tenant-scoped peer comparison).
+
+  Trigger to revisit: when the bank has ≥200-300 responses per item
+  (same cohort threshold as priors-v1.json's empirical-recalibration
+  trigger), the time data becomes statistically meaningful and the
+  Phase 2 lift is justified.
+
+Gate evidence (Phase 7.7, pre-commit):
+  * typecheck clean
+  * lint clean (only pre-existing no-page-custom-font warning)
+  * 424/424 tests pass (412 → 424; +10 display helpers, +2 reducer
+    response-count plumbing assertions)
+  * build succeeds
+

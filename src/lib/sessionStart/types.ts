@@ -39,6 +39,12 @@ export interface StartResponseBody {
   session_id: string;
   question: ClientQuestion;
   next_request: NextRequestJson;
+  /** Count of responses already persisted on this session BEFORE the
+   *  served `question` is answered. Item #12 Phase 7.7 — drives the
+   *  child-facing progress chrome. Fresh session → 0; resume → the
+   *  number of past answers (so the displayed question number is
+   *  `response_count + 1`). */
+  response_count: number;
   /** Present iff the session already existed (HTTP 409). */
   error?: { code: "session_in_progress"; message: string };
 }

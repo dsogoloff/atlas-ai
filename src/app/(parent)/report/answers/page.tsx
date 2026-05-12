@@ -46,6 +46,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { timeFlagBadge } from "@/lib/display/progress";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
@@ -134,11 +135,12 @@ export default async function AnswerLogPage({ searchParams }: AnswersPageProps) 
   }
 
   // ---- Responses — RLS-scoped via session_id (responses RLS keys on
-  //      the session's child's parent).
+  //      the session's child's parent). Item #12 Phase 7.7 adds
+  //      time_flag to the projection for the per-row badge.
   const { data: responses, error: respErr } = await supabase
     .from("responses")
     .select(
-      "question_id, answer_given, is_correct, time_taken_seconds, detected_misconceptions, created_at",
+      "question_id, answer_given, is_correct, time_taken_seconds, time_flag, detected_misconceptions, created_at",
     )
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
@@ -237,6 +239,7 @@ export default async function AnswerLogPage({ searchParams }: AnswersPageProps) 
             const misconceptions = r.detected_misconceptions
               .map((c) => misconceptionLabel.get(c))
               .filter((l): l is string => Boolean(l));
+            const timeBadge = timeFlagBadge(r.time_flag);
 
             return (
               <li
@@ -247,7 +250,12 @@ export default async function AnswerLogPage({ searchParams }: AnswersPageProps) 
                   <span className="text-[10px] md:text-xs font-bold text-sam-gray-mid uppercase tracking-wider">
                     Question {i + 1} · {STRAND_LABELS[question.strand as Strand]}
                   </span>
-                  <ResultBadge isCorrect={r.is_correct} />
+                  <div className="flex items-center gap-2">
+                    {timeBadge !== null && (
+                      <TimeFlagBadge copy={timeBadge} flag={r.time_flag} />
+                    )}
+                    <ResultBadge isCorrect={r.is_correct} />
+                  </div>
                 </div>
 
                 <p className="font-headline-adult text-sam-navy text-base md:text-lg leading-relaxed mb-4">
@@ -433,6 +441,35 @@ function Header({ childName, count }: { childName: string; count: number }) {
             : `${count} questions`}
       </p>
     </div>
+  );
+}
+
+function TimeFlagBadge({
+  copy,
+  flag,
+}: {
+  copy: string;
+  /** Drives the icon — speed for fast, hourglass for slow. */
+  flag: Database["public"]["Enums"]["time_flag"];
+}) {
+  // Both badges share neutral styling — no penalty math (features.md §2:
+  // time is a SECONDARY signal in v1, no score adjustment). The badge
+  // is a contextual hint, not a verdict.
+  const icon = flag === "TOO_FAST" ? "speed" : "hourglass_empty";
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-sam-navy/5 px-3 py-1 text-xs font-bold text-sam-navy/70"
+      aria-label={`Time observation: ${copy}`}
+    >
+      <span
+        className="material-symbols-outlined text-base"
+        style={{ fontVariationSettings: "'FILL' 1" }}
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+      {copy}
+    </span>
   );
 }
 

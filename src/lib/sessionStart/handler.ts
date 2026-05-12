@@ -326,6 +326,8 @@ export async function sessionStartHandler({
     return fail("internal", 500, msg);
   }
 
+  // Fresh-session first pick: no responses persisted yet, so the served
+  // question is question 1 (response_count + 1 = 1).
   return {
     ok: true,
     status: 200,
@@ -333,6 +335,7 @@ export async function sessionStartHandler({
       session_id: sessionId,
       question: toClientQuestion(pickedQuestion),
       next_request: toNextRequestJson(pickedRequest),
+      response_count: 0,
     },
   };
 }
@@ -354,14 +357,21 @@ interface ResumeArgs {
 }
 
 async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
-  // Determine real-progress status once, used by every branch below to
-  // decide between the 200 (no-banner) and 409 (resume-banner) shape.
-  let hasProgress: boolean;
+  // Count of answered responses on this session. Drives two decisions:
+  //   * `hasProgress = responseCount > 0` selects the 200 (no-banner)
+  //     vs 409 (resume-banner) shape.
+  //   * `responseCount` itself is plumbed to logAndRespond and emitted
+  //     on the wire (Item #12 Phase 7.7 progress chrome).
+  let responseCount: number;
   try {
-    hasProgress = await sessionHasResponses(args.serviceClient, args.sessionId);
+    responseCount = await sessionResponseCount(
+      args.serviceClient,
+      args.sessionId,
+    );
   } catch (e) {
     return fail("internal", 500, errorMessage(e));
   }
+  const hasProgress = responseCount > 0;
 
   // (a) Outstanding question?
   let outstanding: PickedQuestionRow | null = null;
@@ -379,6 +389,7 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
       ...args,
       question: outstanding,
       hasProgress,
+      responseCount,
       // For the outstanding case we don't have the engine's current
       // request, but the client still needs SOMETHING in next_request
       // for symmetry with the fresh-start response shape. Recompute
@@ -470,6 +481,7 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
     ...args,
     question: pickedQuestion,
     hasProgress,
+    responseCount,
     precomputedRequest: pickedRequest,
   });
 }
@@ -479,6 +491,10 @@ interface LogAndRespondArgs extends ResumeArgs {
   /** True when the resumed session has ≥1 row in `responses`. Drives
    *  the 200-vs-409 boundary documented in the file header. */
   hasProgress: boolean;
+  /** Count of answered responses on this session. Emitted on the wire
+   *  as `response_count` for the Item #12 Phase 7.7 progress chrome.
+   *  The served question's displayed number is `responseCount + 1`. */
+  responseCount: number;
   computeRequest?: boolean;
   precomputedRequest?: ReturnType<typeof nextQuestionRequest>;
 }
@@ -529,6 +545,7 @@ async function logAndRespond(
         session_id: args.sessionId,
         question: toClientQuestion(args.question),
         next_request: toNextRequestJson(req),
+        response_count: args.responseCount,
       },
     };
   }
@@ -540,6 +557,7 @@ async function logAndRespond(
       session_id: args.sessionId,
       question: toClientQuestion(args.question),
       next_request: toNextRequestJson(req),
+      response_count: args.responseCount,
       error: {
         code: "session_in_progress",
         message: "child already has an active assessment; resumed",
@@ -611,10 +629,10 @@ async function closeSessionWithReason(
  * and 409 (genuine resume of an in-flight session). The check is a
  * cheap HEAD-style count; we don't need the row contents.
  */
-async function sessionHasResponses(
+async function sessionResponseCount(
   serviceClient: SupabaseClient<Database>,
   sessionId: string,
-): Promise<boolean> {
+): Promise<number> {
   const { count, error } = await serviceClient
     .from("responses")
     .select("id", { count: "exact", head: true })
@@ -623,7 +641,7 @@ async function sessionHasResponses(
   if (error) {
     throw new Error(`responses count failed: ${error.message}`);
   }
-  return (count ?? 0) > 0;
+  return count ?? 0;
 }
 
 function isUniqueViolation(err: { code?: string } | unknown): boolean {

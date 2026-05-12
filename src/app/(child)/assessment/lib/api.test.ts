@@ -23,12 +23,14 @@ const startBody: StartResponseBody = {
     content: { stem: "1+1?", options: ["1", "2", "3", "4"] },
   },
   next_request: { strand: "operations_algorithms", target_difficulty: 0, width: 0.5 },
+  response_count: 0,
 };
 
 const submitBodyNext: SubmitResponseBody = {
   is_correct: true,
   time_flag: "NORMAL",
   done: false,
+  response_count: 1,
   next_request: { strand: "operations_algorithms", target_difficulty: 0.2, width: 0.5 },
   next_question: {
     id: "00000000-0000-4000-8000-000000000003",
@@ -43,6 +45,7 @@ const submitBodyDone: SubmitResponseBody = {
   is_correct: true,
   time_flag: "NORMAL",
   done: true,
+  response_count: 25,
   placement: {
     overall_level: "3A",
     strand_levels: {

@@ -65,6 +65,12 @@ export interface SubmitResponseBody {
   is_correct: boolean;
   time_flag: TimeFlag;
   done: boolean;
+  /** Count of responses persisted on this session AFTER this submit's
+   *  response row landed. Item #12 Phase 7.7 — drives the child-facing
+   *  progress chrome's "Question N of up to 25" copy. When done=false
+   *  the displayed question number for `next_question` is
+   *  `response_count + 1`. */
+  response_count: number;
   /** Present iff done === false. Strand + difficulty band the engine
    *  wants next — diagnostic alongside next_question. */
   next_request?: NextRequestJson;
