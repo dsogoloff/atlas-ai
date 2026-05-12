@@ -1617,3 +1617,141 @@ Gate evidence (Phase 7.7, pre-commit):
     response-count plumbing assertions)
   * build succeeds
 
+---
+
+## Item #12 SHIPPED — Taxonomy Migration
+
+Date: 2026-05-12
+
+Scope summary: migrate the engine's 6 legacy strands
+(NUMBER_SENSE / OPERATIONS / WORD_PROBLEMS / FRACTIONS_DECIMALS /
+GEOMETRY / MEASUREMENT_DATA) to the new 2-layer taxonomy locked at
+Phase 1 — the 3 MOE official top-level strands (Number and Algebra /
+Measurement and Geometry / Statistics) as the curriculum reference,
+and the 6 Atlas diagnostic bands (number_sense /
+operations_algorithms / fractions_decimals / measurement / geometry /
+data_statistics) as the engine's per-band posterior carrier.
+WORD_PROBLEMS dropped (classified by underlying content);
+MEASUREMENT_DATA split into measurement + data_statistics. Migration
+covered schema, TypeScript consumers, report rendering, marketing
+copy, prior config metadata, and a row-level audit of 5 deferred
+items. Plus two sub-phases (7.5/7.6/7.7) addressing engine and UI
+issues surfaced by the post-migration visual gate.
+
+### Commit lineage (12 commits across 7 phases + 3 sub-phases)
+
+  Phase 1   2c97313  docs (taxonomy.md + level-subdivision-rubric.md)
+  Phase 2   275bdda  strand enum migration (UPPERCASE → snake_case bands)
+  Phase 3   c289281  rename strand literals across TS consumers
+  Phase 4   525cc86  priors-v1.json description refresh
+  Phase 5   adcb4e8  row-level audit of 5 deferred items
+  Phase 6   4cbc004  marketing strand cards + stale comment cleanup
+  Phase 7.5 701d8f0  engine skip-empty-strands + dev-user seed
+  Phase 7.5 b5f455f  GoTrue NULL→string seed fix
+  Phase 7.5 614b8d2  dev-user UUIDs → RFC 4122 v4 for Zod
+  Phase 7.5 0e7502a  landmine comment expansion (GoTrue + Zod traps)
+  Phase 7.6 895aa71  radar label clipping + recs fallback + answer log
+  Phase 7.7 6880e9d  progress chrome + time-flag badges + Phase 2 backlog
+
+### Phase 5 row-level audit conclusions (as captured at commit time)
+
+Five deferred items reviewed against docs/taxonomy.md edge cases:
+
+  1. MD_CHART_SCALE misconception — RECLASSIFIED measurement →
+     data_statistics. Chart/scale-reading is the data band that was
+     carved out of MEASUREMENT_DATA, not the measurement band.
+  2. SAM-L2-Q09 ("3 more than 54") — NO CHANGE. Per Edge Case A
+     (distractor profile arbitrates ambiguous strand calls), the
+     dominant diagnostic is place-value/quantity comprehension —
+     number_sense, not operations.
+  3. SAM-L2-Q11 ("Jo had 7 apples...") — NO CHANGE. Default cast
+     WORD_PROBLEMS → operations_algorithms confirmed. Per Edge
+     Case C (word problems have no escape hatch), the diagnostic is
+     operation selection + subtraction execution.
+  4. SAM-L2-Q17 ("$45 - $29 school bag") — NO CHANGE. Default cast
+     confirmed. Per Edge Case D (money rule), strip the $ sign →
+     whole-number subtraction → operations.
+  5. curriculum_recommendations placeholders — NO CHANGE. Phase 2
+     rewrote the 6 rows to the new band keys at level 2B already.
+
+Net effect: one UPDATE statement (MD_CHART_SCALE) + four documented
+confirmations. Mirrored in seed.sql per AGENTS.md §11 dev/prod parity
+rule.
+
+### Key learnings carried forward
+
+  1. **Item #13 question distribution is a STRATEGIC DECISION, not a
+     mechanical content load.** Current bank has 11 questions across
+     only 2 of the new 6 bands (number_sense x8, operations_algorithms
+     x3). Founder demo target needs visible activity on all 6 bands
+     in the radar / strand-mastery card / recommendations. Item #13's
+     ~19 grade-2 questions need to populate all 6 bands deliberately
+     — concentration would re-create the Phase 7.5 single-strand
+     fuse without the engine helping. First agenda item at Item #13
+     kickoff: lock the per-band distribution.
+
+  2. **AGENTS.md §11 dev/prod parity rule bit the codebase 8+ times
+     in this project.** Pattern: a tenant-scoped INSERT or UPDATE
+     migration is a no-op in dev (db reset runs migrations before
+     seed.sql; the tenant doesn't exist yet); the equivalent rows
+     must be mirrored in seed.sql. The rule is documented in §11
+     and was held under pressure across multiple sub-steps, but the
+     recurrence count itself is a process-improvement signal. Two
+     candidates worth considering at Item #13 prep:
+       (a) Pre-commit hook that scans migrations for tenant-scoped
+           INSERT/UPDATE patterns and warns if the same rows aren't
+           present in supabase/seed.sql.
+       (b) Refactor the shared INSERT into a `\i`-included SQL file
+           that both the migration and seed.sql source, eliminating
+           the duplication.
+     Both have been deferred as premature; v1 reality is that the
+     recurrence cost is now ~6 minutes per incident + 1 founder ping
+     (cheap), and the abstraction cost would not save that.
+
+  3. **GoTrue auth.users NULL-column trap.** Documented inline in
+     supabase/seed.sql and in commit b5f455f. GoTrue's Go struct
+     scans confirmation_token / recovery_token / email_change_token_new
+     / email_change as `string` (not `*string`); a SQL INSERT that
+     omits them leaves them NULL and silently breaks login at scan
+     time (HTTP 500, "converting NULL to string is unsupported").
+     Affects any future seed work, prod migration touching auth.users
+     directly, or test fixture that builds an auth.users row from raw
+     SQL. The fix is trivial (stamp '' explicitly) once you know.
+
+  4. **Zod's .uuid() enforces RFC 4122; Postgres `uuid` does not.**
+     Documented inline in supabase/seed.sql and in commit 614b8d2.
+     The all-N UUIDs (11111111-..., 22222222-...) used as visually-
+     recognizable seed data pass Postgres's `uuid` type check but
+     fail Zod's regex on POST /api/assess/start because the variant
+     nibble (position 17) must be 8/9/a/b. Use the pattern
+     `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa` (version=4, variant=8)
+     for any future obvious-seed UUIDs that need to pass Zod
+     validation.
+
+### Punch list / deferred items at Item #12 close
+
+  * **Phase 2 Fluency Analysis** — captured this round in
+    founder_log Phase 7.7 entry. Deferred per features.md §2
+    boundary ("Score-adjustment from time is explicitly out of
+    scope in v1"). Revisit trigger: ≥200-300 responses per item
+    cohort threshold + Item #13 prep decision point. Scope:
+    80% partial credit when correct + TOO_SLOW, time-informed
+    placement math, classifier TOO_SLOW + correct path,
+    aggregated average-time-per-question display.
+
+  * **v1.5 taxonomy expansion to 9 bands + cross-cutting
+    Problem Solving competency** — captured in docs/taxonomy.md.
+    Deferred from this migration. v1 ships with 6 bands;
+    expansion gated on real student data showing 6-band
+    diagnostic precision is insufficient.
+
+  * **Item #13: ~19 grade-2 questions under new taxonomy** —
+    next session. Kickoff agenda item #1: per-band distribution
+    strategy (see Key learning #1 above). The new taxonomy is
+    ready; the content is the gating constraint.
+
+Item #12 shipped. Tests: 424/424 passing. Build clean.
+Engine and UI fully on the new taxonomy. Two of six bands
+populated in v1; Item #13 closes that gap.
+
+
