@@ -118,7 +118,7 @@ from t,
        'Time-reading error',
        'Reads the wrong hand on an analog clock, or miscounts elapsed time '
        'across hour boundaries.'),
-    ('MD_CHART_SCALE',            'measurement',
+    ('MD_CHART_SCALE',            'data_statistics',
        'Chart scale misreading',
        'Misreads the scale on a bar chart or pictogram (e.g., reads each '
        'picture as 1 when each represents 5).'),
