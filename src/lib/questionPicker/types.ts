@@ -57,6 +57,44 @@ const _pickedRowKeyCheck: _PickedRowKeyCheck = true;
 void _pickedRowKeyCheck;
 
 // ---------------------------------------------------------------------------
+// Server-side `questions.content` jsonb shape (reference; not a TS type)
+// ---------------------------------------------------------------------------
+//
+// `questions.content` is jsonb at the DB layer (initial_schema.sql:214) and
+// is typed as `Json` everywhere in TS — narrowed at consumption by
+// `correctness.ts` (server-side judging) and `serialize.ts` (client-bound
+// stripping). The shape, by format and cross-cutting:
+//
+//   Cross-cutting (any format) — added Item #13a Phase 1:
+//     * image_path?    string  bucket-relative path into the
+//                              `question-images` Supabase Storage bucket.
+//                              Phase 2 server route mints a short-TTL
+//                              signed URL from this and emits
+//                              ClientQuestionImage.url on the wire.
+//     * image_alt?     string  answer-SAFE alt-text. Must describe the
+//                              answer-relevant aspects of the image
+//                              without giving away the answer. The
+//                              source JSON `image_description` fields
+//                              are answer-LEAKING and cannot be reused
+//                              directly — Phase 4 authoring pass rewrites
+//                              each one. Mandatory when `image_path` is
+//                              set; enforced at the API layer (Phase 2),
+//                              not the schema (jsonb is schemaless).
+//     * image_required? boolean  mirrors the source-JSON `image_required`
+//                              flag — true when the image is essential
+//                              to the diagnostic (e.g. Q02 "count
+//                              triangles" needs the figure), false when
+//                              decorative (e.g. Q11 "apples" — solvable
+//                              from text alone).
+//
+//   MULTIPLE_CHOICE — stem, options[], correct_index, distractor_misconceptions?
+//   NUMERIC_ENTRY   — stem, correct_answer
+//   DRAG_DROP       — stem, items[], correct_order
+//
+// (See correctness.ts header for the per-format correct-answer key
+// convention and the throws-on-malformed contract.)
+
+// ---------------------------------------------------------------------------
 // Client-bound payload (compliance.md §8 Constraint 1 — answers stripped)
 // ---------------------------------------------------------------------------
 
@@ -71,6 +109,8 @@ void _pickedRowKeyCheck;
  *   * distractor_misconceptions  (any format)
  *   * misconception_tags    (any format — denormalised diagnostic data)
  *   * external_id           (S.A.M. catalog ID — licensing audit, server-only)
+ *   * image_path            (Phase 2 mints a signed URL from this; the
+ *                            raw bucket path never crosses to the client)
  */
 export interface ClientQuestion {
   id: string;
@@ -80,10 +120,25 @@ export interface ClientQuestion {
   content: ClientQuestionContent;
 }
 
+/**
+ * Image envelope on the client wire. Populated by the next-question route
+ * (Phase 2) when the server-side `content.image_path` is set. The `url`
+ * is a short-TTL signed URL minted via the Supabase Storage API; the raw
+ * bucket path stays server-side per the allowlist above.
+ *
+ * `alt` is the answer-safe alt-text from `content.image_alt`; mandatory
+ * when present. Phase 4 authoring pass populates the underlying field
+ * for every image-essential item.
+ */
+export interface ClientQuestionImage {
+  url: string;
+  alt: string;
+}
+
 export type ClientQuestionContent =
-  | { stem: string; options: string[] }   // MULTIPLE_CHOICE
-  | { stem: string }                       // NUMERIC_ENTRY
-  | { stem: string; items: string[] };     // DRAG_DROP
+  | { stem: string; options: string[]; image?: ClientQuestionImage }   // MULTIPLE_CHOICE
+  | { stem: string; image?: ClientQuestionImage }                       // NUMERIC_ENTRY
+  | { stem: string; items: string[]; image?: ClientQuestionImage };     // DRAG_DROP
 
 // ---------------------------------------------------------------------------
 // Picker contract

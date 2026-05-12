@@ -1754,4 +1754,857 @@ Item #12 shipped. Tests: 424/424 passing. Build clean.
 Engine and UI fully on the new taxonomy. Two of six bands
 populated in v1; Item #13 closes that gap.
 
+---
+
+## Item #13 — Session Handoff (Pre-Kickoff)
+
+Date: 2026-05-12
+
+Captured at the boundary between Item #12 close (commit 243815f) and
+Item #13 strand-work kickoff. No code, no migration — only backlog
+entries and the verification result that gates the v1.5 progress
+report decision.
+
+### Append-only verification (v1.5 prerequisite)
+
+  Question: is each assessment a discrete placement row, or do
+  repeat assessments mutate prior state?
+
+  Schema confirms append-only at the session level:
+
+  * `assessment_sessions` (initial_schema.sql:233-248) has no unique
+    constraint on `child_id`. Each session is its own row with its
+    own `started_at`, `completed_at`, and `current_estimate` jsonb.
+  * Partial unique index at
+    `20260507000300_add_session_in_progress_unique.sql:28-30`
+    constrains only `where status = 'IN_PROGRESS'`. Inline comment
+    is explicit: "a plain UNIQUE on child_id would forbid retakes
+    after a session COMPLETES (every COMPLETED row would still
+    occupy the slot)."
+  * `responses.session_id` (initial_schema.sql:257) ties every
+    response to its specific session. Historical placement data
+    is fully reconstructible per session, never overwritten.
+
+  Conclusion: **v1.5 Longitudinal Progress Report is a query + UI
+  layer.** No v1 architectural concern. Each end-of-semester
+  assessment appends a new COMPLETED row; the progress report
+  reads all of a child's COMPLETED sessions ordered by
+  `completed_at` and renders the across-session comparison.
+
+### Backlog (Phase 2 / v1.5)
+
+  (a) **v1.5 Longitudinal Progress Report** — multi-assessment
+      growth tracking. Each assessment is a discrete placement
+      (append-only at the session level; verified above). Multiple
+      assessments per child accumulate over time, e.g. end-of-
+      semester cadence. v1.5 surfaces a progress report comparing
+      across them: per-band trajectory, overall placement
+      progression, time-on-task trend if Phase 2 Fluency is also
+      live. Pure query + UI work — no schema change required.
+
+  (b) **Phase 2 Fluency Analysis** — already captured in the
+      Item #12 punch list above and originally in the Phase 7.7
+      entry (§Phase 7.7 punch list). No new entry needed; pointer
+      retained here so the three Item #13 prelude backlog items
+      live in one place.
+
+  (c) **Question bank depth strategy** — S.A.M.'s licensed content
+      is one PDF per grade and is fully consumed by the first
+      assessment per child. Repeat assessments (per item (a)
+      cadence) need bank enrichment, otherwise the second
+      assessment re-serves the same items and the engine has no
+      new evidence to update its posterior on. Founder has an
+      approach in mind; details to surface when this item is
+      unblocked. Until then, treat the v1 bank as single-use per
+      child for diagnostic purposes.
+
+### Item #13 direction (confirmed this session)
+
+  * **19 questions, all sourced from S.A.M. grade-2 PDF.**
+  * **Distribution must hit all 6 Atlas bands** (number_sense,
+    operations_algorithms, fractions_decimals, measurement,
+    geometry, data_statistics). Demo requirement: the radar
+    visualization must show coverage across all bands. This is
+    the Item #12 Key Learning #1 made operative.
+  * **Distribution shape, PDF location, per-question
+    pre-classification status: open questions** to founder
+    before any code or migration work begins.
+
+### Open kickoff questions (HALT for founder direction)
+
+  1. **Distribution shape across the 6 bands.** LOCKED: even-ish
+     (~3 per band; one band gets 4). Goal: maximally legible
+     radar showing coverage across all 6 Atlas bands at demo time.
+
+     **Hard guardrail on this distribution.** If the S.A.M.
+     grade-2 PDF cannot cleanly support ~3 items per empty band
+     (fractions_decimals, measurement, geometry, data_statistics)
+     without stretchy classifications, Phase 1 of Item #13 must
+     halt and surface real PDF counts to founder. Do not
+     force-fit items into bands they don't belong in to hit the
+     ~3 target. docs/taxonomy.md edge cases govern: word problems
+     classify by underlying content (Edge Case C), money is
+     operations_algorithms by default (Edge Case D), chart
+     questions go to data_statistics only when the chart is
+     load-bearing (Edge Case F). Do not reverse-engineer those
+     rules to hit a target count.
+
+     Singapore Math grade-2 is typically thin on data/statistics;
+     fractions are P2-onward but light at P2; geometry is P1-P2
+     2D-shapes work which may or may not be present in S.A.M.'s
+     grade-2 PDF specifically. The 4-band empty gap from Item #11
+     is the most likely place this guardrail trips.
+
+     If a band genuinely under-supplies, founder options at the
+     halt point are:
+       (a) accept a lopsided radar for the demo,
+       (b) supplementary items sourced outside the grade-2 PDF,
+       (c) defer that band to Item #14.
+     Phase 1 surfaces real counts; founder picks.
+
+  2. **PDF location and access.** ANSWERED:
+     `tmp/sam_l2_placement_questions.json` (in repo). 22 items
+     (not 19 — see Q3 surfaces below). This is the canonical
+     source for Item #13 grade-2 content; future sessions can
+     find it without re-asking.
+
+  3. **Per-question pre-classification status.** ANSWERED via
+     file inspection — and the answer reshapes Item #13's scope.
+
+     The JSON is **fully pre-classified** for these fields:
+     `external_id`, `stem`, `format`, `level`, `difficulty`,
+     `misconception_tags`, `content` (options, correct_answer,
+     correct_index, distractor_misconceptions, image_required,
+     image_description), and detailed `notes`.
+
+     **Two structural mismatches against current schema:**
+
+     (i)  `strand` uses the OLD 6-strand enum (NUMBER_SENSE /
+          OPERATIONS / WORD_PROBLEMS / FRACTIONS_DECIMALS /
+          GEOMETRY / MEASUREMENT_DATA). Item #12 migrated the
+          schema to the NEW 6 Atlas bands (number_sense /
+          operations_algorithms / fractions_decimals /
+          measurement / geometry / data_statistics). Re-tagging
+          per docs/taxonomy.md edge cases required for every
+          item.
+
+     (ii) `time_norm_seconds: <int>` is the OLD single-integer
+          shape. Migration 20260507000000 replaced this with 4
+          BLOCKING fields per features.md §1-2: `word_count`,
+          `operation_type` (enum), `num_operations` (≥1),
+          `representation` (enum). Items missing any of the 4
+          cannot be served by the engine. The single-int
+          `time_norm_seconds` in the JSON is no longer the
+          schema's shape; conversion (or fresh tagging) required
+          for every item.
+
+### Distribution reality vs target (guardrail trip)
+
+  Re-tagging the 22 JSON items to the NEW 6 Atlas bands per
+  docs/taxonomy.md edge cases produces:
+
+    number_sense          11  (Q01, Q06, Q07, Q08, Q09*, Q10,
+                               Q18, Q19, Q20, Q21, Q22)
+    operations_algorithms  5  (Q11, Q13, Q14, Q16**, Q17)
+    fractions_decimals     0
+    measurement            2  (Q12 ruler, Q15 clock)
+    geometry               2  (Q02, Q03)
+    data_statistics        1  (Q05 picture graph)
+    [unclear band]         1  (Q04 — see below)
+    ─────────────────────────
+    Total                 22
+
+    *  Q09 confirmed in Item #12 Phase 5 audit as number_sense
+       (distractor profile arbitrates).
+    ** Q16 (coin total 85¢): money classifies as
+       operations_algorithms by default per Edge Case D — strip
+       the $ sign and the diagnostic is addition. Coin-recognition
+       overlay is incidental.
+
+  Target was even-ish ~3 per band (19 items). Variance:
+
+    number_sense          11 → +8 over target (over-supply)
+    operations_algorithms  5 → +2 over target
+    fractions_decimals     0 → −3 under target (GUARDRAIL TRIP)
+    measurement            2 → −1 under target
+    geometry               2 → −1 under target
+    data_statistics        1 → −2 under target (GUARDRAIL TRIP)
+
+  **fractions_decimals**: 0 items in the source. docs/taxonomy.md
+  line 78-79 ("Item #11 deferred all P2 fraction items. The first
+  fractions_decimals row arrives with the next content import
+  wave") matches reality — the S.A.M. grade-2 PDF as represented
+  by this JSON contains zero fraction or decimal items. Cannot be
+  populated without supplementary content from another source.
+
+  **data_statistics**: 1 item only (Q05). Cannot reach 3 without
+  stretchy classification. Per docs/taxonomy.md Edge Case F, only
+  picture-graph / chart-load-bearing items qualify.
+
+  Per memory rule [[no-force-fit-classification]] and the
+  founder-locked Item #13 guardrail: **HALT**. Do not force-fit
+  items into bands they don't belong in. Surface real counts;
+  founder picks.
+
+### Image-asset dependency surfaced
+
+  Of the 11 JSON items NOT in the Item #11 import (i.e., the
+  pool Item #13 would draw from to fill the 4 empty bands), 8
+  are `image_required: true` with the image essential to the
+  diagnostic:
+
+    geometry        Q02, Q03  (both image-essential — band IS
+                               composite-shape identification)
+    measurement     Q12, Q15  (ruler reading, clock face)
+    data_statistics Q05       (picture graph icons)
+    number_sense    Q06, Q18  (base-10 block representations)
+    operations_alg  Q16       (Singapore coin recognition; also
+                               localization issue per the JSON
+                               notes — no 20¢ coin in US)
+
+  The 3 text-only un-imported items (Q04, Q08, Q13) all land in
+  bands that are already over- or adequately-supplied; they do
+  nothing to fill the radar's empty quadrants.
+
+  **Therefore: image-asset infrastructure is a hard prerequisite
+  for any Item #13 plan that aims to populate geometry,
+  measurement, or data_statistics.** Item #11 deferred these
+  precisely because the infra didn't exist; Item #13 cannot
+  ship a 6-band-radar demo without addressing it (or accepting
+  a 3-or-4-band-only demo).
+
+### Q04 band-fit uncertainty
+
+  Q04 ("Abel, Beth, Cary, Dave, Ethan queue at the bank...
+  Who is first?") is a multi-step ordinal-reasoning
+  constraint-satisfaction puzzle with NO underlying arithmetic.
+  docs/taxonomy.md Edge Case C ("word problems classify by
+  underlying content") assumes the underlying content is
+  arithmetic; Q04 doesn't fit the assumption. Three defensible
+  reads:
+
+    (a) number_sense — ordinal position is number-structure
+        adjacent.
+    (b) operations_algorithms — by default cast of word
+        problems, even if "operation" here is logical
+        elimination, not arithmetic.
+    (c) Does not fit any of the 6 bands; flag as outside-scope
+        for v1 grade-2 placement, similar to how WORD_PROBLEMS
+        was dropped from the taxonomy because it cross-cut the
+        other bands.
+
+  Analogous to Q09 boundary review in Item #12 Phase 5 — wants
+  founder direction before classification ships. The JSON notes
+  on Q04 also raise a UX issue (drag-drop placement of 5 names
+  vs. single-answer "Ethan") that is a second decision point.
+
+### Item #13 options at this halt point
+
+  Founder picks; do not pre-decide. Options as they currently
+  shape up:
+
+  (1) **Accept lopsided radar, text-only items only.** Drop
+      image-essential items. Use the 11 already-imported + the
+      3 text-only un-imported (Q04, Q08, Q13). 14 items total.
+      Radar shows number_sense and operations_algorithms only
+      (still 2-band coverage; no new bands light up). Defeats
+      the demo requirement that motivated Item #13.
+
+  (2) **Build image-asset infrastructure as Phase 1 of #13.**
+      Then re-import Q02/Q03/Q05/Q06/Q12/Q15/Q16/Q18. Final
+      bank: number_sense 11, operations_algorithms 5,
+      measurement 2, geometry 2, data_statistics 1,
+      fractions_decimals 0. 21 items (excludes Q04 pending
+      direction). Radar lights up 5 of 6 bands; one quadrant
+      stays empty.
+
+  (3) **Build image infra + supplementary items from outside
+      the grade-2 PDF** to populate fractions_decimals (e.g.,
+      a small set of P2-onward fraction items from S.A.M.
+      grade-3 PDF if available, or expert-authored). Lights
+      up all 6 bands but contradicts the founder-stated
+      "all sourced from SAM grade-2 PDF" constraint.
+
+  (4) **Defer fractions_decimals to Item #14.** Same outcome
+      as (2) on radar coverage; explicitly accepts the empty
+      band as a known gap.
+
+  Q04 disposition orthogonal — applies to whichever option
+  founder picks.
+
+### Founder direction (received in-session)
+
+External supplementary content is acceptable. SAM grade-2 is the
+primary source; missing bands may be filled from elsewhere.
+Option 3 territory unblocked. Four follow-up calls still needed
+(items 1-4 below). Take in order; halt on each.
+
+### Item 1 surface — Image-asset infrastructure scope
+
+**Hard prerequisite for Items 2-4 outcomes.** 8 of the 11
+un-imported JSON items are image-essential. The 4 currently-empty
+Atlas bands (FD, M, G, DS) are populatable only via images. No
+image infra → no 6-band radar regardless of any other decision.
+
+**Compliance bounds (compliance.md §8) — non-negotiable:**
+
+  * **No public CDN / no `public/` directory for question images.**
+    Constraint 1 requires question content (and derivatives) be
+    served via authenticated API calls only. Public assets bypass
+    auth.
+  * Every image serve must be audit-loggable (Constraint 3).
+  * Images are licensed derivatives; same redistribution rule as
+    question text (Constraint 4).
+  * COPPA-clean — JSON image descriptions are math content only
+    (shapes, coins, clocks, blocks, graphs); no children depicted.
+    Not a §3 PII concern.
+
+**Storage options:**
+
+  (a) `public/` — non-viable per Constraint 1.
+  (b) **Supabase Storage private bucket + short-TTL signed URLs**
+      — server route mints signed URL after auth + audit log;
+      client renders signed URL. No new sub-processor (Supabase
+      already in compliance.md §6). Recommended.
+  (c) Server-side proxy through Next.js API route — strictest;
+      streams bytes through the app server. Equivalent compliance
+      to (b) if signed URL TTL is short (~60s). Higher cost.
+  (d) External image CDN (Cloudflare Images, Cloudinary, etc.)
+      — adds sub-processor not in §6; Compliance Agent review
+      required. Defer.
+
+**Referencing from the question record:**
+
+  `questions.content` is already jsonb (schema.sql:214). No
+  schema migration required if we add to jsonb:
+
+    content: {
+      stem,
+      options[]?,
+      correct_answer,
+      distractor_misconceptions{}?,
+      image_path?,              // new: bucket-relative path
+      image_alt?,               // new: a11y alt-text
+      image_required?: boolean  // new: matches JSON flag
+    }
+
+  Alternative: top-level columns (`image_path text`,
+  `image_alt text`). Equivalent at the storage layer; jsonb path
+  keeps the schema stable and matches the existing "content is
+  the variable surface" pattern. Recommend jsonb path.
+
+  Validation rule (enforced at API layer, not schema): if the
+  question is in a content set that requires the image,
+  `image_path` AND `image_alt` must both be set; serving a
+  question with `image_required: true` and missing fields is a
+  500 (caller bug), not a 400 (content bug).
+
+**Rendering surface (QuestionShell.tsx):**
+
+  Currently renders prompt `<h1>` + input children only. Image
+  surface needs to insert between prompt and input:
+
+    QuestionShell
+      ├─ ProgressChrome
+      ├─ prompt (h1)
+      ├─ <yellow underline>
+      ├─ [NEW] <QuestionImage> ← signed URL, alt-text
+      └─ children (input)
+
+  Tier-aware sizing: K-4 larger / more prominent (existing K-4
+  chrome bias is cheerful + visual); G5-8 compact (existing G5-8
+  bias is measured). Loading skeleton during signed-URL fetch.
+  `<img>` not Next `<Image>` initially — Next `<Image>` adds an
+  optimization layer that conflicts with private signed-URL
+  semantics unless configured. Defer Image-optimization decision.
+
+**Alt-text requirement (a11y + diagnostic integrity):**
+
+  Alt-text must describe answer-RELEVANT aspects of the image
+  without giving away the answer. For Q02 (count triangles), alt
+  text "a composite figure made of overlapping triangles" is fine;
+  alt text "5 triangles arranged in a stacked cluster" leaks the
+  answer to screen-reader users. The JSON `image_description`
+  fields lean toward giving away the answer (e.g., Q02:
+  "...a composite figure made of five overlapping/adjacent
+  triangles"). Each image_description needs an a11y pass to
+  produce an answer-safe alt-text variant — content task, not
+  engineering.
+
+**Audit logging:**
+
+  `question_access_log` (schema.sql:292) already captures every
+  question serve. Image access is bundled with the question
+  serve in the same request flow — same session, same child,
+  same timestamp window. Recommended: rely on existing log,
+  document image access as a sub-resource of question access in
+  the licensing audit trail. Add a separate `image_access_log`
+  only if S.A.M. license terms require per-image granularity
+  (open item for licensing conversation).
+
+**Sub-phase breakdown + size estimate:**
+
+  Phase 1.1 — Schema content shape + content jsonb additions +
+              QuestionShell render surface + signed-URL minting
+              in /api/assess (or wherever the next-question route
+              lives) + a11y plumbing + tests. **~3-5 hours.**
+              Standard plumbing.
+
+  Phase 1.2 — Supabase Storage private bucket provisioning, RLS,
+              signed-URL TTL config, env-var wiring, seed.sql
+              local-dev mirror per AGENTS.md §11. **~1-2 hours.**
+
+  Phase 1.3 — Image asset creation for the 8 image-essential
+              items (Q02, Q03, Q05, Q06, Q12, Q15, Q16, Q18)
+              plus alt-text authoring (answer-safe).
+              Approach options:
+                (i)   Hand-authored SVG from image_description
+                      prose. ~30 min/image × 8 = ~4 hours.
+                      Most control; license-clean.
+                (ii)  AI-generated raster + manual review.
+                      Faster but each image needs licensing
+                      review (model provider terms; output
+                      derivative status under SAM license).
+                (iii) Source from S.A.M. if they provide image
+                      files alongside the PDF. Zero creation
+                      work; depends on what S.A.M. delivers.
+                (iv)  Extract from SAM grade-2 PDF directly.
+                      Fastest if PDF has clean raster pages.
+                      License-clean (same source). Image
+                      quality and editability are concerns.
+              **~4-8 hours depending on approach.** This is the
+              part that may rival Item #13 in size per founder
+              concern.
+
+  Total: **~8-15 hours.** Dominated by Phase 1.3 (asset
+  creation/sourcing).
+
+**Decision points for founder before committing:**
+
+  (D1) Storage approach: confirm (b) Supabase Storage with
+       signed URLs, or pick (c) server proxy.
+  (D2) Schema shape: confirm content jsonb additions
+       (image_path, image_alt) — or top-level columns.
+  (D3) Asset creation approach for Phase 1.3: hand-authored
+       SVG, AI-generated, source from S.A.M., or extract from
+       PDF. Each has different cost / license profile.
+  (D4) Audit logging granularity: bundle image access into
+       existing question_access_log, or separate
+       image_access_log. Depends on S.A.M. license terms.
+  (D5) Localization handling for Q16 (Singapore coins vs US
+       coins) — re-author with US coins, keep Singapore for
+       cross-cultural exposure, or drop Q16 from the import
+       set. JSON notes flag this; it interacts with image
+       sourcing approach in D3.
+
+  HALT for founder direction on D1-D5 before any code work.
+  Items 2-4 (Q04 disposition, 22-vs-19 reconciliation,
+  supplementary band sourcing) follow in order after Item 1
+  closes.
+
+### Founder resequencing — Item #13 split into #13a + #13b
+
+**Item #13a — Image infrastructure** (hard prerequisite). Built
+first. Self-contained: schema + storage + render + alt-text +
+asset sourcing + tests + compliance sign-off. After this lands,
+#13b becomes pure content import.
+
+**Item #13b — Question import.** Depends on #13a. ~10 from JSON
+(after Q04 drop) + supplementary content for empty bands. Sized
+after #13a lands and after supplementary-sourcing decision
+(Item 4 of original pre-kickoff list).
+
+### Q04 disposition — recommendation: DROP from #13b, defer to v1.5
+
+  Drop from the Item #13b import set; keep in source JSON for
+  v1.5 import under the deferred Problem Solving & Applications
+  competency layer.
+
+  **Why drop, not force-fit into number_sense:**
+
+  Q04 tests multi-step logical-elimination reasoning with no
+  underlying arithmetic. docs/taxonomy.md already names the
+  v1.5 Problem Solving & Applications competency as "a
+  perpendicular signal that a child has (or hasn't) demonstrated
+  multi-step / non-routine application across the existing
+  bands" — Q04 is the textbook fit for that axis.
+
+  Force-fitting into number_sense (option a) would:
+    * dilute the band's diagnostic signal — a child who fails
+      Q04 has not failed at number-structure understanding;
+    * inject a 2A-difficulty item carrying an item-specific
+      misconception (NEW_ORDINAL_DIRECTION_CONFUSION) into the
+      number_sense level posterior, corrupting the engine's
+      estimate;
+    * leak a category mismatch into the parent report — "your
+      child shows weak number sense" based on a queue puzzle
+      is misleading.
+
+  Defer (option c) is the principled long-term answer; drop
+  (option b) is the v1-shipping form of that. No data loss —
+  the item stays in the source JSON, imports cleanly under
+  v1.5's Problem Solving scaffold when that lands.
+
+### 22-vs-19 reconciliation — count (no founder call required)
+
+    Currently imported (migration 20260511000100): 11
+    JSON total:                                    22
+    JSON un-imported:                              11
+    Drop Q04 (per disposition above):              10 eligible
+
+    Item #13b net-new items:
+      JSON un-imported minus Q04                   10
+      Supplementary fractions_decimals (~3)        +3
+      Supplementary data_statistics (~2 if any)    +0-2
+                                                   ───
+      Net-new in #13b                              13-15
+
+    Final bank after #13b:                         24-26
+
+  Founder's "19" was a planning approximation. No clean
+  arithmetic path lands at 19 without dropping additional items
+  beyond Q04. Honest count surfaced; not force-fitting a drop
+  set to hit the round number. Founder may refine the final
+  shape after Item #13a lands when supplementary sourcing
+  decisions concretize.
+
+### Item #13a phase plan (proposed)
+
+  Modeled on the Item #12 phasing structure (small, gated
+  phases, each with verifiable acceptance criteria). 6 phases:
+
+  **Phase 1 — Storage + schema**
+    * Supabase Storage private bucket provisioned
+      (`question-images`), RLS policy scoped to authenticated
+      sessions for the tenant
+    * Schema: add `image_path`, `image_alt`, `image_required`
+      to `questions.content` jsonb (no migration — jsonb is
+      schemaless at the Postgres layer; validation enforced at
+      the API layer)
+    * OR: top-level columns if founder prefers schema-level
+      visibility (founder call — D2)
+    * `database.types.ts` regen if schema-level
+    * seed.sql mirror per AGENTS.md §11 (eighth recurrence
+      defense — verify dev/prod parity for any tenant-scoped
+      data)
+    * Acceptance: bucket exists, RLS denies unauthenticated
+      reads, content shape is documented; types regen if
+      needed.
+
+  **Phase 2 — Server-route signed URL minting + audit**
+    * The route that serves the next question (need to
+      identify — likely `/api/assess/[session]/next` or
+      similar; verify in Phase 0 prep) mints a short-TTL
+      (~60s) signed URL for `content.image_path` when
+      present, returns it as `content.image_url` in the
+      response
+    * Audit: rely on existing `question_access_log` (image
+      access bundled with question access in same request) —
+      unless S.A.M. license terms require per-image
+      granularity (open item; D4)
+    * Acceptance: integration test demonstrates signed URL is
+      returned with the question payload, log row is written,
+      URL expires correctly.
+
+  **Phase 3 — Render surface**
+    * New `<QuestionImage>` component, inserted between prompt
+      and input children in `QuestionShell.tsx`
+    * Tier-aware sizing: K-4 large (~60% viewport width
+      typical, capped at ~600px); G5-8 compact (~40% viewport
+      width typical, capped at ~480px). Approximate — refine
+      in Phase 3 visual gate.
+    * Loading skeleton during fetch; error fallback (text
+      "[image unavailable]" + retry) if signed-URL load fails
+    * Plain `<img>` initially; Next `<Image>` deferred (private
+      signed URLs conflict with Next's optimization layer
+      unless `unoptimized` set; revisit post-launch)
+    * Acceptance: visual gate with the founder — render an
+      11-imported-item-with-fake-image vs an image-present
+      question across both tiers; tier deltas visible.
+
+  **Phase 4 — Alt-text authoring pass**
+    * 8 image-essential items in the un-imported set (Q02,
+      Q03, Q05, Q06, Q12, Q15, Q16, Q18) plus reserve slots
+      for supplementary content
+    * Alt-text RULE: describes answer-RELEVANT visual content
+      without giving away the answer. JSON's existing
+      `image_description` fields are answer-leaking (e.g.,
+      Q02: "five overlapping triangles"); each needs a rewrite
+    * Authoring workflow (founder call — D6 below)
+    * Acceptance: alt-text reviewed against the rule for each
+      image-essential item; documented in
+      `compliance.md` §13 or a new compliance.md subsection
+      on accessibility standards.
+
+  **Phase 5 — Image asset creation / sourcing**
+    * Approach: founder pick D3 from {hand-authored SVG,
+      AI-generated raster, S.A.M.-sourced, PDF-extracted}
+    * Q16 localization fork (D5) — if "re-author US coins" or
+      "drop Q16," handle here
+    * Upload workflow: manual via Supabase Storage dashboard
+      (founder confirmed — manual for v1, admin UI deferred
+      to v2)
+    * Image-path values copy-pasted into seed.sql + migration
+      so dev/prod parity holds (§11 ninth recurrence defense)
+    * Acceptance: 8 assets in the bucket (or fewer if Q16
+      dropped); each has a corresponding image_path in seed
+      and migration; visual gate of all 8 in the render
+      surface confirms they display correctly.
+
+  **Phase 6 — Tests + compliance sign-off**
+    * Rendering tests (component renders image when path set;
+      renders without image when absent; renders fallback on
+      load failure)
+    * a11y tests (alt-text present and non-empty for every
+      image-essential question; screen-reader-walkthrough
+      smoke test)
+    * Signed-URL TTL test (URL works inside TTL, fails after)
+    * RLS test (unauthenticated request to bucket fails)
+    * Compliance review: §3 PII check, §8 license check
+      (audit log coverage), authoring-workflow standards
+      documented
+    * Acceptance: 424+ existing tests still pass; new tests
+      green; compliance.md updated with the image-standards
+      subsection.
+
+  Optional sub-phases under Phase 5 if Q16 localization needs
+  its own gate (Phase 5.5).
+
+### Item #13a scope decisions for founder (consolidated D-list)
+
+  Re-anchoring on founder's 1-7 scope framing, with my
+  recommendations attached. Founder picks; do not pre-decide.
+
+  **(1) Storage location.** Recommend **Supabase Storage**
+      private bucket + signed URLs. Reasons:
+        * Already a v1 sub-processor (compliance.md §6) — no
+          new vendor to disclose.
+        * Auth integrates with existing Supabase Auth used by
+          parent + instructor RLS.
+        * Repo-committed images would bloat the repo and
+          violate compliance.md §8 Constraint 1
+          (no public-asset exposure of licensed content).
+        * External CDN (R2/S3) adds a sub-processor not in §6,
+          requiring Compliance Agent review.
+
+  **(2) Schema shape.** Recommend **content jsonb additions**
+      (image_path, image_alt, image_required) rather than
+      top-level columns. Reasons:
+        * jsonb already houses the variable-shape content
+          (options, distractor_misconceptions, correct_answer);
+          image fields are content, not metadata.
+        * No migration → fewer §11 (dev/prod parity) trip
+          surfaces.
+        * Question_assets multi-image table is YAGNI for v1:
+          all 22 JSON items have single images (when present).
+          Defer to whenever multi-image content materializes.
+      Counter-argument for top-level columns: better query
+      visibility (e.g., "find all questions with images"). If
+      that query becomes important, add an
+      `image_path text generated always as ((content->>'image_path')) stored`
+      generated column later — additive, non-breaking.
+
+  **(3) Rendering surface.** Approach described in Phase 3
+      above. Visual approach in words (founder asked for word
+      description, not a built mockup):
+
+      K-4 question with image:
+        ┌────────────────────────────────────┐
+        │ [progress chrome]                  │
+        ├────────────────────────────────────┤
+        │                                    │
+        │   How many triangles do you see?   │  (prompt h1)
+        │           ─────────                │  (yellow under)
+        │                                    │
+        │        ┌──────────────┐            │
+        │        │              │            │
+        │        │   [IMAGE]    │  ~60% vw   │
+        │        │              │            │
+        │        └──────────────┘            │
+        │                                    │
+        │   [  1  ] [  5  ] [  3  ] [  7  ]  │  (MC input)
+        │                                    │
+        ├────────────────────────────────────┤
+        │ 💡 Read carefully!                 │
+        └────────────────────────────────────┘
+
+      G5-8 same structure, image ~40% vw (more compact);
+      muted decorative accents per existing G5-8 tier chrome
+      treatment.
+
+      Founder review point — confirm sizing intuition or
+      adjust before Phase 3 builds.
+
+  **(4) Alt-text + accessibility.** Schema field
+      `content.image_alt` mandatory when `content.image_path`
+      is set (API-layer validation). Authoring workflow
+      decision (D6, new):
+
+      Who writes alt-text?
+        (a) Founder writes per item (high-quality, slow)
+        (b) Code drafts from JSON `image_description`, founder
+            reviews + edits for answer-leakage (medium quality,
+            fast)
+        (c) S.A.M. provides if image assets come from them
+            (depends on D3 pick — S.A.M.-sourced)
+
+      Recommend (b) — fast draft + founder review pass
+      catches the answer-leakage rewrites Phase 4 needs.
+
+  **(5) Compliance.** §3 PII check on every image: math
+      content only, no faces, no children. JSON image
+      descriptions all clear this bar. Document in compliance.md
+      a new §14 or appendix: "Image-asset content standards" —
+      no children, no PII, math content only, license-clean
+      sourcing. Compliance Agent reviews each Phase 5 asset
+      against this standard.
+
+  **(6) Upload workflow.** Founder-stated **manual for v1**
+      (Supabase Storage dashboard + copy-paste into seed.sql).
+      Confirmed; admin UI deferred to v2. Document the manual
+      workflow in `docs/image-asset-workflow.md` (new) so
+      founder + future ops have a reproducible procedure.
+
+  **(7) Test strategy.** Covered in Phase 6 above:
+      * Component render tests (image present / absent /
+        load-failure-fallback)
+      * Signed-URL TTL test
+      * RLS unauthenticated-deny test
+      * a11y alt-text presence + non-empty tests
+      * Visual gate (founder review) in Phase 3 + Phase 5
+
+### Halt point — Item #13a kickoff
+
+  Decisions needed before Phase 1 of Item #13a begins:
+
+    (D1) Storage: Supabase Storage signed URLs vs alternative?
+    (D2) Schema: content jsonb additions vs top-level columns?
+    (D3) Asset sourcing: hand-authored SVG / AI-generated /
+         S.A.M.-sourced / PDF-extracted?
+    (D4) Audit: rely on question_access_log vs separate
+         image_access_log?
+    (D5) Q16 localization: re-author US coins / keep Singapore
+         / drop Q16?
+    (D6) Alt-text authoring: founder / code-drafts-founder-
+         reviews / S.A.M.-sourced?
+
+  Plus confirmation:
+    * Sequencing accepted (#13a then #13b)?
+    * Q04 disposition (drop from #13b, defer to v1.5)
+      accepted?
+    * Phase plan structure (6 phases) accepted, or restructure?
+
+  No code, no migration, no asset work until founder direction
+  on the above. After founder direction, Phase 1 of Item #13a
+  becomes the first executable phase.
+
+### Architectural decision — image strategy (locked by founder)
+
+  **Plain image-asset storage for Item #13a. No on-the-fly
+  generation in v1 or v1.5. NO AI-generated images, ever.**
+
+  Effect on D3:
+    AI-generated raster — **REMOVED FROM SCOPE.**
+    Remaining options for Phase 5 asset sourcing:
+      * hand-authored SVG
+      * S.A.M.-sourced (if S.A.M. provides image files)
+      * PDF-extracted from the grade-2 source
+
+  Effect on D1/D2: unchanged. Supabase Storage + content jsonb
+  recommendation stands.
+
+  Forward-compat note: the recommended jsonb shape is
+  naturally extensible to add `image_generator_spec` alongside
+  `image_path` when v2.0 lands. No Phase 1 work needed for
+  forward-compat — jsonb does this for free. Schema design will
+  not preclude the v2.0 path.
+
+### Backlog — v2.0 Deterministic SVG image generation
+
+  Captured at Item #13a architectural-decision moment. Defer
+  until v2.0 (post-launch, post-pilot-data).
+
+  **What:** Question records carry parameterized generator
+  specs for templatable image types instead of image URLs.
+
+    content: {
+      stem,
+      options[]?,
+      correct_answer,
+      // EITHER:
+      image_path?,            // file-stored (v1 default)
+      image_alt?,
+      // OR:
+      image_generator_spec?,  // v2.0 — e.g. {
+                              //   type: "count_icons",
+                              //   icon: "apple", n: 7,
+                              //   layout: "2-row-grid"
+                              // }
+      image_required?: boolean
+    }
+
+  Templatable types under consideration (final list at v2.0
+  kickoff):
+    * Icon counting (n apples, n shells, etc.)
+    * Number lines (range, tick marks, highlighted points)
+    * Place-value blocks (hundreds/tens/ones flats + cubes)
+    * Simple 2D shapes (triangles, circles, squares,
+      composite forms)
+    * Basic charts (picture graphs with parameterized
+      categories + counts; bar graphs)
+    * Analog clocks (parameterized hour + minute)
+    * Rulers (range, unit, object endpoints)
+    * Coin assemblies (parameterized denominations — usable
+      for the Q16 localization problem)
+
+  **Renderer:** produces SVG deterministically at runtime
+  given the spec. Pure function: same spec → same output, no
+  state, no randomness, no LLM calls.
+
+  **Coexists with file-stored images:** `questions.content`
+  supports either `image_path` OR `image_generator_spec` per
+  record. Pre-v2.0 items keep their image_path; new templatable
+  items use the generator spec. No forced migration.
+
+  **Pros:**
+    * Storage-free for templatable types (no asset bucket
+      growth)
+    * Parameterized item variations support the Item #13
+      bank-depth strategy (per session-handoff backlog item
+      (c) above) — same template, different parameter draws,
+      same difficulty calibration; lets the engine serve
+      visually-distinct items to repeat-assessment children
+      without manual asset authoring
+    * Version-controlled in code; no Supabase Storage
+      dashboard manual upload step
+    * Determinism preserves assessment validity — item
+      calibration (IRT difficulty) presumes the item is
+      identical across administrations; deterministic
+      generation upholds that
+
+  **Cons:**
+    * Limited to template library — non-templatable visuals
+      (e.g., a specific composite-shape ice-cream-cone figure
+      like Q03) stay file-stored
+    * Requires generator infra build + per-template authoring
+      (SVG generation library, template tests, accessibility
+      pass per template)
+    * v2.0 commitment, not v1; bank-depth problem still
+      needs a v1 answer
+
+  **Hard rule (locked):** NOT AI-generated images.
+  Non-deterministic generation destroys assessment validity —
+  two children seeing the "same" question (same question_id)
+  with even slightly different images would face different
+  difficulty profiles, and the IRT difficulty parameter for
+  the item becomes meaningless. Deterministic templates only.
+
+  Trigger to revisit: v2.0 planning, post-pilot, after the
+  bank-depth strategy (session-handoff backlog item (c))
+  concretizes and parametric template needs are sized against
+  hand-authored / S.A.M.-sourced alternatives. Could go either
+  way: if pilot shows the file-stored path scales fine, v2.0
+  defer further; if asset-creation becomes a bank-growth
+  bottleneck, v2.0 templates unblock it.
+
 

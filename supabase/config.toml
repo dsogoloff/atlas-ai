@@ -36,7 +36,7 @@ enable_confirmations = true
 # secure_password_change_required = true  # enable when wired to compliance §7
 
 [storage]
-enabled = false  # not used in v1
+enabled = true  # Item #13a Phase 1: question-images bucket for assessment images
 
 [edge_runtime]
 enabled = false  # not used in v1
