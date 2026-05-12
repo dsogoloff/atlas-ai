@@ -73,7 +73,7 @@ insert into auth.users (
   email_change
 )
 values (
-  '11111111-1111-1111-1111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   '00000000-0000-0000-0000-000000000000',
   'authenticated',
   'authenticated',
@@ -107,10 +107,10 @@ insert into auth.identities (
 )
 values (
   gen_random_uuid(),
-  '11111111-1111-1111-1111-111111111111',
-  '11111111-1111-1111-1111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   'email',
-  '{"sub":"11111111-1111-1111-1111-111111111111","email":"dev@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
+  '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","email":"dev@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
   now(),
   now(),
   now()
@@ -121,8 +121,8 @@ on conflict (provider_id, provider) do nothing;
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into parents (id, auth_user_id, tenant_id, email, name)
 select
-  '22222222-2222-2222-2222-222222222222',
-  '11111111-1111-1111-1111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   t.id,
   'dev@atlas.local',
   'Dev Parent'
@@ -135,8 +135,8 @@ on conflict (auth_user_id) do nothing;
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into children (id, parent_id, tenant_id, name, birth_year, grade_level)
 select
-  '33333333-3333-3333-3333-333333333333',
-  '22222222-2222-2222-2222-222222222222',
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   t.id,
   'Dev Child',
   2018,
