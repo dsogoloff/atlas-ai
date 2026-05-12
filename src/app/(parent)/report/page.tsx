@@ -41,6 +41,7 @@ import { redirect } from "next/navigation";
 
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { aggregateMisconceptions } from "@/lib/report/misconception-aggregate";
+import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
 import {
   computeStrandMastery,
   type MasteryBand,
@@ -397,41 +398,48 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     }
   }
 
-  // Recommendations (R7 (i) schema-joined). One row per (strand, level)
-  // pair; we look up by the engine's per-strand HalfGradeLevel.
-  // Curriculum_recommendations also has the tenant-scoped public SELECT
-  // policy, so anon-client is fine.
+  // Recommendations (Phase 7.6 — nearest-level fallback with higher-
+  // level tiebreak). Lookup runs against the full per-tenant set of
+  // curriculum_recommendations rows for each strand the placement
+  // touches; pickNearestRecommendation owns the matching policy.
+  //
+  // Pre-Phase-7.6 behavior was a strict (strand, level) exact match.
+  // The seed has one placeholder row per strand at level 2B, so a
+  // child whose placement spans 2A-3B got zero matches and saw the
+  // "Recommendations will appear after the next assessment" empty
+  // state. The fallback collapses that — assessment #1 now always
+  // produces a per-strand rec when at least one row exists for the
+  // strand.
   const strandLevels = placement.strandLevels;
   const recLookupKeys = Object.entries(strandLevels) as Array<
     [Strand, HalfGradeLevel]
   >;
-  // Pull all candidates in one round-trip; filter in memory. With 6
-  // strands × ~18 levels the curriculum_recommendations table caps at
-  // ~108 rows — cheaper than 6 sequential .eq() round-trips, and a
-  // single round-trip even when the .in() inputs happen to be empty.
+  // Pull all rows whose strand appears in the placement, regardless of
+  // level — the helper does the level matching in memory. With 6
+  // strands × ~18 levels the table caps at ~108 rows.
   const distinctStrands = Array.from(new Set(recLookupKeys.map(([s]) => s)));
-  const distinctLevels = Array.from(new Set(recLookupKeys.map(([, l]) => l)));
   const { data: recRows, error: recErr } = await supabase
     .from("curriculum_recommendations")
     .select("strand, level, primary_recommendation, supplementary, notes")
-    .in("strand", distinctStrands)
-    .in("level", distinctLevels);
+    .in("strand", distinctStrands);
   if (recErr) {
     console.error("[report] recommendations lookup failed", {
       sessionId: latestSession.id,
       err: recErr,
     });
   }
-  const recBy = new Map<string, NonNullable<typeof recRows>[number]>();
-  for (const row of recRows ?? []) {
-    recBy.set(`${row.strand}|${row.level}`, row);
-  }
   const recommendations = recLookupKeys
     .map(([strand, level]) => {
-      const row = recBy.get(`${strand}|${level}`);
+      const row = pickNearestRecommendation(strand, level, recRows ?? []);
       if (!row) return null;
       return {
         strand,
+        // Render the parent-facing level as the PLACEMENT level (what
+        // the child placed at), not the fallback row's level. The
+        // primary copy is matched to the closest available row, but
+        // the eyebrow on the parent UI should reflect the engine's
+        // actual placement so the parent sees the level that matters
+        // for their child.
         level,
         primary: row.primary_recommendation,
         supplementary: row.supplementary,
@@ -496,7 +504,20 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           />
         </div>
 
-        <div className="mt-12 print:hidden">
+        {/* Footer actions — Item #12 Phase 7.6 reintroduces the Stitch
+            "View Detailed Answer Log" CTA dropped at Item #8 audience-
+            validation. Founder explicitly re-approved parent exposure
+            of question content on a per-completed-assessment basis;
+            see /report/answers/page.tsx header for compliance §8
+            rationale. */}
+        <div className="mt-12 print:hidden flex flex-col md:flex-row justify-center items-center gap-4">
+          <Link
+            href={`/report/answers?session=${latestSession.id}`}
+            className="inline-flex items-center gap-2 px-8 py-4 bg-sam-navy text-white rounded-2xl font-bold hover:bg-sam-navy/90 transition-all active:scale-95 shadow-md"
+          >
+            <span className="material-symbols-outlined">list_alt</span>
+            View Detailed Answer Log
+          </Link>
           <BackLink />
         </div>
       </main>

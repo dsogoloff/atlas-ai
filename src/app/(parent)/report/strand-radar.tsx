@@ -26,14 +26,30 @@ import { STRAND_ORDER, type StrandMastery } from "@/lib/report/strand-mastery";
 import { SHORT_STRAND_LABELS, STRAND_LABELS } from "./strand-labels";
 
 // =============================================================================
-// Geometry constants — all in SVG user units (viewBox 0 0 400 400).
+// Geometry constants — SVG internal coordinates.
+//
+// The hexagon is centered at (200, 200) with the original 400×400 reference
+// frame. The viewBox extends 30 units of horizontal padding on each side so
+// off-axis labels ("Operations" upper-right, "Geometry" lower-left, etc.)
+// don't clip — Item #12 Phase 7.6. The grid/polygon math stays in the 0-400
+// reference for stability; only the viewport widens.
 // =============================================================================
 
-const VIEWBOX_SIZE = 400;
-const CENTER = VIEWBOX_SIZE / 2; // 200
+const CENTER = 200;
 const RADIUS = 130; // outer ring (100% mastery)
 const LABEL_DISTANCE = 165; // center → axis label baseline
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1.0] as const;
+
+// viewBox padding: left/right only. The widest labels are on the diagonal
+// axes (text-anchor start/end at x=343 / x=57) which can extend ~70 px
+// horizontally from their anchor. 30 px each side covers "Operations" /
+// "Fractions" / "Geometry" / "Data" at fontSize=14 with comfortable
+// margin; the top/bottom labels (anchor=middle) fit in the original
+// vertical extent.
+const VIEWBOX_PAD_X = 30;
+const VIEWBOX_MIN_X = -VIEWBOX_PAD_X;
+const VIEWBOX_WIDTH = 400 + VIEWBOX_PAD_X * 2;
+const VIEWBOX_HEIGHT = 400;
 
 // =============================================================================
 // Pure math — exported for test coverage (RD9). Tests assert axis
@@ -138,7 +154,7 @@ export function StrandRadar({ rows }: StrandRadarProps) {
     <section>
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30 flex justify-center">
         <svg
-          viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+          viewBox={`${VIEWBOX_MIN_X} 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           className="w-full max-w-md h-auto"
           role="img"
           aria-label={ariaSummary}

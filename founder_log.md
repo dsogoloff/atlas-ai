@@ -1474,3 +1474,69 @@ Items #1, #2, #3, #5, #5a complete. Tests: 225/225 passing across the repo. The 
   strongest §11 refinement candidate from this round.
 
 *(Subsequent entries below)*
+
+---
+
+## Item #12 Phase 7.6 — audience-validation reversal: View Detailed Answer Log restored
+
+Date: 2026-05-12
+
+Item #8 (2026-04-29, founder_log entry above) dropped Stitch's "View
+Detailed Answer Log" CTA at the audience-validation step. The
+reasoning recorded at the time:
+
+> "...the 'View Detailed Answer Log' CTA Stitch carried over from
+> instructor sources at the audience-validation step."
+
+i.e., the button had been ported into the Stitch parent-report design
+from the instructor-report design, and Item #8 treated it as
+audience-inappropriate for parents.
+
+Item #12 Phase 7.6 visual-gate findings included founder explicitly
+asking why the link was missing. After review, the founder reversed
+the Item #8 audience call: parents DO get per-completed-assessment
+question-content exposure via a new `/report/answers?session=<id>`
+route. The reversal is deliberate, not an oversight rediscovered.
+
+Implementation:
+  * New server route `src/app/(parent)/report/answers/page.tsx`.
+  * Reuses the auth + ownership chain from `/report/page.tsx`
+    (RLS-scoped child + session reads; explicit session.status =
+    'COMPLETED' guard).
+  * Service-role client for question content per compliance.md §8
+    Constraint 1. Parent-facing exposure is bounded to the calling
+    parent's own session — does NOT widen to instructor / admin /
+    anon surfaces. If a future instructor cohort view needs the same
+    data, it owns its own access policy.
+  * Renders per question: stem, child's answer, correct answer,
+    right/wrong, time taken, strand, classified misconceptions.
+  * Bottom-of-report link added to `/report/page.tsx`: "View
+    Detailed Answer Log" → `/report/answers?session=<latestSession.id>`.
+
+Compliance.md §8 constraint coverage:
+  * Constraint 1 (no bulk question content to browser): respected —
+    questions content is fetched server-side and rendered server-
+    side; client receives only formatted HTML, not the raw payload.
+  * Constraint 4 (no item content to non-instructors): now scoped to
+    "no bulk item content to non-instructors AND no item content to
+    parents OUTSIDE their own child's completed-assessment review."
+    The /report/answers route is the bounded exception. Update
+    compliance.md if/when a v1.x doc pass lands.
+
+Related Phase 7.6 changes (same commit):
+  * Radar label clipping fix in strand-radar.tsx (viewBox padding).
+  * Nearest-level fallback for curriculum_recommendations matching
+    (page.tsx + new pickNearestRecommendation helper + 10 tests).
+    Pre-fix: assessment #1 showed empty-state "Recommendations will
+    appear after the next assessment" because every seed row sat at
+    level 2B while engine placements varied. Post-fix: every strand
+    with at least one seeded row produces a rec on assessment #1.
+    Tiebreak on equal distance: prefer the HIGHER level
+    (aspirational over remedial — founder direction).
+
+Gate evidence (Phase 7.6, pre-commit):
+  * typecheck clean
+  * lint clean (only pre-existing no-page-custom-font warning)
+  * 412/412 tests pass (402 → 412; +10 recommendation-lookup tests)
+  * build succeeds; new `/report/answers` route appears in route table
+
