@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+    --primary: 202 63% 28%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 28 80% 52%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 205 70% 92%;
+    --muted-foreground: 204 8% 52%;
+    --accent: 205 70% 92%;
+    --accent-foreground: 202 63% 28%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 202 63% 28%;
+    --radius: 0.625rem;
+    
+    /* SAM Brand Colors */
+    --sam-blue: #1A5276;
+    --sam-orange: #E67E22;
+    --sam-light: #D6EAF8;
+    --sam-dark: #333333;
+    --sam-gray: #7F8C8D;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Open Sans', Arial, sans-serif;
+    line-height: 1.6;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Open Sans', Arial, sans-serif;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#E67E22] text-white px-8 py-3.5 rounded-md font-semibold text-base;
+    @apply hover:bg-[#D35400] transition-all duration-300;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent border-2 border-[#1A5276] text-[#1A5276] px-8 py-3.5 rounded-md font-semibold text-base;
+    @apply hover:bg-[#1A5276] hover:text-white transition-all duration-300;
+  }
+  
+  .section-padding {
+    @apply py-16 md:py-20 lg:py-24;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .text-sam-blue {
+    color: var(--sam-blue);
+  }
+  
+  .text-sam-orange {
+    color: var(--sam-orange);
+  }
+  
+  .bg-sam-blue {
+    background-color: var(--sam-blue);
+  }
+  
+  .bg-sam-orange {
+    background-color: var(--sam-orange);
+  }
+  
+  .bg-sam-light {
+    background-color: var(--sam-light);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-count-up {
+    animation: countUp 2s ease-out forwards;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
