@@ -13,7 +13,7 @@ export function Testimonials() {
               What Parents Say
             </h1>
             <p className="text-white/80 text-lg max-w-2xl mx-auto">
-              Real stories from New York families who have experienced the S.A.M difference
+              Real stories from Global SAM families who have experienced the S.A.M difference
             </p>
           </SectionReveal>
         </div>
@@ -26,7 +26,7 @@ export function Testimonials() {
             {[
               { value: '98%', label: 'Parent Satisfaction' },
               { value: '4.9', label: 'Average Rating' },
-              { value: '500+', label: 'NY Families' },
+              { value: '500+', label: 'Global SAM Families' },
               { value: '85%', label: 'Referral Rate' },
             ].map((stat, index) => (
               <StaggerItem key={index}>
@@ -52,7 +52,7 @@ export function Testimonials() {
                 <Star key={star} className="w-6 h-6 text-[#E67E22]" fill="#E67E22" />
               ))}
             </div>
-            <p className="text-[#7F8C8D]">Rated 4.9 out of 5 by over 500 New York families</p>
+            <p className="text-[#7F8C8D]">Rated 4.9 out of 5 by over 500 Global SAM families</p>
           </SectionReveal>
 
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -106,46 +106,6 @@ export function Testimonials() {
         </div>
       </section>
 
-      {/* Success Stories */}
-      <section className="section-padding bg-white">
-        <div className="container-custom">
-          <SectionReveal className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#1A5276] mb-4">
-              Success Stories
-            </h2>
-          </SectionReveal>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <SectionReveal>
-              <div className="bg-[#D6EAF8] rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-[#1A5276] mb-4">
-                  From Struggling to Excelling
-                </h3>
-                <p className="text-[#333333] mb-4">
-                  "When we started S.A.M, our daughter was behind in math and had lost all confidence. 
-                  Within 6 months, she not only caught up to her grade level but started excelling. 
-                  Now she's in the advanced math group at school and actually enjoys homework!"
-                </p>
-                <p className="text-[#1A5276] font-medium">— The Johnson Family, Upper West Side</p>
-              </div>
-            </SectionReveal>
-
-            <SectionReveal delay={0.2}>
-              <div className="bg-[#D6EAF8] rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-[#1A5276] mb-4">
-                  A Gifted Student Reaches New Heights
-                </h3>
-                <p className="text-[#333333] mb-4">
-                  "Our son was always good at math, but S.A.M challenged him in ways school never could. 
-                  The problem-solving heuristics and advanced topics have opened up a whole new world. 
-                  He recently won his first math competition!"
-                </p>
-                <p className="text-[#1A5276] font-medium">— The Chen Family, Tribeca</p>
-              </div>
-            </SectionReveal>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
