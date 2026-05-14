@@ -533,7 +533,7 @@ export function Home() {
               Give Your Child a Head Start
             </h2>
             <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-              Book a free assessment today and discover how S.A.M can help your child excel in math
+              Join the waitlist for launch updates as Singapore Math comes to Manhattan.
             </p>
             <Link to="/join-waitlist" target="_blank" className="btn-primary text-lg px-10 py-4">
               Join the waitlist

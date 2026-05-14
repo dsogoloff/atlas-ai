@@ -243,7 +243,7 @@ export function WhySAM() {
               Ready to Give Your Child the S.A.M Advantage?
             </h2>
             <p className="text-[#7F8C8D] text-lg mb-8 max-w-2xl mx-auto">
-              Book a free assessment and see how our proven methodology can help your child excel in math
+              Join the waitlist for launch updates as S.A.M comes to Manhattan.
             </p>
             <Link to="/join-waitlist" target="_blank" className="btn-primary text-lg px-10 py-4">
               Join the waitlist

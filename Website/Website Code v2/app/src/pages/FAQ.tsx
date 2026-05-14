@@ -76,7 +76,7 @@ export function FAQ() {
               Still Have Questions?
             </h2>
             <p className="text-[#7F8C8D] text-lg mb-8 max-w-2xl mx-auto">
-              We're here to help. Contact us or book a free assessment to learn more about S.A.M
+              We're here to help. Contact us with any questions about the method.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="tel:+12125551234" className="btn-primary">
