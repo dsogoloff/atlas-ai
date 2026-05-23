@@ -1,3 +1,4 @@
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -180,6 +181,7 @@ export type Database = {
           notes: string | null
           primary_recommendation: string
           strand: Database["public"]["Enums"]["strand"]
+          strand_id_new: string | null
           supplementary: string[]
           tenant_id: string
         }
@@ -190,6 +192,7 @@ export type Database = {
           notes?: string | null
           primary_recommendation: string
           strand: Database["public"]["Enums"]["strand"]
+          strand_id_new?: string | null
           supplementary?: string[]
           tenant_id: string
         }
@@ -200,10 +203,18 @@ export type Database = {
           notes?: string | null
           primary_recommendation?: string
           strand?: Database["public"]["Enums"]["strand"]
+          strand_id_new?: string | null
           supplementary?: string[]
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "curriculum_recommendations_strand_id_new_fkey"
+            columns: ["strand_id_new"]
+            isOneToOne: false
+            referencedRelation: "strands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "curriculum_recommendations_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -254,6 +265,46 @@ export type Database = {
           },
           {
             foreignKeyName: "instructors_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      misconception_strands: {
+        Row: {
+          misconception_id: string
+          strand_id: string
+          tenant_id: string
+        }
+        Insert: {
+          misconception_id: string
+          strand_id: string
+          tenant_id: string
+        }
+        Update: {
+          misconception_id?: string
+          strand_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "misconception_strands_misconception_id_fkey"
+            columns: ["misconception_id"]
+            isOneToOne: false
+            referencedRelation: "misconceptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "misconception_strands_strand_id_fkey"
+            columns: ["strand_id"]
+            isOneToOne: false
+            referencedRelation: "strands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "misconception_strands_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -480,6 +531,7 @@ export type Database = {
           operation_type: Database["public"]["Enums"]["operation_type"]
           representation: Database["public"]["Enums"]["representation_kind"]
           strand: Database["public"]["Enums"]["strand"]
+          strand_id_new: string | null
           tenant_id: string
           word_count: number
         }
@@ -497,6 +549,7 @@ export type Database = {
           operation_type: Database["public"]["Enums"]["operation_type"]
           representation: Database["public"]["Enums"]["representation_kind"]
           strand: Database["public"]["Enums"]["strand"]
+          strand_id_new?: string | null
           tenant_id: string
           word_count: number
         }
@@ -514,10 +567,18 @@ export type Database = {
           operation_type?: Database["public"]["Enums"]["operation_type"]
           representation?: Database["public"]["Enums"]["representation_kind"]
           strand?: Database["public"]["Enums"]["strand"]
+          strand_id_new?: string | null
           tenant_id?: string
           word_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "questions_strand_id_new_fkey"
+            columns: ["strand_id_new"]
+            isOneToOne: false
+            referencedRelation: "strands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "questions_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -599,6 +660,87 @@ export type Database = {
           },
           {
             foreignKeyName: "responses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strand_cohorts: {
+        Row: {
+          cohort_id: string
+          strand_id: string
+          tenant_id: string
+        }
+        Insert: {
+          cohort_id: string
+          strand_id: string
+          tenant_id: string
+        }
+        Update: {
+          cohort_id?: string
+          strand_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strand_cohorts_strand_id_fkey"
+            columns: ["strand_id"]
+            isOneToOne: false
+            referencedRelation: "strands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strand_cohorts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strands: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          kind: string
+          parent_strand_id: string | null
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id: string
+          is_active?: boolean
+          kind: string
+          parent_strand_id?: string | null
+          sort_order: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          parent_strand_id?: string | null
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strands_parent_strand_id_fkey"
+            columns: ["parent_strand_id"]
+            isOneToOne: false
+            referencedRelation: "strands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strands_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -995,3 +1137,4 @@ export const Constants = {
     },
   },
 } as const
+

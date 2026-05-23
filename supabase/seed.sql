@@ -318,6 +318,70 @@ from t,
   ) as v(strand, primary_rec, supplementary, notes);
 
 -- =============================================================================
+-- Relational strand taxonomy (Item #12 Phase 2)
+-- =============================================================================
+-- MIRRORED FROM: supabase/migrations/20260519000000_strand_relational_taxonomy.sql
+--
+-- Per AGENTS.md §11: the migration's tenant-scoped strands +
+-- strand_cohorts INSERTs are no-ops in dev because `supabase db reset`
+-- runs migrations BEFORE seed.sql creates the inspirea_singapore_math
+-- tenant. The VALUES below are duplicated VERBATIM from the migration.
+-- Both must stay in sync. Both use ON CONFLICT DO NOTHING so neither
+-- duplicates rows if both ever effectively run against the same DB.
+--
+-- See migration file header for the cohort cross-join rationale and
+-- the v2 evolution notes.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into strands (id, tenant_id, kind, parent_strand_id, display_name, sort_order)
+select v.id, t.id, v.kind, v.parent_strand_id, v.display_name, v.sort_order
+from t,
+  (values
+    ('number_algebra',         'moe',  null::text,             'Number and Algebra',       10),
+    ('measurement_geometry',   'moe',  null::text,             'Measurement and Geometry', 20),
+    ('statistics',             'moe',  null::text,             'Statistics',               30),
+    ('number_sense',           'band', 'number_algebra',       'Number Sense',             11),
+    ('operations_algorithms',  'band', 'number_algebra',       'Operations & Algorithms',  12),
+    ('fractions_decimals',     'band', 'number_algebra',       'Fractions & Decimals',     13),
+    ('measurement',            'band', 'measurement_geometry', 'Measurement',              21),
+    ('geometry',               'band', 'measurement_geometry', 'Geometry',                 22),
+    ('data_statistics',        'band', 'statistics',           'Data & Statistics',        31)
+  ) as v(id, kind, parent_strand_id, display_name, sort_order)
+on conflict (id) do nothing;
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into strand_cohorts (strand_id, cohort_id, tenant_id)
+select v.strand_id, v.cohort_id, t.id
+from t,
+  (values
+    ('number_sense',           'prek_1'),
+    ('number_sense',           'g2_4'),
+    ('number_sense',           'g5_6'),
+    ('number_sense',           'g7_plus'),
+    ('operations_algorithms',  'prek_1'),
+    ('operations_algorithms',  'g2_4'),
+    ('operations_algorithms',  'g5_6'),
+    ('operations_algorithms',  'g7_plus'),
+    ('fractions_decimals',     'prek_1'),
+    ('fractions_decimals',     'g2_4'),
+    ('fractions_decimals',     'g5_6'),
+    ('fractions_decimals',     'g7_plus'),
+    ('measurement',            'prek_1'),
+    ('measurement',            'g2_4'),
+    ('measurement',            'g5_6'),
+    ('measurement',            'g7_plus'),
+    ('geometry',               'prek_1'),
+    ('geometry',               'g2_4'),
+    ('geometry',               'g5_6'),
+    ('geometry',               'g7_plus'),
+    ('data_statistics',        'prek_1'),
+    ('data_statistics',        'g2_4'),
+    ('data_statistics',        'g5_6'),
+    ('data_statistics',        'g7_plus')
+  ) as v(strand_id, cohort_id)
+on conflict (strand_id, cohort_id) do nothing;
+
+-- =============================================================================
 -- S.A.M. Level 2 v1 content (11 founder-approved items from Item #11).
 -- =============================================================================
 -- MIRRORED FROM: supabase/migrations/20260511000100_sam_l2_content_v1.sql
@@ -441,4 +505,61 @@ from t,
   ) as v(external_id, strand, level, difficulty, format,
          content, misconception_tags,
          word_count, operation_type, num_operations, representation)
+on conflict (tenant_id, external_id) do nothing;
+
+-- =============================================================================
+-- Item #13a Phase 3 — visual-gate placeholder question with image.
+-- =============================================================================
+-- DEV ONLY. This row exists solely so the Phase 3 visual gate has an
+-- image-bearing question to render against
+-- docs/item-13a-phase-3-visual-gate.md. The PLACEHOLDER external_id
+-- prefix, PLACEHOLDER stem text, and the "PLACEHOLDER" watermark baked
+-- into the SVG asset all make this row obviously not real content.
+--
+-- DO NOT MIRROR TO A MIGRATION. Production seed is the gated S.A.M.
+-- import path; this placeholder must not reach prod. The §11 dev/prod
+-- parity rule applies in REVERSE here: this row lives ONLY in seed.sql
+-- (dev/CI write path); migrations have nothing to mirror.
+--
+-- REMOVE AT PHASE 5 CLOSE. Once Phase 5 lands real image assets for
+-- the 8 image-essential SAM-L2 items (Q02, Q03, Q05, Q06, Q12, Q15,
+-- Q16, Q18), this placeholder is no longer needed and the entire
+-- block below should be deleted in the Phase 5 commit. The SVG asset
+-- under supabase/storage-seed/question-images/ may stay (useful
+-- regression fixture) or be deleted at the same time.
+--
+-- is_active=false by default. Visual gate runbook documents the
+-- toggle SQL the founder runs to activate this row and deactivate
+-- the SAM-L2 rows just for the gate, then `supabase db reset` to
+-- revert. Default-off keeps the engine from accidentally serving
+-- the placeholder during normal dev workflows.
+--
+-- The asset file (placeholder-grid.svg) must already be in the
+-- question-images bucket before this row is useful. Run
+-- `pnpm storage:seed` after the first `supabase start` with
+-- [storage] enabled in config.toml (per AGENTS.md §11).
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active)
+select t.id, 'PLACEHOLDER-Q-IMG-GRID-001', 'number_sense'::strand,
+       '2A'::half_grade_level, -1.5, 'MULTIPLE_CHOICE'::question_format,
+       jsonb_build_object(
+         'stem', 'PLACEHOLDER — which cell is highlighted in the grid?',
+         'options', jsonb_build_array(
+           'Cell 1,1', 'Cell 2,2', 'Cell 2,3', 'Cell 3,4'
+         ),
+         'correct_index', 0,
+         'image_path', 'placeholder-grid.svg',
+         'image_alt',
+           'Placeholder math grid: 4 columns and 3 rows with cells labeled by coordinates, used for layout and sizing verification only. Not real assessment content.',
+         'image_required', true
+       ),
+       array[]::text[],
+       9, 'IDENTIFY'::operation_type, 1, 'PICTORIAL'::representation_kind,
+       false  -- is_active=false; flip to true at visual gate time
+from t
 on conflict (tenant_id, external_id) do nothing;
