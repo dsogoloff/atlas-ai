@@ -563,3 +563,29 @@ select t.id, 'PLACEHOLDER-Q-IMG-GRID-001', 'number_sense'::strand,
        false  -- is_active=false; flip to true at visual gate time
 from t
 on conflict (tenant_id, external_id) do nothing;
+
+-- =============================================================================
+-- Item #12 Phase 3 — backfill relational strand columns (dev/CI write path)
+-- =============================================================================
+-- MIRRORED FROM: supabase/migrations/20260520000000_backfill_strand_relational_columns.sql
+-- Per AGENTS.md §11: the migration version is a no-op during
+-- `supabase db reset` because the source tables (questions,
+-- curriculum_recommendations, misconceptions) are still empty when
+-- migrations run. The three statements below are kept verbatim so this
+-- file produces a fully backfilled DB after `db reset`.
+--
+-- Keep these three statements byte-for-byte identical to the migration.
+-- Cast safety + idempotency notes live in the migration header.
+
+update questions
+set strand_id_new = strand::text
+where strand_id_new is null;
+
+update curriculum_recommendations
+set strand_id_new = strand::text
+where strand_id_new is null;
+
+insert into misconception_strands (misconception_id, strand_id, tenant_id)
+select id, strand::text, tenant_id
+from misconceptions
+on conflict (misconception_id, strand_id) do nothing;
