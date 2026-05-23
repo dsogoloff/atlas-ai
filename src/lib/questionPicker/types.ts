@@ -129,10 +129,25 @@ export interface ClientQuestion {
  * `alt` is the answer-safe alt-text from `content.image_alt`; mandatory
  * when present. Phase 4 authoring pass populates the underlying field
  * for every image-essential item.
+ *
+ * `required` mirrors the server-side `content.image_required` flag. The
+ * client uses this to drive fallback behavior on image-load failure
+ * (per docs/item-13a-phase-3-visual-gate.md §5):
+ *   * required=true  — image is essential to the diagnostic (e.g. Q02
+ *                      "count triangles"). On load failure, render an
+ *                      inline error + Retry UI. (Phase 3.5 wires the
+ *                      input-disable behavior on top of this signal.)
+ *   * required=false — image is decorative (e.g. apples on a word
+ *                      problem solvable from text). On load failure,
+ *                      hide the image area gracefully and let the
+ *                      child proceed.
+ *
+ * Defaults to `false` at mint time when the server-side field is absent.
  */
 export interface ClientQuestionImage {
   url: string;
   alt: string;
+  required: boolean;
 }
 
 export type ClientQuestionContent =

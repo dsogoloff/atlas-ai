@@ -44,6 +44,7 @@ describe("serveQuestion", () => {
         correct_index: 1,
         image_path: "q02-triangles.png",
         image_alt: "Composite figure with overlapping triangles.",
+        image_required: true,
       },
     };
     const out = await serveQuestion(client, row);
@@ -53,6 +54,7 @@ describe("serveQuestion", () => {
       image: {
         url: "https://example.com/signed?token=t",
         alt: "Composite figure with overlapping triangles.",
+        required: true,
       },
     });
   });

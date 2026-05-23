@@ -175,6 +175,7 @@ describe("toClientQuestion / image arg propagation", () => {
   const fakeImage = {
     url: "https://example.com/signed?token=t",
     alt: "Some image",
+    required: true,
   };
 
   it("attaches image envelope on MULTIPLE_CHOICE when supplied", () => {

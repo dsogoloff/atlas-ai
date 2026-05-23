@@ -135,6 +135,7 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
         prompt={question.content.stem}
         tier={tier}
         progress={progress}
+        image={question.content.image}
       >
         {/* key={question.id} remounts QuestionTimer per question, capturing
             a fresh start time and resetting any internal input state. */}

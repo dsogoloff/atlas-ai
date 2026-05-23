@@ -2607,4 +2607,207 @@ after #13a lands and after supplementary-sourcing decision
   defer further; if asset-creation becomes a bank-growth
   bottleneck, v2.0 templates unblock it.
 
+---
+
+## Strategic Pivot — Position A2 (SAM Model Alignment) confirmed
+
+Date: 2026-05-12
+
+Captured mid-Item-#13, after Item #13a Phase 3 build complete (gates
+green, visual gate pending founder run). Founder confirmed Position
+A2: Atlas restructures around SAM's actual placement and
+recommendation model rather than the half-grade-level + Atlas-band
+taxonomy used through Item #12 and the start of Item #13.
+
+Founder framing (verbatim): "significant scope expansion that
+supersedes parts of Item #12 and reshapes Item #13b. New item to be
+drafted: Item #14 — SAM Model Alignment." Per founder direction,
+this entry is the canonical record of the pivot; Item #14 phase
+planning is gated on the SAM topic list (incoming from Sam Chia).
+
+### Locked decisions (six, founder-stated verbatim)
+
+  1. **Half-grade level subdivision (2A/2B) is superseded.**
+     Atlas adopts whole-grade levels (Level 1, Level 2, Level 3,
+     etc.) matching SAM's structure.
+     `docs/level-subdivision-rubric.md` from Item #12 Phase 1 is
+     deprecated, not deleted — historical record.
+
+  2. **SAM's grade-specific topic taxonomy becomes Atlas's
+     primary diagnostic taxonomy.** The 6 Atlas bands
+     (number_sense, operations_algorithms, fractions_decimals,
+     measurement, geometry, data_statistics) are retained as a
+     supplementary aggregation layer for visualization (radar
+     chart) only. Internal data is topic-keyed.
+
+  3. **Engine output:** SAM-aligned recommendation (Level N +
+     topic-revision list) is the primary parent-facing artifact.
+     Atlas band radar is the secondary "diagnostic overview"
+     visualization.
+
+  4. **Two-worksheet selection logic to be built:** child age
+     plus time-of-school-year determines whether to assess
+     Level N (start of year, age-appropriate level) or Level N+1
+     (>2 months into year, current-grade mastery probe).
+
+  5. **SAM's three-scenario placement rule augments or replaces
+     Atlas's IRT confidence threshold for terminal decisions:**
+       * Most prior-level correct, struggling on current-level
+         probe → place at current level with revision plan
+       * All correct → escalate to next-level worksheet
+       * First few "Numbers" topic items incorrect → terminate,
+         de-escalate to prior-level worksheet
+
+  6. **SAM topic list across Levels 1-6** incoming from Sam —
+     pending.
+
+### What survives the pivot (seven, founder-stated verbatim)
+
+  * Adaptive engine (Atlas's session shorter than SAM's 23-Q
+    worksheet)
+  * Misconception classification (SAM doesn't do this — Atlas
+    value-add)
+  * Time flagging (Atlas value-add — SAM has no time limit)
+  * Image rendering infrastructure (Item #13a continues)
+  * 24+ existing question records (need re-tag from Atlas band
+    → SAM topic, but items + misconception tags survive)
+  * Single-session at-home delivery
+  * Longitudinal tracking (v1.5)
+
+### Item-level effects (founder-stated verbatim)
+
+  * **Item #13a (image infra)** — CONTINUE. Level-model-
+    agnostic. Phase 3 visual gate still on the agenda.
+  * **Item #13b (question authoring)** — PAUSED. Will resume
+    after SAM topic list lands and after Item #14 establishes
+    the topic-tagging schema. Existing pre-classification work
+    against the old Atlas-band taxonomy is invalidated; will
+    need re-classification against SAM topics.
+  * **Item #14 (SAM Model Alignment)** — DRAFT. Captures
+    engine, schema, taxonomy, report, and recommendation-layer
+    changes. Larger than Item #12. Will need its own phase
+    plan.
+
+### Founder action items captured
+
+  * Sam to send SAM topic list across Levels 1-6.
+  * Trainer-differentiation question still pending from prior
+    Sam reply (lower priority now that worksheet structure
+    clarifies the differentiation model).
+
+### Implications for prior work (Code's read; pending confirmation)
+
+These are Code's synthesis of the pivot's implications for
+specific files and prior commits — distinct from the
+founder-stated decisions above. Flagged for founder confirmation
+that the read is accurate.
+
+  * **Survives unchanged:**
+      - All image-infrastructure work (Item #13a Phases 1-3):
+        types.ts ClientQuestionImage, mintImage.ts, serveQuestion.ts,
+        QuestionImage.tsx, QuestionShell.tsx image plumbing,
+        question-images bucket migration (20260512000000), the
+        Phase 3 visual gate doc and placeholder asset. None of
+        this references the level model or the strand taxonomy.
+      - The Item #12 taxonomy migration (Phase 2 commit 275bdda;
+        migration 20260511000200) — survives as the band-
+        aggregation layer. Not reverted.
+      - `docs/taxonomy.md` — preserved as the source of truth
+        for the 6 aggregation bands. Item #14 adds a sibling
+        document for the SAM topic primary taxonomy.
+      - Misconception taxonomy + misconception_classifier audit
+        migration (20260509000000) — bands of misconceptions
+        are still usable; mapping from misconception → SAM
+        topic is a future-additive concern.
+      - `question_access_log`, `responses`, `assessment_sessions`
+        — schema unaffected at the row-shape level. Level enum
+        usage inside `current_estimate` jsonb needs Item #14
+        attention.
+
+  * **Superseded / deprecated:**
+      - `docs/level-subdivision-rubric.md` — explicitly
+        deprecated per locked decision (1).
+      - `half_grade_level` enum (24 values KA-8B) — needs
+        migration to whole-grade in Item #14. Affects
+        `questions.level`, `curriculum_recommendations.level`,
+        and any TypeScript consumer (HalfGradeLevel in
+        engine/types.ts, half-grade plumbing throughout the
+        engine module).
+      - The "6 Atlas bands as primary diagnostic" framing in
+        the marketing strand cards (Item #12 Phase 6 commit
+        4cbc004) — bands stay valid as the aggregation layer,
+        but their primacy in the parent report is downgraded.
+        Marketing copy needs review under the new framing.
+      - Pre-classification work against the old Atlas-band
+        taxonomy for the 22 SAM-L2 JSON items — explicitly
+        invalidated by founder direction.
+
+  * **Item #14 scope hints (NOT a phase plan):**
+      - Schema migration: half_grade_level → whole_grade_level
+        enum
+      - New `topics` table (or topic enum) keyed to SAM's
+        per-level topic list — schema deferred until topic
+        list lands
+      - `questions.topic` column or relation alongside
+        `questions.strand` (band aggregation kept)
+      - `curriculum_recommendations` re-keyed from (strand,
+        level) to (topic, level)
+      - Two-worksheet selection logic in the engine entry path
+      - Three-scenario placement-decision rule reconciled with
+        the IRT 90%-posterior threshold (Item #14 decides
+        which logic owns terminal decisions)
+      - Parent report restructured: Level + topic-revision
+        list primary; radar demoted to secondary panel
+      - Re-tagging migration for the 11 currently-imported
+        SAM-L2 question rows (Atlas band → SAM topic, while
+        retaining the band column for aggregation)
+
+  * **Item #13b authoring work (PAUSED):**
+      - The 22-item JSON pre-classification at
+        `tmp/sam_l2_placement_questions.json` retains its
+        misconception tags + level/difficulty/format metadata.
+      - The Atlas-band `strand` field on each item is no
+        longer the primary classification axis — re-tag
+        against SAM topics required before any seed/migration
+        work.
+      - Distribution analysis (number_sense 11 / operations 5
+        / fractions 0 / measurement 2 / geometry 2 /
+        data_statistics 1 from the prior Item #13 kickoff)
+        becomes informational only; the new distribution lens
+        is SAM topics per Level 2.
+
+### Why this entry exists (process note)
+
+Founder's framing — "capture this pivot before proceeding with
+any work" — recognizes that mid-Item-#13 strategic pivots are
+exactly the moment where context drift bites future sessions
+hardest. A fresh-session future-Code reading the codebase six
+weeks from now will see Item #14's whole-grade migration and
+think the half-grade work in Item #12 was a mistake. This entry
+is the record that Item #12 was correct under Atlas's prior
+positioning, and that Item #14 is a deliberate model realignment
+to a clarified product strategy — not a reversal of prior work.
+
+### Halt point — founder confirmation requested
+
+Founder confirmation requested that:
+  * The six locked decisions are captured verbatim and complete.
+  * The seven "what survives" items are captured verbatim and
+    complete.
+  * The three item-level effects are captured verbatim and
+    complete.
+  * The two founder action items are captured verbatim and
+    complete.
+  * The "Implications for prior work" section (Code's synthesis)
+    is an accurate read — particularly the survives/superseded
+    lists for specific files and migrations.
+
+After confirmation:
+  * Founder runs Item #13a Phase 3 visual gate per
+    `docs/item-13a-phase-3-visual-gate.md`.
+  * Item #14 phase planning DOES NOT START until the SAM topic
+    list lands (founder direction).
+  * No changes to Item #13b authoring scope until Item #14
+    schema decisions are made.
+
 

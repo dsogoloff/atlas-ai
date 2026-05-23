@@ -12,7 +12,59 @@ Phase 3 does NOT include: actual image assets (Phase 5), Phase 2 signed-URL mint
 
 ## Pre-gate setup (founder runs)
 
-For each fixture below the founder needs a running build with at least one MC question carrying a placeholder image. Phase 3 will ship a dev-only seed row (gated to dev tenant, never to prod seed) so the visual gate has something to render. Phase 5 replaces placeholders with real assets.
+These steps prepare a local dev environment with the placeholder image-bearing question active. Phase 3 ships a dev-only seed row (`PLACEHOLDER-Q-IMG-GRID-001`, dormant via `is_active=false` by default) and a hand-authored placeholder SVG (`placeholder-grid.svg` — a 4×3 labeled grid with a "PLACEHOLDER" diagonal watermark). Phase 5 replaces the placeholder with real S.A.M.-sourced assets.
+
+**One-time setup (after the first pull of an Item #13a Phase 1+ branch):**
+
+```bash
+# Bring up the storage container with the new config.toml setting.
+# `supabase db reset` alone will NOT start storage — see AGENTS.md §11.
+supabase stop && supabase start
+
+# Apply Phase 1 bucket migration + Phase 3 placeholder seed row.
+supabase db reset
+
+# Upload the placeholder SVG to the question-images bucket.
+# Idempotent; safe to re-run.
+pnpm storage:seed
+```
+
+**Activate the placeholder for the gate (then revert after):**
+
+```sql
+-- Run via supabase SQL editor or `psql` against the local DB.
+-- Step 1: deactivate the SAM-L2 rows so they don't get served instead.
+update questions set is_active = false where external_id like 'SAM-L2-%';
+
+-- Step 2: activate the placeholder.
+update questions set is_active = true where external_id = 'PLACEHOLDER-Q-IMG-GRID-001';
+```
+
+Then start the dev server and walk through the gate:
+
+```bash
+pnpm dev            # founder's terminal, not the assistant's
+# Sign in as dev@atlas.local / dev-password
+# Navigate to /assessment, walk through the 10 sections below
+```
+
+**Revert when the gate is complete:** `supabase db reset` restores the seed-defined `is_active` values (SAM-L2 rows back to true, placeholder back to false). No manual cleanup of the UPDATE statements.
+
+**Optional — test the decorative fallback path (section 5b):**
+
+```sql
+-- Toggle image_required to false on the placeholder for a section-5b pass.
+-- Run, refresh /assessment, observe graceful hide on simulated load failure
+-- (break the URL via devtools), then revert.
+update questions
+   set content = jsonb_set(content, '{image_required}', 'false')
+ where external_id = 'PLACEHOLDER-Q-IMG-GRID-001';
+
+-- Revert (or supabase db reset).
+update questions
+   set content = jsonb_set(content, '{image_required}', 'true')
+ where external_id = 'PLACEHOLDER-Q-IMG-GRID-001';
+```
 
 ## Gate criteria
 
@@ -24,13 +76,30 @@ Each section: **what to check** / **passes if**. Founder runs through these agai
 
 **Passes if.** Both tier variants display the image correctly with their respective chromes intact. No K-4-only or G5-8-only chrome leaks into the other tier. Image rendering is the only addition vs the current (no-image) layout.
 
-### 2. Sizing — viewport-relative caps
+### 2. Sizing — viewport-relative caps (width AND height)
 
-**What to check.** K-4 image rendered at approximately 60% of the viewport width, capped at ~600px maximum. G5-8 image at approximately 40% of viewport width, capped at ~480px maximum. Image preserves aspect ratio (no squishing). Vertical bound: image must not push the input below the fold on a standard tablet portrait viewport (768×1024).
+**What to check.** Image is bounded on BOTH axes so neither a wide source nor a tall source can crowd out the answer input + Submit button:
 
-**Passes if.** Sizes match the intuition above within ±5%, or — if reality dictates different — founder confirms the deviation. Aspect ratio preserved. No vertical overflow on the iPad-portrait reference viewport.
+- K-4 image: width ≈ 60% of viewport width, capped at **600 px**. Height capped at **40 vh** (40% of viewport height).
+- G5-8 image: width ≈ 40% of viewport width, capped at **480 px**. Height capped at **30 vh**.
+- Aspect ratio preserved via `object-contain` — whichever cap clamps first wins; the other dimension scales proportionally. Image never distorts.
 
-This is the section most likely to change at gate time. Phase 3 ships with the proposed sizing; founder validates and adjusts. Updated sizing lands in the same commit that closes the gate.
+Vertical bound: the full question (prompt + image + answer choices + Submit) must fit within the viewport without scrolling on (a) a standard laptop landscape (~1440 × 900) and (b) iPad portrait (768 × 1024). The 40 vh / 30 vh caps were chosen to leave room for the answer area and Submit on the shortest standard target.
+
+**Reference numbers (placeholder SVG, 600 × 400, aspect 3:2):**
+
+| Viewport | Tier | Width cap | Height cap | Final rendered |
+|---|---|---|---|---|
+| 1920 × 1080 desktop | K-4 | 600 px | 432 px | 600 × 400 (width caps first) |
+| 1440 × 900 laptop | K-4 | 600 px | 360 px | **540 × 360 (height caps first)** |
+| 1024 × 768 landscape tablet | K-4 | 600 px | 307 px | **460 × 307 (height caps first)** |
+| 768 × 1024 iPad portrait | K-4 | 460 px | 410 px | 460 × 307 (width caps first) |
+| 1440 × 900 laptop | G5-8 | 480 px | 270 px | **405 × 270 (height caps first)** |
+| 768 × 1024 iPad portrait | G5-8 | 307 px | 307 px | 307 × 205 (width caps first) |
+
+**Passes if.** Sizes match the table above within ±5%. Aspect ratio preserved (no squishing). On 1440 × 900 laptop and 768 × 1024 iPad portrait, the entire question — prompt, image, answers, Submit — is visible without vertical scrolling.
+
+This section was tightened on 2026-05-23 after a gate finding: width-only caps let a 3:2 source image grow tall enough on standard laptop heights to push Submit below the fold. The height cap is now first-class.
 
 ### 3. Layout — position relative to prompt and input
 
@@ -47,15 +116,19 @@ This is the section most likely to change at gate time. Phase 3 ships with the p
 
 **Passes if.** All three formats render the image in the same slot with the same sizing. No format-specific layout regression.
 
-### 5. Fallback behavior — image-required vs decorative
+### 5. Fallback behavior — image-required vs decorative (visual scope only at Phase 3)
 
-**What to check.** Two scenarios:
+**Scope amendment (Phase 3 build, 2026-05-12).** This section originally specified both the visual error UI AND functional input-disable behavior. Phase 3 ships the **visual** half only; the **functional** input-disable on required-image-failure is deferred to **Phase 3.5** (a new phase between current Phase 3 and Phase 4). The split keeps Phase 3 focused on the render surface and lets Phase 3.5 do the reducer / submit-gate integration cleanly. Founder approved the split at Phase 3 kickoff.
 
-**(5a)** Image with `image_required: true` fails to load (signed URL expired, network error, 404). The question is not solvable without the image (e.g., "count the triangles"). Expected: question component shows an inline error state with a "Retry" affordance; the input is disabled until the image loads or the founder/parent intervenes. The session does NOT auto-advance; the response submit is gated on the image being present.
+**What to check (Phase 3, visual only).** Two scenarios:
 
-**(5b)** Image with `image_required: false` fails to load. Question is solvable from text (e.g., "Jo had 7 apples..."). Expected: image area is hidden gracefully; prompt + input remain; the question is answerable normally. No error UI shown to the child.
+**(5a)** Image with `image_required: true` fails to load (signed URL expired, network error, 404). Expected: the image area is replaced with an inline error block — "The picture couldn't load." copy, the alt-text shown as supporting context, and a "Try again" button. Clicking "Try again" cache-busts the URL and re-attempts the load. The input below the image remains visually present and interactive — that is the **Phase 3.5** behavior change. Phase 3 verifies only that the error UI renders correctly.
 
-**Passes if.** Both behaviors verified by simulating image-load failure (e.g., editing the signed URL to be invalid). The image_required flag drives the fallback divergence.
+**(5b)** Image with `image_required: false` fails to load. Expected: the image area is hidden gracefully (the component returns null); prompt + input remain unchanged; the question is answerable normally. No error UI shown to the child.
+
+**Passes if (Phase 3 gate).** Both visual behaviors verified by simulating image-load failure (e.g., breaking the signed URL with `?broken=1` appended, or stopping the local Supabase storage container mid-session). The `image_required` flag from the wire payload drives the divergence: required=true renders the error block, required=false renders nothing.
+
+**Out of scope at Phase 3.** Input-disable when the image fails AND required=true. The submit button stays clickable in Phase 3; Phase 3.5 wires the reducer / submit-gate to refuse submits while the required image is unresolved. Until Phase 3.5 lands, a child could technically submit a guess against a missing required image — acceptable risk for the visual gate window; the placeholder seed row makes this hard to encounter in practice.
 
 ### 6. Alt-text — accessibility behavior
 

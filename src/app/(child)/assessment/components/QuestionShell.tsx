@@ -22,6 +22,9 @@
 
 import type { Tier } from "@/lib/tier/derive";
 import type { ProgressDisplay } from "@/lib/display/progress";
+import type { ClientQuestionImage } from "@/lib/questionPicker/types";
+
+import { QuestionImage } from "./QuestionImage";
 
 interface Props {
   /** Question prompt (from question.content.stem). */
@@ -31,11 +34,22 @@ interface Props {
   /** Progress chrome data — computed by the assessment client from
    *  reducer state via computeProgressDisplay(responseCount). */
   progress: ProgressDisplay;
+  /** Optional image (from question.content.image). When present, renders
+   *  between prompt and input children per Item #13a Phase 3 visual gate.
+   *  Undefined for text-only questions; behavior is identical to pre-
+   *  Phase-3 (no image slot rendered). */
+  image?: ClientQuestionImage;
   /** Input component for this question's format. */
   children: React.ReactNode;
 }
 
-export function QuestionShell({ prompt, tier, progress, children }: Props) {
+export function QuestionShell({
+  prompt,
+  tier,
+  progress,
+  image,
+  children,
+}: Props) {
   if (tier === "G5_8") {
     return (
       <div className="relative flex min-h-screen flex-col overflow-hidden bg-sam-cream">
@@ -63,6 +77,10 @@ export function QuestionShell({ prompt, tier, progress, children }: Props) {
               </h1>
               <div className="mx-auto mt-4 h-1 w-24 rounded-full bg-sam-yellow" />
             </div>
+
+            {image && (
+              <QuestionImage key={image.url} image={image} tier="G5_8" />
+            )}
 
             <div className="w-full">{children}</div>
           </div>
@@ -96,6 +114,10 @@ export function QuestionShell({ prompt, tier, progress, children }: Props) {
             </h1>
             <div className="mx-auto mt-4 h-1 w-24 rounded-full bg-sam-yellow" />
           </header>
+
+          {image && (
+            <QuestionImage key={image.url} image={image} tier="K_4" />
+          )}
 
           <div className="w-full">{children}</div>
         </div>

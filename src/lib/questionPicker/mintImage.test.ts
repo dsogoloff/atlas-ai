@@ -114,7 +114,7 @@ describe("mintQuestionImage / no image path", () => {
 // ---------------------------------------------------------------------------
 
 describe("mintQuestionImage / happy path", () => {
-  it("returns { url, alt } when image_path + image_alt present", async () => {
+  it("returns { url, alt, required } when image_path + image_alt present", async () => {
     const { client, calls } = fakeServiceClient(
       successOutcome("https://example.com/signed?token=abc"),
     );
@@ -123,10 +123,12 @@ describe("mintQuestionImage / happy path", () => {
       options: ["1", "5", "3", "7"],
       image_path: "q-sam-l2-q02-triangles.png",
       image_alt: "A composite figure made of overlapping triangles.",
+      image_required: true,
     } as Json);
     expect(result).toEqual({
       url: "https://example.com/signed?token=abc",
       alt: "A composite figure made of overlapping triangles.",
+      required: true,
     });
     expect(calls).toEqual([
       {
@@ -159,6 +161,55 @@ describe("mintQuestionImage / happy path", () => {
       image_alt: "alt",
     } as Json);
     expect(calls[0]?.bucket).toBe("question-images");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// image_required propagation — defaults to false, only explicit true flips it.
+// ---------------------------------------------------------------------------
+
+describe("mintQuestionImage / image_required propagation", () => {
+  it("defaults required=false when image_required is absent", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintQuestionImage(client, {
+      stem: "s",
+      image_path: "x.png",
+      image_alt: "alt",
+    } as Json);
+    expect(result?.required).toBe(false);
+  });
+
+  it("returns required=true when image_required is explicitly true", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintQuestionImage(client, {
+      stem: "s",
+      image_path: "x.png",
+      image_alt: "alt",
+      image_required: true,
+    } as Json);
+    expect(result?.required).toBe(true);
+  });
+
+  it("returns required=false when image_required is explicitly false", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintQuestionImage(client, {
+      stem: "s",
+      image_path: "x.png",
+      image_alt: "alt",
+      image_required: false,
+    } as Json);
+    expect(result?.required).toBe(false);
+  });
+
+  it("coerces non-boolean image_required to false (strict-true check)", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintQuestionImage(client, {
+      stem: "s",
+      image_path: "x.png",
+      image_alt: "alt",
+      image_required: "true", // string, not boolean
+    } as Json);
+    expect(result?.required).toBe(false);
   });
 });
 

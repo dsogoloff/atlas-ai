@@ -87,6 +87,12 @@ export async function mintQuestionImage(
     );
   }
 
+  // image_required defaults to false (decorative) when absent. Per the
+  // Phase 1 jsonb shape doc, the source-JSON flag is boolean; defensive
+  // coerce: only an explicit `true` flips required on, anything else
+  // (false, null, undefined, missing, non-boolean) lands at false.
+  const required = obj.image_required === true;
+
   const { data, error } = await serviceClient.storage
     .from(QUESTION_IMAGE_BUCKET)
     .createSignedUrl(imagePath, SIGNED_URL_TTL_SECONDS);
@@ -99,5 +105,5 @@ export async function mintQuestionImage(
     );
   }
 
-  return { url: data.signedUrl, alt: imageAlt };
+  return { url: data.signedUrl, alt: imageAlt, required };
 }
