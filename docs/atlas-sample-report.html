@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aiden Park — Atlas Assessment Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1B3A6B;
+  --navy-deep: #122548;
+  --navy-muted: #4A6080;
+  --cyan: #00B8D4;
+  --paper: #FAFAFA;
+  --paper-white: #FFFFFF;
+  --text: #1A1A1A;
+  --text-secondary: #5A5A5A;
+  --text-light: #8A8A8A;
+  --border: #E5E5E0;
+  --solid: #1B3A6B;
+  --approaching: #B8893F;
+  --developing: #A8404C;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text);
+  background: var(--paper);
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.report {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--paper-white);
+  min-height: 100vh;
+}
+
+/* Topbar */
+.topbar {
+  padding: 20px 48px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.topbar .brand { color: var(--navy); font-weight: 600; }
+
+/* Hero */
+.hero {
+  padding: 56px 48px 44px;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  font-size: 48px;
+  line-height: 1.1;
+  color: var(--navy);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.hero .meta {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.placement-box {
+  background: var(--navy);
+  color: var(--paper-white);
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.placement-box .label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.placement-box .value {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  font-weight: 500;
+}
+
+/* Sections */
+section {
+  padding: 52px 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+section h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  font-size: 28px;
+  color: var(--navy);
+  margin-bottom: 10px;
+  letter-spacing: -0.005em;
+}
+
+section .lede {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  max-width: 560px;
+  line-height: 1.65;
+}
+
+/* Strand performance — radar */
+.strand-visual {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 36px;
+}
+
+.radar {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  overflow: visible;
+}
+
+.radar .grid polygon {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.radar .axes line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.radar polygon.data {
+  fill: var(--cyan);
+  fill-opacity: 0.14;
+  stroke: var(--navy);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.radar .points circle {
+  fill: var(--navy);
+  stroke: var(--paper-white);
+  stroke-width: 1.5;
+}
+.radar .points circle.approaching { fill: var(--approaching); }
+.radar .points circle.developing { fill: var(--developing); }
+
+.radar .scale text {
+  fill: var(--text-light);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+}
+
+.radar .labels text {
+  fill: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Strand performance — list */
+.strand-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+
+.strand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  gap: 16px;
+}
+
+.strand-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.strand-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.strand-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 38px;
+  text-align: right;
+}
+
+.strand-level {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid var(--text-light);
+  color: var(--text-secondary);
+  min-width: 110px;
+  text-align: center;
+}
+
+.strand-level.approaching {
+  border-color: var(--approaching);
+  color: var(--approaching);
+}
+
+.strand-level.developing {
+  border-color: var(--developing);
+  color: var(--developing);
+}
+
+/* Findings */
+.findings {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.finding {
+  padding: 28px 0 8px;
+  border-top: 2px solid var(--navy);
+}
+
+.finding-number {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--cyan);
+  margin-bottom: 10px;
+}
+
+.finding-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--navy);
+  line-height: 1.3;
+  margin-bottom: 28px;
+  letter-spacing: -0.005em;
+}
+
+.beat {
+  margin-bottom: 22px;
+  padding-left: 18px;
+  border-left: 2px solid var(--border);
+}
+
+.beat-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--navy-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.beat p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+/* Recommendation */
+.recommendation-box {
+  background: var(--paper);
+  padding: 32px;
+  margin-top: 8px;
+}
+
+.recommendation-box p {
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.recommendation-box strong {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.recommendation-box ul {
+  list-style: none;
+  margin-top: 24px;
+}
+
+.recommendation-box li {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.recommendation-box li:last-child { border-bottom: 1px solid var(--border); }
+
+.recommendation-box .unit-name {
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.recommendation-box .unit-link {
+  color: var(--text-light);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Next steps */
+.next-steps p {
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 28px;
+  max-width: 560px;
+}
+
+.cta {
+  background: var(--navy);
+  color: var(--paper-white);
+  padding: 22px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.cta:hover { background: var(--navy-deep); }
+
+.cta .arrow {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  margin-left: 16px;
+}
+
+/* Footer */
+.footer {
+  padding: 36px 48px 48px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  line-height: 1.7;
+}
+
+.footer .powered { text-transform: uppercase; color: var(--navy-muted); font-weight: 500; }
+
+.footer .disclaimer {
+  margin-top: 18px;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 11px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .topbar, .hero, section, .footer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .topbar { font-size: 10px; }
+  .topbar span:last-child { display: none; }
+
+  .hero { padding-top: 40px; padding-bottom: 32px; }
+  .hero h1 { font-size: 36px; }
+
+  section { padding-top: 40px; padding-bottom: 40px; }
+  section h2 { font-size: 24px; }
+
+  .strand-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .strand-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .radar .labels text {
+    font-size: 11px;
+  }
+
+  .placement-box {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 22px;
+  }
+
+  .recommendation-box { padding: 24px; }
+  .recommendation-box li { flex-direction: column; gap: 4px; }
+
+  .cta { padding: 18px 22px; font-size: 14px; }
+}
+
+/* Print */
+@media print {
+  body { background: white; }
+  .report { max-width: 100%; box-shadow: none; }
+  section { page-break-inside: avoid; }
+  .finding { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+  <div class="report">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <span class="brand">Atlas Assessment</span>
+      <span>Report ID · A-2026-051901</span>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="eyebrow">Assessment Report</div>
+      <h1>Aiden Park</h1>
+      <div class="meta">Grade 3 &middot; Assessed May 19, 2026 &middot; Completed in 14 minutes</div>
+      <div class="placement-box">
+        <span class="label">Recommended Placement</span>
+        <span class="value">S.A.M. Level 3</span>
+      </div>
+    </div>
+
+    <!-- Strand Performance -->
+    <section>
+      <h2>Strand Performance</h2>
+      <p class="lede">Aiden's responses across the five mathematics strands the assessment covered. Performance is reported relative to expected proficiency for his grade band.</p>
+      <!-- Radar chart -->
+      <div class="strand-visual">
+        <svg viewBox="0 0 500 420" class="radar" xmlns="http://www.w3.org/2000/svg">
+          <!-- Grid pentagons -->
+          <g class="grid">
+            <polygon points="250,90 374,180 326,325 174,325 126,180"/>
+            <polygon points="250,123 343,190 307,299 193,299 157,190"/>
+            <polygon points="250,155 312,200 288,273 212,273 188,200"/>
+            <polygon points="250,188 281,210 269,246 231,246 219,210"/>
+          </g>
+          <!-- Axis lines -->
+          <g class="axes">
+            <line x1="250" y1="220" x2="250" y2="90"/>
+            <line x1="250" y1="220" x2="374" y2="180"/>
+            <line x1="250" y1="220" x2="326" y2="325"/>
+            <line x1="250" y1="220" x2="174" y2="325"/>
+            <line x1="250" y1="220" x2="126" y2="180"/>
+          </g>
+          <!-- Data polygon -->
+          <polygon class="data" points="250,119 351,187 282,264 195,296 182,198"/>
+          <!-- Data points (colour-coded by level) -->
+          <g class="points">
+            <circle cx="250" cy="119" r="4.5"/>
+            <circle cx="351" cy="187" r="4.5"/>
+            <circle cx="282" cy="264" r="4.5" class="developing"/>
+            <circle cx="195" cy="296" r="4.5"/>
+            <circle cx="182" cy="198" r="4.5" class="approaching"/>
+          </g>
+          <!-- Scale labels -->
+          <g class="scale">
+            <text x="256" y="125">75%</text>
+            <text x="256" y="158">50%</text>
+            <text x="256" y="191">25%</text>
+          </g>
+          <!-- Strand labels -->
+          <g class="labels">
+            <text x="250" y="72" text-anchor="middle">Number Sense</text>
+            <text x="384" y="175" text-anchor="start">Whole Number Ops</text>
+            <text x="326" y="350" text-anchor="middle">Fractions</text>
+            <text x="174" y="350" text-anchor="middle">Measurement</text>
+            <text x="116" y="175" text-anchor="end">Word Problems</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Detail list -->
+      <div class="strand-list">
+        <div class="strand-row">
+          <span class="strand-name">Number Sense &amp; Place Value</span>
+          <div class="strand-meta">
+            <span class="strand-value">78%</span>
+            <span class="strand-level">Solid</span>
+          </div>
+        </div>
+        <div class="strand-row">
+          <span class="strand-name">Whole Number Operations</span>
+          <div class="strand-meta">
+            <span class="strand-value">82%</span>
+            <span class="strand-level">Solid</span>
+          </div>
+        </div>
+        <div class="strand-row">
+          <span class="strand-name">Fractions</span>
+          <div class="strand-meta">
+            <span class="strand-value">42%</span>
+            <span class="strand-level developing">Developing</span>
+          </div>
+        </div>
+        <div class="strand-row">
+          <span class="strand-name">Measurement &amp; Geometry</span>
+          <div class="strand-meta">
+            <span class="strand-value">72%</span>
+            <span class="strand-level">Solid</span>
+          </div>
+        </div>
+        <div class="strand-row">
+          <span class="strand-name">Word Problems &amp; Heuristics</span>
+          <div class="strand-meta">
+            <span class="strand-value">55%</span>
+            <span class="strand-level approaching">Approaching</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Findings -->
+    <section>
+      <h2>What We Noticed</h2>
+      <p class="lede">Beyond the strand scores, two specific patterns emerged in how Aiden approached the problems. These are the most actionable findings from this assessment.</p>
+
+      <div class="findings">
+
+        <div class="finding">
+          <div class="finding-number">Finding 01</div>
+          <div class="finding-title">Fraction size is being read from the size of the denominator</div>
+
+          <div class="beat">
+            <div class="beat-label">What we observed</div>
+            <p>On 4 of 5 fraction comparison items, Aiden chose the fraction with the larger denominator as the larger value — for example, selecting 1/8 over 1/4, and 3/10 over 3/5.</p>
+          </div>
+
+          <div class="beat">
+            <div class="beat-label">What it suggests</div>
+            <p>Aiden appears to be applying whole-number logic to the denominator: bigger number, bigger value. This is a common pattern in children who are encountering fraction notation before they have fully internalised what the denominator represents.</p>
+          </div>
+
+          <div class="beat">
+            <div class="beat-label">Why it matters</div>
+            <p>This misconception is foundational. Until it is resolved, work on equivalent fractions, fraction operations, and ratio reasoning tends to compound the confusion rather than build on a stable base.</p>
+          </div>
+
+          <div class="beat">
+            <div class="beat-label">What we'd focus on</div>
+            <p>Concrete fraction models — bar models, fraction circles, paper folding — anchoring the denominator to "how many equal parts the whole is divided into" before returning to symbolic notation.</p>
+          </div>
+        </div>
+
+        <div class="finding">
+          <div class="finding-number">Finding 02</div>
+          <div class="finding-title">Word problems are being parsed by keyword rather than by situation</div>
+
+          <div class="beat">
+            <div class="beat-label">What we observed</div>
+            <p>On word problems, Aiden's chosen operation tracked specific words in the problem rather than the situation described. Problems containing "more" were solved by adding, and "less" by subtracting — including in two cases where the situation called for the opposite operation.</p>
+          </div>
+
+          <div class="beat">
+            <div class="beat-label">What it suggests</div>
+            <p>Aiden is using a keyword-matching shortcut rather than building a mental model of the problem. This strategy works on simple, well-worded problems and fails on multi-step ones or ones that use those keywords in unexpected ways.</p>
+          </div>
+
+          <div class="beat">
+            <div class="beat-label">Why it matters</div>
+            <p>Singapore Math's distinctive strength is structured problem representation — particularly the bar model — which builds the habit of drawing the situation before choosing the operation. Keyword-driven parsing is precisely the strategy the S.A.M. curriculum is designed to replace.</p>
+          </div>
+
+          <div class="beat">
+            <div class="beat-label">What we'd focus on</div>
+            <p>Bar model representation from the ground up, beginning with single-step problems. The goal is building the habit of drawing the situation first — the operation choice tends to follow naturally once the structure is visible.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Recommendation -->
+    <section>
+      <h2>Our Recommendation</h2>
+      <p class="lede">Based on Aiden's overall performance and the two findings above, we recommend the following placement and starting points within the S.A.M. curriculum.</p>
+
+      <div class="recommendation-box">
+        <p>Place Aiden at <strong>S.A.M. Level 3</strong>, with a focused start on two units that directly address what the assessment surfaced:</p>
+        <ul>
+          <li>
+            <span class="unit-name">Fraction Foundations</span>
+            <span class="unit-link">Addresses Finding 01</span>
+          </li>
+          <li>
+            <span class="unit-name">Bar Model Introduction</span>
+            <span class="unit-link">Addresses Finding 02</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Next Steps -->
+    <section class="next-steps">
+      <h2>Next Steps</h2>
+      <p>A S.A.M. center director will reach out within two business days to discuss the findings and answer any questions. If you would like to move faster, you can schedule a conversation directly.</p>
+      <a href="#" class="cta">
+        <span>Schedule a conversation with a S.A.M. centre director</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+    </section>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="powered">Atlas AI &middot; Powered by Inspirea Labs</div>
+    </div>
+
+  </div>
+</body>
+</html>
