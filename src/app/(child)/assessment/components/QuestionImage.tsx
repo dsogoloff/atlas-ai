@@ -33,14 +33,21 @@
 //     so cap never clamped.
 //   2026-05-23 follow-up #1 — combined min(vh, px) via Tailwind
 //     arbitrary class. Cap was on the <img> only; wrapper still
-//     unconstrained. Founder devtools inspection showed wrapper at
-//     ~901px tall regardless of img cap. Either the Tailwind min()
-//     arbitrary didn't compile, or the SVG-no-intrinsic-dims quirk
-//     stretched the img to fill the flex slot.
-//   2026-05-23 follow-up #2 (this rev) — inline style on wrapper +
-//     img, both with the same min(vh, px) cap. Plus explicit
-//     width="600" height="400" added to placeholder-grid.svg to give
-//     it intrinsic dimensions. Belt + suspenders + belt.
+//     unconstrained.
+//   2026-05-23 follow-up #2 — inline style on wrapper + img, both
+//     with the same min(vh, px) cap. Plus explicit width="600"
+//     height="400" added to placeholder-grid.svg.
+//   2026-05-23 follow-up #3 (this rev) — even with the inline max-h
+//     reaching the DOM, the image still rendered at intrinsic size.
+//     Root cause: the wrapper is a flex child of QuestionShell's
+//     content column (`flex flex-col items-center gap-10`). Flex
+//     items default to `min-height: auto` = intrinsic content height,
+//     which after the SVG carries explicit 400px height becomes a
+//     400px FLOOR that defeats our 320px CEILING (max < min → max
+//     dropped per CSS spec). Fix: minHeight: 0 + flex: "none" on the
+//     wrapper to lift the flex floor, plus explicit height: "auto"
+//     width: "auto" on the img (moved from Tailwind className to
+//     inline style so all sizing rules live in one cascade layer).
 //
 // Fallback behavior on image load failure (visual gate §5):
 //   required=true   → render inline error + Retry button
@@ -88,8 +95,28 @@ export function QuestionImage({ image, tier }: Props) {
 
   const sizeClass =
     tier === "K_4" ? "w-[60vw] max-w-[600px]" : "w-[40vw] max-w-[480px]";
-  const maxHeightStyle: React.CSSProperties = {
-    maxHeight: tier === "K_4" ? "min(40vh, 320px)" : "min(30vh, 240px)",
+  const maxH = tier === "K_4" ? "min(40vh, 320px)" : "min(30vh, 240px)";
+  // Wrapper styles. minHeight: 0 + flex: "none" defeat the flex-child
+  // sizing override: the content column is `flex flex-col`, so without
+  // these the wrapper inherits min-height: auto = intrinsic content
+  // height (which after the SVG carries width/height attrs is 400px),
+  // and that floor ignores our maxHeight ceiling (max < min → max
+  // dropped). minHeight: 0 lifts the floor; flex: "none" stops the
+  // parent from stretching this row.
+  const wrapperStyle: React.CSSProperties = {
+    maxHeight: maxH,
+    minHeight: 0,
+    flex: "none",
+    alignSelf: "center",
+  };
+  // Img styles. Same minHeight: 0 in case the img itself ever lands
+  // in a flex context. height: "auto" + width: "auto" + object-contain
+  // preserves aspect ratio inside the max-height ceiling.
+  const imgStyle: React.CSSProperties = {
+    maxHeight: maxH,
+    minHeight: 0,
+    height: "auto",
+    width: "auto",
   };
 
   if (state === "error") {
@@ -120,7 +147,7 @@ export function QuestionImage({ image, tier }: Props) {
   const transitionClass = reduceMotion ? "" : "transition-opacity duration-200";
 
   return (
-    <div className={`relative ${sizeClass}`} style={maxHeightStyle}>
+    <div className={`relative ${sizeClass}`} style={wrapperStyle}>
       {state === "loading" && (
         <div
           className={`absolute inset-0 rounded-lg bg-sam-gray-light/40 ${
@@ -139,8 +166,8 @@ export function QuestionImage({ image, tier }: Props) {
         alt={image.alt}
         onLoad={() => setState("loaded")}
         onError={() => setState("error")}
-        style={maxHeightStyle}
-        className={`mx-auto block h-auto w-auto max-w-full rounded-lg object-contain ${
+        style={imgStyle}
+        className={`mx-auto block max-w-full rounded-lg object-contain ${
           state === "loaded" ? "opacity-100" : "opacity-0"
         } ${transitionClass}`}
       />
