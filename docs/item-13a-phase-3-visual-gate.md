@@ -113,7 +113,7 @@ This section evolved through four gate findings on 2026-05-23. (1) First attempt
 
 **What to check.** Image sits between prompt `<h1>` and the input children, below the yellow underline divider. Vertical spacing: image-to-prompt gap, image-to-input gap. Horizontal: image horizontally centered within the existing `max-w-3xl` container.
 
-**Passes if.** Image is below the underline (not above), above the input (not below), centered. Gaps don't visually crowd either the prompt or the input. Spacing scale matches the existing K-4 / G5-8 chrome rhythm (gap-10 / gap-12 from QuestionShell.tsx).
+**Passes if.** Image is below the underline (not above), above the input (not below), centered. Gaps don't visually crowd either the prompt or the input. Spacing scale uses `gap-6` (24 px) between content-column sections, tightened from `gap-10`/`gap-12` in follow-up #4 to reclaim ~80 px of vertical budget on short viewports.
 
 ### 4. Format compatibility
 

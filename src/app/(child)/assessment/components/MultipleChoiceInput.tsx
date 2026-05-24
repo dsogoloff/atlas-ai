@@ -6,10 +6,16 @@
 //     for text labels and a larger numeric variant. Adapted from
 //     sam-placement MultipleChoice.
 //
-//   * G5_8: aspect-square cards with a ring-radio dot bottom-right;
-//     selected state thickens the border to border-4 and fills the dot
-//     with a check icon. font-math-numeral for numeric options. Adapted
-//     from stitch/module-c/03-g58-mc-journey.html.
+//   * G5_8: rectangular cards (min-h-[88px]) with a ring-radio dot
+//     bottom-right; selected state thickens the border to border-4 and
+//     fills the dot with a check icon. font-math-numeral for numeric
+//     options. Adapted from stitch/module-c/03-g58-mc-journey.html.
+//     2026-05-23: aspect-square dropped after gate finding #4. At
+//     sm:grid-cols-2 with the standard ~432px content column width,
+//     aspect-square produced ~208px-tall cards and a ~432px-tall
+//     2-row grid wall that pushed Submit off the fold on 765-tall
+//     laptop viewports. min-h-[88px] matches the K-4 card rhythm
+//     and brings the 2-row grid down to ~192px.
 //
 // Wire format identical across tiers — submits the option's display text;
 // the server reads correct_index and compares against options[correct_index]
@@ -50,7 +56,7 @@ export function MultipleChoiceInput({ options, onSubmit, disabled, tier }: Props
   }
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-6">
       <div
         role="radiogroup"
         aria-label="Answer options"
@@ -76,7 +82,7 @@ export function MultipleChoiceInput({ options, onSubmit, disabled, tier }: Props
                   disabled || reduceMotion ? undefined : { scale: 0.95 }
                 }
                 className={
-                  "relative flex aspect-square items-center justify-center rounded-3xl bg-white p-6 transition-colors duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-sam-red/30 disabled:cursor-not-allowed " +
+                  "relative flex min-h-[88px] items-center justify-center rounded-3xl bg-white p-6 transition-colors duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-sam-red/30 disabled:cursor-not-allowed " +
                   (isSelected
                     ? "border-4 border-sam-red shadow-lg"
                     : "border-2 border-sam-gray-light shadow-[0_4px_12px_rgba(27,58,107,0.08)] hover:border-sam-red")
