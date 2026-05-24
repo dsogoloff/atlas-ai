@@ -290,7 +290,7 @@ interface ReportContent {
 
   // Header
   child: {
-    display_name: string;              // first + last initial, e.g. "Aiden P."
+    display_name: string;              // child's display name in the report header — full name for demo; live treatment TBD
     grade_label: string;               // e.g. "Grade 3"
   };
   metadata: {
