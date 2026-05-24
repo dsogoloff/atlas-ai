@@ -12,23 +12,35 @@
 // deferred to Phase 3.5 per the doc amendment in this same commit).
 //
 // Tier-aware sizing (visual gate §2):
-//   K-4    → w-[60vw], max-w-[600px], max-h-[min(40vh,320px)] on the <img>
-//   G5-8   → w-[40vw], max-w-[480px], max-h-[min(30vh,240px)] on the <img>
+//   K-4    → w-[60vw], max-w-[600px], max-height: min(40vh, 320px)
+//   G5-8   → w-[40vw], max-w-[480px], max-height: min(30vh, 240px)
+//
+// max-height is set via INLINE STYLE on BOTH the wrapper div AND the
+// <img>, not via Tailwind. Two reasons (both gate findings):
+//   1. The wrapper itself needs the cap — if only the img is capped,
+//      the wrapper can still grow tall (e.g. when an SVG-as-img with
+//      no intrinsic dimensions stretches to fill its containing block
+//      in certain flex contexts), and the wrapper's vertical claim is
+//      what pushes Submit below the fold.
+//   2. Tailwind v4 arbitrary values containing CSS function commas
+//      (max-h-[min(40vh,320px)]) are unreliable in the JIT scanner;
+//      inline style is guaranteed to apply.
 //
 // Height-cap history:
-//   2026-05-23 first attempt — vh-only cap (max-h-[40vh] / max-h-[30vh]).
-//     Insufficient: on tall viewports (~1400px) 40vh = 560px, which is
-//     larger than the placeholder SVG's 400px natural height, so the cap
-//     never clamped and the image rendered full-size. Same gate finding
-//     resurfaced.
-//   2026-05-23 follow-up — combined min(vh, px) cap. The pixel ceiling
-//     (320px K-4, 240px G5-8) clamps the image on tall viewports where
-//     vh alone is too lenient; the vh floor still clamps on short
-//     viewports (~900px laptop, ~768px iPad portrait). Whichever bites
-//     first wins. object-contain + w-auto h-auto preserves aspect ratio
-//     when the height cap clamps the image; the rendered img may then
-//     be narrower than the wrapper's width budget, which is harmless
-//     (centered via mx-auto).
+//   2026-05-23 first attempt — vh-only cap (max-h-[40vh] / max-h-[30vh])
+//     via Tailwind. Insufficient on tall viewports: 40vh = 560px on
+//     1400px-tall viewport > the placeholder's 400px natural height,
+//     so cap never clamped.
+//   2026-05-23 follow-up #1 — combined min(vh, px) via Tailwind
+//     arbitrary class. Cap was on the <img> only; wrapper still
+//     unconstrained. Founder devtools inspection showed wrapper at
+//     ~901px tall regardless of img cap. Either the Tailwind min()
+//     arbitrary didn't compile, or the SVG-no-intrinsic-dims quirk
+//     stretched the img to fill the flex slot.
+//   2026-05-23 follow-up #2 (this rev) — inline style on wrapper +
+//     img, both with the same min(vh, px) cap. Plus explicit
+//     width="600" height="400" added to placeholder-grid.svg to give
+//     it intrinsic dimensions. Belt + suspenders + belt.
 //
 // Fallback behavior on image load failure (visual gate §5):
 //   required=true   → render inline error + Retry button
@@ -76,10 +88,9 @@ export function QuestionImage({ image, tier }: Props) {
 
   const sizeClass =
     tier === "K_4" ? "w-[60vw] max-w-[600px]" : "w-[40vw] max-w-[480px]";
-  const imgMaxHClass =
-    tier === "K_4"
-      ? "max-h-[min(40vh,320px)]"
-      : "max-h-[min(30vh,240px)]";
+  const maxHeightStyle: React.CSSProperties = {
+    maxHeight: tier === "K_4" ? "min(40vh, 320px)" : "min(30vh, 240px)",
+  };
 
   if (state === "error") {
     // image.required === true at this point (decorative case returned above).
@@ -109,7 +120,7 @@ export function QuestionImage({ image, tier }: Props) {
   const transitionClass = reduceMotion ? "" : "transition-opacity duration-200";
 
   return (
-    <div className={`relative ${sizeClass}`}>
+    <div className={`relative ${sizeClass}`} style={maxHeightStyle}>
       {state === "loading" && (
         <div
           className={`absolute inset-0 rounded-lg bg-sam-gray-light/40 ${
@@ -128,7 +139,8 @@ export function QuestionImage({ image, tier }: Props) {
         alt={image.alt}
         onLoad={() => setState("loaded")}
         onError={() => setState("error")}
-        className={`mx-auto block h-auto w-auto max-w-full rounded-lg object-contain ${imgMaxHClass} ${
+        style={maxHeightStyle}
+        className={`mx-auto block h-auto w-auto max-w-full rounded-lg object-contain ${
           state === "loaded" ? "opacity-100" : "opacity-0"
         } ${transitionClass}`}
       />
