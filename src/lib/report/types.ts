@@ -1,42 +1,30 @@
 /**
- * Atlas Assessment — Report data contract
+ * Atlas Assessment — Report data contract (reconciled to the shipped in-app report).
  *
- * Canonical type definitions for the renderer's input. Transcribed from
- * atlas-report-system-spec.md §4.6. The renderer consumes ReportContent; it
- * must be fully parent-readable, with nothing opaque to a non-technical reader.
+ * This is the SINGLE shared report contract. It describes the exact data the
+ * shipped /report components consume. LLM-narration fields (parent-friendly
+ * ledes, "What We Noticed" findings) are intentionally OMITTED here — they are
+ * added at roadmap Step 4 (Items #14/#15), not invented now.
+ *
+ * Composed from canonical types — does not redefine StrandMastery,
+ * AggregatedMisconception, etc. Import them from their source files.
  */
 
-export interface RadarVisualizationData {
-  axes: {
-    strand_id: string;
-    short_label: string; // truncated label for the radial layout
-    value: number; // 0-100
-    level: 'solid' | 'approaching' | 'developing';
-  }[];
-}
+import type { Strand } from "@/lib/engine/types";
+import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
+import type { StrandMastery } from "@/lib/report/strand-mastery";
+import type { Database } from "@/lib/supabase/database.types";
+import type { Tier } from "@/lib/tier/derive";
 
-export interface StrandRow {
-  strand_name: string; // full name
-  percentile_display: number;
-  level: 'solid' | 'approaching' | 'developing';
-  level_label: string; // display string, e.g. "Solid"
-}
+type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
+type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 
-export interface ReportFinding {
-  number: number; // 1, 2, 3 — display order
-  title: string; // headline sentence, declarative
-  observed: string; // "What we observed"
-  suggests: string; // "What it suggests"
-  matters: string; // "Why it matters"
-  focus: string; // "What we'd focus on"
-}
-
-export interface RecommendationAction {
-  number: number; // 1, 2, 3... — display order
-  action: string; // the bold action sentence
-  context: string; // one-line supporting context
-  unit_id?: string; // optional — curriculum unit this action starts, when applicable
-  addresses_finding_number?: number; // optional — finding this action responds to, when applicable
+export interface Recommendation {
+  strand: Strand;
+  level: HalfGradeLevel;
+  primary: string;
+  supplementary: string[]; // hidden v1 (RC3)
+  notes: string | null; // hidden v1 (RC4)
 }
 
 export interface ReportContent {
@@ -44,49 +32,29 @@ export interface ReportContent {
   tenant_id: string;
   generated_at: string; // ISO8601
 
-  // Header
   child: {
-    // Child's display name as shown in the report header.
-    // Demo: full name (e.g. "Aiden Park"). Live treatment TBD — may reduce to
-    // first name only, or first name + last initial.
-    display_name: string;
-    grade_label: string; // e.g. "Grade 3"
+    display_name: string; // demo: full name "Aiden Park"; live treatment TBD
+    grade_label: string; // "Grade 3"
   };
   metadata: {
-    assessed_date_display: string; // e.g. "May 19, 2026"
-    duration_display: string; // e.g. "14 minutes"
-    report_id: string; // e.g. "A-2026-051901"
+    assessed_date_display: string; // "May 19, 2026"
+    duration_display: string; // "14 minutes"
+    report_id: string; // "A-2026-051901"
   };
 
-  // Placement block
+  // Drives the time-flag banner + whether scores render at all (lock R5).
+  // ALWAYS present; value "normal" means render no banner.
+  time_flag: SessionTimeFlag; // unreliable | mixed | rushed | struggling | normal
+
   placement: {
-    level_display: string; // e.g. "S.A.M. Level 3"
+    sam_level: string; // pre-formatted "S.A.M. Level 3A" (samLevelLabel output)
+    overall_percentage: number; // 0..100, R1 hybrid (correct/attempted)
+    tier: Tier; // K_4 | G5_8
   };
 
-  // Strand performance
-  strand_performance: {
-    lede: string; // 1-2 sentence intro
-    radar_data: RadarVisualizationData;
-    detail_rows: StrandRow[]; // ordered for display
-  };
-
-  // Findings — 2-3 items, max 3
-  findings_section: {
-    heading: string; // default "What We Noticed"
-    lede: string;
-    findings: ReportFinding[];
-  };
-
-  // Recommendation — numbered action plan (3-5 items); design.md §5 "What To Do Next"
-  recommendation: {
-    lede: string;
-    actions: RecommendationAction[]; // 3-5 numbered action items, ordered for display
-  };
-
-  // Next steps
-  next_steps: {
-    paragraph: string;
-    cta_text: string;
-    cta_target: string; // URL or app deep link
-  };
+  strand_mastery: StrandMastery[]; // always 6, canonical STRAND_ORDER;
+  // feeds BOTH StrandRadar and StrandMap
+  misconceptions: AggregatedMisconception[]; // 0..3, occurrence desc; empty array
+  // is the ML1 positive-state signal — no separate flag
+  recommendations: Recommendation[]; // band-sorted (page-owned sort), strand-keyed
 }

@@ -15,20 +15,9 @@
 // supplementary[] and notes are intentionally hidden in v1
 // (RC3+RC4) — surface in v2 if pilot families ask.
 
-import type { Strand } from "@/lib/engine/types";
-import type { Database } from "@/lib/supabase/database.types";
+import type { Recommendation } from "@/lib/report/types";
 
 import { STRAND_LABELS } from "./strand-labels";
-
-type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
-
-interface Recommendation {
-  strand: Strand;
-  level: HalfGradeLevel;
-  primary: string;
-  supplementary: string[]; // hidden v1
-  notes: string | null; // hidden v1
-}
 
 interface RecommendationsCardProps {
   /** Already sorted by page.tsx: area_of_focus > progressing > mastery
