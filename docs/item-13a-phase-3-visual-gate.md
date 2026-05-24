@@ -76,30 +76,34 @@ Each section: **what to check** / **passes if**. Founder runs through these agai
 
 **Passes if.** Both tier variants display the image correctly with their respective chromes intact. No K-4-only or G5-8-only chrome leaks into the other tier. Image rendering is the only addition vs the current (no-image) layout.
 
-### 2. Sizing — viewport-relative caps (width AND height)
+### 2. Sizing — combined vh + px caps (width AND height)
 
-**What to check.** Image is bounded on BOTH axes so neither a wide source nor a tall source can crowd out the answer input + Submit button:
+**What to check.** Image is bounded on BOTH axes by a combined `min(vh, px)` cap so neither a tall viewport (where vh alone is too lenient) nor a short one (where px alone is too lenient) leaves the image oversized:
 
-- K-4 image: width ≈ 60% of viewport width, capped at **600 px**. Height capped at **40 vh** (40% of viewport height).
-- G5-8 image: width ≈ 40% of viewport width, capped at **480 px**. Height capped at **30 vh**.
-- Aspect ratio preserved via `object-contain` — whichever cap clamps first wins; the other dimension scales proportionally. Image never distorts.
+- K-4 image: width ≈ 60 vw, capped at **600 px**. Height capped at **min(40 vh, 320 px)** — whichever value is smaller wins.
+- G5-8 image: width ≈ 40 vw, capped at **480 px**. Height capped at **min(30 vh, 240 px)**.
+- Aspect ratio preserved via `object-contain` + `w-auto h-auto` — the cap that bites first clamps the image; the other dimension scales proportionally. Image never distorts.
 
-Vertical bound: the full question (prompt + image + answer choices + Submit) must fit within the viewport without scrolling on (a) a standard laptop landscape (~1440 × 900) and (b) iPad portrait (768 × 1024). The 40 vh / 30 vh caps were chosen to leave room for the answer area and Submit on the shortest standard target.
+Layout companion fix (same commit): the `<main>` element on QuestionShell.tsx switched from `items-center` to `items-start`, so when content exceeds main's available height the overflow goes downward only (the user scrolls to reach Submit) rather than splitting top-and-bottom (which previously hid both the top of the prompt AND the Submit button equally).
+
+Vertical bound: the full question (prompt + image + answer choices + Submit) must fit within the viewport without scrolling on (a) a standard laptop landscape (~1440 × 900) and (b) iPad portrait (768 × 1024). The pixel ceiling was tuned to keep the placeholder 600 × 400 SVG clamped on tall viewports where the vh value alone never fires.
 
 **Reference numbers (placeholder SVG, 600 × 400, aspect 3:2):**
 
-| Viewport | Tier | Width cap | Height cap | Final rendered |
+| Viewport | Tier | Width cap | Height cap (effective) | Final rendered |
 |---|---|---|---|---|
-| 1920 × 1080 desktop | K-4 | 600 px | 432 px | 600 × 400 (width caps first) |
-| 1440 × 900 laptop | K-4 | 600 px | 360 px | **540 × 360 (height caps first)** |
-| 1024 × 768 landscape tablet | K-4 | 600 px | 307 px | **460 × 307 (height caps first)** |
-| 768 × 1024 iPad portrait | K-4 | 460 px | 410 px | 460 × 307 (width caps first) |
-| 1440 × 900 laptop | G5-8 | 480 px | 270 px | **405 × 270 (height caps first)** |
-| 768 × 1024 iPad portrait | G5-8 | 307 px | 307 px | 307 × 205 (width caps first) |
+| 1920 × 1400 portrait monitor | K-4 | 600 px | **320 px (px ceiling)** | **480 × 320 (height caps first)** |
+| 1920 × 1080 desktop | K-4 | 600 px | **320 px (px ceiling)** | **480 × 320 (height caps first)** |
+| 1440 × 900 laptop | K-4 | 600 px | **320 px (px ceiling)** | **480 × 320 (height caps first)** |
+| 1024 × 768 landscape tablet | K-4 | 600 px | **307 px (vh floor)** | **460 × 307 (height caps first)** |
+| 768 × 1024 iPad portrait | K-4 | 460 px | 320 px (px ceiling) | 460 × 307 (width caps first, then aspect) |
+| 1920 × 1080 desktop | G5-8 | 480 px | **240 px (px ceiling)** | **360 × 240 (height caps first)** |
+| 1440 × 900 laptop | G5-8 | 480 px | **240 px (px ceiling)** | **360 × 240 (height caps first)** |
+| 768 × 1024 iPad portrait | G5-8 | 307 px | 240 px (px ceiling) | 307 × 205 (width caps first) |
 
-**Passes if.** Sizes match the table above within ±5%. Aspect ratio preserved (no squishing). On 1440 × 900 laptop and 768 × 1024 iPad portrait, the entire question — prompt, image, answers, Submit — is visible without vertical scrolling.
+**Passes if.** Sizes match the table above within ±5%. Aspect ratio preserved (no squishing). On 1440 × 900 laptop and 768 × 1024 iPad portrait, the entire question — prompt, image, answers, Submit — is visible without scrolling. On taller viewports (1080, 1400), the image is meaningfully smaller than 600 × 400 — never full-bleed.
 
-This section was tightened on 2026-05-23 after a gate finding: width-only caps let a 3:2 source image grow tall enough on standard laptop heights to push Submit below the fold. The height cap is now first-class.
+This section evolved through two gate findings on 2026-05-23. First attempt added vh-only height caps (40 vh / 30 vh); insufficient because on tall viewports (≥1000 px) the vh value exceeded the placeholder's 400 px natural height, so the cap never clamped. Follow-up combined the vh value with a pixel ceiling (320 px / 240 px), which bites first on tall viewports while the vh value still bites on short ones. Layout `items-center` → `items-start` change also landed in the follow-up.
 
 ### 3. Layout — position relative to prompt and input
 

@@ -12,18 +12,23 @@
 // deferred to Phase 3.5 per the doc amendment in this same commit).
 //
 // Tier-aware sizing (visual gate §2):
-//   K-4    → w-[60vw], max-w-[600px], max-h-[40vh] on the <img>
-//   G5-8   → w-[40vw], max-w-[480px], max-h-[30vh] on the <img>
+//   K-4    → w-[60vw], max-w-[600px], max-h-[min(40vh,320px)] on the <img>
+//   G5-8   → w-[40vw], max-w-[480px], max-h-[min(30vh,240px)] on the <img>
 //
-// Height cap added 2026-05-23 after founder gate finding: width-only
-// caps let near-square or 3:2 source images grow tall enough to push
-// answers + Submit below the fold on standard laptop viewports
-// (~900px tall) and iPad-landscape (1024×768). The max-h cap lives on
-// the <img> itself, not the wrapper, so the wrapper's natural height
-// shrinks with the rendered image. `object-contain` + `w-auto h-auto`
-// preserves aspect ratio when the height cap clamps the image; the
-// rendered img may then be narrower than the wrapper's width budget,
-// which is harmless (centered via mx-auto).
+// Height-cap history:
+//   2026-05-23 first attempt — vh-only cap (max-h-[40vh] / max-h-[30vh]).
+//     Insufficient: on tall viewports (~1400px) 40vh = 560px, which is
+//     larger than the placeholder SVG's 400px natural height, so the cap
+//     never clamped and the image rendered full-size. Same gate finding
+//     resurfaced.
+//   2026-05-23 follow-up — combined min(vh, px) cap. The pixel ceiling
+//     (320px K-4, 240px G5-8) clamps the image on tall viewports where
+//     vh alone is too lenient; the vh floor still clamps on short
+//     viewports (~900px laptop, ~768px iPad portrait). Whichever bites
+//     first wins. object-contain + w-auto h-auto preserves aspect ratio
+//     when the height cap clamps the image; the rendered img may then
+//     be narrower than the wrapper's width budget, which is harmless
+//     (centered via mx-auto).
 //
 // Fallback behavior on image load failure (visual gate §5):
 //   required=true   → render inline error + Retry button
@@ -71,7 +76,10 @@ export function QuestionImage({ image, tier }: Props) {
 
   const sizeClass =
     tier === "K_4" ? "w-[60vw] max-w-[600px]" : "w-[40vw] max-w-[480px]";
-  const imgMaxHClass = tier === "K_4" ? "max-h-[40vh]" : "max-h-[30vh]";
+  const imgMaxHClass =
+    tier === "K_4"
+      ? "max-h-[min(40vh,320px)]"
+      : "max-h-[min(30vh,240px)]";
 
   if (state === "error") {
     // image.required === true at this point (decorative case returned above).

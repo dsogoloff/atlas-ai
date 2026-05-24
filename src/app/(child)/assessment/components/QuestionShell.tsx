@@ -69,7 +69,7 @@ export function QuestionShell({
           </div>
         </header>
 
-        <main className="flex flex-1 items-center justify-center px-6 py-12">
+        <main className="flex flex-1 items-start justify-center px-6 py-12">
           <div className="flex w-full max-w-3xl flex-col items-center gap-12">
             <div className="text-center">
               <h1 className="font-display-child text-3xl font-bold leading-tight text-sam-navy md:text-4xl">
@@ -106,7 +106,7 @@ export function QuestionShell({
         </div>
       </div>
 
-      <main className="flex flex-1 items-center justify-center px-6 py-10">
+      <main className="flex flex-1 items-start justify-center px-6 py-10">
         <div className="flex w-full max-w-3xl flex-col items-center gap-10">
           <header className="text-center">
             <h1 className="font-display-child text-3xl font-bold leading-tight text-sam-navy md:text-4xl">
