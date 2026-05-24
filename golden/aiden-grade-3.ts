@@ -140,22 +140,34 @@ export const aidenGrade3Report: ReportContent = {
 
   recommendation: {
     lede:
-      `Based on Aiden's overall performance and the two findings above, we ` +
-      `recommend the following placement and starting points within the ` +
-      `S.A.M. curriculum.`,
-    placement_paragraph:
-      `Place Aiden at <strong>S.A.M. Level 3</strong>, with a focused start ` +
-      `on two units that directly address what the assessment surfaced:`,
-    starting_units: [
+      `A short, ordered plan based on Aiden's placement and the two findings ` +
+      `above.`,
+    actions: [
       {
-        unit_name: 'Fraction Foundations',
-        addresses_finding_number: 1,
-        unit_id: 'unit_fraction_foundations',
+        number: 1,
+        action: 'Start at S.A.M. Level 3.',
+        context: 'Aiden is ready for the conceptual content at this level.',
       },
       {
-        unit_name: 'Bar Model Introduction',
-        addresses_finding_number: 2,
+        number: 2,
+        action: 'Begin with Fraction Foundations.',
+        context:
+          'To rebuild fraction sense before it compounds into later topics.',
+        unit_id: 'unit_fraction_foundations',
+        addresses_finding_number: 1,
+      },
+      {
+        number: 3,
+        action: 'Add Bar Model Introduction.',
+        context:
+          'To replace keyword-driven guessing with structured problem solving.',
         unit_id: 'unit_bar_model_introduction',
+        addresses_finding_number: 2,
+      },
+      {
+        number: 4,
+        action: 'Re-assess in 8–10 weeks.',
+        context: 'To confirm progress and adjust the plan.',
       },
     ],
   },

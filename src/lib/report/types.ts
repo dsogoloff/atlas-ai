@@ -31,10 +31,12 @@ export interface ReportFinding {
   focus: string; // "What we'd focus on"
 }
 
-export interface StartingUnit {
-  unit_name: string;
-  addresses_finding_number: number; // links unit to a finding
-  unit_id: string; // refs curriculum
+export interface RecommendationAction {
+  number: number; // 1, 2, 3... — display order
+  action: string; // the bold action sentence
+  context: string; // one-line supporting context
+  unit_id?: string; // optional — curriculum unit this action starts, when applicable
+  addresses_finding_number?: number; // optional — finding this action responds to, when applicable
 }
 
 export interface ReportContent {
@@ -75,11 +77,10 @@ export interface ReportContent {
     findings: ReportFinding[];
   };
 
-  // Recommendation
+  // Recommendation — numbered action plan (3-5 items); design.md §5 "What To Do Next"
   recommendation: {
     lede: string;
-    placement_paragraph: string; // contains inline <strong> markup — rendered as raw HTML
-    starting_units: StartingUnit[];
+    actions: RecommendationAction[]; // 3-5 numbered action items, ordered for display
   };
 
   // Next steps
