@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "storage:seed": "node scripts/upload-dev-storage-seed.mjs",
-    "convert:extract": "tsx scripts/conversion/stage1-extract.mts"
+    "convert:extract": "tsx scripts/conversion/stage1-extract.mts",
+    "convert:segment": "tsx scripts/conversion/stage2-segment.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
