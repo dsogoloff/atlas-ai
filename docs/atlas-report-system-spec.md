@@ -10,7 +10,7 @@
 
 ### 1.1 Purpose
 
-This document specifies the system that produces the Atlas Assessment Report — the parent-facing artifact a family receives after completing an at-home assessment. The reference output is `atlas-sample-report.html` (the canonical visual spec), and the canonical pipeline output is the `ReportContent` schema defined in §4.6.
+This document specifies the system that produces the Atlas Assessment Report — the parent-facing artifact a family receives after completing an at-home assessment. The visual reference is `design.md` §5 (Screen 7) and the shipped in-app report itself; `atlas-sample-report.html` is an early, now-drifted mockup retained for reference only. The report's data contract is `ReportContent` (§4.6), defined canonically in code.
 
 ### 1.2 Scope
 
@@ -126,7 +126,7 @@ If the 25s budget is exceeded, the in-app experience shows a "your report is bei
 
 ### 3.3 Storage
 
-Each pipeline run persists every intermediate artifact (`PlacementResult`, `MisconceptionFinding[]`, `ReportContent`, rendered HTML, rendered PDF) keyed by `session_id` in Supabase Postgres + Supabase Storage. This enables (a) replay of any stage without rerunning earlier stages, (b) audit trail per regulatory requirement, (c) downstream analytics.
+Each pipeline run persists every intermediate artifact (`PlacementResult`, `MisconceptionFinding[]`, `ReportContent`, rendered HTML) keyed by `session_id` in Supabase Postgres + Supabase Storage. This enables (a) replay of any stage without rerunning earlier stages, (b) audit trail per regulatory requirement, (c) downstream analytics.
 
 ---
 
@@ -214,6 +214,14 @@ interface AbilityEstimate {
 
 ### 4.4 PlacementResult (Stage 1 output)
 
+> **Status note (2026-05-24):** §4.4–4.5 describe Stage 1/2 engine and
+> classifier outputs. These have NOT yet been reconciled to current code —
+> the engine is mid-migration (Item #12 Phases 4–7, on hold until the SAM
+> call). Note in particular that the shipped report displays a plain
+> correct/attempted **percentage** with 75/50 band thresholds (see §4.6
+> `StrandMastery`), not a percentile. Reconcile §4.4–4.5 once the engine
+> taxonomy migration stabilises.
+
 ```typescript
 interface PlacementResult {
   session_id: string;
@@ -278,92 +286,100 @@ interface MisconceptionEvidence {
 }
 ```
 
-### 4.6 ReportContent (Stage 3 output / Stage 4 input)
+### 4.6 ReportContent — the report data contract
 
-This is the canonical intermediate that the renderer consumes. It MUST be fully parent-readable; nothing here is opaque to a non-technical reader.
+`ReportContent` is the single shared data contract for the Atlas Assessment
+report. It is the exact data the shipped in-app report
+(`src/app/(parent)/report/`) renders, and the contract a future email /
+signed-URL delivery path (§8) will reuse — there is one report and one
+contract.
+
+The canonical definition lives in code: `src/lib/report/types.ts`
+(commit `e334caf`). This section mirrors it for reference; on any
+discrepancy, the code wins.
+
+`ReportContent` deliberately contains **no narrative prose fields**.
+Parent-facing ledes and a "What We Noticed" findings section are a planned
+LLM-narration upgrade (§7); whether that narration extends `ReportContent`
+or populates a separate adjacent type is an open decision (§14).
 
 ```typescript
 interface ReportContent {
   session_id: string;
   tenant_id: string;
-  generated_at: string;
+  generated_at: string;                  // ISO8601
 
   // Header
   child: {
-    display_name: string;              // child's display name in the report header — full name for demo; live treatment TBD
-    grade_label: string;               // e.g. "Grade 3"
+    display_name: string;                // shown in the report header — full name for the SAM demo ("Aiden Park"); live treatment TBD
+    grade_label: string;                 // e.g. "Grade 3"
   };
   metadata: {
-    assessed_date_display: string;     // e.g. "May 19, 2026"
-    duration_display: string;          // e.g. "14 minutes"
-    report_id: string;                 // e.g. "A-2026-051901"
+    assessed_date_display: string;       // e.g. "May 19, 2026"
+    duration_display: string;            // e.g. "14 minutes"
+    report_id: string;                   // e.g. "A-2026-051901"
   };
 
-  // Placement block
+  // Session reliability — drives the time-flag banner and whether scores
+  // render at all (lock R5). ALWAYS present; "normal" renders no banner.
+  time_flag: SessionTimeFlag;
+
+  // Placement
   placement: {
-    level_display: string;             // e.g. "S.A.M. Level 3"
+    sam_level: string;                   // pre-formatted, e.g. "S.A.M. Level 3"
+    overall_percentage: number;          // 0-100, R1 hybrid (correct / attempted)
+    tier: Tier;                          // 'K_4' | 'G5_8'
   };
 
-  // Strand performance
-  strand_performance: {
-    lede: string;                      // 1-2 sentence intro
-    radar_data: RadarVisualizationData;
-    detail_rows: StrandRow[];          // ordered for display
-  };
+  // Strand performance — always 6 rows in canonical STRAND_ORDER. This one
+  // array feeds BOTH the radar and the strand-bar map.
+  strand_mastery: StrandMastery[];
 
-  // Findings — 2-3 items, max 3
-  findings_section: {
-    heading: string;                   // default "What We Noticed"
-    lede: string;
-    findings: ReportFinding[];
-  };
+  // Misconceptions — 0-3 rows, occurrence-count descending. An empty array
+  // IS the positive-state signal (lock ML1); there is no separate flag.
+  misconceptions: AggregatedMisconception[];
 
-  // Recommendation — numbered action plan (3-5 items); design.md §5 "What To Do Next"
-  recommendation: {
-    lede: string;
-    actions: RecommendationAction[];   // 3-5 numbered action items, ordered for display
-  };
+  // Recommendations — strand-keyed, pre-sorted by the page
+  // (band priority, then STRAND_ORDER as tiebreak).
+  recommendations: Recommendation[];
+}
+```
 
-  // Next steps
-  next_steps: {
-    paragraph: string;
-    cta_text: string;
-    cta_target: string;                // URL or app deep link
-  };
+Supporting types — all mirror canonical code definitions; `src/lib/report/`
+is authoritative.
+
+```typescript
+// src/lib/report/strand-mastery.ts
+type MasteryBand = 'mastery' | 'progressing' | 'area_of_focus' | 'no_data';
+
+interface StrandMastery {
+  strand: Strand;
+  correct: number;
+  total: number;
+  percentage: number;                    // integer; 0 when total === 0 (no_data)
+  band: MasteryBand;                     // mastery ≥ 75 / progressing 50-74 / area_of_focus < 50 / no_data when total === 0
 }
 
-interface RadarVisualizationData {
-  axes: {
-    strand_id: string;
-    short_label: string;               // e.g. "Number Sense" (truncated for radial layout)
-    value: number;                     // 0-100
-    level: 'solid' | 'approaching' | 'developing';
-  }[];
+// src/lib/report/misconception-aggregate.ts
+interface AggregatedMisconception {
+  code: string;
+  label: string;
+  description: string;
+  strand: Strand;
+  occurrences: number;                   // responses that flagged this code (deduped within each response)
 }
 
-interface StrandRow {
-  strand_name: string;                 // full name
-  percentile_display: number;
-  level: 'solid' | 'approaching' | 'developing';
-  level_label: string;                 // display string (e.g. "Solid", "Developing")
+// Recommendation — exported from src/lib/report/types.ts
+interface Recommendation {
+  strand: Strand;
+  level: HalfGradeLevel;                 // parent-facing placement level for the strand
+  primary: string;                       // primary_recommendation copy
+  supplementary: string[];               // hidden in v1 (locks RC3/RC4)
+  notes: string | null;                  // hidden in v1
 }
 
-interface ReportFinding {
-  number: number;                      // 1, 2, 3 (display order)
-  title: string;                       // headline sentence, declarative
-  observed: string;                    // "What we observed" — specific, evidence-grounded
-  suggests: string;                    // "What it suggests" — interpretation
-  matters: string;                     // "Why it matters" — connection to learning
-  focus: string;                       // "What we'd focus on" — remediation, S.A.M.-aware
-}
-
-interface RecommendationAction {
-  number: number;                      // 1, 2, 3... — display order
-  action: string;                      // the bold action sentence
-  context: string;                     // one-line supporting context
-  unit_id?: string;                    // optional — curriculum unit this action starts, when applicable
-  addresses_finding_number?: number;   // optional — finding this action responds to, when applicable
-}
+// SessionTimeFlag — DB enum: 'unreliable' | 'mixed' | 'rushed' | 'struggling' | 'normal'
+// Tier — 'K_4' | 'G5_8'
 ```
 
 ---
@@ -486,6 +502,12 @@ Only `medium` and `high` confidence findings reach the report.
 
 ### 7.1 Responsibilities
 
+> **Status note (2026-05-24):** §7 describes planned work (report roadmap
+> Step 4). The shipped report renders without narration. Whether the
+> narrative generator extends `ReportContent` with prose fields or populates
+> a separate adjacent type is an open decision (§14). Field names below are
+> illustrative of intended narration, not current `ReportContent` fields.
+
 Convert structured findings + placement data into the `ReportContent` schema — specifically, the parent-readable text fields (ledes, finding bodies, recommendation actions, next-steps paragraph).
 
 ### 7.2 Model
@@ -541,6 +563,12 @@ Failures trigger one retry; second failure → fallback paragraph generation (§
 ## 8. Stage 4: Report Renderer & Delivery
 
 ### 8.1 Responsibilities
+
+> **Status note (2026-05-24):** the report renderer already exists — it is
+> the shipped in-app `/report` route, not a separate Nunjucks template. The
+> from-scratch renderer once described in §8.2 is dropped; `atlas-report.html.njk`
+> will not be built. Stage 4's remaining scope is delivery only: add email +
+> signed-URL access to the existing shipped report (report roadmap Step 5).
 
 - Render `ReportContent` to HTML using the canonical template
 - Persist the rendered HTML to Supabase Storage
@@ -806,6 +834,7 @@ These are decisions deliberately deferred to product + engineering input during 
 4. **Parent re-share / forward mechanics** — does a unique parent-shareable URL persist beyond 24h? Open
 5. **Assessor (centre director) view** of the same data — separate report variant or a different surface entirely? Open
 6. **Continuous learning** — when (if ever) do we feed real session data back into prompt iteration? Open, requires a privacy review
+7. **Narration ↔ ReportContent relationship** — does LLM narration (report roadmap Step 4) extend `ReportContent` with prose fields, or populate a separate adjacent type rendered alongside it? Deferred to Step 4.
 
 ---
 
