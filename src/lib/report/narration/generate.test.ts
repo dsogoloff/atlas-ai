@@ -110,4 +110,38 @@ describe("generateReportNarration", () => {
       result.generated_at,
     );
   });
+
+  it("resolves to status:'failed' with prose absent when Sonnet returns shape-invalid JSON", async () => {
+    // Well-formed JSON but missing a required prose field — exercises the
+    // Piece 3 validation gate. The brief: validation failure must NOT throw;
+    // it resolves to a status:'failed' ReportNarration so the report
+    // renderer falls back to data-only across all four surfaces.
+    const malformed = {
+      placement_line: "Has placement.",
+      strand_lede: "Has strand lede.",
+      misconceptions_lede: "Has misconceptions.",
+      // recommendations_lede missing
+    };
+    mockCallSonnet.mockResolvedValue({
+      text: JSON.stringify(malformed),
+      model: "anthropic/claude-sonnet-4-6",
+      tokens: { input: 100, output: 50 },
+      elapsedMs: 1234,
+    });
+
+    const result = await generateReportNarration(aidenGrade3Report);
+
+    expect(result.status).toBe("failed");
+    expect(result.session_id).toBe(aidenGrade3Report.session_id);
+    expect(result.tenant_id).toBe(aidenGrade3Report.tenant_id);
+    expect(result.model).toBe("anthropic/claude-sonnet-4-6");
+    expect(result.placement_line).toBeUndefined();
+    expect(result.strand_lede).toBeUndefined();
+    expect(result.misconceptions_lede).toBeUndefined();
+    expect(result.recommendations_lede).toBeUndefined();
+    // generated_at is still stamped on failed rows so the failure has audit.
+    expect(new Date(result.generated_at).toISOString()).toBe(
+      result.generated_at,
+    );
+  });
 });

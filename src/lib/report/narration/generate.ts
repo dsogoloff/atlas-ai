@@ -2,40 +2,33 @@
 //
 // Reads a ReportContent, builds the Sonnet prompt via ./prompt, calls
 // Sonnet via ./llmClient, defensively strips markdown code fences if the
-// model wrapped its output, JSON-parses the response, and assembles a
-// ReportNarration.
+// model wrapped its output, JSON-parses the response, runs the Piece 3
+// schema gate via ./validate, and assembles a ReportNarration.
 //
-// No schema validation here beyond JSON.parse success — that is Piece 3
-// (the schema gate). The deliberate sequence is generate -> validate ->
-// gate: keeping the parse-vs-validate split testable means a malformed
-// generation surfaces as a typed value Piece 3 can reject cleanly, rather
-// than as an exception thrown deep inside the SDK.
-//
-// Error modes:
-//   * JSON.parse failure throws — caller / Piece 3 catches and writes
-//     status='failed' on the report_narrations row.
-//   * callSonnet's throw on persistent live-mode failure propagates.
+// Failure classes:
+//   * Validation failure (parse succeeded but shape is invalid — missing
+//     field, wrong type, empty after trim, over-length): RESOLVES to a
+//     status:'failed' ReportNarration with all four prose fields absent.
+//     This is the DESIGNED degraded path — the report renderer falls back
+//     to data-only output per surface.
+//   * JSON.parse error: THROWS — caller handles (different failure class,
+//     e.g. fenced output the strip missed, or the model emitting non-JSON
+//     entirely). callSonnet failures (network, API, timeout) also throw.
 
 import type { ReportContent, ReportNarration } from "@/lib/report/types";
 
 import { callSonnet } from "./llmClient";
 import { buildNarrationPrompt } from "./prompt";
+import { validateNarration } from "./validate";
 
-/** Defensively strip markdown code fences from the model output. The
- *  system prompt instructs JSON-only, but real models occasionally wrap
- *  output in ```json ... ``` or ``` ... ``` despite explicit instructions.
- *  Strip a single outer fence pair if present before JSON.parse. */
+/** Defensively strip a single outer markdown code fence pair from the model
+ *  output. The system prompt instructs JSON-only, but models occasionally
+ *  wrap output in ```json ... ``` or ``` ... ``` despite explicit
+ *  instructions. Strip then JSON.parse. */
 function stripFences(text: string): string {
   const trimmed = text.trim();
   const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   return fenced ? fenced[1].trim() : trimmed;
-}
-
-interface ParsedNarrationFields {
-  placement_line?: string;
-  strand_lede?: string;
-  misconceptions_lede?: string;
-  recommendations_lede?: string;
 }
 
 export async function generateReportNarration(
@@ -44,7 +37,20 @@ export async function generateReportNarration(
   const { system, prompt } = buildNarrationPrompt(content);
   const result = await callSonnet(system, prompt);
 
-  const parsed = JSON.parse(stripFences(result.text)) as ParsedNarrationFields;
+  // JSON.parse throws on malformed JSON — let it propagate (caller's job).
+  // Successful parse but shape-invalid falls through to the validation gate.
+  const parsed: unknown = JSON.parse(stripFences(result.text));
+
+  const validation = validateNarration(parsed);
+  if (!validation.valid) {
+    return {
+      session_id: content.session_id,
+      tenant_id: content.tenant_id,
+      generated_at: new Date().toISOString(),
+      model: result.model,
+      status: "failed",
+    };
+  }
 
   return {
     session_id: content.session_id,
@@ -52,9 +58,9 @@ export async function generateReportNarration(
     generated_at: new Date().toISOString(),
     model: result.model,
     status: "ok",
-    placement_line: parsed.placement_line,
-    strand_lede: parsed.strand_lede,
-    misconceptions_lede: parsed.misconceptions_lede,
-    recommendations_lede: parsed.recommendations_lede,
+    placement_line: validation.prose.placement_line,
+    strand_lede: validation.prose.strand_lede,
+    misconceptions_lede: validation.prose.misconceptions_lede,
+    recommendations_lede: validation.prose.recommendations_lede,
   };
 }
