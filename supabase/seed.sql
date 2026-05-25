@@ -318,68 +318,13 @@ from t,
   ) as v(strand, primary_rec, supplementary, notes);
 
 -- =============================================================================
--- Relational strand taxonomy (Item #12 Phase 2)
+-- Relational strand taxonomy seed REMOVED (Item #12 Phase 9 Part A)
 -- =============================================================================
--- MIRRORED FROM: supabase/migrations/20260519000000_strand_relational_taxonomy.sql
---
--- Per AGENTS.md §11: the migration's tenant-scoped strands +
--- strand_cohorts INSERTs are no-ops in dev because `supabase db reset`
--- runs migrations BEFORE seed.sql creates the inspirea_singapore_math
--- tenant. The VALUES below are duplicated VERBATIM from the migration.
--- Both must stay in sync. Both use ON CONFLICT DO NOTHING so neither
--- duplicates rows if both ever effectively run against the same DB.
---
--- See migration file header for the cohort cross-join rationale and
--- the v2 evolution notes.
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-insert into strands (id, tenant_id, kind, parent_strand_id, display_name, sort_order)
-select v.id, t.id, v.kind, v.parent_strand_id, v.display_name, v.sort_order
-from t,
-  (values
-    ('number_algebra',         'moe',  null::text,             'Number and Algebra',       10),
-    ('measurement_geometry',   'moe',  null::text,             'Measurement and Geometry', 20),
-    ('statistics',             'moe',  null::text,             'Statistics',               30),
-    ('number_sense',           'band', 'number_algebra',       'Number Sense',             11),
-    ('operations_algorithms',  'band', 'number_algebra',       'Operations & Algorithms',  12),
-    ('fractions_decimals',     'band', 'number_algebra',       'Fractions & Decimals',     13),
-    ('measurement',            'band', 'measurement_geometry', 'Measurement',              21),
-    ('geometry',               'band', 'measurement_geometry', 'Geometry',                 22),
-    ('data_statistics',        'band', 'statistics',           'Data & Statistics',        31)
-  ) as v(id, kind, parent_strand_id, display_name, sort_order)
-on conflict (id) do nothing;
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-insert into strand_cohorts (strand_id, cohort_id, tenant_id)
-select v.strand_id, v.cohort_id, t.id
-from t,
-  (values
-    ('number_sense',           'prek_1'),
-    ('number_sense',           'g2_4'),
-    ('number_sense',           'g5_6'),
-    ('number_sense',           'g7_plus'),
-    ('operations_algorithms',  'prek_1'),
-    ('operations_algorithms',  'g2_4'),
-    ('operations_algorithms',  'g5_6'),
-    ('operations_algorithms',  'g7_plus'),
-    ('fractions_decimals',     'prek_1'),
-    ('fractions_decimals',     'g2_4'),
-    ('fractions_decimals',     'g5_6'),
-    ('fractions_decimals',     'g7_plus'),
-    ('measurement',            'prek_1'),
-    ('measurement',            'g2_4'),
-    ('measurement',            'g5_6'),
-    ('measurement',            'g7_plus'),
-    ('geometry',               'prek_1'),
-    ('geometry',               'g2_4'),
-    ('geometry',               'g5_6'),
-    ('geometry',               'g7_plus'),
-    ('data_statistics',        'prek_1'),
-    ('data_statistics',        'g2_4'),
-    ('data_statistics',        'g5_6'),
-    ('data_statistics',        'g7_plus')
-  ) as v(strand_id, cohort_id)
-on conflict (strand_id, cohort_id) do nothing;
+-- The old flat-taxonomy `strands`, `strand_cohorts`, and `misconception_strands`
+-- tables were dropped in 20260525000004_drop_old_flat_taxonomy.sql. The
+-- corresponding seed blocks (mirrored from 20260519000000 and 20260520000000)
+-- are no longer relevant — those migration files remain as history; this
+-- seed file no longer carries the mirrored INSERTs.
 
 -- =============================================================================
 -- S.A.M. Level 2 v1 content (11 founder-approved items from Item #11).
@@ -565,30 +510,13 @@ from t
 on conflict (tenant_id, external_id) do nothing;
 
 -- =============================================================================
--- Item #12 Phase 3 — backfill relational strand columns (dev/CI write path)
+-- Strand-relational backfill REMOVED (Item #12 Phase 9 Part A)
 -- =============================================================================
--- MIRRORED FROM: supabase/migrations/20260520000000_backfill_strand_relational_columns.sql
--- Per AGENTS.md §11: the migration version is a no-op during
--- `supabase db reset` because the source tables (questions,
--- curriculum_recommendations, misconceptions) are still empty when
--- migrations run. The three statements below are kept verbatim so this
--- file produces a fully backfilled DB after `db reset`.
---
--- Keep these three statements byte-for-byte identical to the migration.
--- Cast safety + idempotency notes live in the migration header.
-
-update questions
-set strand_id_new = strand::text
-where strand_id_new is null;
-
-update curriculum_recommendations
-set strand_id_new = strand::text
-where strand_id_new is null;
-
-insert into misconception_strands (misconception_id, strand_id, tenant_id)
-select id, strand::text, tenant_id
-from misconceptions
-on conflict (misconception_id, strand_id) do nothing;
+-- questions.strand_id_new, curriculum_recommendations.strand_id_new, and the
+-- misconception_strands join table were dropped in
+-- 20260525000004_drop_old_flat_taxonomy.sql. The Phase 3 backfill block
+-- mirrored from 20260520000000_backfill_strand_relational_columns.sql is
+-- no longer relevant. Migration file remains as history.
 
 -- =============================================================================
 -- V2026 taxonomy seed (Item #12 Phase 6 + Phase 7 Part A)
