@@ -58,3 +58,41 @@ export interface ReportContent {
   // is the ML1 positive-state signal — no separate flag
   recommendations: Recommendation[]; // band-sorted (page-owned sort), strand-keyed
 }
+
+// =============================================================================
+// ReportNarration — the LLM-generated prose layer, kept separate from
+// ReportContent. ReportContent is deterministic engine data; ReportNarration
+// is generated, fallible prose. The two join by session_id; the renderer
+// degrades each surface to data-only when its prose field is absent.
+// =============================================================================
+
+/**
+ * ReportNarration — LLM-generated parent-facing prose for the report.
+ *
+ * Deliberately SEPARATE from ReportContent: ReportContent is deterministic
+ * engine data; ReportNarration is generated, fallible prose. One row per
+ * session, joined by session_id. Every prose field is independently optional
+ * — the report renders each surface data-only when its field is absent, so a
+ * missing or partial narration degrades gracefully with no special handling.
+ */
+export interface ReportNarration {
+  session_id: string;
+  tenant_id: string;
+  generated_at: string; // ISO8601
+  model: string; // e.g. "claude-sonnet-..." — audit
+  status: "ok" | "failed"; // 'failed' rows may be written for audit; treat prose as absent
+
+  // One warm sentence shown under the S.A.M. placement level.
+  placement_line?: string;
+
+  // 1-2 sentence intro to the strand radar + bar section.
+  strand_lede?: string;
+
+  // 1-2 sentence framing for the misconception cards. Generation writes the
+  // appropriate version depending on whether any misconceptions were detected
+  // (including the positive "none detected" case).
+  misconceptions_lede?: string;
+
+  // 1-2 sentence intro to the recommendations action list.
+  recommendations_lede?: string;
+}
