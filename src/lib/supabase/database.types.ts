@@ -518,6 +518,7 @@ export type Database = {
       questions: {
         Row: {
           content: Json
+          content_id: string | null
           created_at: string
           difficulty: number
           external_id: string | null
@@ -536,6 +537,7 @@ export type Database = {
         }
         Insert: {
           content: Json
+          content_id?: string | null
           created_at?: string
           difficulty: number
           external_id?: string | null
@@ -554,6 +556,7 @@ export type Database = {
         }
         Update: {
           content?: Json
+          content_id?: string | null
           created_at?: string
           difficulty?: number
           external_id?: string | null
@@ -571,6 +574,13 @@ export type Database = {
           word_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "questions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "tax_content"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "questions_strand_id_new_fkey"
             columns: ["strand_id_new"]

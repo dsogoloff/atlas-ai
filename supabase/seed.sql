@@ -829,3 +829,78 @@ from t, (values
   ('l6-data_representation-2',   'data_representation', 'l6',  'Word Problems',                                                                                                  2, false)
 ) as v(code, sub_strand_code, level_code, name, display_order, mvp)
 on conflict (tenant_id, code) do nothing;
+
+-- =============================================================================
+-- questions.content_id backfill (Item #12 Phase 7 Part B)
+-- =============================================================================
+-- MIRRORED FROM: supabase/migrations/20260525000003_bridge_questions_to_tax_content.sql
+--
+-- AGENTS.md §11: the migration's UPDATE runs against ZERO rows during
+-- `supabase db reset` because all question seed migrations are themselves
+-- tenant-CTE no-ops at migration time (questions only exist after seed.sql
+-- runs). The migration's RAISE NOTICE shows total=0 in dev.
+--
+-- We re-run the same UPDATE + summary here, after the questions are
+-- seeded, so the dev DB matches what prod would look like post-migration.
+-- Keep the UPDATE + DO blocks byte-identical to the migration.
+
+update questions q
+set content_id = tc.id
+from tax_content tc
+join tax_sub_strands ss
+  on ss.id = tc.sub_strand_id and ss.tenant_id = tc.tenant_id
+join tax_levels tl
+  on tl.id = tc.level_id and tl.tenant_id = tc.tenant_id
+where tc.tenant_id = q.tenant_id
+  and ss.code = case q.strand::text
+    when 'geometry'        then 'geometry'
+    when 'measurement'     then 'measurement'
+    when 'data_statistics' then 'data_representation'
+  end
+  and tl.code = case q.level::text
+    when '1A' then 'l1' when '1B' then 'l1'
+    when '2A' then 'l2' when '2B' then 'l2'
+    when '3A' then 'l3' when '3B' then 'l3'
+    when '4A' then 'l4' when '4B' then 'l4'
+    when '5A' then 'l5' when '5B' then 'l5'
+    when '6A' then 'l6' when '6B' then 'l6'
+  end
+  and 1 = (
+    select count(*) from tax_content tc2
+    where tc2.tenant_id = q.tenant_id
+      and tc2.level_id = tl.id
+      and tc2.sub_strand_id = ss.id
+  );
+
+do $$
+declare
+  total_count        int;
+  matched_count      int;
+  null_count         int;
+  null_strand_skip   int;
+  null_level_oor     int;
+  null_pair_ambig    int;
+begin
+  select count(*) into total_count   from questions;
+  select count(*) into matched_count from questions where content_id is not null;
+  null_count := total_count - matched_count;
+
+  select count(*) into null_strand_skip
+    from questions
+    where content_id is null
+      and strand::text not in ('geometry','measurement','data_statistics');
+
+  select count(*) into null_level_oor
+    from questions
+    where content_id is null
+      and strand::text in ('geometry','measurement','data_statistics')
+      and level::text not in ('1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B');
+
+  null_pair_ambig := null_count - null_strand_skip - null_level_oor;
+
+  raise notice '[questions content_id backfill] total=% matched=% null=%',
+    total_count, matched_count, null_count;
+  raise notice '[questions content_id backfill] null breakdown: strand-not-mapped=% level-out-of-range=% pair-has-multiple-content=%',
+    null_strand_skip, null_level_oor, null_pair_ambig;
+end
+$$;
