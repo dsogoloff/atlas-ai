@@ -587,15 +587,6 @@ export type Database = {
           },
         ]
       }
-      // ─── MANUAL ADDITION — pending regen ─────────────────────────────
-      // Mirrors migration 20260525000000_add_report_narrations.sql. This
-      // block was added by hand because database.types.ts hasn't been
-      // regenerated since the migration landed (commit 8303f21). When the
-      // founder next runs
-      //   supabase gen types typescript --local > src/lib/supabase/database.types.ts
-      // this file will be re-emitted and this block will be replaced with
-      // the generator's equivalent (this comment goes away with it).
-      // ─────────────────────────────────────────────────────────────────
       report_narrations: {
         Row: {
           generated_at: string
@@ -800,6 +791,197 @@ export type Database = {
           },
           {
             foreignKeyName: "strands_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_content: {
+        Row: {
+          code: string
+          created_at: string
+          display_order: number
+          id: string
+          level_id: string
+          mvp: boolean
+          name: string
+          sub_strand_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          display_order: number
+          id?: string
+          level_id: string
+          mvp: boolean
+          name: string
+          sub_strand_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          level_id?: string
+          mvp?: boolean
+          name?: string
+          sub_strand_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_content_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "tax_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_content_sub_strand_id_fkey"
+            columns: ["sub_strand_id"]
+            isOneToOne: false
+            referencedRelation: "tax_sub_strands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_content_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_levels: {
+        Row: {
+          code: string
+          created_at: string
+          display_order: number
+          id: string
+          mvp: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          display_order: number
+          id?: string
+          mvp: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          mvp?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_levels_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_strands: {
+        Row: {
+          code: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          display_order: number
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_strands_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_sub_strands: {
+        Row: {
+          applies_to_level_codes: string[]
+          code: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          strand_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to_level_codes?: string[]
+          code: string
+          created_at?: string
+          display_order: number
+          id?: string
+          name: string
+          strand_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to_level_codes?: string[]
+          code?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          strand_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_sub_strands_strand_id_fkey"
+            columns: ["strand_id"]
+            isOneToOne: false
+            referencedRelation: "tax_strands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_sub_strands_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1196,4 +1378,3 @@ export const Constants = {
     },
   },
 } as const
-
