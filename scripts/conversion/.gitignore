@@ -1,0 +1,6 @@
+# Stage 1 conversion I/O — both folders hold licensed S.A.M. PDFs and
+# rendered page artefacts. Never commit. Keep input/.gitkeep so the
+# empty folder is tracked.
+input/*
+!input/.gitkeep
+output/
