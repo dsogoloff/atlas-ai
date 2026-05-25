@@ -16,7 +16,7 @@
 // still strips fences defensively for robustness against models that
 // wrap output despite explicit instructions.
 
-import type { ReportContent } from "@/lib/report/types";
+import type { ReportContent, Strand } from "@/lib/report/types";
 
 const SYSTEM = `You are writing short, warm, parent-readable narration text for a child's math diagnostic assessment report. The report shows the child's placement, per-strand performance, any patterns observed across responses, and recommended next steps. Your job is to write four short intro / framing sentences — nothing more.
 
@@ -36,7 +36,37 @@ HARD RULES (never violate)
 - NEVER diagnose, label, or pathologise the child. Do NOT write framings like "[child] has", "[child] is", or "[child] struggles with".
 - Frame everything as patterns observed in THIS assessment, not as traits of the child.
 - Never quote or describe specific question content.
-- When the input has zero misconceptions, write misconceptions_lede as a GENUINE positive-signal sentence — no detected misconceptions IS a real positive, not faint praise.`;
+- When the input has zero misconceptions, write misconceptions_lede as a GENUINE positive-signal sentence — no detected misconceptions IS a real positive, not faint praise.
+- Render the placement as "S.A.M. Level N" only (e.g. "S.A.M. Level 3"). NEVER include the half-level letter (e.g. "3A", "3B") in any prose field — the half-level is an internal placement detail, not parent-facing copy.
+- Do NOT claim the recommendations are ordered by priority, impact, importance, or "biggest difference". The recommendations are presented in a fixed display order, not impact-ranked. Frame them neutrally — e.g. as suggested next steps or areas to work on next — with no ordering rationale.`;
+
+/** Sub-strand slug → human-readable label, mirroring the `name` column in
+ *  supabase/migrations/...seed_v2026_taxonomy.sql. Local to prompt.ts so the
+ *  narration's display surface stays decoupled from the report contract
+ *  (ReportContent still carries slug-only Strand values). If a future
+ *  sub-strand is added to the V2026 enum, TypeScript will flag a missing
+ *  key here. */
+const SUB_STRAND_LABELS: Record<Strand, string> = {
+  whole_numbers: "Whole Numbers",
+  fractions: "Fractions",
+  decimals: "Decimals",
+  money: "Money",
+  percentage: "Percentage",
+  rate: "Rate",
+  ratio: "Ratio",
+  algebra: "Algebra",
+  measurement: "Measurement",
+  geometry: "Geometry",
+  area_volume: "Area and Volume",
+  data_representation: "Data Representation and Interpretation",
+};
+
+/** Strip the trailing half-level letter (e.g. "3A" → "3", "0b" → "0") from a
+ *  formatted placement string. The taxonomy uses A/B at most levels and adds C
+ *  at L0; the matcher accepts any trailing letter to stay forward-compatible. */
+function stripHalfLevel(samLevel: string): string {
+  return samLevel.replace(/[A-Za-z]$/, "");
+}
 
 export interface PromptBundle {
   system: string;
@@ -48,7 +78,9 @@ export function buildNarrationPrompt(content: ReportContent): PromptBundle {
     content;
 
   const strandLines = strand_mastery
-    .map((s) => `- ${s.strand}: ${s.percentage}% (${s.band})`)
+    .map(
+      (s) => `- ${SUB_STRAND_LABELS[s.strand]}: ${s.percentage}% (${s.band})`,
+    )
     .join("\n");
 
   const misconceptionsBlock =
@@ -63,7 +95,7 @@ export function buildNarrationPrompt(content: ReportContent): PromptBundle {
 
   const recommendationsBlock =
     recommendations.length > 0
-      ? `RECOMMENDATIONS (pre-sorted by priority — most actionable first)\n${recommendations
+      ? `RECOMMENDATIONS (suggested next steps — presented in display order, NOT ranked by priority or impact)\n${recommendations
           .map((r) => `- ${r.strand} @ ${r.level}: ${r.primary}`)
           .join("\n")}`
       : `RECOMMENDATIONS\nnone on this report.`;
@@ -73,7 +105,7 @@ Display name: ${child.display_name}
 Grade: ${child.grade_label}
 
 PLACEMENT
-${placement.sam_level} (overall ${placement.overall_percentage}%, tier ${placement.tier})
+${stripHalfLevel(placement.sam_level)} (overall ${placement.overall_percentage}%, tier ${placement.tier})
 
 STRAND PERFORMANCE
 ${strandLines}
