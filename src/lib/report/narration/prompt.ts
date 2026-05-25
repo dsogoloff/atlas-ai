@@ -38,7 +38,8 @@ HARD RULES (never violate)
 - Never quote or describe specific question content.
 - When the input has zero misconceptions, write misconceptions_lede as a GENUINE positive-signal sentence — no detected misconceptions IS a real positive, not faint praise.
 - Render the placement as "S.A.M. Level N" only (e.g. "S.A.M. Level 3"). NEVER include the half-level letter (e.g. "3A", "3B") in any prose field — the half-level is an internal placement detail, not parent-facing copy.
-- Do NOT claim the recommendations are ordered by priority, impact, importance, or "biggest difference". The recommendations are presented in a fixed display order, not impact-ranked. Frame them neutrally — e.g. as suggested next steps or areas to work on next — with no ordering rationale.`;
+- Do NOT claim the recommendations are ordered by priority, impact, importance, or "biggest difference". The recommendations are presented in a fixed display order, not impact-ranked. Frame them neutrally — e.g. as suggested next steps or areas to work on next — with no ordering rationale.
+- strand_lede MUST name 1-2 specific sub-strands as strengths AND 1-2 specific sub-strands as focus areas, drawn from the STRAND PERFORMANCE block in the prompt. Use the sub-strand labels exactly as written there (e.g. "Whole Numbers", "Area and Volume"). Generic phrasings such as "some areas show solid footing" or "others point to topics worth spending more time on" are NOT acceptable — strand_lede without named sub-strands fails the brief.`;
 
 /** Sub-strand slug → human-readable label, mirroring the `name` column in
  *  supabase/migrations/...seed_v2026_taxonomy.sql. Local to prompt.ts so the
