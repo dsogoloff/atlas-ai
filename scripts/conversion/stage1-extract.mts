@@ -9,16 +9,21 @@
 // 3 tag, 4 load). NOT wired into the Next.js app. Run via:
 //   pnpm convert:extract
 //
-// Render path: pdf-to-img (pdfjs-dist under the hood). pdfjs renders at
-// 72 DPI when scale=1, so RENDER_SCALE = 200/72 produces ~200 DPI PNGs.
+// Render path: mupdf (pure-WASM). The brief's first choice was pdf-to-img,
+// but pdf-to-img@6.1.0 builds its standardFontDataUrl / cMapUrl with
+// `path/posix.join` over a Windows backslash path returned by
+// createRequire().resolve(), producing a mixed-slash string that pdfjs's
+// URL validator rejects ("Value is none of these types `String`, `Path`").
+// Switched to mupdf per the brief's fallback clause. PDFs default to
+// 72 DPI; Matrix.scale(200/72, 200/72) yields ~200 DPI PNGs.
 // Text path: pdf-parse with pageJoiner='' so per-page text is clean.
 
 import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import * as mupdf from "mupdf";
 import { PDFParse } from "pdf-parse";
-import { pdf } from "pdf-to-img";
 
 interface ExtractedPage {
   page: number;
@@ -67,19 +72,25 @@ async function extractTextByPage(buffer: Buffer): Promise<Map<number, string>> {
 }
 
 async function renderPagesToPng(
-  pdfPath: string,
+  pdfBuffer: Buffer,
   outDir: string,
 ): Promise<{ pageCount: number; imageFileNames: Map<number, string> }> {
-  const doc = await pdf(pdfPath, { scale: RENDER_SCALE });
+  const doc = mupdf.Document.openDocument(
+    new Uint8Array(pdfBuffer),
+    "application/pdf",
+  );
+  const pageCount = doc.countPages();
+  const scaleMatrix = mupdf.Matrix.scale(RENDER_SCALE, RENDER_SCALE);
   const imageFileNames = new Map<number, string>();
-  let index = 0;
-  for await (const pageBuffer of doc) {
-    index += 1;
-    const fileName = `page-${String(index).padStart(2, "0")}.png`;
-    await writeFile(path.join(outDir, fileName), pageBuffer);
-    imageFileNames.set(index, fileName);
+  for (let i = 0; i < pageCount; i += 1) {
+    const page = doc.loadPage(i);
+    const pixmap = page.toPixmap(scaleMatrix, mupdf.ColorSpace.DeviceRGB, false);
+    const pngBytes = pixmap.asPNG();
+    const fileName = `page-${String(i + 1).padStart(2, "0")}.png`;
+    await writeFile(path.join(outDir, fileName), pngBytes);
+    imageFileNames.set(i + 1, fileName);
   }
-  return { pageCount: doc.length, imageFileNames };
+  return { pageCount, imageFileNames };
 }
 
 async function processPdf(pdfFileName: string): Promise<ProcessSummary> {
@@ -90,7 +101,7 @@ async function processPdf(pdfFileName: string): Promise<ProcessSummary> {
   const pdfPath = path.join(INPUT_DIR, pdfFileName);
   const pdfBuffer = await readFile(pdfPath);
 
-  const { pageCount, imageFileNames } = await renderPagesToPng(pdfPath, outDir);
+  const { pageCount, imageFileNames } = await renderPagesToPng(pdfBuffer, outDir);
   const textByPage = await extractTextByPage(pdfBuffer);
 
   const pages: ExtractedPage[] = [];
