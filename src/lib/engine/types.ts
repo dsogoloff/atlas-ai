@@ -6,7 +6,27 @@
 import type { Enums } from "@/lib/supabase/database.types";
 
 export type Strand = Enums<"strand">;
+
+/**
+ * The ENGINE grade-half axis: US grades K through 8 split into A/B
+ * halves. Values: KA, KB, 1A, 1B, 2A, 2B, ..., 8A, 8B (18 levels).
+ *
+ * DISTINCT from the V2026 `tax_levels.code` S.A.M.-level axis
+ * (l0a, l0b, l0c, l1, l2, ..., l6 — 9 levels). The two axes coexist on
+ * `questions`:
+ *
+ *   * `questions.level` (HalfGradeLevel) — the engine's placement target
+ *     used by the picker, classifier, and Bayesian update.
+ *   * `questions.content_id` → `tax_content.level_id` → `tax_levels.code` —
+ *     the S.A.M.-curriculum-level axis used by the report's strand_mastery /
+ *     bar map (Phase 8). Not consumed by the engine.
+ *
+ *  Don't conflate the two. "HalfGradeLevel" names the engine axis; the
+ *  S.A.M. axis is `tax_levels.code` (no TypeScript alias yet — referred
+ *  to as a level code string in code, e.g. `"l3"`).
+ */
 export type HalfGradeLevel = Enums<"half_grade_level">;
+
 export type QuestionFormat = Enums<"question_format">;
 
 /**
