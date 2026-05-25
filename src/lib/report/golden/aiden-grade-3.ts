@@ -38,13 +38,18 @@ export const aidenGrade3Report: ReportContent = {
     tier: "K_4",
   },
 
+  // Phase 8: strand_mastery is now keyed by V2026 sub-strands. The 7
+  // sub-strands applicable at l3 per the spec's applies_to_level_codes:
+  // whole_numbers, fractions, money, measurement, geometry, area_volume,
+  // data_representation. Ordering follows tax_sub_strands.display_order.
   strand_mastery: [
-    { strand: "number_sense", correct: 14, total: 18, percentage: 78, band: "mastery" },
-    { strand: "operations_algorithms", correct: 14, total: 17, percentage: 82, band: "mastery" },
-    { strand: "fractions_decimals", correct: 5, total: 12, percentage: 42, band: "area_of_focus" },
-    { strand: "measurement", correct: 13, total: 18, percentage: 72, band: "progressing" },
+    { strand: "whole_numbers", correct: 14, total: 18, percentage: 78, band: "mastery" },
+    { strand: "fractions", correct: 5, total: 12, percentage: 42, band: "area_of_focus" },
+    { strand: "money", correct: 4, total: 6, percentage: 67, band: "progressing" },
+    { strand: "measurement", correct: 6, total: 8, percentage: 75, band: "mastery" },
     { strand: "geometry", correct: 8, total: 12, percentage: 67, band: "progressing" },
-    { strand: "data_statistics", correct: 0, total: 0, percentage: 0, band: "no_data" },
+    { strand: "area_volume", correct: 3, total: 7, percentage: 43, band: "area_of_focus" },
+    { strand: "data_representation", correct: 0, total: 0, percentage: 0, band: "no_data" },
   ],
 
   misconceptions: [

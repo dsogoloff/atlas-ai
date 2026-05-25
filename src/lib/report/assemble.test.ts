@@ -69,10 +69,39 @@ const CHILD = {
   grade_level: "3",
 };
 
+// Three l3 sub-strands for testing — a subset of the 7 the spec lists
+// for l3, enough to exercise the applicable-strand filter without
+// reproducing the whole taxonomy table in tests.
+const L3_TAX_SUB_STRANDS = [
+  {
+    id: "ss-whole-numbers",
+    code: "whole_numbers",
+    applies_to_level_codes: ["l1", "l2", "l3", "l4"],
+    display_order: 1,
+  },
+  {
+    id: "ss-fractions",
+    code: "fractions",
+    applies_to_level_codes: ["l2", "l3", "l4"],
+    display_order: 2,
+  },
+  {
+    id: "ss-geometry",
+    code: "geometry",
+    applies_to_level_codes: ["l0a", "l1", "l2", "l3"],
+    display_order: 10,
+  },
+];
+
 describe("assembleReportContent", () => {
   it("returns a ReportContent with every required envelope field populated", async () => {
+    // No responses, no taxonomy populated → strand_mastery comes back
+    // empty (no applicable sub-strands). Phase 8 drops the "always 6"
+    // guarantee — variable length now.
     const readClient = makeFakeClient({
       responses: [],
+      tax_sub_strands: [],
+      tax_content: [],
       misconceptions: [],
       curriculum_recommendations: [],
     });
@@ -94,7 +123,7 @@ describe("assembleReportContent", () => {
     expect(content.placement.sam_level).toBe("S.A.M. Level 3A");
     expect(content.placement.tier).toBe("K_4");
     expect(content.time_flag).toBe("normal");
-    expect(content.strand_mastery).toHaveLength(6); // canonical STRAND_ORDER
+    expect(content.strand_mastery).toEqual([]);
     expect(content.misconceptions).toEqual([]);
     expect(content.recommendations).toEqual([]);
 
@@ -103,9 +132,43 @@ describe("assembleReportContent", () => {
     );
   });
 
+  it("produces strand_mastery rows for the sub-strands applicable at the child's level", async () => {
+    // With the level mapping 3A → l3 and three sub-strands whose
+    // applies_to_level_codes contains 'l3', strand_mastery has 3 rows
+    // in display_order (whole_numbers, fractions, geometry). All
+    // no_data since responses is empty.
+    const readClient = makeFakeClient({
+      responses: [],
+      tax_sub_strands: L3_TAX_SUB_STRANDS,
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({ questions: [] });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: SESSION,
+      child: CHILD,
+    });
+
+    expect(content.strand_mastery).toHaveLength(3);
+    expect(content.strand_mastery.map((r) => r.strand)).toEqual([
+      "whole_numbers",
+      "fractions",
+      "geometry",
+    ]);
+    for (const r of content.strand_mastery) {
+      expect(r.band).toBe("no_data");
+    }
+  });
+
   it("defaults session_time_flag null to 'normal'", async () => {
     const readClient = makeFakeClient({
       responses: [],
+      tax_sub_strands: [],
+      tax_content: [],
       misconceptions: [],
       curriculum_recommendations: [],
     });

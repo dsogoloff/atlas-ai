@@ -50,7 +50,9 @@ import { timeFlagBadge } from "@/lib/display/progress";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
-import { STRAND_LABELS } from "../strand-labels";
+// Phase 8: question.strand is the engine's 6-value enum (DB column type),
+// not the new V2026 sub-strand axis — so look up the legacy strand labels.
+import { ENGINE_STRAND_LABELS } from "../strand-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -248,7 +250,7 @@ export default async function AnswerLogPage({ searchParams }: AnswersPageProps) 
               >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <span className="text-[10px] md:text-xs font-bold text-sam-gray-mid uppercase tracking-wider">
-                    Question {i + 1} · {STRAND_LABELS[question.strand as Strand]}
+                    Question {i + 1} · {ENGINE_STRAND_LABELS[question.strand as Strand]}
                   </span>
                   <div className="flex items-center gap-2">
                     {timeBadge !== null && (

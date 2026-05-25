@@ -2,44 +2,45 @@
 //
 // One function used by BOTH the in-app /report route AND the post-
 // completion narration trigger so query orchestration + per-strand
-// recommendation lookup don't drift between the two surfaces. The pure
-// derivation helpers (computeStrandMastery, aggregateMisconceptions,
-// pickNearestRecommendation) are already shared via @/lib/report/;
-// this file factors the wiring that previously lived inline in
-// /report/page.tsx Branch 7.
+// derivation don't drift between the two surfaces.
+//
+// Phase 8 (Item #12): strand_mastery is now keyed by V2026 sub-strands
+// (not the engine's 6-value enum). The mapping flow per response is:
+//   response.question_id → questions.content_id → tax_content.sub_strand_id
+//                       → tax_sub_strands.code (the new Strand value)
+// applicableStrands for the child's level is determined upstream from
+// tax_sub_strands.applies_to_level_codes for the placement's tax_level.
+// Questions with NULL content_id are skipped (no sub-strand mapping).
 //
 // Two clients in, one ReportContent out:
-//
-//   * readClient — for responses, misconceptions, curriculum_recommendations.
-//     The page passes its anon RLS client here to preserve defense-in-depth
-//     on parent-facing reads; the trigger passes the service-role client.
-//   * serviceClient — for `questions` only. Compliance.md §8 locks question
-//     content behind RLS with no public policies; service-role is required
-//     to read strand_id off question rows. Both callers pass a service
-//     client here.
+//   * readClient — for responses, taxonomy tables, misconceptions,
+//     curriculum_recommendations. The page passes its anon RLS client
+//     here to preserve defense-in-depth on parent-facing reads; the
+//     trigger passes the service-role client.
+//   * serviceClient — for `questions` only. Compliance.md §8 locks
+//     question content behind RLS with no public policies; service-role
+//     is required to read content_id off question rows.
 //
 // Caller responsibility: the auth + ownership check happens UPSTREAM of
 // this function. assembleReportContent does NOT verify that the caller is
-// allowed to read this session's data — that's the page's job (parent
-// owns child, etc.) or the trigger's structural guarantee (post-completion
-// server-side).
+// allowed to read this session's data.
 
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Strand } from "@/lib/engine/types";
+import type { Strand as EngineStrand } from "@/lib/engine/types";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { aggregateMisconceptions } from "@/lib/report/misconception-aggregate";
 import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
 import {
   computeStrandMastery,
-  type MasteryBand,
   type ScoredResponse,
 } from "@/lib/report/strand-mastery";
 import type {
   Recommendation,
   ReportContent,
+  Strand,
 } from "@/lib/report/types";
 import {
   fromPlacementEstimateJson,
@@ -51,8 +52,6 @@ import { deriveTier } from "@/lib/tier/derive";
 type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
 
-// Same SAM-level mapping the page used inline (R2 lock: parent-facing
-// label is "S.A.M. Level [N]"; engine half-grade enum stays opaque).
 const SAM_LEVEL_BY_HALF_GRADE: Record<HalfGradeLevel, string> = {
   KA: "Kindergarten A",
   KB: "Kindergarten B",
@@ -78,15 +77,37 @@ function samLevelLabel(level: HalfGradeLevel): string {
   return `S.A.M. ${SAM_LEVEL_BY_HALF_GRADE[level]}`;
 }
 
-// Same band-priority ordering for recommendations (area_of_focus first,
-// then progressing, mastery, no_data). STRAND_ORDER provides the
-// within-band tiebreaker via strandMastery's row order.
-const BAND_PRIORITY: Record<MasteryBand, number> = {
-  area_of_focus: 0,
-  progressing: 1,
-  mastery: 2,
-  no_data: 3,
-};
+/** Half-grade → tax_level code. Best-effort 1:1; half-grades outside
+ *  the V2026 L0-L6 range (7A-8B) map to null and end up with empty
+ *  strand_mastery output. K maps to l0a/l0b approximately. */
+function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
+  switch (level) {
+    case "KA":
+      return "l0a";
+    case "KB":
+      return "l0b";
+    case "1A":
+    case "1B":
+      return "l1";
+    case "2A":
+    case "2B":
+      return "l2";
+    case "3A":
+    case "3B":
+      return "l3";
+    case "4A":
+    case "4B":
+      return "l4";
+    case "5A":
+    case "5B":
+      return "l5";
+    case "6A":
+    case "6B":
+      return "l6";
+    default:
+      return null;
+  }
+}
 
 export interface AssembleSession {
   id: string;
@@ -145,13 +166,16 @@ export async function assembleReportContent(
     );
   }
 
-  // ---- questions (service-role; compliance §8 — projection is id+strand only)
+  // ---- questions (service-role; compliance §8 — projection is id +
+  // content_id only). content_id keys into tax_content for the V2026
+  // sub-strand axis. Questions without content_id can't be placed on the
+  // sub-strand grid and are skipped from strand_mastery.
   const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
-  const questionStrandById = new Map<string, Strand>();
+  const contentIdByQuestion = new Map<string, string>();
   if (questionIds.length > 0) {
     const { data: questionRows, error: questionsErr } = await serviceClient
       .from("questions")
-      .select("id, strand")
+      .select("id, content_id")
       .in("id", questionIds);
     if (questionsErr || !questionRows) {
       throw new AssembleError(
@@ -160,27 +184,97 @@ export async function assembleReportContent(
       );
     }
     for (const q of questionRows) {
-      questionStrandById.set(q.id, q.strand);
+      if (q.content_id) contentIdByQuestion.set(q.id, q.content_id);
     }
   }
 
-  // Scored responses for the derivation helpers. Drop orphans (defence-
-  // in-depth; question_ids come from rows we just selected).
+  // ---- Taxonomy lookups: determine applicable sub-strands at the
+  // child's level, and resolve each question's content_id to a sub-strand
+  // code. Both queries pull small tables (≤12 sub-strands, ≤145 content
+  // rows per tenant) so a full filter on tenant_id is fine.
+  const taxLevelCode = halfGradeToTaxLevelCode(placement.overallLevel);
+  let applicableStrands: Strand[] = [];
+  const subStrandByQuestion = new Map<string, Strand>();
+
+  if (taxLevelCode) {
+    // tax_sub_strands — applies_to_level_codes carries the level filter
+    // as a denormalised text[] column.
+    const { data: subStrands, error: ssErr } = await readClient
+      .from("tax_sub_strands")
+      .select("id, code, applies_to_level_codes, display_order")
+      .eq("tenant_id", session.tenant_id);
+    if (ssErr) {
+      throw new AssembleError(
+        `tax_sub_strands lookup failed: ${ssErr.message}`,
+        ssErr,
+      );
+    }
+    const subStrandCodeById = new Map<string, Strand>();
+    const applicable: Array<{ code: Strand; order: number }> = [];
+    for (const ss of subStrands ?? []) {
+      subStrandCodeById.set(ss.id, ss.code as Strand);
+      if (ss.applies_to_level_codes.includes(taxLevelCode)) {
+        applicable.push({ code: ss.code as Strand, order: ss.display_order });
+      }
+    }
+    // Stable display order — sub-strand display_order is unique within
+    // tax_sub_strands so this gives a deterministic bar order.
+    applicable.sort((a, b) => a.order - b.order);
+    applicableStrands = applicable.map((a) => a.code);
+
+    // tax_content — map question.content_id → tax_content.sub_strand_id
+    // → sub-strand code. Filter to just the content_ids on this session.
+    const sessionContentIds = Array.from(
+      new Set(contentIdByQuestion.values()),
+    );
+    if (sessionContentIds.length > 0) {
+      const { data: contentRows, error: cErr } = await readClient
+        .from("tax_content")
+        .select("id, sub_strand_id")
+        .in("id", sessionContentIds);
+      if (cErr) {
+        throw new AssembleError(
+          `tax_content lookup failed: ${cErr.message}`,
+          cErr,
+        );
+      }
+      const subStrandByContent = new Map<string, Strand>();
+      for (const c of contentRows ?? []) {
+        const code = subStrandCodeById.get(c.sub_strand_id);
+        if (code) subStrandByContent.set(c.id, code);
+      }
+      for (const [qid, cid] of contentIdByQuestion) {
+        const code = subStrandByContent.get(cid);
+        if (code) subStrandByQuestion.set(qid, code);
+      }
+    }
+  }
+
+  // Scored responses for computeStrandMastery — keyed by V2026 sub-strand
+  // codes. Responses whose question has no content_id (or whose content_id
+  // doesn't resolve to an applicable sub-strand) are silently dropped.
   const scoredResponses: ScoredResponse[] = [];
   for (const r of responses) {
-    const strand = questionStrandById.get(r.question_id);
+    const strand = subStrandByQuestion.get(r.question_id);
     if (!strand) continue;
     scoredResponses.push({ strand, isCorrect: r.is_correct });
   }
 
-  const overallTotal = scoredResponses.length;
-  const overallCorrect = scoredResponses.filter((r) => r.isCorrect).length;
+  // Overall percentage stays correct/attempted across the whole session
+  // (R1 hybrid). Counts ALL responses, not just sub-strand-resolved ones —
+  // overall mastery doesn't depend on whether each question has been
+  // taxonomy-tagged yet.
+  const overallTotal = responses.length;
+  const overallCorrect = responses.filter((r) => r.is_correct).length;
   const overallPercentage =
     overallTotal === 0
       ? 0
       : Math.round((overallCorrect / overallTotal) * 100);
 
-  const strandMastery = computeStrandMastery(scoredResponses);
+  const strandMastery = computeStrandMastery(
+    scoredResponses,
+    applicableStrands,
+  );
 
   // ---- misconceptions
   const misconceptionCodes = responses.map((r) => r.detected_misconceptions);
@@ -204,10 +298,12 @@ export async function assembleReportContent(
     });
   }
 
-  // ---- recommendations (Phase 7.6 nearest-level fallback)
+  // ---- recommendations (Phase 7.6 nearest-level fallback). Still keyed
+  // by the engine's 6-value strand because curriculum_recommendations
+  // rows aren't remapped onto sub-strands.
   const strandLevels = placement.strandLevels;
   const recLookupKeys = Object.entries(strandLevels) as Array<
-    [Strand, HalfGradeLevel]
+    [EngineStrand, HalfGradeLevel]
   >;
   const distinctStrands = Array.from(new Set(recLookupKeys.map(([s]) => s)));
   const { data: recRows, error: recErr } = await readClient
@@ -234,18 +330,20 @@ export async function assembleReportContent(
     })
     .filter((r): r is Recommendation => r !== null);
 
-  // Sort by band priority then strand display order.
-  const strandMeta = new Map<Strand, { band: MasteryBand; order: number }>();
-  strandMastery.forEach((s, i) => {
-    strandMeta.set(s.strand, { band: s.band, order: i });
-  });
+  // Phase 8 sort: deterministic by level then engine-strand code.
+  // The old pre-Phase-8 sort was "area_of_focus first, then progressing,
+  // then mastery, with STRAND_ORDER as within-band tiebreak" — but that
+  // relied on the strand-mastery key matching the recommendation strand
+  // (both were engine 6-value). Now strand_mastery is sub-strand-keyed
+  // and curriculum_recommendations rows are still engine-strand-keyed;
+  // the axis mismatch means we can't cleanly band-prioritise here.
+  // v2 work (curriculum_recommendations rebuild onto sub-strands) can
+  // restore the band-priority sort. For now: stable, alphabetic, level-
+  // first. The brief's RC1 lock (per-item strand eyebrow) holds; the
+  // order shifts mildly but the data is the same.
   recommendations.sort((a, b) => {
-    const aMeta = strandMeta.get(a.strand);
-    const bMeta = strandMeta.get(b.strand);
-    const aBand = aMeta ? BAND_PRIORITY[aMeta.band] : 99;
-    const bBand = bMeta ? BAND_PRIORITY[bMeta.band] : 99;
-    if (aBand !== bBand) return aBand - bBand;
-    return (aMeta?.order ?? 99) - (bMeta?.order ?? 99);
+    if (a.level !== b.level) return a.level.localeCompare(b.level);
+    return a.strand.localeCompare(b.strand);
   });
 
   // ---- metadata + envelope
@@ -280,8 +378,7 @@ export async function assembleReportContent(
 /** Grade label for ReportContent.child.grade_label. Mirrors page.tsx's
  *  buildSubtitle pattern: format the raw grade_level when present and
  *  non-empty; fall back to "Unknown grade" so the required-string contract
- *  holds. (Narration doesn't fail on "Unknown grade"; it's a real edge
- *  case for children seeded without a grade.) */
+ *  holds. */
 function formatChildGradeLabel(child: AssembleChild): string {
   const raw = child.grade_level?.trim();
   return raw ? formatGradeLevel(raw) : "Unknown grade";

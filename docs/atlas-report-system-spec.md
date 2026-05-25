@@ -331,16 +331,23 @@ interface ReportContent {
     tier: Tier;                          // 'K_4' | 'G5_8'
   };
 
-  // Strand performance — always 6 rows in canonical STRAND_ORDER. This one
-  // array feeds BOTH the radar and the strand-bar map.
+  // Strand performance — VARIABLE LENGTH (2-8 rows): the N V2026 sub-
+  // strands applicable at the child's S.A.M. level (per
+  // tax_sub_strands.applies_to_level_codes). Feeds the bar map directly;
+  // the radar consumes a derived 3-parent roll-up via
+  // rollUpToParentStrands. Phase 8 (Item #12) dropped the legacy
+  // "always 6 in canonical STRAND_ORDER" guarantee.
   strand_mastery: StrandMastery[];
 
   // Misconceptions — 0-3 rows, occurrence-count descending. An empty array
   // IS the positive-state signal (lock ML1); there is no separate flag.
   misconceptions: AggregatedMisconception[];
 
-  // Recommendations — strand-keyed, pre-sorted by the page
-  // (band priority, then STRAND_ORDER as tiebreak).
+  // Recommendations — keyed by the engine's 6-value strand enum (the DB
+  // column type in curriculum_recommendations); Phase 8 left this axis
+  // unchanged because the rec rows haven't been remapped onto sub-strands.
+  // Sorted by level then strand code (deterministic). Pre-Phase-8 band-
+  // priority sort is paused until curriculum_recommendations rebuild.
   recommendations: Recommendation[];
 }
 ```
@@ -349,29 +356,54 @@ Supporting types — all mirror canonical code definitions; `src/lib/report/`
 is authoritative.
 
 ```typescript
+// src/lib/report/types.ts — V2026 strand vocabulary (Phase 8)
+type Strand =                            // 12 sub-strand codes from §7
+  | 'whole_numbers' | 'fractions' | 'decimals' | 'money' | 'percentage'
+  | 'rate' | 'ratio' | 'algebra' | 'measurement' | 'geometry'
+  | 'area_volume' | 'data_representation';
+
+type ParentStrand =                      // 3 parent strands — fixed radar axes
+  | 'number_algebra' | 'measurement_geometry' | 'statistics';
+
+// SUB_STRAND_TO_PARENT: Record<Strand, ParentStrand>   — mapping per §7
+// PARENT_STRAND_ORDER: readonly ParentStrand[]         — radar axis order
+
 // src/lib/report/strand-mastery.ts
 type MasteryBand = 'mastery' | 'progressing' | 'area_of_focus' | 'no_data';
 
 interface StrandMastery {
-  strand: Strand;
+  strand: Strand;                        // sub-strand code (new Phase 8)
   correct: number;
   total: number;
   percentage: number;                    // integer; 0 when total === 0 (no_data)
   band: MasteryBand;                     // mastery ≥ 75 / progressing 50-74 / area_of_focus < 50 / no_data when total === 0
 }
 
+interface ParentStrandMastery {           // radar input — always length 3
+  strand: ParentStrand;
+  correct: number;
+  total: number;
+  percentage: number;
+  band: MasteryBand;
+}
+
+// computeStrandMastery(responses, applicableStrands) → StrandMastery[]
+//   variable length matches applicableStrands; ordered by caller.
+// rollUpToParentStrands(strandMastery) → ParentStrandMastery[]
+//   always 3 rows in PARENT_STRAND_ORDER.
+
 // src/lib/report/misconception-aggregate.ts
 interface AggregatedMisconception {
   code: string;
   label: string;
   description: string;
-  strand: Strand;
+  strand: EngineStrand;                  // engine's 6-value enum (DB column type)
   occurrences: number;                   // responses that flagged this code (deduped within each response)
 }
 
 // Recommendation — exported from src/lib/report/types.ts
 interface Recommendation {
-  strand: Strand;
+  strand: EngineStrand;                  // engine's 6-value enum (DB column type)
   level: HalfGradeLevel;                 // parent-facing placement level for the strand
   primary: string;                       // primary_recommendation copy
   supplementary: string[];               // hidden in v1 (locks RC3/RC4)
@@ -380,6 +412,7 @@ interface Recommendation {
 
 // SessionTimeFlag — DB enum: 'unreliable' | 'mixed' | 'rushed' | 'struggling' | 'normal'
 // Tier — 'K_4' | 'G5_8'
+// EngineStrand — DB enum: 'number_sense' | 'operations_algorithms' | 'fractions_decimals' | 'measurement' | 'geometry' | 'data_statistics'
 ```
 
 ---

@@ -1,207 +1,241 @@
-// Unit tests for computeStrandMastery. Pure function — no React, no DB.
+// Unit tests for computeStrandMastery + rollUpToParentStrands. Pure
+// functions — no React, no DB.
 //
-// Coverage:
-//   * Shape contract — always 6 rows in canonical STRAND_ORDER.
-//   * Aggregation — correct/total counts, cross-strand isolation,
-//     percentage rounding.
-//   * Band derivation — boundary tests at 75 (mastery edge) and 50
-//     (progressing edge), exact + just-below pairs to catch off-by-one.
-//   * no_data discrimination — fires only when total === 0, not when
-//     percentage rounds to 0 with at least one response.
-//   * Ordering stability — independent of input order.
+// Phase 8 contract changes:
+//   * Strand union is the V2026 12-value sub-strand set, not the engine's
+//     6-value enum.
+//   * computeStrandMastery takes an `applicableStrands` parameter; output
+//     length matches input length (variable, not always 6).
+//   * Output order follows `applicableStrands` order — caller controls.
+//   * rollUpToParentStrands aggregates sub-strand rows up to the 3 parent
+//     strands for the radar; always 3 rows in PARENT_STRAND_ORDER.
 //
-// Fixture helper: `mk(strand, isCorrect, count)` builds repeated
-// responses inline. Avoids per-test array literal noise.
+// Band thresholds unchanged: 75 mastery / 50 progressing / <50 area_of_focus,
+// no_data when total === 0.
 
 import { describe, expect, it } from "vitest";
 
-import type { Strand } from "@/lib/engine/types";
+import type { Strand } from "@/lib/report/types";
 
 import {
   computeStrandMastery,
+  rollUpToParentStrands,
   type ScoredResponse,
 } from "./strand-mastery";
 
-// =============================================================================
-// Fixtures
-// =============================================================================
-
-const mk = (
-  strand: Strand,
-  isCorrect: boolean,
-  count = 1,
-): ScoredResponse[] =>
+const mk = (strand: Strand, isCorrect: boolean, count = 1): ScoredResponse[] =>
   Array.from({ length: count }, () => ({ strand, isCorrect }));
 
-// All 6 strands in canonical STRAND_ORDER. Tests that need to assert
-// ordering compare against this constant.
-const ORDER: readonly Strand[] = [
-  "number_sense",
-  "operations_algorithms",
-  "fractions_decimals",
+// Representative applicable-strand sets at different levels. The brief
+// describes a child seeing the N sub-strands applicable at their level
+// (2-8); these match the spec's applies_to_level_codes for l3 (7 sub-
+// strands) and l1 (4 sub-strands).
+const L3_APPLICABLE: readonly Strand[] = [
+  "whole_numbers",
+  "fractions",
+  "money",
   "measurement",
   "geometry",
-  "data_statistics",
-] as const;
+  "area_volume",
+  "data_representation",
+];
 
-// =============================================================================
-// Tests
-// =============================================================================
+const L1_APPLICABLE: readonly Strand[] = [
+  "whole_numbers",
+  "measurement",
+  "geometry",
+  "data_representation",
+];
 
-describe("computeStrandMastery", () => {
+describe("computeStrandMastery (Phase 8 — variable length, caller-ordered)", () => {
   describe("shape contract", () => {
-    it("returns exactly 6 rows for empty input", () => {
-      const result = computeStrandMastery([]);
-      expect(result).toHaveLength(6);
+    it("returns one row per applicable strand, in caller order", () => {
+      const result = computeStrandMastery([], L3_APPLICABLE);
+      expect(result).toHaveLength(7);
+      expect(result.map((r) => r.strand)).toEqual(L3_APPLICABLE);
     });
 
-    it("returns rows in canonical STRAND_ORDER", () => {
-      const result = computeStrandMastery([]);
-      expect(result.map((r) => r.strand)).toEqual(ORDER);
+    it("supports the smallest realistic level (4 applicable strands at l1)", () => {
+      const result = computeStrandMastery([], L1_APPLICABLE);
+      expect(result).toHaveLength(4);
+      expect(result.map((r) => r.strand)).toEqual(L1_APPLICABLE);
     });
 
-    it("returns 6 rows with single-strand input (others get no_data)", () => {
-      const result = computeStrandMastery(mk("operations_algorithms", true, 4));
-      expect(result).toHaveLength(6);
-
-      const ops = result.find((r) => r.strand === "operations_algorithms")!;
-      expect(ops.band).toBe("mastery");
-
-      const others = result.filter((r) => r.strand !== "operations_algorithms");
-      expect(others).toHaveLength(5);
-      for (const r of others) {
-        expect(r.band).toBe("no_data");
-        expect(r.total).toBe(0);
-      }
+    it("returns no rows when applicableStrands is empty", () => {
+      const result = computeStrandMastery(mk("fractions", true, 3), []);
+      expect(result).toHaveLength(0);
     });
   });
 
   describe("aggregation", () => {
-    it("counts correct/total per strand across multiple responses", () => {
-      const result = computeStrandMastery([
-        ...mk("number_sense", true, 3),
-        ...mk("number_sense", false, 1),
-      ]);
-      const ns = result.find((r) => r.strand === "number_sense")!;
-      expect(ns.correct).toBe(3);
-      expect(ns.total).toBe(4);
-      expect(ns.percentage).toBe(75);
+    it("counts correct/total per strand across responses (single strand)", () => {
+      const result = computeStrandMastery(
+        [...mk("whole_numbers", true, 3), ...mk("whole_numbers", false, 1)],
+        L3_APPLICABLE,
+      );
+      const wn = result.find((r) => r.strand === "whole_numbers")!;
+      expect(wn).toMatchObject({ correct: 3, total: 4, percentage: 75 });
     });
 
-    it("sums responses across strands without cross-contamination", () => {
-      const result = computeStrandMastery([
-        ...mk("number_sense", true, 2),
-        ...mk("operations_algorithms", false, 2),
-        ...mk("geometry", true, 1),
-        ...mk("geometry", false, 1),
-      ]);
-      const ns = result.find((r) => r.strand === "number_sense")!;
-      const ops = result.find((r) => r.strand === "operations_algorithms")!;
+    it("does not cross-contaminate strands", () => {
+      const result = computeStrandMastery(
+        [
+          ...mk("whole_numbers", true, 2),
+          ...mk("fractions", false, 2),
+          ...mk("geometry", true, 1),
+          ...mk("geometry", false, 1),
+        ],
+        L3_APPLICABLE,
+      );
+      const wn = result.find((r) => r.strand === "whole_numbers")!;
+      const fr = result.find((r) => r.strand === "fractions")!;
       const geo = result.find((r) => r.strand === "geometry")!;
-
-      expect(ns).toMatchObject({ correct: 2, total: 2, percentage: 100 });
-      expect(ops).toMatchObject({ correct: 0, total: 2, percentage: 0 });
+      expect(wn).toMatchObject({ correct: 2, total: 2, percentage: 100 });
+      expect(fr).toMatchObject({ correct: 0, total: 2, percentage: 0 });
       expect(geo).toMatchObject({ correct: 1, total: 2, percentage: 50 });
     });
 
+    it("ignores responses whose strand is not in applicableStrands", () => {
+      // `algebra` is not applicable at l3. Counts must not appear.
+      const result = computeStrandMastery(
+        [...mk("algebra", true, 5), ...mk("whole_numbers", true, 1)],
+        L3_APPLICABLE,
+      );
+      expect(result.find((r) => r.strand === "algebra")).toBeUndefined();
+      const wn = result.find((r) => r.strand === "whole_numbers")!;
+      expect(wn).toMatchObject({ correct: 1, total: 1, percentage: 100 });
+    });
+
     it("rounds percentage to nearest integer (2/3 → 67)", () => {
-      const result = computeStrandMastery([
-        ...mk("operations_algorithms", true, 2),
-        ...mk("operations_algorithms", false, 1),
-      ]);
-      const wp = result.find((r) => r.strand === "operations_algorithms")!;
-      expect(wp.percentage).toBe(67);
+      const result = computeStrandMastery(
+        [...mk("fractions", true, 2), ...mk("fractions", false, 1)],
+        L3_APPLICABLE,
+      );
+      const fr = result.find((r) => r.strand === "fractions")!;
+      expect(fr.percentage).toBe(67);
     });
   });
 
   describe("band derivation", () => {
     it("returns mastery at exactly 75%", () => {
-      // 3/4 = 75
-      const result = computeStrandMastery([
-        ...mk("number_sense", true, 3),
-        ...mk("number_sense", false, 1),
-      ]);
-      const ns = result.find((r) => r.strand === "number_sense")!;
-      expect(ns.percentage).toBe(75);
-      expect(ns.band).toBe("mastery");
+      const result = computeStrandMastery(
+        [...mk("whole_numbers", true, 3), ...mk("whole_numbers", false, 1)],
+        L3_APPLICABLE,
+      );
+      const wn = result.find((r) => r.strand === "whole_numbers")!;
+      expect(wn.percentage).toBe(75);
+      expect(wn.band).toBe("mastery");
     });
 
     it("returns progressing at 74%", () => {
-      // 37/50 = 74
-      const result = computeStrandMastery([
-        ...mk("number_sense", true, 37),
-        ...mk("number_sense", false, 13),
-      ]);
-      const ns = result.find((r) => r.strand === "number_sense")!;
-      expect(ns.percentage).toBe(74);
-      expect(ns.band).toBe("progressing");
+      const result = computeStrandMastery(
+        [...mk("whole_numbers", true, 37), ...mk("whole_numbers", false, 13)],
+        L3_APPLICABLE,
+      );
+      const wn = result.find((r) => r.strand === "whole_numbers")!;
+      expect(wn.percentage).toBe(74);
+      expect(wn.band).toBe("progressing");
     });
 
     it("returns progressing at exactly 50%", () => {
-      // 1/2 = 50
-      const result = computeStrandMastery([
-        ...mk("operations_algorithms", true, 1),
-        ...mk("operations_algorithms", false, 1),
-      ]);
-      const ops = result.find((r) => r.strand === "operations_algorithms")!;
-      expect(ops.percentage).toBe(50);
-      expect(ops.band).toBe("progressing");
+      const result = computeStrandMastery(
+        [...mk("geometry", true, 1), ...mk("geometry", false, 1)],
+        L3_APPLICABLE,
+      );
+      const geo = result.find((r) => r.strand === "geometry")!;
+      expect(geo.percentage).toBe(50);
+      expect(geo.band).toBe("progressing");
     });
 
     it("returns area_of_focus at 49%", () => {
-      // 24/49 = 48.98 → rounds to 49
-      const result = computeStrandMastery([
-        ...mk("geometry", true, 24),
-        ...mk("geometry", false, 25),
-      ]);
-      const geo = result.find((r) => r.strand === "geometry")!;
-      expect(geo.percentage).toBe(49);
-      expect(geo.band).toBe("area_of_focus");
+      const result = computeStrandMastery(
+        [...mk("fractions", true, 24), ...mk("fractions", false, 25)],
+        L3_APPLICABLE,
+      );
+      const fr = result.find((r) => r.strand === "fractions")!;
+      expect(fr.percentage).toBe(49);
+      expect(fr.band).toBe("area_of_focus");
     });
 
-    it("returns area_of_focus at 0% with total > 0", () => {
-      // 0/3 = 0; total > 0 distinguishes from no_data.
-      const result = computeStrandMastery(mk("fractions_decimals", false, 3));
-      const fd = result.find((r) => r.strand === "fractions_decimals")!;
-      expect(fd.percentage).toBe(0);
-      expect(fd.total).toBe(3);
-      expect(fd.band).toBe("area_of_focus");
+    it("returns area_of_focus at 0% when total > 0", () => {
+      const result = computeStrandMastery(
+        mk("fractions", false, 3),
+        L3_APPLICABLE,
+      );
+      const fr = result.find((r) => r.strand === "fractions")!;
+      expect(fr).toMatchObject({
+        percentage: 0,
+        total: 3,
+        band: "area_of_focus",
+      });
     });
 
-    it("returns no_data at total === 0 (not area_of_focus)", () => {
-      // Empty input; every strand has total === 0 → no_data, not
-      // area_of_focus, even though percentage is also 0.
-      const result = computeStrandMastery([]);
+    it("returns no_data when total === 0 for an applicable strand", () => {
+      const result = computeStrandMastery([], L3_APPLICABLE);
       for (const r of result) {
-        expect(r.total).toBe(0);
-        expect(r.percentage).toBe(0);
-        expect(r.band).toBe("no_data");
+        expect(r).toMatchObject({ total: 0, percentage: 0, band: "no_data" });
       }
     });
   });
+});
 
-  describe("ordering", () => {
-    it("first row is number_sense, last is data_statistics", () => {
-      const result = computeStrandMastery([]);
-      expect(result[0]!.strand).toBe("number_sense");
-      expect(result[5]!.strand).toBe("data_statistics");
-    });
+describe("rollUpToParentStrands", () => {
+  it("returns 3 rows in PARENT_STRAND_ORDER (number_algebra → measurement_geometry → statistics)", () => {
+    const result = rollUpToParentStrands([]);
+    expect(result.map((r) => r.strand)).toEqual([
+      "number_algebra",
+      "measurement_geometry",
+      "statistics",
+    ]);
+  });
 
-    it("ordering is stable across calls regardless of input order", () => {
-      const inputA: ScoredResponse[] = [
-        ...mk("measurement", true, 1),
-        ...mk("number_sense", false, 1),
-        ...mk("geometry", true, 1),
-      ];
-      const inputB: ScoredResponse[] = [
-        ...mk("number_sense", false, 1),
-        ...mk("geometry", true, 1),
-        ...mk("measurement", true, 1),
-      ];
-      const orderA = computeStrandMastery(inputA).map((r) => r.strand);
-      const orderB = computeStrandMastery(inputB).map((r) => r.strand);
-      expect(orderA).toEqual(ORDER);
-      expect(orderB).toEqual(ORDER);
-    });
+  it("aggregates correct/total across sub-strands belonging to each parent", () => {
+    // l3 layout: whole_numbers + fractions + money under number_algebra;
+    // measurement + geometry + area_volume under measurement_geometry;
+    // data_representation under statistics.
+    const subStrand = computeStrandMastery(
+      [
+        ...mk("whole_numbers", true, 8),
+        ...mk("whole_numbers", false, 2),
+        ...mk("fractions", true, 1),
+        ...mk("fractions", false, 3),
+        ...mk("geometry", true, 3),
+        ...mk("geometry", false, 1),
+        ...mk("data_representation", true, 2),
+        ...mk("data_representation", false, 0),
+      ],
+      L3_APPLICABLE,
+    );
+    const parents = rollUpToParentStrands(subStrand);
+
+    // number_algebra: whole_numbers (8/10) + fractions (1/4) = 9/14 = 64%
+    const na = parents.find((r) => r.strand === "number_algebra")!;
+    expect(na).toMatchObject({ correct: 9, total: 14, percentage: 64 });
+    expect(na.band).toBe("progressing");
+
+    // measurement_geometry: geometry only (3/4) = 75%
+    // (measurement + area_volume in L3_APPLICABLE but with 0 responses
+    // contribute 0/0 each — included in totals but neutral)
+    const mg = parents.find((r) => r.strand === "measurement_geometry")!;
+    expect(mg).toMatchObject({ correct: 3, total: 4, percentage: 75 });
+    expect(mg.band).toBe("mastery");
+
+    // statistics: data_representation (2/2) = 100%
+    const st = parents.find((r) => r.strand === "statistics")!;
+    expect(st).toMatchObject({ correct: 2, total: 2, percentage: 100 });
+    expect(st.band).toBe("mastery");
+  });
+
+  it("returns no_data for a parent with zero responses across its applicable sub-strands", () => {
+    // L1_APPLICABLE includes no statistics-parent sub-strands at l1
+    // beyond data_representation — but if that has 0 responses, the
+    // parent rolls up to no_data.
+    const subStrand = computeStrandMastery(
+      mk("whole_numbers", true, 2),
+      L1_APPLICABLE,
+    );
+    const parents = rollUpToParentStrands(subStrand);
+    const st = parents.find((r) => r.strand === "statistics")!;
+    expect(st).toMatchObject({ correct: 0, total: 0, band: "no_data" });
   });
 });

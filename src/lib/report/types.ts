@@ -10,7 +10,11 @@
  * AggregatedMisconception, etc. Import them from their source files.
  */
 
-import type { Strand } from "@/lib/engine/types";
+// Engine's 6-value strand enum (the DB schema column type). Aliased
+// because the report-side `Strand` (defined below) is the new V2026
+// 12-value sub-strand union; misconceptions + curriculum_recommendations
+// rows are still keyed by the engine enum in the DB.
+import type { Strand as EngineStrand } from "@/lib/engine/types";
 import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
 import type { StrandMastery } from "@/lib/report/strand-mastery";
 import type { Database } from "@/lib/supabase/database.types";
@@ -19,8 +23,78 @@ import type { Tier } from "@/lib/tier/derive";
 type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
 type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 
+// =============================================================================
+// V2026 taxonomy types (Item #12 Phase 8)
+// =============================================================================
+// The report side moved off the engine's closed 6-value strand union to
+// the V2026 two-level taxonomy: 3 parent strands → 12 sub-strands.
+// strand_mastery is keyed by sub-strand (Strand below) and is variable
+// length (the N sub-strands applicable at the child's S.A.M. level). The
+// radar rolls up to the 3 parent strands; the bar map renders the N
+// sub-strands directly.
+//
+// Codes are sourced verbatim from docs/sam-v2026-taxonomy.md §7 — do not
+// hand-invent. The schema's tax_sub_strands.code / tax_strands.code rows
+// are the runtime source of truth.
+
+/** 12 sub-strand codes from V2026 §7. Used for strand_mastery rows and
+ *  the bar map. */
+export type Strand =
+  | "whole_numbers"
+  | "fractions"
+  | "decimals"
+  | "money"
+  | "percentage"
+  | "rate"
+  | "ratio"
+  | "algebra"
+  | "measurement"
+  | "geometry"
+  | "area_volume"
+  | "data_representation";
+
+/** 3 parent-strand codes from V2026 §7. Used for the radar — always three
+ *  fixed axes. Each sub-strand maps to exactly one parent via
+ *  SUB_STRAND_TO_PARENT. */
+export type ParentStrand =
+  | "number_algebra"
+  | "measurement_geometry"
+  | "statistics";
+
+/** Sub-strand → parent. Per V2026 §7. */
+export const SUB_STRAND_TO_PARENT: Record<Strand, ParentStrand> = {
+  whole_numbers: "number_algebra",
+  fractions: "number_algebra",
+  decimals: "number_algebra",
+  money: "number_algebra",
+  percentage: "number_algebra",
+  rate: "number_algebra",
+  ratio: "number_algebra",
+  algebra: "number_algebra",
+  measurement: "measurement_geometry",
+  geometry: "measurement_geometry",
+  area_volume: "measurement_geometry",
+  data_representation: "statistics",
+};
+
+/** Canonical radar order. The radar geometry assumes this order — axis 0
+ *  points up (number_algebra), axis 1 lower-right (measurement_geometry),
+ *  axis 2 lower-left (statistics) — and the SR1 lock keeps the radar
+ *  text-free, so this order is the only place the parent-strand sequence
+ *  is encoded. */
+export const PARENT_STRAND_ORDER: readonly ParentStrand[] = [
+  "number_algebra",
+  "measurement_geometry",
+  "statistics",
+] as const;
+
+// =============================================================================
+// Recommendation — still keyed by the engine's 6-value strand because the
+// curriculum_recommendations DB rows haven't been remapped onto sub-strands.
+// =============================================================================
+
 export interface Recommendation {
-  strand: Strand;
+  strand: EngineStrand;
   level: HalfGradeLevel;
   primary: string;
   supplementary: string[]; // hidden v1 (RC3)
@@ -52,8 +126,11 @@ export interface ReportContent {
     tier: Tier; // K_4 | G5_8
   };
 
-  strand_mastery: StrandMastery[]; // always 6, canonical STRAND_ORDER;
-  // feeds BOTH StrandRadar and StrandMap
+  // strand_mastery is the N sub-strands applicable at the child's
+  // S.A.M. level (variable length 2-8 per the V2026 taxonomy). Feeds the
+  // bar map directly; the radar consumes a rolled-up 3-parent view
+  // derived at render time via rollUpToParentStrands.
+  strand_mastery: StrandMastery[];
   misconceptions: AggregatedMisconception[]; // 0..3, occurrence desc; empty array
   // is the ML1 positive-state signal — no separate flag
   recommendations: Recommendation[]; // band-sorted (page-owned sort), strand-keyed

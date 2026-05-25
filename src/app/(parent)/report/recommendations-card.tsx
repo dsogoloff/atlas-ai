@@ -17,7 +17,10 @@
 
 import type { Recommendation } from "@/lib/report/types";
 
-import { STRAND_LABELS } from "./strand-labels";
+// Phase 8: Recommendation.strand is still keyed by the engine's 6-value
+// enum (curriculum_recommendations rows haven't been remapped onto V2026
+// sub-strands). Use ENGINE_STRAND_LABELS, not the new sub-strand labels.
+import { ENGINE_STRAND_LABELS } from "./strand-labels";
 
 interface RecommendationsCardProps {
   /** Already sorted by page.tsx: area_of_focus > progressing > mastery
@@ -72,7 +75,7 @@ export function RecommendationsCard({
                 </span>
                 <div className="flex-1 space-y-1">
                   <div className="text-[10px] md:text-xs font-bold text-sam-gray-mid uppercase tracking-wider">
-                    {STRAND_LABELS[rec.strand]}
+                    {ENGINE_STRAND_LABELS[rec.strand]}
                   </div>
                   <p className="text-sam-navy/80 text-sm md:text-base leading-relaxed">
                     {rec.primary}

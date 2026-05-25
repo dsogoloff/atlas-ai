@@ -42,6 +42,7 @@ import { redirect } from "next/navigation";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { assembleReportContent } from "@/lib/report/assemble";
 import { resolveNarrationProse } from "@/lib/report/narration/resolve";
+import { rollUpToParentStrands } from "@/lib/report/strand-mastery";
 import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -330,7 +331,13 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             </p>
           )}
 
-          <StrandRadar rows={reportContent.strand_mastery} />
+          {/* Radar consumes the 3-parent rollup; bar map consumes the
+              N sub-strands directly. Roll-up is derived at render-time
+              per the Phase 8 brief — kept out of the component so the
+              radar stays a pure render. */}
+          <StrandRadar
+            rows={rollUpToParentStrands(reportContent.strand_mastery)}
+          />
 
           <StrandMap rows={reportContent.strand_mastery} />
 

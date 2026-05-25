@@ -1,60 +1,61 @@
 // Strand Mastery Radar Chart for the parent diagnostic report.
 //
-// Reads the same StrandMastery[] array as <StrandMap>; renders it as a
-// hexagonal radar (6 strands → 6 axes 60° apart). Gives the parent a
-// gestalt view of strengths vs. focus areas; the bars below carry the
-// precise per-strand percentages and band labels.
+// Phase 8 (Item #12): the radar now renders the 3 V2026 parent strands
+// — number_algebra, measurement_geometry, statistics — as a triangular
+// 3-axis radar. The 6-axis hexagon is gone. Sub-strand-level mastery is
+// rolled up to parent-strand level upstream via rollUpToParentStrands;
+// this component takes the 3-row result.
 //
-// Hand-rolled SVG — no charting library. Matches the placement-card
-// gauge precedent (also hand-rolled SVG). Math is pure: each axis at
-// angle (-90 + i*60)°, vertex distance = (percentage/100) * RADIUS.
-// no_data strands render the vertex at the center (polygon dips in)
-// with a greyed axis label.
+// Geometry is a permanent 3-axis triangle anchored at the top of the
+// circle: axis 0 points up (number_algebra), axis 1 to lower-right
+// (measurement_geometry, +120°), axis 2 to lower-left (statistics, -120°
+// from axis 0). A parent strand with band='no_data' renders its vertex
+// at center (polygon dips in to a degenerate edge) with a greyed label —
+// same treatment the 6-axis radar applied per-strand.
 //
-// All sizing in SVG user units (viewBox 0 0 400 400). The container
-// scales the SVG via CSS (w-full max-w-md); SVG math stays fixed.
+// Hand-rolled SVG, no charting library. Pure math is preserved (mirrors
+// the placement-card precedent). All sizing in SVG user units (viewBox
+// 0 0 400 400). The container scales the SVG via CSS (w-full max-w-md).
 //
-// Print stylesheet: prints alongside the bars (RD8). Useful for
-// instructor/tutor handoff; small visual, doesn't bloat the page.
-//
-// No section title (SR1) — radar pairs with the StrandMap section
-// header below ("Mathematical Strengths"). Two visualizations of the
-// same data; one shared label.
+// Print stylesheet: prints alongside the bars (RD8).
+// SR1 lock: no section title inside the radar; the bar map's
+// "Mathematical Strengths" header below covers both visualizations.
 
-import { STRAND_ORDER, type StrandMastery } from "@/lib/report/strand-mastery";
+import type { ParentStrandMastery } from "@/lib/report/strand-mastery";
+import { PARENT_STRAND_ORDER } from "@/lib/report/types";
 
-import { SHORT_STRAND_LABELS, STRAND_LABELS } from "./strand-labels";
+import {
+  PARENT_STRAND_LABELS,
+  SHORT_PARENT_STRAND_LABELS,
+} from "./strand-labels";
 
 // =============================================================================
 // Geometry constants — SVG internal coordinates.
 //
-// The hexagon is centered at (200, 200) with the original 400×400 reference
-// frame. The viewBox extends 30 units of horizontal padding on each side so
-// off-axis labels ("Operations" upper-right, "Geometry" lower-left, etc.)
-// don't clip — Item #12 Phase 7.6. The grid/polygon math stays in the 0-400
-// reference for stability; only the viewport widens.
+// 3 axes at 120° apart, axis 0 pointing up. Same 400×400 reference frame
+// the hexagon used so the bar-map and radar visually balance on the page.
+// VIEWBOX_PAD_X widened slightly: the diagonal labels at -30° / 210° sit
+// further from the central vertical than hexagon labels did.
 // =============================================================================
 
 const CENTER = 200;
 const RADIUS = 130; // outer ring (100% mastery)
 const LABEL_DISTANCE = 165; // center → axis label baseline
+const AXIS_COUNT = 3;
+const ANGLE_STEP_DEG = 360 / AXIS_COUNT; // 120
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1.0] as const;
 
-// viewBox padding: left/right only. The widest labels are on the diagonal
-// axes (text-anchor start/end at x=343 / x=57) which can extend ~70 px
-// horizontally from their anchor. 30 px each side covers "Operations" /
-// "Fractions" / "Geometry" / "Data" at fontSize=14 with comfortable
-// margin; the top/bottom labels (anchor=middle) fit in the original
-// vertical extent.
+// viewBox padding: 30px each side covers SHORT_PARENT_STRAND_LABELS
+// ("Number" / "Measure" / "Statistics") at fontSize=14 without clipping.
 const VIEWBOX_PAD_X = 30;
 const VIEWBOX_MIN_X = -VIEWBOX_PAD_X;
 const VIEWBOX_WIDTH = 400 + VIEWBOX_PAD_X * 2;
 const VIEWBOX_HEIGHT = 400;
 
 // =============================================================================
-// Pure math — exported for test coverage (RD9). Tests assert axis
-// ordering, sin/cos sign correctness, edge cases at 0% and 100%, and
-// the no_data → center vertex behavior.
+// Pure math — exported for test coverage. Tests assert axis ordering,
+// reflection invariants for 3-fold symmetry, equidistance, and edge
+// cases at 0% and 100%.
 // =============================================================================
 
 /** Maps a percentage on axis i to an SVG (x, y) point. Clamps the
@@ -67,14 +68,13 @@ export function pointOnAxis(
   return pointAtDistance((clamped / 100) * RADIUS, axisIndex);
 }
 
-/** Maps a fixed distance on axis i to an SVG (x, y) point. Used for
- *  grid rings, axis lines, and label positioning. Axis 0 points up;
- *  subsequent axes rotate clockwise at 60° intervals. */
+/** Maps a fixed distance on axis i to an SVG (x, y) point. Axis 0 points
+ *  up; subsequent axes rotate clockwise at ANGLE_STEP_DEG intervals. */
 export function pointAtDistance(
   distance: number,
   axisIndex: number,
 ): { x: number; y: number } {
-  const angleRad = ((axisIndex * 60 - 90) * Math.PI) / 180;
+  const angleRad = ((axisIndex * ANGLE_STEP_DEG - 90) * Math.PI) / 180;
   return {
     x: CENTER + distance * Math.cos(angleRad),
     y: CENTER + distance * Math.sin(angleRad),
@@ -82,11 +82,9 @@ export function pointAtDistance(
 }
 
 // =============================================================================
-// Internal helpers — SVG points formatting + per-axis label anchoring.
+// Internal helpers — SVG points + per-axis label anchoring.
 // =============================================================================
 
-/** Joins axis-indexed distances into the "x1,y1 x2,y2 ..." string format
- *  the SVG <polygon points> attribute expects. */
 function pointsString(distances: readonly number[]): string {
   return distances
     .map((d, i) => {
@@ -97,8 +95,9 @@ function pointsString(distances: readonly number[]): string {
 }
 
 /** Per-axis text-anchor + dominant-baseline so labels sit cleanly
- *  outside the hexagon. Top/bottom axes anchor middle; right side
- *  anchors start (text extends rightward); left side anchors end. */
+ *  outside the triangle. Axis 0 (top): anchor middle, baseline above
+ *  text. Axis 1 (lower-right): anchor start, baseline below text. Axis
+ *  2 (lower-left): anchor end, baseline below text. */
 function labelAnchor(axisIndex: number): {
   textAnchor: "start" | "middle" | "end";
   dominantBaseline: "alphabetic" | "middle" | "hanging";
@@ -107,15 +106,9 @@ function labelAnchor(axisIndex: number): {
     case 0:
       return { textAnchor: "middle", dominantBaseline: "alphabetic" };
     case 1:
-      return { textAnchor: "start", dominantBaseline: "alphabetic" };
-    case 2:
       return { textAnchor: "start", dominantBaseline: "hanging" };
-    case 3:
-      return { textAnchor: "middle", dominantBaseline: "hanging" };
-    case 4:
+    case 2:
       return { textAnchor: "end", dominantBaseline: "hanging" };
-    case 5:
-      return { textAnchor: "end", dominantBaseline: "alphabetic" };
     default:
       return { textAnchor: "middle", dominantBaseline: "middle" };
   }
@@ -126,27 +119,27 @@ function labelAnchor(axisIndex: number): {
 // =============================================================================
 
 interface StrandRadarProps {
-  rows: StrandMastery[]; // length always 6 in canonical STRAND_ORDER
+  /** Always length 3, in PARENT_STRAND_ORDER. Produced by
+   *  rollUpToParentStrands(reportContent.strand_mastery). */
+  rows: ParentStrandMastery[];
 }
 
 export function StrandRadar({ rows }: StrandRadarProps) {
-  // Polygon vertex distances per strand. no_data rows have percentage = 0
-  // (helper guarantee), so the vertex naturally lands at the center —
-  // no special-case branch needed for the polygon itself.
+  // Polygon vertex distances. no_data rows have percentage=0 → vertex at
+  // center. With 3 axes a single no_data axis degenerates the polygon to
+  // a line through the other two vertices; visually honest "triangle
+  // missing a side."
   const polygonDistances = rows.map(
     (row) => (Math.max(0, Math.min(100, row.percentage)) / 100) * RADIUS,
   );
 
-  // Build a screen-reader summary listing each strand's percentage.
-  // The SVG itself is decorative for AT users; the description gives
-  // them the same data the sighted parent reads from the polygon.
   const ariaSummary =
     "Strand mastery: " +
     rows
       .map((row) =>
         row.band === "no_data"
-          ? `${STRAND_LABELS[row.strand]} not assessed`
-          : `${STRAND_LABELS[row.strand]} ${row.percentage} percent`,
+          ? `${PARENT_STRAND_LABELS[row.strand]} not assessed`
+          : `${PARENT_STRAND_LABELS[row.strand]} ${row.percentage} percent`,
       )
       .join(", ");
 
@@ -159,11 +152,13 @@ export function StrandRadar({ rows }: StrandRadarProps) {
           role="img"
           aria-label={ariaSummary}
         >
-          {/* Grid rings — concentric hexagons at 25/50/75/100%. */}
+          {/* Grid rings — concentric triangles at 25/50/75/100%. */}
           {GRID_LEVELS.map((level) => (
             <polygon
               key={`grid-${level}`}
-              points={pointsString(STRAND_ORDER.map(() => RADIUS * level))}
+              points={pointsString(
+                PARENT_STRAND_ORDER.map(() => RADIUS * level),
+              )}
               fill="none"
               stroke="#F1F3FF"
               strokeWidth="1.5"
@@ -171,7 +166,7 @@ export function StrandRadar({ rows }: StrandRadarProps) {
           ))}
 
           {/* Axis lines — center to each outer vertex. */}
-          {STRAND_ORDER.map((_, i) => {
+          {PARENT_STRAND_ORDER.map((_, i) => {
             const outer = pointAtDistance(RADIUS, i);
             return (
               <line
@@ -196,7 +191,7 @@ export function StrandRadar({ rows }: StrandRadarProps) {
             strokeLinejoin="round"
           />
 
-          {/* Vertex dots — one per non-no_data strand. */}
+          {/* Vertex dots — one per non-no_data parent. */}
           {rows.map((row, i) => {
             if (row.band === "no_data") return null;
             const { x, y } = pointOnAxis(row.percentage, i);
@@ -228,7 +223,7 @@ export function StrandRadar({ rows }: StrandRadarProps) {
                 fontWeight="600"
                 fill={labelColor}
               >
-                {SHORT_STRAND_LABELS[row.strand]}
+                {SHORT_PARENT_STRAND_LABELS[row.strand]}
               </text>
             );
           })}

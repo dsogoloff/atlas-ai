@@ -1,9 +1,10 @@
 // Strand Breakdown card for the parent diagnostic report.
 //
-// Stitch port from module-d/04 (lines 183-238) + 05. One correction
-// vs source, locked at port time:
-//   * Render all 6 strands, not 5 (no_data band shows "Not assessed"
-//     when the engine never sampled a strand).
+// Stitch port from module-d/04 (lines 183-238) + 05. Phase 8 (Item #12)
+// widened the input to a VARIABLE-LENGTH list of V2026 sub-strands (2-8
+// rows depending on the child's S.A.M. level). Each row is one sub-
+// strand applicable at that level; sub-strands with no responses still
+// appear with band='no_data' so the parent sees the full level coverage.
 //
 // Section title is "Mathematical Strengths" (SM2 lock) — performance-
 // blind copy by design for v1, same class as the placement-card flavor
@@ -19,7 +20,11 @@ import type {
 import { STRAND_LABELS } from "./strand-labels";
 
 interface StrandMapProps {
-  rows: StrandMastery[]; // length always 6, fixed order, helper guarantee
+  /** Variable-length 2-8: one row per V2026 sub-strand applicable at the
+   *  child's S.A.M. level. Ordering and length are controlled by the
+   *  caller (assemble.ts derives them from tax_sub_strands.applies_to_
+   *  level_codes for the child's level). */
+  rows: StrandMastery[];
 }
 
 interface BandStyle {
