@@ -1,0 +1,113 @@
+// Unit tests for the report narration prompt builder + generator.
+//
+// prompt.ts is pure (no LLM, no DB) — tested directly. The brief calls out
+// three asserts: voice constraints in the system message, child name in the
+// prompt body, and the empty-vs-nonempty misconception branch.
+//
+// generate.ts is tested with callSonnet mocked. The brief: feed the Aiden
+// Grade 3 ReportContent golden fixture, hand the mocked call a canned valid
+// JSON response containing all four prose fields, and assert the assembled
+// ReportNarration is well-formed (session_id and tenant_id copied from the
+// input fixture, generated_at a valid ISO8601 string, model set, status
+// 'ok', all four prose fields present).
+
+// vi.mock is hoisted; declare before importing the unit under test.
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("./llmClient", () => ({
+  callSonnet: vi.fn(),
+}));
+
+import { aidenGrade3Report } from "@/lib/report/golden/aiden-grade-3";
+import type { ReportContent } from "@/lib/report/types";
+
+import { generateReportNarration } from "./generate";
+import { callSonnet } from "./llmClient";
+import { buildNarrationPrompt } from "./prompt";
+
+const mockCallSonnet = vi.mocked(callSonnet);
+
+beforeEach(() => {
+  mockCallSonnet.mockReset();
+});
+
+describe("buildNarrationPrompt", () => {
+  it("stamps the JSON-only + voice constraints into the system message", () => {
+    const { system } = buildNarrationPrompt(aidenGrade3Report);
+
+    // Output contract.
+    expect(system).toMatch(/JSON only/i);
+    expect(system).toContain("placement_line");
+    expect(system).toContain("strand_lede");
+    expect(system).toContain("misconceptions_lede");
+    expect(system).toContain("recommendations_lede");
+
+    // Voice hard rules — load-bearing. If any of these disappear from the
+    // system message, this test fails so the regression is visible.
+    expect(system).toMatch(/NEVER diagnose/);
+    expect(system).toMatch(/Flesch-Kincaid/);
+    expect(system).toMatch(/never quote/i);
+    expect(system).toMatch(/patterns observed in THIS assessment/);
+  });
+
+  it("includes the child's display name and grade label in the prompt body", () => {
+    const { prompt } = buildNarrationPrompt(aidenGrade3Report);
+    expect(prompt).toContain("Aiden Park");
+    expect(prompt).toContain("Grade 3");
+  });
+
+  it("takes the non-empty branch when misconceptions are present", () => {
+    // Sanity: the Aiden fixture has misconceptions — guards against a fixture
+    // edit silently turning this test green via the wrong branch.
+    expect(aidenGrade3Report.misconceptions.length).toBeGreaterThan(0);
+
+    const { prompt } = buildNarrationPrompt(aidenGrade3Report);
+    expect(prompt).toContain(aidenGrade3Report.misconceptions[0].label);
+    expect(prompt).not.toContain("none detected");
+  });
+
+  it("takes the positive-state branch when misconceptions are empty", () => {
+    const emptyMcContent: ReportContent = {
+      ...aidenGrade3Report,
+      misconceptions: [],
+    };
+    const { prompt } = buildNarrationPrompt(emptyMcContent);
+
+    expect(prompt).toContain("none detected");
+    expect(prompt).toMatch(/positive-signal/i);
+    expect(prompt).toMatch(/real positive/i);
+  });
+});
+
+describe("generateReportNarration", () => {
+  it("assembles a well-formed ReportNarration from a canned Sonnet response", async () => {
+    const canned = {
+      placement_line: "Canned placement.",
+      strand_lede: "Canned strand lede.",
+      misconceptions_lede: "Canned misconceptions lede.",
+      recommendations_lede: "Canned recommendations lede.",
+    };
+    mockCallSonnet.mockResolvedValue({
+      text: JSON.stringify(canned),
+      model: "anthropic/claude-sonnet-4-6",
+      tokens: { input: 100, output: 50 },
+      elapsedMs: 1234,
+    });
+
+    const result = await generateReportNarration(aidenGrade3Report);
+
+    expect(result.session_id).toBe(aidenGrade3Report.session_id);
+    expect(result.tenant_id).toBe(aidenGrade3Report.tenant_id);
+    expect(result.model).toBe("anthropic/claude-sonnet-4-6");
+    expect(result.status).toBe("ok");
+    expect(result.placement_line).toBe(canned.placement_line);
+    expect(result.strand_lede).toBe(canned.strand_lede);
+    expect(result.misconceptions_lede).toBe(canned.misconceptions_lede);
+    expect(result.recommendations_lede).toBe(canned.recommendations_lede);
+
+    // Valid ISO8601 — cheapest robust check is a Date round-trip.
+    expect(new Date(result.generated_at).toISOString()).toBe(
+      result.generated_at,
+    );
+  });
+});

@@ -52,3 +52,15 @@ export function getAnthropicApiKey(): string {
 export function isMisconceptionClassifierLive(): boolean {
   return process.env.MISCONCEPTION_CLASSIFIER_LIVE === "true";
 }
+
+/**
+ * Feature flag gating real Anthropic API calls for the report narration
+ * generator. False (default) means the Sonnet wrapper returns a deterministic
+ * stub JSON — wires stay testable while the Anthropic DPA is in flight
+ * (compliance.md §13.3, mirrors the misconception classifier's gating). Flip
+ * to 'true' in Vercel env once the DPA lands. Only the literal string 'true'
+ * enables live calls.
+ */
+export function isReportNarrationLive(): boolean {
+  return process.env.REPORT_NARRATION_LIVE === "true";
+}
