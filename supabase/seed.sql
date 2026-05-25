@@ -591,15 +591,21 @@ from misconceptions
 on conflict (misconception_id, strand_id) do nothing;
 
 -- =============================================================================
--- V2026 taxonomy seed (Item #12 Phase 6)
+-- V2026 taxonomy seed (Item #12 Phase 6 + Phase 7 Part A)
 -- =============================================================================
 -- Source-of-truth: docs/sam-v2026-taxonomy.md §7 (machine-readable JSON).
 -- The four tax_* tables created by 20260525000001 are populated here.
 --
--- No mirrored migration: Phase 5's migration creates EMPTY tables, so the
--- AGENTS.md §11 parity rule does not apply (there is no row-inserting
--- migration to mirror). seed.sql is the dev/CI population path; production
--- rollout uses a separate path (see Phase 8+).
+-- MIRRORED FROM: supabase/migrations/20260525000002_seed_v2026_taxonomy.sql
+-- (Phase 7 Part A added the production-rollout migration). VALUES blocks
+-- below are byte-identical to that migration; the test at
+-- src/lib/taxonomy/seed.test.ts asserts that — drift fails the test.
+--
+-- AGENTS.md §11 parity: `supabase db reset` runs the migration first
+-- (which inserts the rows), then runs seed.sql which re-runs the same
+-- inserts; both files use `on conflict (tenant_id, code) do nothing` so
+-- the second pass is a no-op. Either file run alone also produces a
+-- correct final state.
 --
 -- FK strategy: parent rows are looked up by `code` via scalar subquery.
 -- If any parent reference is missing, the subquery returns null and the

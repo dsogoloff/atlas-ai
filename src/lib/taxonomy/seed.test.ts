@@ -26,6 +26,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "../../..");
 const SPEC_PATH = resolve(REPO_ROOT, "docs/sam-v2026-taxonomy.md");
 const SEED_PATH = resolve(REPO_ROOT, "supabase/seed.sql");
+const MIGRATION_PATH = resolve(
+  REPO_ROOT,
+  "supabase/migrations/20260525000002_seed_v2026_taxonomy.sql",
+);
 
 interface SpecPayload {
   version: string;
@@ -59,21 +63,45 @@ function loadSpec(): SpecPayload {
 }
 
 /** Count VALUES rows inside the (values ...) block of a tax_* INSERT in
- *  seed.sql. Anchored from `(values` to the closing `) as v(` so scalar
- *  subqueries earlier in the SELECT (e.g. `(select s.id ...)`) don't
- *  false-positive as values rows. Each row begins on its own line
+ *  the given SQL text. Anchored from `(values` to the closing `) as v(`
+ *  so scalar subqueries earlier in the SELECT (e.g. `(select s.id ...)`)
+ *  don't false-positive as values rows. Each row begins on its own line
  *  indented + open-paren. */
-function countSeedValuesRows(table: string): number {
-  const seed = readFileSync(SEED_PATH, "utf-8");
-  const insertStart = seed.indexOf(`insert into ${table}`);
-  if (insertStart === -1) throw new Error(`no insert into ${table} in seed.sql`);
-  const valuesStart = seed.indexOf("(values", insertStart);
+function countValuesRows(sql: string, table: string): number {
+  const insertStart = sql.indexOf(`insert into ${table}`);
+  if (insertStart === -1) throw new Error(`no insert into ${table} in SQL`);
+  const valuesStart = sql.indexOf("(values", insertStart);
   if (valuesStart === -1) throw new Error(`no (values block after ${table} insert`);
-  const valuesEnd = seed.indexOf(") as v(", valuesStart);
+  const valuesEnd = sql.indexOf(") as v(", valuesStart);
   if (valuesEnd === -1) throw new Error(`no values-close after ${table} insert`);
-  const block = seed.slice(valuesStart, valuesEnd);
+  const block = sql.slice(valuesStart, valuesEnd);
   const matches = block.match(/^\s+\(/gm);
   return matches?.length ?? 0;
+}
+
+/** Extract the inclusive `(values ... )` block as a string. Used by the
+ *  byte-identical parity check between seed.sql and the rollout migration —
+ *  any drift in row content, ordering, or formatting fails the test.
+ *
+ *  Line endings are normalised to LF so the test is robust against the
+ *  Windows autocrlf working-tree setting — git stores LF on disk but the
+ *  working tree may have CRLF on Windows. Drift in content/ordering still
+ *  fails; cosmetic line-ending mismatches do not. */
+function extractValuesBlock(sql: string, table: string): string {
+  const insertStart = sql.indexOf(`insert into ${table}`);
+  if (insertStart === -1) throw new Error(`no insert into ${table} in SQL`);
+  const valuesStart = sql.indexOf("(values", insertStart);
+  if (valuesStart === -1) throw new Error(`no (values block after ${table} insert`);
+  const valuesEnd = sql.indexOf(") as v(", valuesStart);
+  if (valuesEnd === -1) throw new Error(`no values-close after ${table} insert`);
+  return sql.slice(valuesStart, valuesEnd + 1).replace(/\r\n/g, "\n");
+}
+
+const seedSql = readFileSync(SEED_PATH, "utf-8");
+const migrationSql = readFileSync(MIGRATION_PATH, "utf-8");
+
+function countSeedValuesRows(table: string): number {
+  return countValuesRows(seedSql, table);
 }
 
 const spec = loadSpec();
@@ -152,4 +180,29 @@ describe("V2026 taxonomy seed.sql row counts", () => {
   it("tax_content has 145 rows", () => {
     expect(countSeedValuesRows("tax_content")).toBe(145);
   });
+});
+
+describe("V2026 taxonomy seed.sql ↔ rollout migration parity", () => {
+  // Phase 7 Part A added the production-rollout migration. Its VALUES
+  // blocks must stay byte-identical to seed.sql's so the two files cannot
+  // drift. If a row is added/removed/edited in one file and not the other,
+  // these tests fail loudly.
+  for (const table of [
+    "tax_strands",
+    "tax_levels",
+    "tax_sub_strands",
+    "tax_content",
+  ]) {
+    it(`${table} VALUES block is byte-identical between seed.sql and migration`, () => {
+      const seedBlock = extractValuesBlock(seedSql, table);
+      const migrationBlock = extractValuesBlock(migrationSql, table);
+      expect(migrationBlock).toBe(seedBlock);
+    });
+
+    it(`${table} row count matches between seed.sql and migration`, () => {
+      expect(countValuesRows(migrationSql, table)).toBe(
+        countValuesRows(seedSql, table),
+      );
+    });
+  }
 });
