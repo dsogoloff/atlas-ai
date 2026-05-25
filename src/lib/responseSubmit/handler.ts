@@ -110,6 +110,8 @@
 
 import "server-only";
 
+import { after } from "next/server";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -126,6 +128,7 @@ import type {
   TerminationDecision,
 } from "@/lib/engine/types";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
+import { attemptNarration } from "@/lib/report/narration/trigger";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import {
   discoverEmptyBankStrands,
@@ -707,9 +710,25 @@ async function pickAndMaybeClose(
 }
 
 /**
- * Close the session: (c1) status=COMPLETED + completed_at, then (c2)
- * aggregate time-flag summary. Returns null on success, an error string
- * on failure (caller maps to 500).
+ * Close the session: (c1) status=COMPLETED + completed_at, (c2) aggregate
+ * time-flag summary, (c3) fire the narration trigger fire-and-forget.
+ * Returns null on success, an error string on failure (caller maps to 500).
+ *
+ * (c3) — Item #16 Piece 5 — generates the report narration off the just-
+ * completed session and writes it to report_narrations. Fire-and-forget
+ * via Next.js `after()` (Next 16's canonical equivalent of `waitUntil` —
+ * it registers a callback to keep running past the response). This is
+ * essential: the closing submit happens while the CHILD is staring at
+ * the assessment-end screen; awaiting Sonnet's 5-15s live generation
+ * would freeze that transition. Fire-and-forget makes (c3) zero-latency
+ * to the submit response; the narration row lands shortly after.
+ *
+ * If a parent opens the report before the row lands, the page renders
+ * data-only (the Piece 4 resolver treats no-row as no-prose).
+ *
+ * attemptNarration is fully try/caught internally and never rejects, so
+ * the inner promise can't surface as an unhandled rejection. The trailing
+ * .catch(() => undefined) is belt-and-suspenders only.
  */
 async function closeSession(
   serviceClient: SupabaseClient<Database>,
@@ -725,7 +744,17 @@ async function closeSession(
 
   if (closeErr) return `session close failed: ${closeErr.message}`;
 
-  return persistSessionSummary(serviceClient, sessionId);
+  const summaryErr = await persistSessionSummary(serviceClient, sessionId);
+  if (summaryErr) return summaryErr;
+
+  // (c3) Narration — fire-and-forget. The `after()` callback runs after
+  // the response is sent; the runtime keeps the function alive until it
+  // resolves.
+  after(() =>
+    attemptNarration(serviceClient, sessionId).catch(() => undefined),
+  );
+
+  return null;
 }
 
 function toWireReason(

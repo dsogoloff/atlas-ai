@@ -40,21 +40,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
-import { aggregateMisconceptions } from "@/lib/report/misconception-aggregate";
+import { assembleReportContent } from "@/lib/report/assemble";
 import { resolveNarrationProse } from "@/lib/report/narration/resolve";
-import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
-import {
-  computeStrandMastery,
-  type MasteryBand,
-  type ScoredResponse,
-} from "@/lib/report/strand-mastery";
-import {
-  fromPlacementEstimateJson,
-  isPlacementEstimateJson,
-} from "@/lib/responseSubmit/types";
+import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
-import { deriveTier } from "@/lib/tier/derive";
 
 import { MisconceptionList } from "./misconception-list";
 import { PlacementCard } from "./placement-card";
@@ -67,58 +57,15 @@ import { TimeFlagBanner } from "./time-flag-banner";
 export const dynamic = "force-dynamic";
 
 type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
-type Strand = Database["public"]["Enums"]["strand"];
-type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Maps the engine's HalfGradeLevel codes (KA…8B) to the parent-facing
-// "S.A.M. Level [N]" label (R2 lock). The S.A.M. curriculum's level
-// numbering is intentionally opaque to the parent — they don't need to
-// reverse-engineer half-grades. This is a thin display mapping; if
-// S.A.M. ever rebrands the levels, change here.
-const SAM_LEVEL_BY_HALF_GRADE: Record<HalfGradeLevel, string> = {
-  KA: "Kindergarten A",
-  KB: "Kindergarten B",
-  "1A": "Level 1A",
-  "1B": "Level 1B",
-  "2A": "Level 2A",
-  "2B": "Level 2B",
-  "3A": "Level 3A",
-  "3B": "Level 3B",
-  "4A": "Level 4A",
-  "4B": "Level 4B",
-  "5A": "Level 5A",
-  "5B": "Level 5B",
-  "6A": "Level 6A",
-  "6B": "Level 6B",
-  "7A": "Level 7A",
-  "7B": "Level 7B",
-  "8A": "Level 8A",
-  "8B": "Level 8B",
-};
-
-function samLevelLabel(level: HalfGradeLevel): string {
-  return `S.A.M. ${SAM_LEVEL_BY_HALF_GRADE[level]}`;
-}
-
-// Sort priority for the recommendations card. Lower = surfaced first.
-// Within the same band, recommendations fall back to the strandMastery
-// row order (which is the canonical STRAND_ORDER from strand-mastery.ts).
-const BAND_PRIORITY: Record<MasteryBand, number> = {
-  area_of_focus: 0,
-  progressing: 1,
-  mastery: 2,
-  no_data: 3,
-};
-
-// Runtime guard for current_estimate now lives at the
-// responseSubmit/types boundary as isPlacementEstimateJson — same module
-// that owns the inverse serializer toPlacementEstimateJson. Page reads
-// the raw jsonb, narrows with isPlacementEstimateJson, then hydrates
-// via fromPlacementEstimateJson into the camelCase engine shape used
-// downstream.
+// SAM level mapping, BAND_PRIORITY, samLevelLabel, the placement hydration
+// step, and the per-strand recommendation lookup all moved into the shared
+// assembleReportContent helper (Item #16 Piece 5). Both this route and the
+// post-completion narration trigger consume that helper so query
+// orchestration + derivation don't drift between the two surfaces.
 
 // =============================================================================
 // Page
@@ -191,13 +138,15 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     );
   }
 
-  const tier = deriveTier(child);
-
   // Most-recent COMPLETED session for this child. R3 lock: empty state
-  // when none.
+  // when none. Selects everything assembleReportContent needs in Branch 7
+  // (tenant_id, started_at, completed_at, current_estimate, session_time_flag)
+  // plus the id used everywhere else.
   const { data: latestSession } = await supabase
     .from("assessment_sessions")
-    .select("id, completed_at, current_estimate, session_time_flag")
+    .select(
+      "id, tenant_id, started_at, completed_at, current_estimate, session_time_flag",
+    )
     .eq("child_id", child.id)
     .eq("status", "COMPLETED")
     .order("completed_at", { ascending: false })
@@ -241,8 +190,9 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   // A COMPLETED session without a valid current_estimate is a data
   // integrity bug (engine should always write one before flipping
   // status). Log + render minimal error so the parent doesn't see a
-  // crashed page. Hydrate snake_case wire shape → camelCase engine
-  // shape so all downstream code reads placement.overallLevel, etc.
+  // crashed page. assembleReportContent runs the same guard internally,
+  // but doing it here too lets Branches 6 (unreliable/mixed) early-return
+  // a clean error before reaching the assembly path.
   if (!isPlacementEstimateJson(latestSession.current_estimate)) {
     console.error("[report] completed session missing valid placement", {
       sessionId: latestSession.id,
@@ -255,7 +205,6 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
       />
     );
   }
-  const placement = fromPlacementEstimateJson(latestSession.current_estimate);
   const timeFlag: SessionTimeFlag = latestSession.session_time_flag ?? "normal";
 
   // ---- Branch 6: unreliable/mixed → "please re-take" banner only.
@@ -289,19 +238,24 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
   // ---- Branch 7: full report (normal | rushed | struggling).
   //
-  // Fetch responses for this session, then aggregate. Two queries:
-  // responses (for is_correct + detected_misconceptions) and questions
-  // (for response.question_id → strand). Misconception lookup adds a
-  // third query, recommendations a fourth.
-  const { data: responses, error: responsesErr } = await supabase
-    .from("responses")
-    .select("question_id, is_correct, detected_misconceptions")
-    .eq("session_id", latestSession.id);
-
-  if (responsesErr || !responses) {
-    console.error("[report] responses lookup failed", {
+  // Assembly delegates to the shared assembleReportContent helper. Page
+  // passes its anon RLS client as the readClient (defense-in-depth on
+  // parent-facing reads) and a service-role client for the questions-
+  // table lookup (compliance §8). Any failure inside assembly throws
+  // AssembleError; the page treats it the same as the legacy inline
+  // lookup failures — render MinimalError.
+  let reportContent;
+  try {
+    reportContent = await assembleReportContent({
+      readClient: supabase,
+      serviceClient: createServiceClient(),
+      session: latestSession,
+      child,
+    });
+  } catch (err) {
+    console.error("[report] assembly failed", {
       sessionId: latestSession.id,
-      err: responsesErr,
+      err,
     });
     return (
       <MinimalError
@@ -311,168 +265,12 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     );
   }
 
-  // Strand lookup for question_id → strand. Service-role client because
-  // the questions table is locked behind RLS for compliance §8 (no item
-  // content to non-instructors). We project ONLY id + strand here —
-  // never content, never the prompt — so no leakage risk.
-  const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
-  const questionStrandById = new Map<string, Strand>();
-  if (questionIds.length > 0) {
-    const adminClient = createServiceClient();
-    // NOTE: no `is_active` filter — these question_ids come from `responses`
-    // rows the child already answered. Filtering would silently drop
-    // answered questions from the strand-mastery histogram if any of them
-    // were deactivated since the response.
-    // See Item #11 Phase 3 enumeration.
-    const { data: questionRows, error: questionsErr } = await adminClient
-      .from("questions")
-      .select("id, strand")
-      .in("id", questionIds);
-    if (questionsErr || !questionRows) {
-      console.error("[report] questions lookup failed", {
-        sessionId: latestSession.id,
-        err: questionsErr,
-      });
-      return (
-        <MinimalError
-          title="Report unavailable"
-          body="We couldn't load this assessment. Please try again in a moment, or contact support if the problem persists."
-        />
-      );
-    }
-    for (const q of questionRows) {
-      questionStrandById.set(q.id, q.strand);
-    }
-  }
-
-  // Build the engine-typed scored responses for the strand-mastery
-  // helper. Skip rows whose question we couldn't resolve (shouldn't
-  // happen, but guards against orphaned response rows).
-  const scoredResponses: ScoredResponse[] = [];
-  for (const r of responses) {
-    const strand = questionStrandById.get(r.question_id);
-    if (!strand) {
-      console.warn("[report] response references unknown question", {
-        sessionId: latestSession.id,
-        questionId: r.question_id,
-      });
-      continue;
-    }
-    scoredResponses.push({ strand, isCorrect: r.is_correct });
-  }
-
-  // Overall percentage for the placement card (R1 hybrid: simple
-  // correct/attempted across the whole session). The placement level
-  // itself comes from the engine's PlacementEstimate.overallLevel.
-  const overallTotal = scoredResponses.length;
-  const overallCorrect = scoredResponses.filter((r) => r.isCorrect).length;
-  const overallPercentage =
-    overallTotal === 0 ? 0 : Math.round((overallCorrect / overallTotal) * 100);
-
-  const strandMastery = computeStrandMastery(scoredResponses);
-
-  // Misconception aggregation. Lookup is anon-client because
-  // misconceptions has a tenant-scoped public SELECT policy (P-A).
-  const misconceptionCodes = responses.map((r) => r.detected_misconceptions);
-  const allCodes = Array.from(new Set(misconceptionCodes.flat()));
-  let topMisconceptions: ReturnType<typeof aggregateMisconceptions> = [];
-  if (allCodes.length > 0) {
-    const { data: misconceptionRows, error: misconceptionsErr } = await supabase
-      .from("misconceptions")
-      .select("code, label, description, strand")
-      .in("code", allCodes);
-    if (misconceptionsErr) {
-      // Soft fail: skip the misconception card rather than blow up the
-      // whole report. Strand bars + recommendations still render.
-      console.error("[report] misconceptions lookup failed", {
-        sessionId: latestSession.id,
-        err: misconceptionsErr,
-      });
-    } else {
-      const lookup = new Map(
-        (misconceptionRows ?? []).map((row) => [row.code, row]),
-      );
-      topMisconceptions = aggregateMisconceptions({
-        codes: misconceptionCodes,
-        lookup,
-      });
-    }
-  }
-
-  // Recommendations (Phase 7.6 — nearest-level fallback with higher-
-  // level tiebreak). Lookup runs against the full per-tenant set of
-  // curriculum_recommendations rows for each strand the placement
-  // touches; pickNearestRecommendation owns the matching policy.
-  //
-  // Pre-Phase-7.6 behavior was a strict (strand, level) exact match.
-  // The seed has one placeholder row per strand at level 2B, so a
-  // child whose placement spans 2A-3B got zero matches and saw the
-  // "Recommendations will appear after the next assessment" empty
-  // state. The fallback collapses that — assessment #1 now always
-  // produces a per-strand rec when at least one row exists for the
-  // strand.
-  const strandLevels = placement.strandLevels;
-  const recLookupKeys = Object.entries(strandLevels) as Array<
-    [Strand, HalfGradeLevel]
-  >;
-  // Pull all rows whose strand appears in the placement, regardless of
-  // level — the helper does the level matching in memory. With 6
-  // strands × ~18 levels the table caps at ~108 rows.
-  const distinctStrands = Array.from(new Set(recLookupKeys.map(([s]) => s)));
-  const { data: recRows, error: recErr } = await supabase
-    .from("curriculum_recommendations")
-    .select("strand, level, primary_recommendation, supplementary, notes")
-    .in("strand", distinctStrands);
-  if (recErr) {
-    console.error("[report] recommendations lookup failed", {
-      sessionId: latestSession.id,
-      err: recErr,
-    });
-  }
-  const recommendations = recLookupKeys
-    .map(([strand, level]) => {
-      const row = pickNearestRecommendation(strand, level, recRows ?? []);
-      if (!row) return null;
-      return {
-        strand,
-        // Render the parent-facing level as the PLACEMENT level (what
-        // the child placed at), not the fallback row's level. The
-        // primary copy is matched to the closest available row, but
-        // the eyebrow on the parent UI should reflect the engine's
-        // actual placement so the parent sees the level that matters
-        // for their child.
-        level,
-        primary: row.primary_recommendation,
-        supplementary: row.supplementary,
-        notes: row.notes,
-      };
-    })
-    .filter((r): r is NonNullable<typeof r> => r !== null);
-
-  // Sort by band priority then strand display order. strandMastery is
-  // already in STRAND_ORDER, so its index doubles as the tiebreaker.
-  // Single pass to build the lookup avoids 6×6 .findIndex calls.
-  const strandMeta = new Map<Strand, { band: MasteryBand; order: number }>();
-  strandMastery.forEach((s, i) => {
-    strandMeta.set(s.strand, { band: s.band, order: i });
-  });
-  recommendations.sort((a, b) => {
-    // Strands without a mastery entry sort last; helper returns all 6
-    // so this is defense-in-depth, not an expected branch.
-    const aMeta = strandMeta.get(a.strand);
-    const bMeta = strandMeta.get(b.strand);
-    const aBand = aMeta ? BAND_PRIORITY[aMeta.band] : 99;
-    const bBand = bMeta ? BAND_PRIORITY[bMeta.band] : 99;
-    if (aBand !== bBand) return aBand - bBand;
-    return (aMeta?.order ?? 99) - (bMeta?.order ?? 99);
-  });
-
-  // Narration prose (Item #16 Piece 4). Soft fetch — mirrors the
-  // misconceptions lookup idiom: no row, fetch error, or status !== 'ok'
-  // all resolve to no prose, and the report renders data-only without it.
-  // R5 suppression (no prose on unreliable/mixed branches) is enforced
-  // structurally — those branches early-return above this block — and
-  // belt-and-suspenders inside resolveNarrationProse.
+  // Narration prose (Piece 4). Soft fetch — mirrors the misconceptions
+  // lookup idiom: no row, fetch error, or status !== 'ok' all resolve to
+  // no prose, and the report renders data-only without it. R5 suppression
+  // (no prose on unreliable/mixed branches) is enforced structurally —
+  // those branches early-return above this block — and belt-and-
+  // suspenders inside resolveNarrationProse.
   const { data: narrationRow, error: narrationErr } = await supabase
     .from("report_narrations")
     .select(
@@ -486,7 +284,10 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
       err: narrationErr,
     });
   }
-  const narrationProse = resolveNarrationProse(narrationRow ?? null, timeFlag);
+  const narrationProse = resolveNarrationProse(
+    narrationRow ?? null,
+    reportContent.time_flag,
+  );
 
   return (
     <>
@@ -494,24 +295,28 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
       <main className="flex-grow px-6 py-10 md:py-12 max-w-4xl mx-auto w-full">
         <TopBackLink />
         <ReportHeader
-          childName={child.name}
+          childName={reportContent.child.display_name}
           subtitle={buildSubtitle(child, latestSession.completed_at)}
         />
 
         {/* Caveat banner for rushed/struggling — full report still
             renders below, but the parent sees the caveat first. */}
-        {(timeFlag === "rushed" || timeFlag === "struggling") && (
+        {(reportContent.time_flag === "rushed" ||
+          reportContent.time_flag === "struggling") && (
           <div className="mt-6">
-            <TimeFlagBanner flag={timeFlag} childName={child.name} />
+            <TimeFlagBanner
+              flag={reportContent.time_flag}
+              childName={reportContent.child.display_name}
+            />
           </div>
         )}
 
         <div className="mt-8 space-y-8">
           <PlacementCard
-            childName={child.name}
-            samLevel={samLevelLabel(placement.overallLevel)}
-            overallPercentage={overallPercentage}
-            tier={tier}
+            childName={reportContent.child.display_name}
+            samLevel={reportContent.placement.sam_level}
+            overallPercentage={reportContent.placement.overall_percentage}
+            tier={reportContent.placement.tier}
             narrationLine={narrationProse?.placement_line}
           />
 
@@ -525,19 +330,19 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             </p>
           )}
 
-          <StrandRadar rows={strandMastery} />
+          <StrandRadar rows={reportContent.strand_mastery} />
 
-          <StrandMap rows={strandMastery} />
+          <StrandMap rows={reportContent.strand_mastery} />
 
           <MisconceptionList
-            rows={topMisconceptions}
-            childName={child.name}
+            rows={reportContent.misconceptions}
+            childName={reportContent.child.display_name}
             narrationLede={narrationProse?.misconceptions_lede}
           />
 
           <RecommendationsCard
-            recommendations={recommendations}
-            childName={child.name}
+            recommendations={reportContent.recommendations}
+            childName={reportContent.child.display_name}
             narrationLede={narrationProse?.recommendations_lede}
           />
         </div>

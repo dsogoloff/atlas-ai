@@ -5,9 +5,31 @@ vi.mock("@/lib/misconceptionClassifier/classifier", () => ({
   classify: vi.fn(),
 }));
 
+// Stub the narration trigger so existing handler tests don't need to
+// script report_narrations queries. The trigger has its own unit tests
+// in src/lib/report/narration/trigger.test.ts covering happy path,
+// failure isolation, and idempotency.
+vi.mock("@/lib/report/narration/trigger", () => ({
+  attemptNarration: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Stub Next.js `after` so the fire-and-forget kick-off in closeSession
+// invokes its callback synchronously in tests. Outside a request context
+// the real `after` would throw, and we want the trigger-side effects to
+// observably happen within each test rather than dangling on a real
+// post-response queue.
+vi.mock("next/server", () => ({
+  after: (cb: () => unknown) => {
+    // Promise resolved with the result so a rejection inside the
+    // callback can't surface as an unhandled rejection during tests.
+    Promise.resolve(cb()).catch(() => undefined);
+  },
+}));
+
 import { STRANDS } from "@/lib/engine/levels";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import type { ClassifierOutput } from "@/lib/misconceptionClassifier/types";
+import { attemptNarration } from "@/lib/report/narration/trigger";
 import type { Database, Enums, Json, TablesInsert } from "@/lib/supabase/database.types";
 import {
   TIME_FLAG_CONFIG_VERSION,
@@ -19,6 +41,7 @@ import { submitResponseHandler } from "./handler";
 import type { SubmitRequest } from "./types";
 
 const mockClassify = vi.mocked(classify);
+const mockAttemptNarration = vi.mocked(attemptNarration);
 
 const DEFAULT_CLASSIFICATION: ClassifierOutput = {
   codes: [],
@@ -32,6 +55,8 @@ beforeEach(() => {
   // that exercise classifier output (e.g., distractor-map hits) override
   // per-test via mockResolvedValueOnce.
   mockClassify.mockResolvedValue(DEFAULT_CLASSIFICATION);
+  mockAttemptNarration.mockReset();
+  mockAttemptNarration.mockResolvedValue(undefined);
 });
 
 // ===========================================================================
@@ -451,6 +476,15 @@ describe("submitResponseHandler — happy path terminating", () => {
     const summaryPatch = sessionUpdates[2].patch as Record<string, unknown>;
     expect(summaryPatch.session_time_flag).toBeDefined();
     expect(summaryPatch.time_flag_summary).toBeDefined();
+
+    // (c3) Narration trigger fired via after(). Test mock invokes the
+    // after() callback synchronously, so by this point the trigger has
+    // been called once with the closed session's id.
+    expect(mockAttemptNarration).toHaveBeenCalledTimes(1);
+    expect(mockAttemptNarration).toHaveBeenCalledWith(
+      svc.client,
+      SESSION_ID,
+    );
   });
 });
 
