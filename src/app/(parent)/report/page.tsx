@@ -41,6 +41,7 @@ import { redirect } from "next/navigation";
 
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { aggregateMisconceptions } from "@/lib/report/misconception-aggregate";
+import { resolveNarrationProse } from "@/lib/report/narration/resolve";
 import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
 import {
   computeStrandMastery,
@@ -466,6 +467,27 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     return (aMeta?.order ?? 99) - (bMeta?.order ?? 99);
   });
 
+  // Narration prose (Item #16 Piece 4). Soft fetch — mirrors the
+  // misconceptions lookup idiom: no row, fetch error, or status !== 'ok'
+  // all resolve to no prose, and the report renders data-only without it.
+  // R5 suppression (no prose on unreliable/mixed branches) is enforced
+  // structurally — those branches early-return above this block — and
+  // belt-and-suspenders inside resolveNarrationProse.
+  const { data: narrationRow, error: narrationErr } = await supabase
+    .from("report_narrations")
+    .select(
+      "status, placement_line, strand_lede, misconceptions_lede, recommendations_lede",
+    )
+    .eq("session_id", latestSession.id)
+    .maybeSingle();
+  if (narrationErr) {
+    console.error("[report] narration lookup failed", {
+      sessionId: latestSession.id,
+      err: narrationErr,
+    });
+  }
+  const narrationProse = resolveNarrationProse(narrationRow ?? null, timeFlag);
+
   return (
     <>
       <TopAppBar />
@@ -490,17 +512,33 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             samLevel={samLevelLabel(placement.overallLevel)}
             overallPercentage={overallPercentage}
             tier={tier}
+            narrationLine={narrationProse?.placement_line}
           />
+
+          {/* strand_lede sits above the StrandRadar — the radar is an SVG
+              chart with no internal text slot (lock SR1: no section title
+              inside the radar; it pairs with StrandMap's heading below).
+              Rendering the lede here keeps StrandRadar pure. */}
+          {narrationProse?.strand_lede && (
+            <p className="font-body-regular text-sam-navy/80 text-base md:text-lg leading-relaxed">
+              {narrationProse.strand_lede}
+            </p>
+          )}
 
           <StrandRadar rows={strandMastery} />
 
           <StrandMap rows={strandMastery} />
 
-          <MisconceptionList rows={topMisconceptions} childName={child.name} />
+          <MisconceptionList
+            rows={topMisconceptions}
+            childName={child.name}
+            narrationLede={narrationProse?.misconceptions_lede}
+          />
 
           <RecommendationsCard
             recommendations={recommendations}
             childName={child.name}
+            narrationLede={narrationProse?.recommendations_lede}
           />
         </div>
 

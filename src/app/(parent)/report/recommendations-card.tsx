@@ -24,11 +24,14 @@ interface RecommendationsCardProps {
    *  > no_data, with STRAND_ORDER as the within-band tiebreaker. */
   recommendations: Recommendation[];
   childName: string;
+  /** Optional Sonnet-generated intro sentence, rendered above the list. */
+  narrationLede?: string;
 }
 
 export function RecommendationsCard({
   recommendations,
   childName,
+  narrationLede,
 }: RecommendationsCardProps) {
   return (
     <section aria-label={`Ways to support ${childName} at home`}>
@@ -43,6 +46,12 @@ export function RecommendationsCard({
           </span>
           Ways to Support {childName} at Home
         </h3>
+
+        {narrationLede && (
+          <p className="font-body-regular text-sam-navy/80 text-base md:text-lg leading-relaxed mb-5 md:mb-6">
+            {narrationLede}
+          </p>
+        )}
 
         {recommendations.length === 0 ? (
           <p className="text-sam-gray-mid text-sm md:text-base leading-relaxed">

@@ -587,6 +587,66 @@ export type Database = {
           },
         ]
       }
+      // ─── MANUAL ADDITION — pending regen ─────────────────────────────
+      // Mirrors migration 20260525000000_add_report_narrations.sql. This
+      // block was added by hand because database.types.ts hasn't been
+      // regenerated since the migration landed (commit 8303f21). When the
+      // founder next runs
+      //   supabase gen types typescript --local > src/lib/supabase/database.types.ts
+      // this file will be re-emitted and this block will be replaced with
+      // the generator's equivalent (this comment goes away with it).
+      // ─────────────────────────────────────────────────────────────────
+      report_narrations: {
+        Row: {
+          generated_at: string
+          misconceptions_lede: string | null
+          model: string
+          placement_line: string | null
+          recommendations_lede: string | null
+          session_id: string
+          status: string
+          strand_lede: string | null
+          tenant_id: string
+        }
+        Insert: {
+          generated_at?: string
+          misconceptions_lede?: string | null
+          model: string
+          placement_line?: string | null
+          recommendations_lede?: string | null
+          session_id: string
+          status: string
+          strand_lede?: string | null
+          tenant_id: string
+        }
+        Update: {
+          generated_at?: string
+          misconceptions_lede?: string | null
+          model?: string
+          placement_line?: string | null
+          recommendations_lede?: string | null
+          session_id?: string
+          status?: string
+          strand_lede?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_narrations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_narrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responses: {
         Row: {
           answer_given: string

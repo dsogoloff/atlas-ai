@@ -28,6 +28,11 @@ interface PlacementCardProps {
   samLevel: string; // pre-formatted, e.g. "S.A.M. Level 2A"
   overallPercentage: number; // 0..100, R1 hybrid (correct/attempted)
   tier: Tier;
+  /** Optional Sonnet-generated warm sentence shown under the SAM level.
+   *  When present, replaces the hardcoded tier-aware flavor sentence —
+   *  the slot accommodates one warm sentence, not two competing ones.
+   *  When absent, falls back to flavorSentence(...) (today's behaviour). */
+  narrationLine?: string;
 }
 
 function flavorSentence(
@@ -46,6 +51,7 @@ export function PlacementCard({
   samLevel,
   overallPercentage,
   tier,
+  narrationLine,
 }: PlacementCardProps) {
   const pct = Math.max(0, Math.min(100, overallPercentage));
   const dashOffset = CIRCUMFERENCE * (1 - pct / 100);
@@ -63,7 +69,7 @@ export function PlacementCard({
           {samLevel}
         </div>
         <p className="font-body-regular text-sam-navy/90 text-base md:text-lg">
-          {flavorSentence(childName, samLevel, tier)}
+          {narrationLine ?? flavorSentence(childName, samLevel, tier)}
         </p>
       </div>
 

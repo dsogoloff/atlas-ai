@@ -23,6 +23,8 @@ import type { AggregatedMisconception } from "@/lib/report/misconception-aggrega
 interface MisconceptionListProps {
   rows: AggregatedMisconception[]; // length 0..3, sorted by occurrences desc
   childName: string;
+  /** Optional Sonnet-generated intro sentence, rendered above the cards. */
+  narrationLede?: string;
 }
 
 const STRAND_ICONS: Record<Strand, string> = {
@@ -49,12 +51,18 @@ const RANK_STYLES: readonly RankStyle[] = [
 export function MisconceptionList({
   rows,
   childName,
+  narrationLede,
 }: MisconceptionListProps) {
   return (
     <section aria-label="Areas for growth">
       <h3 className="font-display-child text-sam-navy text-xl md:text-2xl mb-4 md:mb-6">
         Areas for Growth
       </h3>
+      {narrationLede && (
+        <p className="font-body-regular text-sam-navy/80 text-base md:text-lg leading-relaxed mb-6">
+          {narrationLede}
+        </p>
+      )}
       {rows.length === 0 ? (
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30 flex items-start gap-4">
           <div className="w-12 h-12 bg-sam-teal/10 rounded-xl flex items-center justify-center shrink-0">
