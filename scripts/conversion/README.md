@@ -11,7 +11,7 @@ build. Run from the repo root.
 | 0 | Audit (read-only) — confirm DB shapes and target schema | done |
 | 1 | **Extract** — PDF → per-page PNG + per-page text | done |
 | 2 | **Segment** — extraction → per-question records + answer-key pairing | done (DRAFT output) |
-| 3 | Tag — attach strand / level / misconception codes | not yet |
+| 3 | **Tag** — AI-assisted: content_key / misconceptions / norm fields | done (DRAFT output) |
 | 4 | Load — write to `questions` (and mirror to `seed.sql`) | not yet |
 
 ## How to run Stage 1
@@ -56,6 +56,47 @@ Per-task fields:
 heuristic. Stage 3 will reconcile against the real S.A.M. content and apply
 misconception/strand tagging.
 
+## How to run Stage 3
+
+After Stage 2 has produced `output/<worksheet>/stage2-questions.json`:
+
+1. Make sure `docs/sam-v2026-taxonomy.md` is saved in the repo (Stage 3 reads
+   its fenced ` ```json ` block as the source of truth for strands /
+   sub-strands / levels / content items).
+2. Add your Anthropic key to `.env.local` at the repo root:
+   ```
+   ANTHROPIC_API_KEY=sk-ant-...
+   ```
+3. From the repo root:
+   ```bash
+   pnpm convert:tag
+   ```
+
+Stage 3 calls the Anthropic API once per question (Claude Sonnet 4.6,
+identifier `claude-sonnet-4-6` — reused from
+`src/lib/report/narration/llmClient.ts`'s Gateway model string), passing the
+question, the answer key, the verbatim Evaluation Results table, the
+taxonomy content items for the worksheet's level (± 1), and the 21-code
+misconception vocabulary. The model returns a single JSON object with
+`content_key`, `format`, clean `stem`, `options` + `correct_index` for MC
+(or `correct_answer` for the other formats), `distractor_misconceptions`,
+`misconception_tags`, `operation_type` / `num_operations` /
+`representation`, `difficulty_seed`, `image_required` + `image_alt`,
+`confidence`, `reasoning`, and `review_flags`.
+
+The script then validates the response (content_key must exist, codes must
+be in the 21, format ↔ correct_answer agreement, …) and folds any
+violations into `review_flags`. It derives `external_id`
+(`SAM-L<n>-Q<NN>`), `sub_strand`, `strand`, and `word_count` from the
+taxonomy and the final stem. Outputs in each worksheet folder:
+
+- `stage3-tagged.json` — machine-readable, one record per question
+- `stage3-review.md` — human-readable review sheet (the founder's gate)
+
+**Output is DRAFT for human review.** No DB writes. Per-question failures
+log the error and continue — Stage 3 never aborts a worksheet because of a
+single bad call.
+
 ## Why `input/` and `output/` are gitignored
 
 Both directories hold **licensed third-party PDF content** (S.A.M. placement
@@ -71,6 +112,9 @@ git history. Only `input/.gitkeep` and the script itself are tracked.
   `Matrix.scale(200/72, 200/72)` yields ~200 DPI output.
 - `pdf-parse` — text-layer extraction per page. `pageJoiner: ''` so the
   per-page text doesn't carry the default `-- N of M --` boundary marker.
-- `tsx` — runs the TypeScript script directly.
+- `@anthropic-ai/sdk` — direct Anthropic Messages API client used by Stage
+  3. Reads `ANTHROPIC_API_KEY` from `.env.local`. Model identifier
+  `claude-sonnet-4-6`.
+- `tsx` — runs the TypeScript scripts directly.
 
-All three are dev dependencies. Run `pnpm install` if missing.
+All are dev dependencies. Run `pnpm install` if missing.

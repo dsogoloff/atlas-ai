@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "storage:seed": "node scripts/upload-dev-storage-seed.mjs",
     "convert:extract": "tsx scripts/conversion/stage1-extract.mts",
-    "convert:segment": "tsx scripts/conversion/stage2-segment.ts"
+    "convert:segment": "tsx scripts/conversion/stage2-segment.ts",
+    "convert:tag": "tsx scripts/conversion/stage3-tag.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -27,6 +28,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
