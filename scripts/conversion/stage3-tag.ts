@@ -423,16 +423,17 @@ async function discoverStage2(): Promise<DiscoveredStage2[]> {
 // Prompt construction
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `You are an expert Singapore Math curriculum tagger. Your job is to take an individual placement-test question (already extracted and segmented) and produce a single fully-structured JSON record that classifies it against the S.A.M. V2026 taxonomy and the controlled Atlas misconception vocabulary.
+const SYSTEM_PROMPT = `You are an expert Singapore Math curriculum tagger. Your job is to take an individual placement-test question (already extracted and segmented) and produce a single fully-structured tagged record that classifies it against the S.A.M. V2026 taxonomy and the controlled Atlas misconception vocabulary.
 
 HARD CONSTRAINTS:
-1. Respond with ONLY a single JSON object. No prose, no markdown fences, no explanation outside the JSON's "reasoning" field.
+1. Call the submit_tagging tool exactly once for this question. The tool's input_schema fixes the response shape — populate every required field. Use null (not omission) for fields that legitimately don't apply (e.g. options on a non-MC question).
 2. content_key MUST be one of the keys from the provided taxonomy content list. Never invent a key.
 3. Every misconception code (in distractor_misconceptions values and misconception_tags) MUST be one of the 21 codes from the provided vocabulary. Never invent a code.
 4. operation_type MUST be one of: ${VALID_OPERATION_TYPES.join(", ")}.
 5. representation MUST be one of: ${VALID_REPRESENTATIONS.join(", ")}.
 6. format MUST be one of: ${VALID_FORMATS.join(", ")}.
 7. confidence MUST be exactly "high", "medium", or "low".
+8. sam_level MUST be the bare integer from the eval table (1, 2, 3, ...). Not "1", not "l1".
 
 S.A.M. EVAL TABLE RULES (the worksheet ships an Evaluation Results table that maps each task to a Topic and Level):
 - Apply FILL-DOWN: when a row's Topic or Level cell is blank, inherit the most recent non-blank value from above. Real S.A.M. worksheets leave these blank when consecutive tasks share the same Topic.
@@ -497,7 +498,8 @@ EVALUATION RESULTS TABLE (verbatim — apply fill-down to resolve topic/level fo
 ${evalResultsRaw ?? "(not available)"}
 \`\`\`
 
-TASK ${q.task_number}:
+QUESTION RECORD INPUTS:
+- task_number: ${q.task_number}
 - raw_text:
 \`\`\`
 ${q.raw_text}
@@ -518,19 +520,107 @@ MISCONCEPTION vocabulary (the ONLY 21 codes allowed):
 ${vocabJson}
 \`\`\`
 
-Produce the JSON object described in the system prompt. Output JSON only.`;
+Call the submit_tagging tool with this question's tagged record.`;
 }
 
 // ---------------------------------------------------------------------------
-// LLM call + parse
+// Tool-use schema + LLM call
 // ---------------------------------------------------------------------------
 
-function stripFences(text: string): string {
-  return text
-    .replace(/^\s*```(?:json)?\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim();
+// The submit_tagging tool's input_schema. EVERY field the pipeline needs is
+// `required` — Anthropic's forced tool-use prevents the model from omitting
+// any required key. Fields that legitimately don't apply (options on
+// non-MC, correct_index on non-MC, image_alt when no image) are made
+// nullable via `type: [..., "null"]` rather than optional, so the model
+// still has to emit the key with an explicit null.
+//
+// Enum constraints on format / operation_type / representation / confidence
+// and on every misconception code (in both the per-distractor map values
+// and the misconception_tags array items) make invalid enum values
+// impossible at the API boundary — the model cannot return e.g.
+// `confidence: "very high"` or `operation_type: "INTEGRATION"`.
+function buildTaggingToolSchema(misconceptionCodes: string[]): Record<string, unknown> {
+  const codeEnum = { type: "string", enum: misconceptionCodes };
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "task_number",
+      "sam_level",
+      "sam_topic",
+      "content_key",
+      "format",
+      "stem",
+      "options",
+      "correct_index",
+      "correct_answer",
+      "distractor_misconceptions",
+      "misconception_tags",
+      "operation_type",
+      "num_operations",
+      "representation",
+      "difficulty_seed",
+      "image_required",
+      "image_alt",
+      "confidence",
+      "reasoning",
+      "review_flags",
+    ],
+    properties: {
+      task_number: { type: "integer", minimum: 1 },
+      sam_level: {
+        type: ["integer", "null"],
+        minimum: 0,
+        maximum: 6,
+        description: "Bare integer level from the eval table (1, 2, 3...). Not 'l1'.",
+      },
+      sam_topic: { type: ["string", "null"] },
+      content_key: {
+        type: "string",
+        description: "Must exactly match one key from the provided taxonomy content list.",
+      },
+      format: { type: "string", enum: [...VALID_FORMATS] },
+      stem: { type: "string" },
+      options: {
+        type: ["array", "null"],
+        items: { type: "string" },
+        description: "Exactly 4 strings for MULTIPLE_CHOICE; null otherwise.",
+      },
+      correct_index: {
+        type: ["integer", "null"],
+        minimum: 0,
+        description: "0-based index into options for MC; null for non-MC.",
+      },
+      correct_answer: {
+        type: ["string", "null"],
+        description: "Cleaned value for NUMERIC_ENTRY/DRAG_DROP; null for MC.",
+      },
+      distractor_misconceptions: {
+        type: ["object", "null"],
+        additionalProperties: codeEnum,
+        description:
+          "MC only: keys are stringified option indices ('0'..'3'); values are misconception codes from the 21. Omit a key when no code fits.",
+      },
+      misconception_tags: {
+        type: "array",
+        items: codeEnum,
+        description:
+          "Deduplicated superset of every distractor code plus any item-level codes.",
+      },
+      operation_type: { type: "string", enum: [...VALID_OPERATION_TYPES] },
+      num_operations: { type: "integer", minimum: 1 },
+      representation: { type: "string", enum: [...VALID_REPRESENTATIONS] },
+      difficulty_seed: { type: "number" },
+      image_required: { type: "boolean" },
+      image_alt: { type: ["string", "null"] },
+      confidence: { type: "string", enum: [...VALID_CONFIDENCE] },
+      reasoning: { type: "string" },
+      review_flags: { type: "array", items: { type: "string" } },
+    },
+  };
 }
+
+const TOOL_NAME = "submit_tagging";
 
 async function tagQuestion(
   client: Anthropic,
@@ -541,18 +631,32 @@ async function tagQuestion(
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: SYSTEM_PROMPT,
+      tools: [
+        {
+          name: TOOL_NAME,
+          description:
+            "Submit the fully-structured tagged record for this S.A.M. placement-test question.",
+          input_schema: buildTaggingToolSchema(
+            input.misconceptions.map((m) => m.code),
+          ) as Anthropic.Tool["input_schema"],
+        },
+      ],
+      tool_choice: { type: "tool", name: TOOL_NAME },
       messages: [{ role: "user", content: buildUserPrompt(input) }],
     });
 
-    // Anthropic SDK returns content[] of typed blocks; we expect a single
-    // text block holding the JSON object.
-    let text = "";
+    // With forced tool_choice the model must emit a single tool_use block
+    // for TOOL_NAME. Read its `input` directly — no text block, no fence
+    // stripping, no JSON.parse.
     for (const block of response.content) {
-      if (block.type === "text") text += block.text;
+      if (block.type === "tool_use" && block.name === TOOL_NAME) {
+        return { ok: true, data: block.input as LlmTagged };
+      }
     }
-    text = stripFences(text);
-    const parsed = JSON.parse(text) as LlmTagged;
-    return { ok: true, data: parsed };
+    return {
+      ok: false,
+      error: `No tool_use block named '${TOOL_NAME}' in response (stop_reason=${response.stop_reason}).`,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { ok: false, error: message };
@@ -575,6 +679,22 @@ function countWords(text: string): number {
   return trimmed.split(/\s+/).length;
 }
 
+// Normalize sam_level to a bare integer regardless of whether the model
+// returns 1, "1", or "l1". Tool-use forces integer at the API boundary,
+// but this stays defensive: a manual re-run with a malformed JSON file,
+// or a future model variation that slips a string through, will not
+// produce the "ll1" false-mismatch flag the prose-prompt version did.
+function normalizeSamLevel(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const m = /^l?(\d+)$/i.exec(value.trim());
+    if (m) return Number(m[1]);
+  }
+  return null;
+}
+
 function validateAndEnrich(
   tagged: LlmTagged,
   q: Stage2Question,
@@ -588,18 +708,23 @@ function validateAndEnrich(
   const content = taxonomy.content.find((c) => c.key === tagged.content_key);
   let subStrandKey: string | null = null;
   let strandKey: string | null = null;
+  // Normalize sam_level once for the consistency check below AND for the
+  // record we return (so downstream consumers see a clean integer).
+  const normalizedLevel = normalizeSamLevel(tagged.sam_level);
   if (!content) {
     flags.add(`content_key '${tagged.content_key}' not in taxonomy`);
   } else {
     subStrandKey = content.sub_strand;
     const subStrand = taxonomy.sub_strands.find((s) => s.key === content.sub_strand);
     strandKey = subStrand?.strand ?? null;
-    // sam_level / content level consistency
-    const levelKey = tagged.sam_level !== null ? `l${tagged.sam_level}` : null;
-    if (levelKey && content.level !== levelKey) {
-      flags.add(
-        `sam_level=${tagged.sam_level} does not match content_key level ${content.level}`,
-      );
+    // sam_level / content level consistency. Both sides normalized to "l<n>".
+    if (normalizedLevel !== null) {
+      const levelKey = `l${normalizedLevel}`;
+      if (content.level !== levelKey) {
+        flags.add(
+          `sam_level=${normalizedLevel} does not match content_key level ${content.level}`,
+        );
+      }
     }
   }
 
@@ -666,6 +791,7 @@ function validateAndEnrich(
 
   return {
     ...tagged,
+    sam_level: normalizedLevel,
     review_flags: [...flags],
     external_id: externalId,
     sub_strand: subStrandKey,
@@ -713,6 +839,17 @@ function failedRecord(
 // Review-sheet renderer
 // ---------------------------------------------------------------------------
 
+// Derive a stable question label even when task_number is somehow absent —
+// tool-use now requires it, but the renderer stays defensive so a hand-
+// edited stage3-tagged.json never renders "## Qundefined".
+function questionLabel(q: Stage3Question): string {
+  if (typeof q.task_number === "number" && Number.isFinite(q.task_number)) {
+    return `Q${q.task_number}`;
+  }
+  const m = /Q0*(\d+)$/.exec(q.external_id);
+  return m ? `Q${m[1]}` : "Q?";
+}
+
 function renderReviewSheet(out: Stage3Output): string {
   const lines: string[] = [];
   lines.push(`# Stage 3 review — ${out.source}`);
@@ -733,7 +870,7 @@ function renderReviewSheet(out: Stage3Output): string {
   lines.push("");
 
   for (const q of out.questions) {
-    lines.push(`## Q${q.task_number} — ${q.external_id}`);
+    lines.push(`## ${questionLabel(q)} — ${q.external_id}`);
     lines.push(`**Confidence:** ${q.confidence}  **Status:** ${q.status}`);
     if (q.status === "failed") {
       lines.push("");
