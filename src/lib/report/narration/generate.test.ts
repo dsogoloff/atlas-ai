@@ -89,7 +89,7 @@ describe("generateReportNarration", () => {
     };
     mockCallSonnet.mockResolvedValue({
       text: JSON.stringify(canned),
-      model: "anthropic/claude-sonnet-4-6",
+      model: "claude-sonnet-4-6",
       tokens: { input: 100, output: 50 },
       elapsedMs: 1234,
     });
@@ -98,7 +98,7 @@ describe("generateReportNarration", () => {
 
     expect(result.session_id).toBe(aidenGrade3Report.session_id);
     expect(result.tenant_id).toBe(aidenGrade3Report.tenant_id);
-    expect(result.model).toBe("anthropic/claude-sonnet-4-6");
+    expect(result.model).toBe("claude-sonnet-4-6");
     expect(result.status).toBe("ok");
     expect(result.placement_line).toBe(canned.placement_line);
     expect(result.strand_lede).toBe(canned.strand_lede);
@@ -124,7 +124,7 @@ describe("generateReportNarration", () => {
     };
     mockCallSonnet.mockResolvedValue({
       text: JSON.stringify(malformed),
-      model: "anthropic/claude-sonnet-4-6",
+      model: "claude-sonnet-4-6",
       tokens: { input: 100, output: 50 },
       elapsedMs: 1234,
     });
@@ -134,7 +134,7 @@ describe("generateReportNarration", () => {
     expect(result.status).toBe("failed");
     expect(result.session_id).toBe(aidenGrade3Report.session_id);
     expect(result.tenant_id).toBe(aidenGrade3Report.tenant_id);
-    expect(result.model).toBe("anthropic/claude-sonnet-4-6");
+    expect(result.model).toBe("claude-sonnet-4-6");
     expect(result.placement_line).toBeUndefined();
     expect(result.strand_lede).toBeUndefined();
     expect(result.misconceptions_lede).toBeUndefined();

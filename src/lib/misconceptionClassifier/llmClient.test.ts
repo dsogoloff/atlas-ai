@@ -98,7 +98,7 @@ describe("callHaiku — live mode (flag = 'true', mocked AI SDK)", () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-test");
   });
 
-  it("calls generateObject with the gateway model + abortSignal + maxRetries", async () => {
+  it("calls generateObject with the direct @ai-sdk/anthropic model + abortSignal + maxRetries", async () => {
     mockGenerateObject.mockResolvedValueOnce({
       object: { codes: ["OP_NO_REGROUPING"] },
       usage: { inputTokens: 100, outputTokens: 5 },
@@ -108,7 +108,11 @@ describe("callHaiku — live mode (flag = 'true', mocked AI SDK)", () => {
 
     expect(mockGenerateObject).toHaveBeenCalledTimes(1);
     const call = mockGenerateObject.mock.calls[0][0];
-    expect(call.model).toBe("anthropic/claude-haiku-4-5-20251001");
+    // @ai-sdk/anthropic returns a LanguageModelV3 instance whose modelId is
+    // the bare provider model string (no 'anthropic/' prefix). Keep the date
+    // suffix — Haiku 4.5 is pre-4.6-generation, dateless is an alias.
+    const model = call.model as unknown as { modelId: string };
+    expect(model.modelId).toBe("claude-haiku-4-5-20251001");
     expect(call.system).toContain("classifier");
     expect(call.prompt).toContain("47-19=?");
     expect(call.prompt).toContain("Correct answer: 28");

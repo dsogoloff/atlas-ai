@@ -1,9 +1,10 @@
 // Atlas Assessment — Anthropic Haiku misconception classifier client.
 //
-// Routes through the Vercel AI Gateway via the AI SDK's plain provider/model
-// string convention (Q1 lock: 'anthropic/claude-haiku-4-5-20251001').
-// The Gateway provides observability + zero-data-retention + provider
-// failover; we don't talk to api.anthropic.com directly.
+// Calls api.anthropic.com directly via @ai-sdk/anthropic (Q1 lock:
+// 'claude-haiku-4-5-20251001' — dated form, pinned snapshot, no silent
+// upgrades; Haiku 4.5 is pre-4.6-generation so the dateless alias is an
+// evergreen pointer, NOT a snapshot, and would silently shift under IRT
+// calibration. Do not strip the date suffix.).
 //
 // Two modes:
 //   * stub  (default; MISCONCEPTION_CLASSIFIER_LIVE != 'true'): returns
@@ -11,9 +12,10 @@
 //     testable while Anthropic K-8 educational ToS alignment is in flight
 //     (compliance.md §6 LLM-specific guardrails + §13.3).
 //   * live  (MISCONCEPTION_CLASSIFIER_LIVE === 'true'): calls generateObject
-//     against the Gateway with structured-output enforcement, 3s hard
-//     timeout (S3 lock), 1 retry on retryable failures (S4 lock; AI SDK
-//     handles 5xx/timeout retry with exponential backoff and skips 4xx).
+//     against api.anthropic.com with structured-output enforcement, 3s
+//     hard timeout (S3 lock), 1 retry on retryable failures (S4 lock;
+//     AI SDK handles 5xx/timeout retry with exponential backoff and
+//     skips 4xx).
 //
 // Cost telemetry: every live call emits a structured console.log with
 // token counts + elapsedMs + strand + format. E2 lock — no schema column
@@ -29,6 +31,7 @@
 // Throws on persistent live-mode failure. classifier.ts wraps the haiku
 // branch in try/catch (S2 lock) → method='failed' on the response row.
 
+import { anthropic } from "@ai-sdk/anthropic";
 import { generateObject } from "ai";
 
 import { getAnthropicApiKey, isMisconceptionClassifierLive } from "@/lib/env";
@@ -40,11 +43,13 @@ import {
 } from "./prompt";
 import type { ClassifierInput, ClassifierOutput, TaxonomyMap } from "./types";
 
-/** Vercel AI Gateway model string (Q1 lock — dated form for stable model
- *  identity, no silent upgrades). If a live call fails with an unknown-
- *  model error, look up Vercel AI Gateway docs for the current Anthropic
- *  provider model strings rather than guessing a variation. */
-const MODEL = "anthropic/claude-haiku-4-5-20251001";
+/** Direct @ai-sdk/anthropic model string (Q1 lock — dated form for stable
+ *  model identity, no silent upgrades). NO 'anthropic/' prefix (that was
+ *  the Vercel AI Gateway convention). Haiku 4.5 is pre-4.6-generation, so
+ *  the dateless 'claude-haiku-4-5' is an EVERGREEN ALIAS, not a snapshot —
+ *  do not strip the date suffix or classifier output drifts on minor
+ *  Haiku 4.5 revisions. */
+const MODEL = "claude-haiku-4-5-20251001";
 
 /** S3 lock: 3-second hard timeout on the live call. */
 const TIMEOUT_MS = 3000;
@@ -80,7 +85,7 @@ export async function callHaiku(
   const start = Date.now();
 
   const result = await generateObject({
-    model: MODEL,
+    model: anthropic(MODEL),
     system,
     prompt,
     schema: classifierResponseSchema,

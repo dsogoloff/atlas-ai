@@ -138,7 +138,7 @@ const FAKE_NARRATION_OK: ReportNarration = {
   session_id: SESSION_ID,
   tenant_id: TENANT_ID,
   generated_at: "2026-05-19T15:44:02.000Z",
-  model: "anthropic/claude-sonnet-4-6",
+  model: "claude-sonnet-4-6",
   status: "ok",
   placement_line: "Placement line.",
   strand_lede: "Strand lede.",
@@ -195,7 +195,7 @@ describe("attemptNarration", () => {
       session_id: SESSION_ID,
       tenant_id: TENANT_ID,
       generated_at: "2026-05-19T15:44:02.000Z",
-      model: "anthropic/claude-sonnet-4-6",
+      model: "claude-sonnet-4-6",
       status: "failed",
     });
     const { client, upserts } = makeServiceClient({

@@ -1,14 +1,12 @@
 // Atlas Assessment — Anthropic Sonnet report narration client.
 //
 // Sibling to src/lib/misconceptionClassifier/llmClient.ts. Mirrors the same
-// locks (Q1 dated model string, S3 hard timeout, S4 retries, E2 telemetry,
-// stub-vs-live env gate) but uses generateText (not generateObject) so the
-// narration output is raw text that generate.ts JSON-parses, and Piece 3
+// locks (Q1 dateless-pinned model string, S3 hard timeout, S4 retries, E2
+// telemetry, stub-vs-live env gate) but uses generateText (not generateObject)
+// so the narration output is raw text that generate.ts JSON-parses, and Piece 3
 // owns the schema gate independently of the SDK.
 //
-// Routes through the Vercel AI Gateway via the AI SDK's plain provider/model
-// string convention. The Gateway provides observability + zero-data-retention
-// + provider failover; we don't talk to api.anthropic.com directly.
+// Calls api.anthropic.com directly via @ai-sdk/anthropic.
 //
 // Two modes:
 //   * stub  (default; REPORT_NARRATION_LIVE != 'true'): returns a deterministic
@@ -30,18 +28,18 @@
 // throw propagate; Piece 3 (validate/gate) will translate generation
 // failures into status='failed' on the report_narrations row.
 
+import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 import { getAnthropicApiKey, isReportNarrationLive } from "@/lib/env";
 
-/** Vercel AI Gateway model string for Sonnet. Mirrors the classifier's Q1
- *  lock — provider-prefixed identifier, no silent upgrades. If a live call
- *  fails with an unknown-model error, look up Vercel AI Gateway docs for
- *  the current Anthropic provider model strings rather than guessing a
- *  variation. The dated form (anthropic/claude-sonnet-4-6-YYYYMMDD) is the
- *  preferred Gateway identity once that string is verified against live
- *  Gateway docs. */
-const MODEL = "anthropic/claude-sonnet-4-6";
+/** Direct @ai-sdk/anthropic model string for Sonnet. NO 'anthropic/' prefix
+ *  (that was the Vercel AI Gateway convention) and NO date suffix (Sonnet
+ *  4.6 is post-4.6-generation, so the dateless 'claude-sonnet-4-6' IS the
+ *  pinned snapshot per Anthropic docs — there is no dated form of this
+ *  model ID). Mirrors the classifier's Q1 lock — stable model identity,
+ *  no silent upgrades. */
+const MODEL = "claude-sonnet-4-6";
 
 /** S3 analogue: 15-second hard timeout. Longer than the classifier's 3s
  *  because narration runs asynchronously off the response-submit critical
@@ -99,7 +97,7 @@ export async function callSonnet(
   const start = Date.now();
 
   const result = await generateText({
-    model: MODEL,
+    model: anthropic(MODEL),
     system,
     prompt,
     abortSignal: AbortSignal.timeout(TIMEOUT_MS),
