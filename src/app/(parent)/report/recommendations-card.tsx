@@ -1,10 +1,11 @@
 // Recommended Next Steps card for the parent diagnostic report.
 //
-// Stitch port from module-d/04 (lines 265-287) + 05. Title verbatim
-// from Stitch with name substitution: "Ways to Support {childName}
-// at Home". One bulleted item per recommendation; the parent receives
-// an already-sorted array (page.tsx owns the band-priority sort, so
-// area_of_focus items appear first — most-actionable to least).
+// Stitch port from module-d/04 (lines 265-287) + 05. Title was originally
+// "Ways to Support {childName} at Home"; retitled to "How We Can Support
+// Your Child" — name-free, parent-direct framing. One bulleted item per
+// recommendation; the parent receives an already-sorted array (page.tsx
+// owns the band-priority sort, so area_of_focus items appear first —
+// most-actionable to least).
 //
 // Schema-vs-Stitch note: Stitch shows 3 hand-written bullets; the
 // schema (curriculum_recommendations) returns one row per (strand,
@@ -26,18 +27,16 @@ interface RecommendationsCardProps {
   /** Already sorted by page.tsx: area_of_focus > progressing > mastery
    *  > no_data, with STRAND_ORDER as the within-band tiebreaker. */
   recommendations: Recommendation[];
-  childName: string;
   /** Optional Sonnet-generated intro sentence, rendered above the list. */
   narrationLede?: string;
 }
 
 export function RecommendationsCard({
   recommendations,
-  childName,
   narrationLede,
 }: RecommendationsCardProps) {
   return (
-    <section aria-label={`Ways to support ${childName} at home`}>
+    <section aria-label="How we can support your child">
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border-2 border-sam-navy/5">
         <h3 className="text-lg md:text-xl font-bold text-sam-navy mb-5 md:mb-6 flex items-center gap-2">
           <span
@@ -47,7 +46,7 @@ export function RecommendationsCard({
           >
             tips_and_updates
           </span>
-          Ways to Support {childName} at Home
+          How We Can Support Your Child
         </h3>
 
         {narrationLede && (

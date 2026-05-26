@@ -27,6 +27,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { CTA_LINKS } from "@/lib/cta-links";
+import { firstName } from "@/lib/format/firstName";
 import { createClient } from "@/lib/supabase/server";
 import { deriveTier } from "@/lib/tier/derive";
 
@@ -34,16 +36,6 @@ import { ChildCard } from "./child-card";
 
 // Cookies + auth.getUser → no static prerender.
 export const dynamic = "force-dynamic";
-
-// Phase 1 Q6: split-on-whitespace for the greeting. Works for 95%+ of
-// names; edge cases (mononyms, multi-word first names like "Mary Beth")
-// render harmlessly. Schema change to add a first_name column is out of
-// Item #7 scope.
-function firstName(fullName: string): string {
-  const trimmed = fullName.trim();
-  if (!trimmed) return "";
-  return trimmed.split(/\s+/)[0] ?? trimmed;
-}
 
 export default async function ParentDashboardPage() {
   // Auth gate (Phase 1 Q5b): page-level. Mirrors Phase 2/3 idiom.
@@ -278,6 +270,31 @@ export default async function ParentDashboardPage() {
                 add
               </span>
               Add Another Child
+            </Link>
+          </div>
+
+          {/* Dashboard CTA block — slimmer counterpart to the end-of-report
+              version. Same two actions, same shared URLs. Sits at the
+              bottom of the dashboard so families discover scheduling +
+              support without it competing with the per-child cards. */}
+          <div className="mt-12 pt-8 border-t border-sam-gray-light/30 flex flex-col md:flex-row justify-center items-center gap-3">
+            <Link
+              href={CTA_LINKS.scheduleFreeClass}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-sam-red hover:bg-sam-red/90 text-white font-headline-adult font-bold rounded-xl shadow-sm hover:shadow-md active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">
+                event_available
+              </span>
+              Schedule a free class
+            </Link>
+            <Link
+              href={CTA_LINKS.questionsTalkToUs}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sam-navy/70 hover:text-sam-red font-headline-adult transition-colors"
+            >
+              <span className="material-symbols-outlined text-lg">
+                chat_bubble
+              </span>
+              Questions? Talk to us
             </Link>
           </div>
         </main>

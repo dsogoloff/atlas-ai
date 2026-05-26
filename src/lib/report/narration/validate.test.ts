@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { validateNarration } from "./validate";
 
 const VALID_PROSE = {
-  placement_line: "Aiden showed steady command at S.A.M. Level 3A.",
+  placement_line: "Aiden showed steady command at S.A.M Level 3A.",
   strand_lede:
     "Here's how Aiden's responses spread across the five mathematics strands the assessment covered.",
   misconceptions_lede:

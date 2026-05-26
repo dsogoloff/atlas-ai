@@ -120,7 +120,7 @@ describe("assembleReportContent", () => {
     expect(content.child.grade_label).toBe("3rd Grade");
     expect(content.metadata.report_id).toBe(SESSION.id);
     expect(content.metadata.duration_display).toBe("14 minutes");
-    expect(content.placement.sam_level).toBe("S.A.M. Level 3A");
+    expect(content.placement.sam_level).toBe("S.A.M Level 3A");
     expect(content.placement.tier).toBe("K_4");
     expect(content.time_flag).toBe("normal");
     expect(content.strand_mastery).toEqual([]);

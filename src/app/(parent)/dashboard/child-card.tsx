@@ -13,6 +13,7 @@
 
 import Link from "next/link";
 
+import { firstName } from "@/lib/format/firstName";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import type { Tier } from "@/lib/tier/derive";
 
@@ -88,7 +89,7 @@ export function ChildCard({ child, lastCompletedAt, tier }: ChildCardProps) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h2 className="font-display-child text-xl md:text-3xl text-sam-navy">
-              {child.name}
+              {firstName(child.name)}
             </h2>
             <span
               className={`${accent.badgeBg} ${accent.badgeText} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider`}

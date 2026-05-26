@@ -39,6 +39,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { CTA_LINKS } from "@/lib/cta-links";
+import { firstName } from "@/lib/format/firstName";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { assembleReportContent } from "@/lib/report/assemble";
 import { resolveNarrationProse } from "@/lib/report/narration/resolve";
@@ -156,6 +158,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
   // ---- Branch 5: empty state.
   if (!latestSession) {
+    const childFirstName = firstName(child.name);
     return (
       <>
         <TopAppBar />
@@ -164,11 +167,11 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           <div className="flex-grow flex items-center justify-center">
             <div className="max-w-xl w-full text-center bg-white rounded-3xl p-10 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30">
               <ReportHeader
-                childName={child.name}
+                childName={childFirstName}
                 subtitle={buildSubtitle(child, null)}
               />
               <p className="font-body-regular text-sam-gray-mid mt-4">
-                {`${child.name} hasn’t completed an assessment yet. Once they finish their first session, the diagnostic report will appear here.`}
+                {`${childFirstName} hasn’t completed an assessment yet. Once they finish their first session, the diagnostic report will appear here.`}
               </p>
               <div className="mt-8 print:hidden flex flex-col md:flex-row gap-3 items-center justify-center">
                 <Link
@@ -213,19 +216,20 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   // measurement. We show the date + a banner; we do NOT surface scores
   // or misconceptions because they would mislead the parent.
   if (timeFlag === "unreliable" || timeFlag === "mixed") {
+    const childFirstName = firstName(child.name);
     return (
       <>
         <TopAppBar />
         <main className="flex-grow flex flex-col px-6 py-12 max-w-3xl mx-auto w-full">
           <TopBackLink />
           <ReportHeader
-            childName={child.name}
+            childName={childFirstName}
             subtitle={buildSubtitle(child, latestSession.completed_at)}
           />
           <div className="mt-8 w-full">
             <TimeFlagBanner
               flag={timeFlag}
-              childName={child.name}
+              childName={childFirstName}
               childId={child.id}
             />
           </div>
@@ -290,13 +294,15 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     reportContent.time_flag,
   );
 
+  const childFirstName = firstName(reportContent.child.display_name);
+
   return (
     <>
       <TopAppBar />
       <main className="flex-grow px-6 py-10 md:py-12 max-w-4xl mx-auto w-full">
         <TopBackLink />
         <ReportHeader
-          childName={reportContent.child.display_name}
+          childName={childFirstName}
           subtitle={buildSubtitle(child, latestSession.completed_at)}
         />
 
@@ -307,14 +313,14 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           <div className="mt-6">
             <TimeFlagBanner
               flag={reportContent.time_flag}
-              childName={reportContent.child.display_name}
+              childName={childFirstName}
             />
           </div>
         )}
 
         <div className="mt-8 space-y-8">
           <PlacementCard
-            childName={reportContent.child.display_name}
+            childName={childFirstName}
             samLevel={reportContent.placement.sam_level}
             overallPercentage={reportContent.placement.overall_percentage}
             tier={reportContent.placement.tier}
@@ -343,15 +349,37 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
           <MisconceptionList
             rows={reportContent.misconceptions}
-            childName={reportContent.child.display_name}
+            childName={childFirstName}
             narrationLede={narrationProse?.misconceptions_lede}
           />
 
           <RecommendationsCard
             recommendations={reportContent.recommendations}
-            childName={reportContent.child.display_name}
             narrationLede={narrationProse?.recommendations_lede}
           />
+        </div>
+
+        {/* End-of-report CTA block. Primary "Schedule a free class"
+            (dominant, sam-red) + secondary "Questions? Talk to us"
+            (lighter, outlined). URLs sourced from src/lib/cta-links.ts
+            so wiring real targets later is a single-file change. */}
+        <div className="mt-12 print:hidden flex flex-col md:flex-row justify-center items-center gap-4">
+          <Link
+            href={CTA_LINKS.scheduleFreeClass}
+            className="inline-flex items-center gap-2 px-8 py-4 bg-sam-red hover:bg-sam-red/90 text-white font-headline-adult font-bold rounded-2xl shadow-md hover:shadow-lg active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined">event_available</span>
+            Schedule a free class
+          </Link>
+          <Link
+            href={CTA_LINKS.questionsTalkToUs}
+            className="inline-flex items-center gap-2 px-6 py-3 border-2 border-sam-navy/20 rounded-2xl font-headline-adult text-sam-navy hover:bg-white hover:border-sam-red hover:text-sam-red transition-all"
+          >
+            <span className="material-symbols-outlined text-sam-navy/60">
+              chat_bubble
+            </span>
+            Questions? Talk to us
+          </Link>
         </div>
 
         {/* Footer actions — Item #12 Phase 7.6 reintroduces the Stitch
@@ -360,7 +388,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             of question content on a per-completed-assessment basis;
             see /report/answers/page.tsx header for compliance §8
             rationale. */}
-        <div className="mt-12 print:hidden flex flex-col md:flex-row justify-center items-center gap-4">
+        <div className="mt-8 print:hidden flex flex-col md:flex-row justify-center items-center gap-4">
           <Link
             href={`/report/answers?session=${latestSession.id}`}
             className="inline-flex items-center gap-2 px-8 py-4 bg-sam-navy text-white rounded-2xl font-bold hover:bg-sam-navy/90 transition-all active:scale-95 shadow-md"

@@ -74,7 +74,10 @@ const SAM_LEVEL_BY_HALF_GRADE: Record<HalfGradeLevel, string> = {
 };
 
 function samLevelLabel(level: HalfGradeLevel): string {
-  return `S.A.M. ${SAM_LEVEL_BY_HALF_GRADE[level]}`;
+  // S.A.M's official brand name has no trailing dot — "S.A.M Level 3A",
+  // not "S.A.M. Level 3A". Sentence-ending punctuation in copy is added
+  // separately; this formatter produces only the mid-sentence form.
+  return `S.A.M ${SAM_LEVEL_BY_HALF_GRADE[level]}`;
 }
 
 /** Half-grade → tax_level code. Best-effort 1:1; half-grades outside

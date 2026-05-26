@@ -24,7 +24,7 @@ export const aidenGrade3Narration: ReportNarration = {
   status: "ok",
 
   placement_line:
-    "Aiden's responses point to a clean fit at S.A.M. Level 3 — confident " +
+    "Aiden's responses point to a clean fit at S.A.M Level 3 — confident " +
     "with whole-number work and ready to build on what's already in place.",
 
   strand_lede:

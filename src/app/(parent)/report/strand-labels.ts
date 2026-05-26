@@ -47,8 +47,8 @@ export const PARENT_STRAND_LABELS: Record<ParentStrand, string> = {
  *  labels in particular. Single-word where possible so 3-axis labels fit
  *  without clipping the 460-unit-wide viewBox at small viewports. */
 export const SHORT_PARENT_STRAND_LABELS: Record<ParentStrand, string> = {
-  number_algebra: "Number",
-  measurement_geometry: "Measure",
+  number_algebra: "Numbers",
+  measurement_geometry: "Measurement",
   statistics: "Statistics",
 };
 

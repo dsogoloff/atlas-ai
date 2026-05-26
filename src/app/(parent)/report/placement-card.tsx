@@ -25,7 +25,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // 552.92
 
 interface PlacementCardProps {
   childName: string;
-  samLevel: string; // pre-formatted, e.g. "S.A.M. Level 2A"
+  samLevel: string; // pre-formatted, e.g. "S.A.M Level 2A"
   overallPercentage: number; // 0..100, R1 hybrid (correct/attempted)
   tier: Tier;
   /** Optional Sonnet-generated warm sentence shown under the SAM level.
@@ -35,15 +35,23 @@ interface PlacementCardProps {
   narrationLine?: string;
 }
 
+/** Strip the trailing half-level letter (A/B/C) for parent-facing display.
+ *  Report lock R2: parent-facing copy shows "S.A.M Level N" only — the
+ *  half-level is an internal placement detail. Mirrors the narration
+ *  prompt's stripper. Input "S.A.M Level 3A" -> "S.A.M Level 3". */
+function stripHalfLevel(samLevel: string): string {
+  return samLevel.replace(/[A-Za-z]$/, "").trimEnd();
+}
+
 function flavorSentence(
   childName: string,
-  samLevel: string,
+  samLevelWhole: string,
   tier: Tier,
 ): string {
   if (tier === "G5_8") {
-    return `${childName} demonstrated solid command of grade-level concepts. Placement at ${samLevel} reflects current strengths.`;
+    return `${childName} demonstrated solid command of grade-level concepts. Placement at ${samLevelWhole} reflects current strengths.`;
   }
-  return `${childName} showed strong conceptual understanding today! Ready to begin ${samLevel}.`;
+  return `${childName} showed strong conceptual understanding today! Ready to begin ${samLevelWhole}.`;
 }
 
 export function PlacementCard({
@@ -55,6 +63,7 @@ export function PlacementCard({
 }: PlacementCardProps) {
   const pct = Math.max(0, Math.min(100, overallPercentage));
   const dashOffset = CIRCUMFERENCE * (1 - pct / 100);
+  const samLevelWhole = stripHalfLevel(samLevel);
 
   return (
     <section
@@ -66,10 +75,10 @@ export function PlacementCard({
           Recommended Placement
         </h2>
         <div className="font-display-child text-sam-red text-3xl md:text-5xl leading-tight">
-          {samLevel}
+          {samLevelWhole}
         </div>
         <p className="font-body-regular text-sam-navy/90 text-base md:text-lg">
-          {narrationLine ?? flavorSentence(childName, samLevel, tier)}
+          {narrationLine ?? flavorSentence(childName, samLevelWhole, tier)}
         </p>
       </div>
 

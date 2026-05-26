@@ -121,7 +121,7 @@ export interface ReportContent {
   time_flag: SessionTimeFlag; // unreliable | mixed | rushed | struggling | normal
 
   placement: {
-    sam_level: string; // pre-formatted "S.A.M. Level 3A" (samLevelLabel output)
+    sam_level: string; // pre-formatted "S.A.M Level 3A" (samLevelLabel output)
     overall_percentage: number; // 0..100, R1 hybrid (correct/attempted)
     tier: Tier; // K_4 | G5_8
   };

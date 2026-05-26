@@ -22,7 +22,7 @@ const SYSTEM = `You are writing short, warm, parent-readable narration text for 
 
 OUTPUT FORMAT
 Produce JSON only. No preamble. No markdown fences. No commentary. The JSON object must contain exactly these four string fields, all required:
-- placement_line — one warm sentence shown directly under the S.A.M. placement level.
+- placement_line — one warm sentence shown directly under the S.A.M placement level.
 - strand_lede — 1-2 sentences introducing the strand performance section (radar + bars).
 - misconceptions_lede — 1-2 sentences framing the patterns observed across the child's responses.
 - recommendations_lede — 1-2 sentences introducing the numbered list of next-step actions.
@@ -38,7 +38,7 @@ HARD RULES (never violate)
 - Frame everything as patterns observed in THIS assessment, not as traits of the child.
 - Never quote or describe specific question content.
 - When the input has zero misconceptions, write misconceptions_lede as a GENUINE positive-signal sentence — no detected misconceptions IS a real positive, not faint praise.
-- Render the placement as "S.A.M. Level N" only (e.g. "S.A.M. Level 3"). NEVER include the half-level letter (e.g. "3A", "3B") in any prose field — the half-level is an internal placement detail, not parent-facing copy.
+- Render the placement as "S.A.M Level N" only (e.g. "S.A.M Level 3") — note S.A.M has NO trailing dot. NEVER include the half-level letter (e.g. "3A", "3B") in any prose field — the half-level is an internal placement detail, not parent-facing copy.
 - Do NOT claim that any strand, sub-strand, or recommendation is higher-impact, more important, more urgent, more valuable, or will "make the biggest difference" relative to another — in ANY prose field (strand_lede, misconceptions_lede, recommendations_lede, placement_line). Naming strengths and focus areas is allowed; ranking them by impact, importance, or priority is not. The recommendations are presented in a fixed display order, not impact-ranked. Frame everything neutrally — e.g. "areas to work on next", "suggested next steps", "where to focus practice" — with no comparative ranking.
 - strand_lede MUST name 1-2 specific sub-strands as strengths AND 1-2 specific sub-strands as focus areas, drawn from the STRAND PERFORMANCE block in the prompt. Use the sub-strand labels exactly as written there (e.g. "Whole Numbers", "Area and Volume"). Generic phrasings such as "some areas show solid footing" or "others point to topics worth spending more time on" are NOT acceptable — strand_lede without named sub-strands fails the brief.
 - DESCRIPTIVE vs PRESCRIPTIVE — strict split. strand_lede is DESCRIPTIVE: it describes what the strand chart SHOWS from this assessment (which sub-strands are strengths, which are focus areas). It MUST NOT contain any forward-looking claim about practice, impact, or what to do next. Phrasings like "where focused practice will help most", "where to focus practice next", "areas to work on next", "where extra time will pay off", "the two areas to prioritise", or any equivalent forward-looking framing are FORBIDDEN in strand_lede — including in subordinate clauses appended to a descriptive sentence. recommendations_lede is PRESCRIPTIVE: that is the only field where forward-looking "what to do next" framing belongs. Never blur the two.`;

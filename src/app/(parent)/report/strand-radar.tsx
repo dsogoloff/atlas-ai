@@ -46,7 +46,9 @@ const ANGLE_STEP_DEG = 360 / AXIS_COUNT; // 120
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1.0] as const;
 
 // viewBox padding: 30px each side covers SHORT_PARENT_STRAND_LABELS
-// ("Number" / "Measure" / "Statistics") at fontSize=14 without clipping.
+// ("Numbers" / "Measurement" / "Statistics") at fontSize=14 without
+// clipping (widest is "Measurement" / "Statistics" at ~11 chars; SVG
+// labels are center-anchored at radius 165 so spans stay well within).
 const VIEWBOX_PAD_X = 30;
 const VIEWBOX_MIN_X = -VIEWBOX_PAD_X;
 const VIEWBOX_WIDTH = 400 + VIEWBOX_PAD_X * 2;

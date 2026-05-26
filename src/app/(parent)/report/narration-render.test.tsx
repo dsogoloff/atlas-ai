@@ -25,7 +25,7 @@ describe("PlacementCard narrationLine", () => {
     const html = renderToString(
       <PlacementCard
         childName="Aiden"
-        samLevel="S.A.M. Level 3A"
+        samLevel="S.A.M Level 3A"
         overallPercentage={70}
         tier="K_4"
         narrationLine={NARRATION_LINE}
@@ -41,7 +41,7 @@ describe("PlacementCard narrationLine", () => {
     const html = renderToString(
       <PlacementCard
         childName="Aiden"
-        samLevel="S.A.M. Level 3A"
+        samLevel="S.A.M Level 3A"
         overallPercentage={70}
         tier="K_4"
       />,
@@ -74,7 +74,6 @@ describe("RecommendationsCard narrationLede", () => {
   it("renders narrationLede above the recommendations list when present", () => {
     const html = renderToString(
       <RecommendationsCard
-        childName="Aiden"
         recommendations={[]}
         narrationLede={RECOMMENDATIONS_LEDE}
       />,
@@ -84,7 +83,7 @@ describe("RecommendationsCard narrationLede", () => {
 
   it("renders without the lede when absent", () => {
     const html = renderToString(
-      <RecommendationsCard childName="Aiden" recommendations={[]} />,
+      <RecommendationsCard recommendations={[]} />,
     );
     expect(html).not.toContain(RECOMMENDATIONS_LEDE);
   });
