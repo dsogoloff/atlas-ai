@@ -60,7 +60,7 @@ export async function generateReportNarration(
     status: "ok",
     placement_line: validation.prose.placement_line,
     strand_lede: validation.prose.strand_lede,
-    misconceptions_lede: validation.prose.misconceptions_lede,
+    key_findings: validation.prose.key_findings,
     recommendations_lede: validation.prose.recommendations_lede,
   };
 }

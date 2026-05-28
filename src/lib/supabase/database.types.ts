@@ -539,8 +539,9 @@ export type Database = {
       }
       report_narrations: {
         Row: {
+          findings_growth_areas: string[] | null
+          findings_strengths: string[] | null
           generated_at: string
-          misconceptions_lede: string | null
           model: string
           placement_line: string | null
           recommendations_lede: string | null
@@ -550,8 +551,9 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          findings_growth_areas?: string[] | null
+          findings_strengths?: string[] | null
           generated_at?: string
-          misconceptions_lede?: string | null
           model: string
           placement_line?: string | null
           recommendations_lede?: string | null
@@ -561,8 +563,9 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          findings_growth_areas?: string[] | null
+          findings_strengths?: string[] | null
           generated_at?: string
-          misconceptions_lede?: string | null
           model?: string
           placement_line?: string | null
           recommendations_lede?: string | null
@@ -1247,3 +1250,4 @@ export const Constants = {
     },
   },
 } as const
+

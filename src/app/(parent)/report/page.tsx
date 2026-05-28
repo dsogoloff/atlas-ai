@@ -49,7 +49,7 @@ import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
-import { MisconceptionList } from "./misconception-list";
+import { KeyFindings } from "./key-findings";
 import { PlacementCard } from "./placement-card";
 import { RecommendationsCard } from "./recommendations-card";
 import { StrandMap } from "./strand-map";
@@ -279,7 +279,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   const { data: narrationRow, error: narrationErr } = await supabase
     .from("report_narrations")
     .select(
-      "status, placement_line, strand_lede, misconceptions_lede, recommendations_lede",
+      "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
     )
     .eq("session_id", latestSession.id)
     .maybeSingle();
@@ -347,11 +347,17 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
           <StrandMap rows={reportContent.strand_mastery} />
 
-          <MisconceptionList
-            rows={reportContent.misconceptions}
-            childName={childFirstName}
-            narrationLede={narrationProse?.misconceptions_lede}
-          />
+          {/* "What We Noticed" — Block 2 restructure. Replaces the prior
+              MisconceptionList card grid + misconceptions_lede prose with
+              a single numbered list driven by narrationProse.key_findings.
+              Renders only when narration is available; without it the
+              section is omitted (data-only fallback per surface). */}
+          {narrationProse?.key_findings && (
+            <KeyFindings
+              strengths={narrationProse.key_findings.strengths}
+              growthAreas={narrationProse.key_findings.growth_areas}
+            />
+          )}
 
           <RecommendationsCard
             recommendations={reportContent.recommendations}

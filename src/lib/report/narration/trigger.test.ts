@@ -142,7 +142,10 @@ const FAKE_NARRATION_OK: ReportNarration = {
   status: "ok",
   placement_line: "Placement line.",
   strand_lede: "Strand lede.",
-  misconceptions_lede: "Misconceptions lede.",
+  key_findings: {
+    strengths: ["Strength one.", "Strength two."],
+    growth_areas: ["Growth one.", "Growth two."],
+  },
   recommendations_lede: "Recommendations lede.",
 };
 
@@ -169,7 +172,14 @@ describe("attemptNarration", () => {
     expect(upserts[0].row.status).toBe("ok");
     expect(upserts[0].row.placement_line).toBe("Placement line.");
     expect(upserts[0].row.strand_lede).toBe("Strand lede.");
-    expect(upserts[0].row.misconceptions_lede).toBe("Misconceptions lede.");
+    expect(upserts[0].row.findings_strengths).toEqual([
+      "Strength one.",
+      "Strength two.",
+    ]);
+    expect(upserts[0].row.findings_growth_areas).toEqual([
+      "Growth one.",
+      "Growth two.",
+    ]);
     expect(upserts[0].row.recommendations_lede).toBe("Recommendations lede.");
   });
 
@@ -209,7 +219,8 @@ describe("attemptNarration", () => {
     expect(upserts[0].row.status).toBe("failed");
     expect(upserts[0].row.placement_line).toBeNull();
     expect(upserts[0].row.strand_lede).toBeNull();
-    expect(upserts[0].row.misconceptions_lede).toBeNull();
+    expect(upserts[0].row.findings_strengths).toBeNull();
+    expect(upserts[0].row.findings_growth_areas).toBeNull();
     expect(upserts[0].row.recommendations_lede).toBeNull();
   });
 

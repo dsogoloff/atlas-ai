@@ -159,16 +159,28 @@ export interface ReportNarration {
   model: string; // e.g. "claude-sonnet-..." — audit
   status: "ok" | "failed"; // 'failed' rows may be written for audit; treat prose as absent
 
-  // One warm sentence shown under the S.A.M. placement level.
+  // One warm sentence shown under the S.A.M placement level.
   placement_line?: string;
 
   // 1-2 sentence intro to the strand radar + bar section.
   strand_lede?: string;
 
-  // 1-2 sentence framing for the misconception cards. Generation writes the
-  // appropriate version depending on whether any misconceptions were detected
-  // (including the positive "none detected" case).
-  misconceptions_lede?: string;
+  /**
+   * Backs the parent report's "What We Noticed" numbered list. strengths
+   * come from top-mastered sub-strands (strand_mastery data); growth_areas
+   * come from surfaced misconception patterns, supplemented from
+   * lowest-mastery sub-strands when fewer than 2 misconceptions surfaced.
+   * Each item is short prose (pattern name + plain description for growth
+   * areas; sub-strand + warm phrase for strengths).
+   *
+   * strengths MAY be empty when there is no measured strand data
+   * (thin-bank case); growth_areas MAY be empty when neither misconceptions
+   * nor mastery data surfaced anything. Both are valid — not errors.
+   */
+  key_findings?: {
+    strengths: string[]; // 0-3 items
+    growth_areas: string[]; // 0-3 items
+  };
 
   // 1-2 sentence intro to the recommendations action list.
   recommendations_lede?: string;

@@ -39,7 +39,7 @@ describe("buildNarrationPrompt", () => {
     expect(system).toMatch(/JSON only/i);
     expect(system).toContain("placement_line");
     expect(system).toContain("strand_lede");
-    expect(system).toContain("misconceptions_lede");
+    expect(system).toContain("key_findings");
     expect(system).toContain("recommendations_lede");
 
     // Voice hard rules — load-bearing. If any of these disappear from the
@@ -66,7 +66,11 @@ describe("buildNarrationPrompt", () => {
     expect(prompt).not.toContain("none detected");
   });
 
-  it("takes the positive-state branch when misconceptions are empty", () => {
+  it("takes the fallback branch when misconceptions are empty", () => {
+    // Block 2 restructure: empty-misconceptions branch now instructs the
+    // model to fall back to lowest-percentage sub-strands for growth_areas
+    // (rather than the old positive-signal sentence framing). Test guards
+    // that the new fallback instruction is in the prompt body.
     const emptyMcContent: ReportContent = {
       ...aidenGrade3Report,
       misconceptions: [],
@@ -74,8 +78,7 @@ describe("buildNarrationPrompt", () => {
     const { prompt } = buildNarrationPrompt(emptyMcContent);
 
     expect(prompt).toContain("none detected");
-    expect(prompt).toMatch(/positive-signal/i);
-    expect(prompt).toMatch(/real positive/i);
+    expect(prompt).toMatch(/fall back to lowest-percentage sub-strands/i);
   });
 });
 
@@ -84,7 +87,10 @@ describe("generateReportNarration", () => {
     const canned = {
       placement_line: "Canned placement.",
       strand_lede: "Canned strand lede.",
-      misconceptions_lede: "Canned misconceptions lede.",
+      key_findings: {
+        strengths: ["Strength one.", "Strength two."],
+        growth_areas: ["Growth one.", "Growth two."],
+      },
       recommendations_lede: "Canned recommendations lede.",
     };
     mockCallSonnet.mockResolvedValue({
@@ -102,7 +108,7 @@ describe("generateReportNarration", () => {
     expect(result.status).toBe("ok");
     expect(result.placement_line).toBe(canned.placement_line);
     expect(result.strand_lede).toBe(canned.strand_lede);
-    expect(result.misconceptions_lede).toBe(canned.misconceptions_lede);
+    expect(result.key_findings).toEqual(canned.key_findings);
     expect(result.recommendations_lede).toBe(canned.recommendations_lede);
 
     // Valid ISO8601 — cheapest robust check is a Date round-trip.
@@ -112,14 +118,17 @@ describe("generateReportNarration", () => {
   });
 
   it("resolves to status:'failed' with prose absent when Sonnet returns shape-invalid JSON", async () => {
-    // Well-formed JSON but missing a required prose field — exercises the
+    // Well-formed JSON but missing a required field — exercises the
     // Piece 3 validation gate. The brief: validation failure must NOT throw;
     // it resolves to a status:'failed' ReportNarration so the report
     // renderer falls back to data-only across all four surfaces.
     const malformed = {
       placement_line: "Has placement.",
       strand_lede: "Has strand lede.",
-      misconceptions_lede: "Has misconceptions.",
+      key_findings: {
+        strengths: ["Strength."],
+        growth_areas: ["Growth."],
+      },
       // recommendations_lede missing
     };
     mockCallSonnet.mockResolvedValue({
@@ -137,7 +146,7 @@ describe("generateReportNarration", () => {
     expect(result.model).toBe("claude-sonnet-4-6");
     expect(result.placement_line).toBeUndefined();
     expect(result.strand_lede).toBeUndefined();
-    expect(result.misconceptions_lede).toBeUndefined();
+    expect(result.key_findings).toBeUndefined();
     expect(result.recommendations_lede).toBeUndefined();
     // generated_at is still stamped on failed rows so the failure has audit.
     expect(new Date(result.generated_at).toISOString()).toBe(

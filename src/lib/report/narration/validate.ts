@@ -16,10 +16,17 @@
 // headroom for variations without admitting runaway output. Multi-paragraph
 // runaway typically blows past 800-1200 chars, so 600 sits comfortably
 // between "comfortable headroom" and "clear hallucination floor."
+//
+// key_findings shape: strengths + growth_areas, each 0-3 short items
+// (pattern + description for growth_areas; sub-strand + warm phrase for
+// strengths). Empty arrays are valid — strengths empty when there's no
+// measured strand data (thin-bank case), growth_areas empty when neither
+// misconceptions nor mastery data surfaced anything.
 
 import { z } from "zod";
 
 const MAX_PROSE_LENGTH = 600;
+const MAX_FINDINGS_PER_LIST = 3;
 
 /** Per-field rule: a non-empty (after trim) string within MAX_PROSE_LENGTH.
  *  Two refines instead of one so failure messages distinguish "blank" from
@@ -33,10 +40,23 @@ const proseField = z
     `exceeds max prose length of ${MAX_PROSE_LENGTH} chars`,
   );
 
+/** Per-item rule for key_findings lists: same shape as proseField (non-empty
+ *  after trim, under MAX_PROSE_LENGTH). */
+const findingItem = proseField;
+
+/** key_findings list: 0-3 items, each a valid finding item. Empty array
+ *  is allowed — see header. */
+const findingsList = z.array(findingItem).max(MAX_FINDINGS_PER_LIST);
+
+const keyFindingsSchema = z.object({
+  strengths: findingsList,
+  growth_areas: findingsList,
+});
+
 export const narrationProseSchema = z.object({
   placement_line: proseField,
   strand_lede: proseField,
-  misconceptions_lede: proseField,
+  key_findings: keyFindingsSchema,
   recommendations_lede: proseField,
 });
 
@@ -47,8 +67,9 @@ export type ValidateNarrationResult =
   | { valid: false };
 
 /** All-or-nothing validation. Any failure (missing field, wrong type, empty
- *  after trim, over-length) invalidates the whole narration. Callers should
- *  fall back to status='failed' / data-only render per surface. */
+ *  after trim, over-length, too many findings) invalidates the whole
+ *  narration. Callers should fall back to status='failed' / data-only
+ *  render per surface. */
 export function validateNarration(parsed: unknown): ValidateNarrationResult {
   const result = narrationProseSchema.safeParse(parsed);
   return result.success ? { valid: true, prose: result.data } : { valid: false };

@@ -51,7 +51,7 @@ const TIMEOUT_MS = 15000;
  *  exponential backoff; 4xx errors bypass retry by SDK default. */
 const MAX_RETRIES = 1;
 
-/** Deterministic stub output. JSON with all four prose fields populated by
+/** Deterministic stub output. JSON with all four output fields populated by
  *  recognisable placeholder copy — same shape live mode would produce so
  *  generate.ts's parse path is exercised identically in stub mode. */
 const STUB_TEXT = JSON.stringify({
@@ -59,8 +59,16 @@ const STUB_TEXT = JSON.stringify({
     "[stub narration] placement line goes here in live mode.",
   strand_lede:
     "[stub narration] strand lede goes here in live mode.",
-  misconceptions_lede:
-    "[stub narration] misconceptions lede goes here in live mode.",
+  key_findings: {
+    strengths: [
+      "[stub narration] strength item 1 goes here in live mode.",
+      "[stub narration] strength item 2 goes here in live mode.",
+    ],
+    growth_areas: [
+      "[stub narration] growth area item 1 goes here in live mode.",
+      "[stub narration] growth area item 2 goes here in live mode.",
+    ],
+  },
   recommendations_lede:
     "[stub narration] recommendations lede goes here in live mode.",
 });

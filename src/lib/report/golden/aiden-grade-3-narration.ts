@@ -2,13 +2,13 @@
  * Atlas Assessment Report — "Aiden, Grade 3" narration golden fixture
  *
  * Sibling to `aiden-grade-3.ts` (the ReportContent fixture). Joins by
- * session_id, which is identical across both files. Status `ok`; all four
- * prose fields populated with realistic, warm, parent-readable placeholder
- * copy.
+ * session_id, which is identical across both files. Status `ok`; all
+ * narration output fields populated with realistic, warm, parent-readable
+ * placeholder copy.
  *
  * The fixture demonstrates the joined-but-separate shape: the report
  * renderer reads ReportContent for data and overlays ReportNarration's
- * optional prose per surface. A missing or partial narration degrades each
+ * optional fields per surface. A missing or partial narration degrades each
  * surface to data-only — no special handling required.
  *
  * Spec reference: report-system-spec §7 (planned narration layer).
@@ -28,15 +28,28 @@ export const aidenGrade3Narration: ReportNarration = {
     "with whole-number work and ready to build on what's already in place.",
 
   strand_lede:
-    "Here's how Aiden's responses spread across the five mathematics strands " +
-    "the assessment covered, alongside the expected proficiency range for " +
-    "his grade band.",
+    "This assessment shows clear strength in Whole Numbers and Measurement, " +
+    "while Fractions and Area and Volume are the sub-strands where Aiden's " +
+    "responses landed in the focus-area band.",
 
-  misconceptions_lede:
-    "Two specific patterns came up across Aiden's responses. These aren't " +
-    "deficits — they're the most useful signals for where to focus next.",
+  key_findings: {
+    strengths: [
+      "Whole Numbers: Aiden's responses showed consistent mastery across the " +
+        "questions in this sub-strand.",
+      "Measurement: solid command of the measurement items in this " +
+        "assessment.",
+    ],
+    growth_areas: [
+      "Fraction comparison: in side-by-side fraction questions, Aiden's " +
+        "responses followed the size of the denominator rather than the size " +
+        "of the fraction itself.",
+      "Keyword-driven operation choice: in word problems, the operation " +
+        "chosen appeared to be guided by certain keywords rather than the " +
+        "full situation described.",
+    ],
+  },
 
   recommendations_lede:
-    "A short, ordered plan built around Aiden's placement and the two " +
-    "patterns above. Start at the top and work down.",
+    "A short, ordered plan built around Aiden's placement and the patterns " +
+    "above. Start at the top and work down.",
 };

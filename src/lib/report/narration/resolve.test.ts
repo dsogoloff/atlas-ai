@@ -1,6 +1,8 @@
 // Unit tests for resolveNarrationProse. Covers the brief's four cases:
 // narration absent (null row), status:'failed', time_flag suppression
-// (unreliable + mixed), and the happy path with full prose.
+// (unreliable + mixed), and the happy path with full prose. Plus
+// post-Block-2 specifics: key_findings present requires BOTH array
+// columns non-null.
 
 import { describe, expect, it } from "vitest";
 
@@ -10,7 +12,8 @@ const VALID_ROW = {
   status: "ok",
   placement_line: "Warm placement line.",
   strand_lede: "Strand intro.",
-  misconceptions_lede: "Patterns came up.",
+  findings_strengths: ["Strength one.", "Strength two."],
+  findings_growth_areas: ["Growth one.", "Growth two."],
   recommendations_lede: "Short plan.",
 };
 
@@ -19,7 +22,10 @@ describe("resolveNarrationProse", () => {
     expect(resolveNarrationProse(VALID_ROW, "normal")).toEqual({
       placement_line: "Warm placement line.",
       strand_lede: "Strand intro.",
-      misconceptions_lede: "Patterns came up.",
+      key_findings: {
+        strengths: ["Strength one.", "Strength two."],
+        growth_areas: ["Growth one.", "Growth two."],
+      },
       recommendations_lede: "Short plan.",
     });
   });
@@ -43,18 +49,43 @@ describe("resolveNarrationProse", () => {
   });
 
   it("maps null prose fields to undefined when only some fields are populated", () => {
-    // Partial coverage — e.g. a Sonnet response that produced three fields
-    // cleanly and one field as something invalid that the gate dropped.
-    // Hypothetical given the all-or-nothing Piece 3 gate, but the resolver
-    // must still handle per-field nullability cleanly because the DB
-    // columns are nullable.
     expect(
       resolveNarrationProse({ ...VALID_ROW, strand_lede: null }, "normal"),
     ).toEqual({
       placement_line: "Warm placement line.",
       strand_lede: undefined,
-      misconceptions_lede: "Patterns came up.",
+      key_findings: {
+        strengths: ["Strength one.", "Strength two."],
+        growth_areas: ["Growth one.", "Growth two."],
+      },
       recommendations_lede: "Short plan.",
+    });
+  });
+
+  it("key_findings resolves to undefined when either array column is null", () => {
+    // Partial / legacy write — neither half is meaningful without the other.
+    const noStrengths = {
+      ...VALID_ROW,
+      findings_strengths: null,
+    };
+    expect(resolveNarrationProse(noStrengths, "normal")?.key_findings).toBeUndefined();
+
+    const noGrowth = {
+      ...VALID_ROW,
+      findings_growth_areas: null,
+    };
+    expect(resolveNarrationProse(noGrowth, "normal")?.key_findings).toBeUndefined();
+  });
+
+  it("key_findings preserves empty arrays (thin-bank / quiet-classifier valid case)", () => {
+    const empty = {
+      ...VALID_ROW,
+      findings_strengths: [],
+      findings_growth_areas: [],
+    };
+    expect(resolveNarrationProse(empty, "normal")?.key_findings).toEqual({
+      strengths: [],
+      growth_areas: [],
     });
   });
 });
