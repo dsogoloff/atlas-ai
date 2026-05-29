@@ -1,6 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
+// The handler emits short_test_started via next/server `after()`. Stub it as
+// a no-op so the (analytics) side-effect doesn't run during these tests —
+// emit() has its own coverage in src/lib/analytics/emit.test.ts.
+vi.mock("next/server", () => ({
+  after: () => {},
+}));
+
 import { STRANDS } from "@/lib/engine/levels";
 import type { Database } from "@/lib/supabase/database.types";
 

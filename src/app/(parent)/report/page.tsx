@@ -38,6 +38,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
 import { KeyFindings } from "./key-findings";
+import { ParentReportFeedback } from "./parent-report-feedback";
 import { PlacementCard } from "./placement-card";
 import { RecommendationsCard } from "./recommendations-card";
 import { StrandMap } from "./strand-map";
@@ -350,6 +351,8 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
       </Section>
 
       <NextSteps sessionId={latestSession.id} />
+
+      <ParentReportFeedback sessionId={latestSession.id} childId={child.id} />
 
       <Footer />
     </ReportShell>

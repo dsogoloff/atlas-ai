@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 
+import { LandingViewBeacon } from "./landing-view-beacon";
+
 // Ported from stitch/module-a/01-landing-desktop.html (do not hand-edit
 // either this file or the Stitch source — re-port if the design changes).
 //
@@ -20,6 +22,7 @@ import Link from "next/link";
 export default function LandingPage() {
   return (
     <>
+      <LandingViewBeacon />
       {/* TopAppBar */}
       <header className="bg-[#FEFBF6] font-display-child font-semibold top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4 sticky">
         <div className="flex items-center gap-8">

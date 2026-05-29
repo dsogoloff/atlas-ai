@@ -23,7 +23,10 @@
 // only — no client insert policy — mirroring how signup writes vpc_audit_log).
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 
+import { emit } from "@/lib/analytics/emit";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   CONSENT_TEXT,
@@ -148,6 +151,26 @@ export async function addChildAction(
       error: "Could not record consent. Please try again.",
     };
   }
+
+  // Funnel instrumentation (fail-soft, off the response path via after()).
+  // Both events fire only here — past the consent rollback — so they always
+  // reflect a child that actually persisted. No PII: ids + non-identifying
+  // scalars only.
+  after(() => {
+    void emit(admin, ANALYTICS_EVENTS.CHILD_PROFILE_CREATED, {
+      tenantId: parent.tenant_id,
+      childId: child.id,
+      props: { grade_level: data.gradeLevel ?? null },
+    });
+    void emit(admin, ANALYTICS_EVENTS.PARENT_CONSENT_COMPLETED, {
+      tenantId: parent.tenant_id,
+      childId: child.id,
+      props: {
+        consent_type: CONSENT_TYPE,
+        consent_text_version: CONSENT_TEXT_VERSION,
+      },
+    });
+  });
 
   return { ok: true, childId: child.id };
 }
