@@ -73,7 +73,9 @@ const SAM_LEVEL_BY_HALF_GRADE: Record<HalfGradeLevel, string> = {
   "8B": "Level 8B",
 };
 
-function samLevelLabel(level: HalfGradeLevel): string {
+// Exported for reuse by the instructor roster, which needs the canonical
+// S.A.M-level label per child without re-running the full report assembly.
+export function samLevelLabel(level: HalfGradeLevel): string {
   // S.A.M's official brand name has no trailing dot — "S.A.M Level 3A",
   // not "S.A.M. Level 3A". Sentence-ending punctuation in copy is added
   // separately; this formatter produces only the mid-sentence form.
