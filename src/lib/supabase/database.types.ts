@@ -174,7 +174,7 @@ export type Database = {
       }
       consent_records: {
         Row: {
-          child_id: string | null
+          child_id: string
           consent_text: string
           consent_text_version: string
           consent_type: string
@@ -191,7 +191,7 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
-          child_id?: string | null
+          child_id: string
           consent_text: string
           consent_text_version: string
           consent_type: string
@@ -208,7 +208,7 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
-          child_id?: string | null
+          child_id?: string
           consent_text?: string
           consent_text_version?: string
           consent_type?: string

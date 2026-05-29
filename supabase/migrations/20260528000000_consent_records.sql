@@ -9,29 +9,25 @@
 --     Gate-B integrity blocker. This table IS that enforceable record; the
 --     session-start and response-submit handlers gate on it server-side.
 --
--- Model: parent-scoped consent. Under COPPA the *parent* is the consenting
--- party, and this app's existing VPC trail (vpc_audit_log) is already
--- parent-scoped (no child_id). consent_records follows that precedent:
---   * child_id is NULLABLE. A row with child_id NULL is a blanket grant
---     covering all of the parent's children. This is what the /coppa screen
---     writes — /coppa runs BEFORE /add-child in the signup flow
---     (signup -> verify -> /coppa -> /add-child), so no child profile exists
---     yet at consent time. A non-null child_id scopes a grant to one child
---     (room for future per-child consent without a schema change).
---   * The gate verifies an unrevoked consent row exists for the child's
---     parent in the tenant; the child is already proven to belong to that
---     parent upstream (explicit parent_id eq in both handlers).
+-- Model B — PER-CHILD consent. COPPA requires verifiable parental consent for
+-- each child whose data is collected, so consent is one row per (parent,
+-- child) and child_id is NOT NULL. Consent is captured at the moment the child
+-- profile is created (/add-child), with the parent in hand: the disclosure is
+-- shown first at /coppa, then the binding per-child grant is recorded by the
+-- add-child server action. The gate verifies an unrevoked consent row exists
+-- for THAT specific child — there is no parent-level / blanket fallback.
 --
 -- `revoked` is a boolean (drives the gate via a cheap equality filter and a
--- partial index); `revoked_at` is the audit timestamp. Revoking flips both.
+-- partial index); `revoked_at` is the audit timestamp. Revoking flips both,
+-- and blocks only the child on that row.
 
 create table consent_records (
   id                    uuid primary key default gen_random_uuid(),
   tenant_id             uuid not null references tenants(id) on delete cascade,
   parent_id             uuid not null references parents(id) on delete cascade,
-  -- NULL = blanket grant covering all of the parent's children (the /coppa
-  -- case, written before any child profile exists). Non-null scopes to one.
-  child_id              uuid references children(id) on delete cascade,
+  -- The child this consent authorizes data collection for. One row per
+  -- (parent, child); NOT NULL (Model B per-child consent).
+  child_id              uuid not null references children(id) on delete cascade,
   -- The consent instrument granted, e.g. 'coppa_vpc'.
   consent_type          text not null,
   -- Version tag + verbatim text of the disclosure the parent agreed to, so a
@@ -58,9 +54,9 @@ create table consent_records (
 create index consent_records_tenant_idx on consent_records(tenant_id);
 create index consent_records_parent_idx on consent_records(parent_id);
 create index consent_records_child_idx  on consent_records(child_id);
--- Gate lookup: "does this parent have a live consent in this tenant?"
+-- Gate lookup: "does this child have a live consent in this tenant?"
 create index consent_records_active_idx
-  on consent_records(parent_id, tenant_id)
+  on consent_records(child_id, tenant_id)
   where revoked = false;
 
 -- =============================================================================

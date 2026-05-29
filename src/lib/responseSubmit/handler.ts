@@ -250,15 +250,16 @@ export async function submitResponseHandler({
   //
   // Independent of the session-start gate: a session may have started while
   // consent was valid and consent then revoked mid-assessment. We refuse to
-  // accept further responses once consent is gone. Parent-scoped (the child
-  // is already proven owned by this parent above). Server-side, not
-  // bypassable — "consent_required" routes the parent to the /coppa screen.
+  // accept further responses once consent is gone. Per-child (Model B): the
+  // gate checks consent for this session's child specifically. Server-side,
+  // not bypassable — "consent_required" routes the parent to the consent flow.
   // ---------------------------------------------------------------------------
   let consentOk: boolean;
   try {
     consentOk = await hasValidConsent(serviceClient, {
       tenantId: parent.tenant_id,
       parentId: parent.id,
+      childId: session.child_id,
     });
   } catch (e) {
     return fail("internal", 500, errorMessage(e));

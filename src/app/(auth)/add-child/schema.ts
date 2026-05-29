@@ -32,6 +32,12 @@ export const AddChildSchema = z.object({
     .max(50, "Too long")
     .optional()
     .transform((v) => v?.trim() || undefined),
+  // Per-child parental consent (Model B / COPPA Gate-B). The binding consent
+  // is captured here, with the child in hand; the server action writes a
+  // consent_records row keyed to the new child_id. Must be true to register.
+  consent: z.literal<true>(true, {
+    error: "Parental consent is required to add a child",
+  }),
 });
 
 export type AddChildInput = z.infer<typeof AddChildSchema>;

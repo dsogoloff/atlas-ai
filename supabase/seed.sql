@@ -157,12 +157,12 @@ select
 from t
 on conflict (id) do nothing;
 
--- 4b. public.consent_records — a blanket VPC grant for the dev parent so the
+-- 4b. public.consent_records — a PER-CHILD VPC grant for the dev child so the
 --     session-start / response-submit consent gate (migration
---     20260528000000) passes in local dev. child_id NULL = covers all of the
---     parent's children. Mirrors what the /coppa server action writes in
---     production; without it, a freshly seeded dev DB blocks every assessment
---     with "consent_required".
+--     20260528000000) passes in local dev. Keyed to the dev child above;
+--     mirrors what the /add-child server action writes in production. Without
+--     it, a freshly seeded dev DB blocks that child's assessment with
+--     "consent_required".
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into consent_records (
   id, tenant_id, parent_id, child_id, consent_type,
@@ -172,10 +172,10 @@ select
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
   t.id,
   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-  null,
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   'coppa_vpc',
   'dev-seed',
-  'Seeded blanket parental consent for local development only.',
+  'Seeded per-child parental consent for local development only.',
   '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb,
   '{}'::jsonb
 from t

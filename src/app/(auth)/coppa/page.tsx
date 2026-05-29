@@ -11,6 +11,11 @@
 //    over decorative blurs, drops the redundant TopAppBar (the whole point
 //    of this route is the disclosure card).
 //
+// This route is DISCLOSURE-ONLY. Per Model B (per-child consent), the binding
+// parental consent is recorded at /add-child (with the child in hand), not
+// here — see src/app/(auth)/add-child/actions.ts and
+// src/lib/consent/text.ts. "Review & Continue" just advances to add the child.
+//
 // Spec gaps to address before launch (intentionally NOT fixed in this port):
 //  - The Stitch disclosure text is placeholder marketing copy. Final wording
 //    must match compliance.md §2 (including the school-operator consent
@@ -21,8 +26,6 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
-import { ConsentForm } from "./consent-form";
 
 // Force dynamic so Next.js doesn't statically prerender — we read
 // searchParams to forward stale email-link `?code=` values to the
@@ -200,11 +203,31 @@ export default async function CoppaPage({ searchParams }: Props) {
           </div>
         </div>
 
-        {/* Agreement + footer. Interactive (client) — wires the checkbox and
-            "I Consent & Continue" to the recordConsentAction server action,
-            which persists the consent_records row the assessment gate checks,
-            then advances to /add-child. */}
-        <ConsentForm />
+        {/* Footer. This screen is disclosure-only — the binding, per-child
+            consent is recorded at /add-child (Model B), with the child in
+            hand. "Continue" advances to add the child; the actual
+            consent_records row (what the assessment gate checks) is written by
+            the add-child server action. */}
+        <div className="p-8 border-t border-sam-gray-light bg-surface-container-lowest rounded-b-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
+          <button className="w-full md:w-auto px-6 py-3 border-2 border-sam-navy text-sam-navy rounded-xl font-headline-adult text-sm hover:bg-sam-navy hover:text-white transition-all flex items-center justify-center gap-2 order-2 md:order-1">
+            <span className="material-symbols-outlined">picture_as_pdf</span>
+            Download PDF
+          </button>
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto order-1 md:order-2">
+            <Link
+              href="/signup"
+              className="px-8 py-3 text-sam-navy font-semibold hover:bg-sam-cream rounded-xl transition-colors text-center"
+            >
+              Decline
+            </Link>
+            <Link
+              href="/add-child"
+              className="px-10 py-3 bg-sam-red text-white rounded-xl font-headline-adult text-base shadow-[0px_4px_12px_rgba(230,57,70,0.3)] hover:scale-105 active:scale-95 transition-all text-center"
+            >
+              Review &amp; Continue
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Mascot peek (desktop only) */}

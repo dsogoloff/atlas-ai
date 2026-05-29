@@ -186,18 +186,18 @@ export async function sessionStartHandler({
   // ---------------------------------------------------------------------------
   // 2.5 Consent gate (M2 readiness / COPPA Gate-B).
   //
-  // A child assessment may not begin without a valid, unrevoked parental
-  // consent record. Parent-scoped per the app's VPC model: the child is
-  // already proven to belong to this parent above, so an unrevoked consent
-  // for the parent in this tenant is a valid consent for the child. This runs
-  // server-side and is not bypassable — the route handler is a thin shell.
-  // A "consent_required" code routes the parent to the /coppa consent screen.
+  // A child assessment may not begin without a valid, unrevoked PER-CHILD
+  // parental consent record (Model B): the gate requires consent for THIS
+  // specific child — consent for a sibling does not count. Runs server-side
+  // and is not bypassable (the route handler is a thin shell). A
+  // "consent_required" code routes the parent to the consent flow.
   // ---------------------------------------------------------------------------
   let consentOk: boolean;
   try {
     consentOk = await hasValidConsent(serviceClient, {
       tenantId: parent.tenant_id,
       parentId: parent.id,
+      childId: child.id,
     });
   } catch (e) {
     return fail("internal", 500, errorMessage(e));
