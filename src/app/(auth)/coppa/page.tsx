@@ -11,6 +11,11 @@
 //    over decorative blurs, drops the redundant TopAppBar (the whole point
 //    of this route is the disclosure card).
 //
+// This route is DISCLOSURE-ONLY. Per Model B (per-child consent), the binding
+// parental consent is recorded at /add-child (with the child in hand), not
+// here — see src/app/(auth)/add-child/actions.ts and
+// src/lib/consent/text.ts. "Review & Continue" just advances to add the child.
+//
 // Spec gaps to address before launch (intentionally NOT fixed in this port):
 //  - The Stitch disclosure text is placeholder marketing copy. Final wording
 //    must match compliance.md §2 (including the school-operator consent
@@ -145,6 +150,28 @@ export default async function CoppaPage({ searchParams }: Props) {
                 privacy@atlasassessment.edu for any such requests.
               </p>
             </section>
+            {/* Automated (AI) processing disclosure — minor-safety safeguard
+                C2 (M2 readiness). Discloses, in the consent flow itself, that
+                an AI system processes responses and that the child never
+                interacts with it directly. Mirrors what the misconception
+                classifier actually does (structured response data only —
+                src/lib/misconceptionClassifier/*). */}
+            <section className="space-y-3">
+              <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
+                4. Automated (AI) Processing
+              </h2>
+              <p className="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
+                To help identify common misconceptions, your child&rsquo;s
+                answers to assessment questions are processed by an automated
+                system that uses artificial intelligence. Your child never
+                chats with or types free-form messages to this system: only
+                structured assessment data (the question, the expected answer,
+                and the answer your child selected or entered) is analyzed, and
+                the analysis happens on our servers after the response is
+                submitted. The AI is never shown your child&rsquo;s name or any
+                identifying information.
+              </p>
+            </section>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
               <div className="border border-sam-gray-light rounded-xl p-4 flex items-start gap-3">
                 <span className="material-symbols-outlined text-sam-teal">
@@ -174,26 +201,13 @@ export default async function CoppaPage({ searchParams }: Props) {
               </div>
             </div>
           </div>
-
-          {/* Agreement checkbox */}
-          <div className="pt-6 border-t border-sam-gray-light">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative mt-1">
-                <input
-                  className="peer h-5 w-5 rounded border-sam-gray-mid text-sam-red focus:ring-sam-red transition-all"
-                  type="checkbox"
-                />
-              </div>
-              <span className="font-body-regular text-sam-navy group-hover:text-sam-red transition-colors">
-                I verify that I am the parent/legal guardian and I give
-                permission for Atlas Assessment to collect and use my
-                child&rsquo;s diagnostic data as described above.
-              </span>
-            </label>
-          </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer. This screen is disclosure-only — the binding, per-child
+            consent is recorded at /add-child (Model B), with the child in
+            hand. "Continue" advances to add the child; the actual
+            consent_records row (what the assessment gate checks) is written by
+            the add-child server action. */}
         <div className="p-8 border-t border-sam-gray-light bg-surface-container-lowest rounded-b-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
           <button className="w-full md:w-auto px-6 py-3 border-2 border-sam-navy text-sam-navy rounded-xl font-headline-adult text-sm hover:bg-sam-navy hover:text-white transition-all flex items-center justify-center gap-2 order-2 md:order-1">
             <span className="material-symbols-outlined">picture_as_pdf</span>
@@ -210,7 +224,7 @@ export default async function CoppaPage({ searchParams }: Props) {
               href="/add-child"
               className="px-10 py-3 bg-sam-red text-white rounded-xl font-headline-adult text-base shadow-[0px_4px_12px_rgba(230,57,70,0.3)] hover:scale-105 active:scale-95 transition-all text-center"
             >
-              I Consent &amp; Continue
+              Review &amp; Continue
             </Link>
           </div>
         </div>

@@ -116,6 +116,12 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
         if (table === "children") {
           return { data: { grade_level: null }, error: null };
         }
+        // Consent gate (M2): default to "consent on file" so legacy submit
+        // scripts don't have to stage it. The consent-gate test stages an
+        // empty array explicitly to exercise the block.
+        if (table === "consent_records") {
+          return { data: [{ id: "consent-default" }], error: null };
+        }
         return { data: null, error: null };
       };
 

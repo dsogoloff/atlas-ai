@@ -92,6 +92,7 @@ export type SubmitErrorCode =
   | "invalid_body"
   | "unauthorized"
   | "forbidden"
+  | "consent_required"
   | "session_not_found"
   | "session_completed"
   | "question_not_found"

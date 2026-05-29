@@ -57,6 +57,7 @@ export type StartErrorCode =
   | "invalid_body"
   | "unauthorized"
   | "forbidden"
+  | "consent_required"
   | "child_not_found"
   | "bank_unservable"
   | "internal";

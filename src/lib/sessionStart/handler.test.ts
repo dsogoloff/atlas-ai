@@ -28,6 +28,10 @@ interface ServiceMock {
   inserts: Array<{ table: string; row: unknown }>;
   updates: Array<{ table: string; patch: unknown }>;
   deletes: Array<{ table: string }>;
+  /** Captured .eq(col, val) filters, tagged by table. Lets the consent-gate
+   *  tests assert the lookup is keyed to the specific child + excludes
+   *  revoked rows (the mock's .eq is otherwise a passthrough). */
+  eqCalls: Array<{ table: string; col: string; val: unknown }>;
 }
 
 function makeServiceClient(
@@ -36,6 +40,7 @@ function makeServiceClient(
   const inserts: Array<{ table: string; row: unknown }> = [];
   const updates: Array<{ table: string; patch: unknown }> = [];
   const deletes: Array<{ table: string }> = [];
+  const eqCalls: Array<{ table: string; col: string; val: unknown }> = [];
   // Item #12 Phase 7.5: the handler's first `questions` SELECT is the
   // discoverEmptyBankStrands call. Inject a synthetic "bank populates
   // every strand" default so emptyBankStrands is empty and legacy test
@@ -69,6 +74,12 @@ function makeServiceClient(
         if (table === "children") {
           return { data: { grade_level: null }, error: null };
         }
+        // Consent gate (M2): default to "consent on file" so legacy scripts
+        // don't have to stage it. The consent-gate tests stage an empty array
+        // explicitly to exercise the block.
+        if (table === "consent_records") {
+          return { data: [{ id: "consent-default" }], error: null };
+        }
         return { data: null, error: null };
       };
 
@@ -77,7 +88,10 @@ function makeServiceClient(
       const builder: Record<string, unknown> = {};
 
       builder.select = () => builder;
-      builder.eq = () => builder;
+      builder.eq = (col: string, val: unknown) => {
+        eqCalls.push({ table, col, val });
+        return builder;
+      };
       builder.in = () => builder;
       builder.order = () => builder;
 
@@ -119,6 +133,7 @@ function makeServiceClient(
     inserts,
     updates,
     deletes,
+    eqCalls,
   };
 }
 
@@ -269,6 +284,158 @@ describe("sessionStartHandler / auth chain", () => {
       ok: false,
       error: { code: "child_not_found", status: 404 },
     });
+  });
+});
+
+// ===========================================================================
+// Consent gate (M2 readiness / COPPA Gate-B)
+// ===========================================================================
+
+describe("sessionStartHandler / consent gate (per-child / Model B)", () => {
+  // Helper: the consent_records lookup filters captured by the gate.
+  function consentFilters(svc: ReturnType<typeof makeServiceClient>) {
+    return svc.eqCalls.filter((e) => e.table === "consent_records");
+  }
+
+  it("blocks with 403 and creates no session when THIS child has no unrevoked consent", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      // No consent row matches this child — the gate must refuse.
+      consent_records: [{ data: [], error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "consent_required", status: 403 },
+    });
+    // Gate runs BEFORE any session insert — a session cannot start without
+    // this child's consent (the integrity blocker the M2 audit found).
+    expect(svc.inserts.some((i) => i.table === "assessment_sessions")).toBe(
+      false,
+    );
+  });
+
+  it("keys the lookup to the requested child: child A cannot start on child B's consent", async () => {
+    // Request is for CHILD_ID (child A). The DB holds no consent for A (empty
+    // result) — even if child B were consented, this query is scoped to A, so
+    // B's consent is irrelevant. We assert the lookup filtered on A's id.
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: [], error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      request: { child_id: CHILD_ID },
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "consent_required", status: 403 },
+    });
+    // The consent query is scoped to child A specifically — not parent-wide.
+    expect(consentFilters(svc)).toEqual(
+      expect.arrayContaining([
+        { table: "consent_records", col: "child_id", val: CHILD_ID },
+        { table: "consent_records", col: "parent_id", val: PARENT_ID },
+      ]),
+    );
+  });
+
+  it("excludes revoked rows: revoking child A's consent blocks child A", async () => {
+    // A revoked row would not satisfy `revoked = false`, so the gate sees no
+    // valid consent and blocks. We assert the lookup filters revoked=false AND
+    // the specific child — so revoking A affects A only (a different child_id
+    // row is untouched by this query).
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: [], error: null }], // only a revoked row exists
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "consent_required", status: 403 },
+    });
+    expect(consentFilters(svc)).toEqual(
+      expect.arrayContaining([
+        { table: "consent_records", col: "child_id", val: CHILD_ID },
+        { table: "consent_records", col: "revoked", val: false },
+      ]),
+    );
+  });
+
+  it("proceeds to create a session when THIS child has an unrevoked consent record", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: [{ id: "consent-1" }], error: null }],
+      assessment_sessions: [
+        { data: null, error: null }, // existing-session check (none)
+        { data: { id: SESSION_ID }, error: null }, // INSERT...returning id
+      ],
+      questions: [{ data: [questionRow()], error: null }],
+      question_access_log: [{ data: null, error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.status).toBe(200);
+    expect(result.body.session_id).toBe(SESSION_ID);
+  });
+
+  it("returns 500 when the consent lookup itself errors (does not fail open)", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: null, error: { message: "consent table down" } }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "internal", status: 500 },
+    });
+    expect(svc.inserts.some((i) => i.table === "assessment_sessions")).toBe(
+      false,
+    );
   });
 });
 

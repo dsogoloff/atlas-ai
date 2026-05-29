@@ -102,6 +102,7 @@ import {
 } from "@/lib/questionPicker/picker";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
+import { hasValidConsent } from "@/lib/consent/verify";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
 import { toNextRequestJson } from "@/lib/responseSubmit/types";
 import type { Database } from "@/lib/supabase/database.types";
@@ -180,6 +181,33 @@ export async function sessionStartHandler({
   }
   if (!child) {
     return fail("child_not_found", 404, "child not found for caller");
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2.5 Consent gate (M2 readiness / COPPA Gate-B).
+  //
+  // A child assessment may not begin without a valid, unrevoked PER-CHILD
+  // parental consent record (Model B): the gate requires consent for THIS
+  // specific child — consent for a sibling does not count. Runs server-side
+  // and is not bypassable (the route handler is a thin shell). A
+  // "consent_required" code routes the parent to the consent flow.
+  // ---------------------------------------------------------------------------
+  let consentOk: boolean;
+  try {
+    consentOk = await hasValidConsent(serviceClient, {
+      tenantId: parent.tenant_id,
+      parentId: parent.id,
+      childId: child.id,
+    });
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+  if (!consentOk) {
+    return fail(
+      "consent_required",
+      403,
+      "parental consent required before assessment; complete the consent screen",
+    );
   }
 
   // ---------------------------------------------------------------------------

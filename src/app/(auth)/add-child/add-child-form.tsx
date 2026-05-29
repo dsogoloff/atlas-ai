@@ -189,6 +189,53 @@ export function AddChildForm({ cancelHref }: Props) {
         </p>
       </div>
 
+      {/* Per-child parental consent (Model B / COPPA Gate-B). Binding consent
+          is captured here — the server action records a consent_records row
+          keyed to this child, which the assessment gate checks. Discloses the
+          automated (AI) processing as part of the consent (safeguard C2). */}
+      <div className="bg-sam-cream p-4 rounded-2xl border border-sam-orange/20 space-y-3">
+        <div className="flex items-start gap-3">
+          <input
+            className="w-5 h-5 mt-1 rounded border-sam-gray-light text-sam-red focus:ring-sam-red"
+            id="consent"
+            type="checkbox"
+            aria-invalid={!!errors.consent}
+            {...register("consent")}
+          />
+          <div className="space-y-1">
+            <label
+              className="font-caption text-[13px] leading-tight text-sam-navy font-bold flex items-center gap-1"
+              htmlFor="consent"
+            >
+              <span
+                className="material-symbols-outlined text-sam-orange text-lg"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                verified_user
+              </span>
+              Parental Consent for This Child
+            </label>
+            <p className="font-caption text-[12px] text-sam-gray-mid leading-relaxed">
+              I am the parent or legal guardian of this child and I consent to
+              Atlas collecting and using their diagnostic data as described in
+              the{" "}
+              <Link className="text-sam-red underline" href="/coppa">
+                COPPA disclosure
+              </Link>
+              . I understand their responses are analyzed by an automated (AI)
+              system to identify learning patterns, that my child never
+              interacts with that system directly, and that data is not shared
+              beyond the assessment except with their instructors.
+            </p>
+          </div>
+        </div>
+        {errors.consent && (
+          <p className="text-caption text-sam-red ml-1">
+            {errors.consent.message}
+          </p>
+        )}
+      </div>
+
       {/* Actions */}
       <div className="pt-4 space-y-4">
         <button

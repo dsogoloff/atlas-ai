@@ -127,6 +127,7 @@ import type {
   Strand,
   TerminationDecision,
 } from "@/lib/engine/types";
+import { hasValidConsent } from "@/lib/consent/verify";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { attemptNarration } from "@/lib/report/narration/trigger";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
@@ -242,6 +243,33 @@ export async function submitResponseHandler({
   }
   if (!childIds.has(session.child_id)) {
     return fail("forbidden", 403, "session not owned by caller");
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3.5 Consent gate (M2 readiness / COPPA Gate-B).
+  //
+  // Independent of the session-start gate: a session may have started while
+  // consent was valid and consent then revoked mid-assessment. We refuse to
+  // accept further responses once consent is gone. Per-child (Model B): the
+  // gate checks consent for this session's child specifically. Server-side,
+  // not bypassable — "consent_required" routes the parent to the consent flow.
+  // ---------------------------------------------------------------------------
+  let consentOk: boolean;
+  try {
+    consentOk = await hasValidConsent(serviceClient, {
+      tenantId: parent.tenant_id,
+      parentId: parent.id,
+      childId: session.child_id,
+    });
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+  if (!consentOk) {
+    return fail(
+      "consent_required",
+      403,
+      "parental consent required; complete the consent screen",
+    );
   }
 
   // ---------------------------------------------------------------------------
