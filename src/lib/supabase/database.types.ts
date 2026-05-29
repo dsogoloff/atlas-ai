@@ -172,6 +172,82 @@ export type Database = {
           },
         ]
       }
+      consent_records: {
+        Row: {
+          child_id: string | null
+          consent_text: string
+          consent_text_version: string
+          consent_type: string
+          created_at: string
+          data_uses: Json
+          granted_at: string
+          id: string
+          ip_address: unknown
+          parent_id: string
+          revoked: boolean
+          revoked_at: string | null
+          sharing_permissions: Json
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          child_id?: string | null
+          consent_text: string
+          consent_text_version: string
+          consent_type: string
+          created_at?: string
+          data_uses?: Json
+          granted_at?: string
+          id?: string
+          ip_address?: unknown
+          parent_id: string
+          revoked?: boolean
+          revoked_at?: string | null
+          sharing_permissions?: Json
+          tenant_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          child_id?: string | null
+          consent_text?: string
+          consent_text_version?: string
+          consent_type?: string
+          created_at?: string
+          data_uses?: Json
+          granted_at?: string
+          id?: string
+          ip_address?: unknown
+          parent_id?: string
+          revoked?: boolean
+          revoked_at?: string | null
+          sharing_permissions?: Json
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consent_records_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consent_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       curriculum_recommendations: {
         Row: {
           created_at: string

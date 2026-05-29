@@ -35,19 +35,27 @@ export function getServiceRoleKey(): string {
 }
 
 // Server-only. Used by the misconception classifier (architecture.md #3).
-// Routed via the Vercel AI Gateway, not called against Anthropic directly.
-// Never import or call this from a client component.
+// Called against api.anthropic.com directly via @ai-sdk/anthropic (the Vercel
+// AI Gateway routing was removed in ebc47dd). Never import or call this from a
+// client component.
 export function getAnthropicApiKey(): string {
   return required("ANTHROPIC_API_KEY");
 }
 
 /**
- * Feature flag gating real Anthropic API calls. False (default) means the
- * classifier's LLM client returns a deterministic stub — wires stay testable
- * while the Anthropic DPA is in flight (compliance.md §13.3). Flip to 'true'
- * in Vercel env once the DPA lands. Any other value (unset, '', 'false',
- * '0', etc.) reads as false; only the literal string 'true' enables live
- * calls.
+ * Feature flag gating real Anthropic API calls for the misconception
+ * classifier. When false, the classifier's LLM client returns a deterministic
+ * stub. Any value other than the literal string 'true' reads as false.
+ *
+ * M2 readiness (2026-05-28): cleared to go live behind the minor-safety
+ * safeguards — the child never sends free text to the model (only structured
+ * response data is classified, server-side), the age gate is satisfied by
+ * verifiable parental consent (the /coppa consent gate, not child
+ * self-attestation), and the AI-processing disclosure is shown in the consent
+ * flow. Live calls stay fail-soft (classifier.ts wraps the call and degrades
+ * to method='failed' on error). The flip itself is operational: set
+ * MISCONCEPTION_CLASSIFIER_LIVE='true' in the deploy env (with
+ * ANTHROPIC_API_KEY).
  */
 export function isMisconceptionClassifierLive(): boolean {
   return process.env.MISCONCEPTION_CLASSIFIER_LIVE === "true";

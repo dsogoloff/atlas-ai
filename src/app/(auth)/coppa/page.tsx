@@ -22,6 +22,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ConsentForm } from "./consent-form";
+
 // Force dynamic so Next.js doesn't statically prerender — we read
 // searchParams to forward stale email-link `?code=` values to the
 // /auth/callback Route Handler (where cookies can be set).
@@ -145,6 +147,28 @@ export default async function CoppaPage({ searchParams }: Props) {
                 privacy@atlasassessment.edu for any such requests.
               </p>
             </section>
+            {/* Automated (AI) processing disclosure — minor-safety safeguard
+                C2 (M2 readiness). Discloses, in the consent flow itself, that
+                an AI system processes responses and that the child never
+                interacts with it directly. Mirrors what the misconception
+                classifier actually does (structured response data only —
+                src/lib/misconceptionClassifier/*). */}
+            <section className="space-y-3">
+              <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
+                4. Automated (AI) Processing
+              </h2>
+              <p className="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
+                To help identify common misconceptions, your child&rsquo;s
+                answers to assessment questions are processed by an automated
+                system that uses artificial intelligence. Your child never
+                chats with or types free-form messages to this system: only
+                structured assessment data (the question, the expected answer,
+                and the answer your child selected or entered) is analyzed, and
+                the analysis happens on our servers after the response is
+                submitted. The AI is never shown your child&rsquo;s name or any
+                identifying information.
+              </p>
+            </section>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
               <div className="border border-sam-gray-light rounded-xl p-4 flex items-start gap-3">
                 <span className="material-symbols-outlined text-sam-teal">
@@ -174,46 +198,13 @@ export default async function CoppaPage({ searchParams }: Props) {
               </div>
             </div>
           </div>
-
-          {/* Agreement checkbox */}
-          <div className="pt-6 border-t border-sam-gray-light">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative mt-1">
-                <input
-                  className="peer h-5 w-5 rounded border-sam-gray-mid text-sam-red focus:ring-sam-red transition-all"
-                  type="checkbox"
-                />
-              </div>
-              <span className="font-body-regular text-sam-navy group-hover:text-sam-red transition-colors">
-                I verify that I am the parent/legal guardian and I give
-                permission for Atlas Assessment to collect and use my
-                child&rsquo;s diagnostic data as described above.
-              </span>
-            </label>
-          </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-8 border-t border-sam-gray-light bg-surface-container-lowest rounded-b-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
-          <button className="w-full md:w-auto px-6 py-3 border-2 border-sam-navy text-sam-navy rounded-xl font-headline-adult text-sm hover:bg-sam-navy hover:text-white transition-all flex items-center justify-center gap-2 order-2 md:order-1">
-            <span className="material-symbols-outlined">picture_as_pdf</span>
-            Download PDF
-          </button>
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto order-1 md:order-2">
-            <Link
-              href="/signup"
-              className="px-8 py-3 text-sam-navy font-semibold hover:bg-sam-cream rounded-xl transition-colors text-center"
-            >
-              Decline
-            </Link>
-            <Link
-              href="/add-child"
-              className="px-10 py-3 bg-sam-red text-white rounded-xl font-headline-adult text-base shadow-[0px_4px_12px_rgba(230,57,70,0.3)] hover:scale-105 active:scale-95 transition-all text-center"
-            >
-              I Consent &amp; Continue
-            </Link>
-          </div>
-        </div>
+        {/* Agreement + footer. Interactive (client) — wires the checkbox and
+            "I Consent & Continue" to the recordConsentAction server action,
+            which persists the consent_records row the assessment gate checks,
+            then advances to /add-child. */}
+        <ConsentForm />
       </div>
 
       {/* Mascot peek (desktop only) */}
