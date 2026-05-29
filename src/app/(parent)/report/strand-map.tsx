@@ -1,16 +1,17 @@
-// Strand Breakdown card for the parent diagnostic report.
+// Sub-strand performance detail — parent Assessment Report.
 //
-// Stitch port from module-d/04 (lines 183-238) + 05. Phase 8 (Item #12)
-// widened the input to a VARIABLE-LENGTH list of V2026 sub-strands (2-8
-// rows depending on the child's S.A.M. level). Each row is one sub-
-// strand applicable at that level; sub-strands with no responses still
-// appear with band='no_data' so the parent sees the full level coverage.
+// Editorial reskin (docs/atlas-sample-report.html): the per-sub-strand
+// breakdown moves from coloured bars to a calm table-style list — one row
+// per sub-strand with name, percentage, and a qualitative pill (Solid /
+// Approaching / Developing / Not assessed). Pills are bordered, not filled,
+// to keep the typographic weight on the prose elsewhere on the page.
 //
-// Section title is "Mathematical Strengths" (SM2 lock) — performance-
-// blind copy by design for v1, same class as the placement-card flavor
-// sentence and the mascot quote. Band-aware framing is a v2 fixup.
-//
-// Bars are static (SM4 lock) — no Framer Motion, server component.
+// Band → pill mapping (reuses the existing classifier in strand-mastery.ts;
+// thresholds unchanged):
+//   mastery        → Solid       (navy)
+//   progressing    → Approaching (amber)
+//   area_of_focus  → Developing  (oxblood)
+//   no_data        → Not assessed (neutral)
 
 import type {
   MasteryBand,
@@ -20,94 +21,92 @@ import type {
 import { STRAND_LABELS } from "./strand-labels";
 
 interface StrandMapProps {
-  /** Variable-length 2-8: one row per V2026 sub-strand applicable at the
-   *  child's S.A.M. level. Ordering and length are controlled by the
-   *  caller (assemble.ts derives them from tax_sub_strands.applies_to_
-   *  level_codes for the child's level). */
   rows: StrandMastery[];
 }
 
-interface BandStyle {
-  /** Tailwind class for the bar fill background. */
-  fillClass: string;
-  /** Tailwind class for the right-side caption text color. */
-  captionClass: string;
-  /** Trailing word(s) after the percentage (e.g. "Mastery"). */
-  captionSuffix: string;
+interface PillStyle {
+  label: string;
+  borderVar: string;
+  colorVar: string;
 }
 
-const BAND_STYLES: Record<MasteryBand, BandStyle> = {
+const PILL_STYLES: Record<MasteryBand, PillStyle> = {
   mastery: {
-    fillClass: "bg-sam-teal",
-    captionClass: "text-sam-teal",
-    captionSuffix: "Mastery",
+    label: "Solid",
+    borderVar: "var(--color-report-solid)",
+    colorVar: "var(--color-report-solid)",
   },
   progressing: {
-    fillClass: "bg-sam-orange",
-    captionClass: "text-sam-orange",
-    captionSuffix: "Progressing",
+    label: "Approaching",
+    borderVar: "var(--color-report-approaching)",
+    colorVar: "var(--color-report-approaching)",
   },
   area_of_focus: {
-    fillClass: "bg-sam-red",
-    captionClass: "text-sam-red",
-    captionSuffix: "Area of Focus",
+    label: "Developing",
+    borderVar: "var(--color-report-developing)",
+    colorVar: "var(--color-report-developing)",
   },
   no_data: {
-    fillClass: "", // no fill rendered — see render path
-    captionClass: "text-sam-gray-mid",
-    captionSuffix: "",
+    label: "Not assessed",
+    borderVar: "var(--color-report-text-light)",
+    colorVar: "var(--color-report-text-secondary)",
   },
 };
 
 export function StrandMap({ rows }: StrandMapProps) {
   return (
-    <section aria-label="Mathematical strengths by strand">
-      <h3 className="font-display-child text-sam-navy text-xl md:text-2xl mb-4 md:mb-6">
-        Mathematical Strengths
-      </h3>
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30 space-y-6 md:space-y-8">
-        {rows.map((row) => {
-          const style = BAND_STYLES[row.band];
-          const isEmpty = row.band === "no_data";
-          const captionText = isEmpty
-            ? "Not assessed"
-            : `${row.percentage}% ${style.captionSuffix}`;
-          return (
-            <div key={row.strand} className="space-y-2">
-              <div className="flex justify-between items-end gap-4">
-                <span className="font-bold text-sam-navy">
-                  {STRAND_LABELS[row.strand]}
-                </span>
-                <span
-                  className={`text-sm font-bold ${style.captionClass}`}
-                  aria-label={
-                    isEmpty
-                      ? `${STRAND_LABELS[row.strand]} not assessed`
-                      : `${STRAND_LABELS[row.strand]}: ${row.percentage} percent ${style.captionSuffix}`
-                  }
-                >
-                  {captionText}
-                </span>
-              </div>
-              <div
-                className="h-3 w-full bg-slate-100 rounded-full overflow-hidden"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={isEmpty ? 0 : row.percentage}
-                aria-label={STRAND_LABELS[row.strand]}
+    <div
+      className="flex flex-col border-t"
+      style={{ borderColor: "var(--color-report-border)" }}
+    >
+      {rows.map((row) => {
+        const pill = PILL_STYLES[row.band];
+        const isEmpty = row.band === "no_data";
+        const value = isEmpty ? "—" : `${row.percentage}%`;
+        const ariaSummary = isEmpty
+          ? `${STRAND_LABELS[row.strand]}: not assessed`
+          : `${STRAND_LABELS[row.strand]}: ${row.percentage} percent, ${pill.label}`;
+        return (
+          <div
+            key={row.strand}
+            className="flex justify-between items-center gap-4 py-3.5 border-b text-sm max-sm:flex-col max-sm:items-start max-sm:gap-2"
+            style={{ borderColor: "var(--color-report-border)" }}
+            aria-label={ariaSummary}
+          >
+            <span
+              className="font-medium"
+              style={{
+                fontFamily: "var(--font-report-sans)",
+                color: "var(--color-report-text)",
+              }}
+            >
+              {STRAND_LABELS[row.strand]}
+            </span>
+            <div className="flex items-center gap-4 max-sm:w-full max-sm:justify-between">
+              <span
+                className="font-medium text-right min-w-[38px]"
+                style={{
+                  fontFamily: "var(--font-report-sans)",
+                  fontVariantNumeric: "tabular-nums",
+                  color: "var(--color-report-text)",
+                }}
               >
-                {!isEmpty && (
-                  <div
-                    className={`h-full rounded-full ${style.fillClass}`}
-                    style={{ width: `${row.percentage}%` }}
-                  />
-                )}
-              </div>
+                {value}
+              </span>
+              <span
+                className="text-[10px] uppercase tracking-[0.14em] px-3 py-1 border min-w-[110px] text-center"
+                style={{
+                  fontFamily: "var(--font-report-sans)",
+                  borderColor: pill.borderVar,
+                  color: pill.colorVar,
+                }}
+              >
+                {pill.label}
+              </span>
             </div>
-          );
-        })}
-      </div>
-    </section>
+          </div>
+        );
+      })}
+    </div>
   );
 }

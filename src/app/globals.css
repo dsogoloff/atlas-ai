@@ -75,6 +75,25 @@
   --font-headline-adult: var(--font-inter), sans-serif;
   --font-math-numeral: var(--font-plus-jakarta), sans-serif;
   --font-caption: var(--font-inter), sans-serif;
+  /* Editorial faces used by the parent /report view (Playfair for serif
+   * headers, DM Sans for body). Other views keep the Stitch faces above. */
+  --font-report-serif: var(--font-playfair-display), Georgia, serif;
+  --font-report-sans: var(--font-dm-sans), system-ui, sans-serif;
+
+  /* --- Editorial report palette (parent /report only) --------------------- */
+  --color-report-navy: #1b3a6b;
+  --color-report-navy-deep: #122548;
+  --color-report-navy-muted: #4a6080;
+  --color-report-cyan: #00b8d4;
+  --color-report-paper: #fafafa;
+  --color-report-paper-white: #ffffff;
+  --color-report-text: #1a1a1a;
+  --color-report-text-secondary: #5a5a5a;
+  --color-report-text-light: #8a8a8a;
+  --color-report-border: #e5e5e0;
+  --color-report-solid: #1b3a6b;
+  --color-report-approaching: #b8893f;
+  --color-report-developing: #a8404c;
 
   /* --- Font sizes (with line-height / weight / letter-spacing) ------------ */
   --text-display-child: 36px;

@@ -1,68 +1,95 @@
-// "What We Noticed" — the parent report's key findings section.
+// "What We Noticed" — key findings for the parent Assessment Report.
 //
-// Replaces the prior MisconceptionList card grid + misconceptions_lede prose
-// (Block 2 restructure). Renders one numbered list: strengths first, then
-// growth areas, with the numbering continuing across both groups so the
-// parent reads it as a single flow.
+// Editorial reskin (docs/atlas-sample-report.html): each finding renders as
+// a stacked card with a 2px navy top rule, an italic "Finding 0N" eyebrow
+// in cyan, and the existing one/two-line body as the serif title. The 4-beat
+// expansion in the reference HTML is intentionally NOT rendered here — the
+// brief explicitly defers that pass.
 //
 // Data shape: ReportNarration.key_findings = { strengths, growth_areas }.
 // Both arrays may be 0-3 items; empty arrays are valid (thin-bank +
-// classifier-quiet cases). If BOTH are empty, the section falls back to an
-// empty-state card.
-//
-// No icons per item — the brief moves from a card-grid look to a clean
-// numbered prose list. Lightweight visual differentiation between
-// strengths and growth areas via a small uppercase eyebrow under the
-// section header (not per-item) so the list itself stays readable.
+// classifier-quiet cases). Strengths render first, then growth areas, with
+// numbering continuous across both — the parent reads it as one ordered
+// flow of "what we noticed", labelled by kind via a small pre-eyebrow.
 
 interface KeyFindingsProps {
   strengths: string[];
   growthAreas: string[];
 }
 
+interface FindingItem {
+  text: string;
+  kind: "strength" | "growth";
+}
+
+function findingNumber(index: number): string {
+  return `Finding ${String(index + 1).padStart(2, "0")}`;
+}
+
 export function KeyFindings({ strengths, growthAreas }: KeyFindingsProps) {
-  const isEmpty = strengths.length === 0 && growthAreas.length === 0;
+  const items: FindingItem[] = [
+    ...strengths.map<FindingItem>((text) => ({ text, kind: "strength" })),
+    ...growthAreas.map<FindingItem>((text) => ({ text, kind: "growth" })),
+  ];
+
+  if (items.length === 0) {
+    return (
+      <p
+        className="text-[15px] leading-[1.65]"
+        style={{
+          fontFamily: "var(--font-report-sans)",
+          color: "var(--color-report-text-secondary)",
+        }}
+      >
+        No specific findings to surface from this assessment yet. Future
+        sessions will fill this section as more responses come in.
+      </p>
+    );
+  }
 
   return (
-    <section aria-label="What we noticed">
-      <h3 className="font-display-child text-sam-navy text-xl md:text-2xl mb-4 md:mb-6">
-        What We Noticed
-      </h3>
-      {isEmpty ? (
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30">
-          <p className="text-sam-gray-mid text-sm md:text-base leading-relaxed">
-            No specific findings to surface from this assessment yet. Future
-            sessions will fill this section as more responses come in.
+    <ol className="flex flex-col gap-10 list-none p-0 m-0">
+      {items.map((item, idx) => (
+        <li
+          key={`finding-${idx}`}
+          className="pt-7 pb-2 border-t-2"
+          style={{ borderColor: "var(--color-report-navy)" }}
+        >
+          <div className="flex items-baseline gap-3 mb-2.5">
+            <span
+              className="text-[10px] uppercase tracking-[0.14em] font-semibold"
+              style={{
+                fontFamily: "var(--font-report-sans)",
+                color:
+                  item.kind === "strength"
+                    ? "var(--color-report-solid)"
+                    : "var(--color-report-developing)",
+              }}
+            >
+              {item.kind === "strength" ? "Strength" : "Growth area"}
+            </span>
+            <span
+              className="italic text-[14px]"
+              style={{
+                fontFamily: "var(--font-report-serif)",
+                color: "var(--color-report-cyan)",
+              }}
+            >
+              {findingNumber(idx)}
+            </span>
+          </div>
+          <p
+            className="text-[22px] leading-[1.3] font-medium"
+            style={{
+              fontFamily: "var(--font-report-serif)",
+              color: "var(--color-report-navy)",
+              letterSpacing: "-0.005em",
+            }}
+          >
+            {item.text}
           </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30">
-          <ol className="list-decimal list-outside space-y-4 md:space-y-5 pl-6 md:pl-8 marker:font-bold marker:text-sam-navy/60">
-            {strengths.map((item, idx) => (
-              <li
-                key={`s-${idx}`}
-                className="text-sam-navy/90 text-sm md:text-base leading-relaxed pl-2"
-              >
-                <span className="inline-block text-[10px] md:text-xs font-bold text-sam-teal uppercase tracking-wider mr-2 align-middle">
-                  Strength
-                </span>
-                {item}
-              </li>
-            ))}
-            {growthAreas.map((item, idx) => (
-              <li
-                key={`g-${idx}`}
-                className="text-sam-navy/90 text-sm md:text-base leading-relaxed pl-2"
-              >
-                <span className="inline-block text-[10px] md:text-xs font-bold text-sam-red uppercase tracking-wider mr-2 align-middle">
-                  Growth area
-                </span>
-                {item}
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-    </section>
+        </li>
+      ))}
+    </ol>
   );
 }

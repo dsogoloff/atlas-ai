@@ -1,25 +1,13 @@
-// Strand Mastery Radar Chart for the parent diagnostic report.
+// Strand performance radar — parent Assessment Report.
 //
-// Phase 8 (Item #12): the radar now renders the 3 V2026 parent strands
-// — number_algebra, measurement_geometry, statistics — as a triangular
-// 3-axis radar. The 6-axis hexagon is gone. Sub-strand-level mastery is
-// rolled up to parent-strand level upstream via rollUpToParentStrands;
-// this component takes the 3-row result.
+// 3-axis triangular radar of the V2026 parent strands (number_algebra,
+// measurement_geometry, statistics). Geometry is unchanged from the prior
+// Stitch-era radar; the editorial reskin only changes colours / typography
+// to the docs/atlas-sample-report.html palette (navy stroke + cyan fill,
+// per-vertex colour-coding by mastery band, neutral grid).
 //
-// Geometry is a permanent 3-axis triangle anchored at the top of the
-// circle: axis 0 points up (number_algebra), axis 1 to lower-right
-// (measurement_geometry, +120°), axis 2 to lower-left (statistics, -120°
-// from axis 0). A parent strand with band='no_data' renders its vertex
-// at center (polygon dips in to a degenerate edge) with a greyed label —
-// same treatment the 6-axis radar applied per-strand.
-//
-// Hand-rolled SVG, no charting library. Pure math is preserved (mirrors
-// the placement-card precedent). All sizing in SVG user units (viewBox
-// 0 0 400 400). The container scales the SVG via CSS (w-full max-w-md).
-//
-// Print stylesheet: prints alongside the bars (RD8).
-// SR1 lock: no section title inside the radar; the bar map's
-// "Mathematical Strengths" header below covers both visualizations.
+// Hand-rolled SVG, no charting library. All sizing in SVG user units
+// (viewBox 0 0 400 400). The container scales the SVG via CSS.
 
 import type { ParentStrandMastery } from "@/lib/report/strand-mastery";
 import { PARENT_STRAND_ORDER } from "@/lib/report/types";
@@ -29,39 +17,19 @@ import {
   SHORT_PARENT_STRAND_LABELS,
 } from "./strand-labels";
 
-// =============================================================================
-// Geometry constants — SVG internal coordinates.
-//
-// 3 axes at 120° apart, axis 0 pointing up. Same 400×400 reference frame
-// the hexagon used so the bar-map and radar visually balance on the page.
-// VIEWBOX_PAD_X widened slightly: the diagonal labels at -30° / 210° sit
-// further from the central vertical than hexagon labels did.
-// =============================================================================
-
 const CENTER = 200;
 const RADIUS = 130; // outer ring (100% mastery)
-const LABEL_DISTANCE = 165; // center → axis label baseline
+const LABEL_DISTANCE = 165;
 const AXIS_COUNT = 3;
-const ANGLE_STEP_DEG = 360 / AXIS_COUNT; // 120
+const ANGLE_STEP_DEG = 360 / AXIS_COUNT;
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1.0] as const;
 
-// viewBox padding: 30px each side covers SHORT_PARENT_STRAND_LABELS
-// ("Numbers" / "Measurement" / "Statistics") at fontSize=14 without
-// clipping (widest is "Measurement" / "Statistics" at ~11 chars; SVG
-// labels are center-anchored at radius 165 so spans stay well within).
 const VIEWBOX_PAD_X = 30;
 const VIEWBOX_MIN_X = -VIEWBOX_PAD_X;
 const VIEWBOX_WIDTH = 400 + VIEWBOX_PAD_X * 2;
 const VIEWBOX_HEIGHT = 400;
 
-// =============================================================================
-// Pure math — exported for test coverage. Tests assert axis ordering,
-// reflection invariants for 3-fold symmetry, equidistance, and edge
-// cases at 0% and 100%.
-// =============================================================================
-
-/** Maps a percentage on axis i to an SVG (x, y) point. Clamps the
- *  percentage to [0, 100] before computing distance. */
+/** Maps a percentage on axis i to an SVG (x, y) point. */
 export function pointOnAxis(
   percentage: number,
   axisIndex: number,
@@ -83,10 +51,6 @@ export function pointAtDistance(
   };
 }
 
-// =============================================================================
-// Internal helpers — SVG points + per-axis label anchoring.
-// =============================================================================
-
 function pointsString(distances: readonly number[]): string {
   return distances
     .map((d, i) => {
@@ -96,10 +60,6 @@ function pointsString(distances: readonly number[]): string {
     .join(" ");
 }
 
-/** Per-axis text-anchor + dominant-baseline so labels sit cleanly
- *  outside the triangle. Axis 0 (top): anchor middle, baseline above
- *  text. Axis 1 (lower-right): anchor start, baseline below text. Axis
- *  2 (lower-left): anchor end, baseline below text. */
 function labelAnchor(axisIndex: number): {
   textAnchor: "start" | "middle" | "end";
   dominantBaseline: "alphabetic" | "middle" | "hanging";
@@ -116,21 +76,25 @@ function labelAnchor(axisIndex: number): {
   }
 }
 
-// =============================================================================
-// Component
-// =============================================================================
+function vertexFill(band: ParentStrandMastery["band"]): string {
+  switch (band) {
+    case "progressing":
+      return "var(--color-report-approaching)";
+    case "area_of_focus":
+      return "var(--color-report-developing)";
+    case "no_data":
+      return "var(--color-report-text-light)";
+    case "mastery":
+    default:
+      return "var(--color-report-solid)";
+  }
+}
 
 interface StrandRadarProps {
-  /** Always length 3, in PARENT_STRAND_ORDER. Produced by
-   *  rollUpToParentStrands(reportContent.strand_mastery). */
   rows: ParentStrandMastery[];
 }
 
 export function StrandRadar({ rows }: StrandRadarProps) {
-  // Polygon vertex distances. no_data rows have percentage=0 → vertex at
-  // center. With 3 axes a single no_data axis degenerates the polygon to
-  // a line through the other two vertices; visually honest "triangle
-  // missing a side."
   const polygonDistances = rows.map(
     (row) => (Math.max(0, Math.min(100, row.percentage)) / 100) * RADIUS,
   );
@@ -146,91 +110,97 @@ export function StrandRadar({ rows }: StrandRadarProps) {
       .join(", ");
 
   return (
-    <section>
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30 flex justify-center">
-        <svg
-          viewBox={`${VIEWBOX_MIN_X} 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-          className="w-full max-w-md h-auto"
-          role="img"
-          aria-label={ariaSummary}
-        >
-          {/* Grid rings — concentric triangles at 25/50/75/100%. */}
-          {GRID_LEVELS.map((level) => (
-            <polygon
-              key={`grid-${level}`}
-              points={pointsString(
-                PARENT_STRAND_ORDER.map(() => RADIUS * level),
-              )}
-              fill="none"
-              stroke="#F1F3FF"
+    <div className="flex justify-center my-2 mb-9">
+      <svg
+        viewBox={`${VIEWBOX_MIN_X} 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+        className="w-full max-w-[460px] h-auto overflow-visible"
+        role="img"
+        aria-label={ariaSummary}
+      >
+        {/* Grid triangles at 25/50/75/100%. */}
+        {GRID_LEVELS.map((level) => (
+          <polygon
+            key={`grid-${level}`}
+            points={pointsString(
+              PARENT_STRAND_ORDER.map(() => RADIUS * level),
+            )}
+            fill="none"
+            stroke="var(--color-report-border)"
+            strokeWidth="1"
+          />
+        ))}
+
+        {/* Axis lines. */}
+        {PARENT_STRAND_ORDER.map((_, i) => {
+          const outer = pointAtDistance(RADIUS, i);
+          return (
+            <line
+              key={`axis-${i}`}
+              x1={CENTER}
+              y1={CENTER}
+              x2={outer.x.toFixed(2)}
+              y2={outer.y.toFixed(2)}
+              stroke="var(--color-report-border)"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        {/* Data polygon — cyan fill, navy stroke. */}
+        <polygon
+          points={pointsString(polygonDistances)}
+          fill="var(--color-report-cyan)"
+          fillOpacity="0.14"
+          stroke="var(--color-report-navy)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+
+        {/* Vertex dots — colour-coded per band. */}
+        {rows.map((row, i) => {
+          if (row.band === "no_data") return null;
+          const { x, y } = pointOnAxis(row.percentage, i);
+          return (
+            <circle
+              key={`vertex-${row.strand}`}
+              cx={x.toFixed(2)}
+              cy={y.toFixed(2)}
+              r="4.5"
+              fill={vertexFill(row.band)}
+              stroke="var(--color-report-paper-white)"
               strokeWidth="1.5"
             />
-          ))}
+          );
+        })}
 
-          {/* Axis lines — center to each outer vertex. */}
-          {PARENT_STRAND_ORDER.map((_, i) => {
-            const outer = pointAtDistance(RADIUS, i);
-            return (
-              <line
-                key={`axis-${i}`}
-                x1={CENTER}
-                y1={CENTER}
-                x2={outer.x.toFixed(2)}
-                y2={outer.y.toFixed(2)}
-                stroke="#F1F3FF"
-                strokeWidth="1.5"
-              />
-            );
-          })}
-
-          {/* Data polygon. */}
-          <polygon
-            points={pointsString(polygonDistances)}
-            fill="#06A77D"
-            fillOpacity="0.25"
-            stroke="#06A77D"
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Vertex dots — one per non-no_data parent. */}
-          {rows.map((row, i) => {
-            if (row.band === "no_data") return null;
-            const { x, y } = pointOnAxis(row.percentage, i);
-            return (
-              <circle
-                key={`vertex-${row.strand}`}
-                cx={x.toFixed(2)}
-                cy={y.toFixed(2)}
-                r="4"
-                fill="#06A77D"
-              />
-            );
-          })}
-
-          {/* Axis labels (short form) — color-keyed: greyed when no_data. */}
-          {rows.map((row, i) => {
-            const { x, y } = pointAtDistance(LABEL_DISTANCE, i);
-            const { textAnchor, dominantBaseline } = labelAnchor(i);
-            const labelColor =
-              row.band === "no_data" ? "#6B7280" : "#1B3A6B";
-            return (
-              <text
-                key={`label-${row.strand}`}
-                x={x.toFixed(2)}
-                y={y.toFixed(2)}
-                textAnchor={textAnchor}
-                dominantBaseline={dominantBaseline}
-                fontSize="14"
-                fontWeight="600"
-                fill={labelColor}
-              >
-                {SHORT_PARENT_STRAND_LABELS[row.strand]}
-              </text>
-            );
-          })}
-        </svg>
-      </div>
-    </section>
+        {/* Axis labels — short form, navy (greyed when no_data). */}
+        {rows.map((row, i) => {
+          const { x, y } = pointAtDistance(LABEL_DISTANCE, i);
+          const { textAnchor, dominantBaseline } = labelAnchor(i);
+          const labelColor =
+            row.band === "no_data"
+              ? "var(--color-report-text-light)"
+              : "var(--color-report-text)";
+          return (
+            <text
+              key={`label-${row.strand}`}
+              x={x.toFixed(2)}
+              y={y.toFixed(2)}
+              textAnchor={textAnchor}
+              dominantBaseline={dominantBaseline}
+              fontSize="12"
+              fontWeight="500"
+              fill={labelColor}
+              style={{
+                fontFamily: "var(--font-report-sans)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              {SHORT_PARENT_STRAND_LABELS[row.strand]}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
   );
 }

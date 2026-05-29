@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import {
+  Plus_Jakarta_Sans,
+  Inter,
+  Playfair_Display,
+  DM_Sans,
+} from "next/font/google";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -13,6 +18,21 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -30,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`light ${plusJakarta.variable} ${inter.variable} h-full antialiased`}
+      className={`light ${plusJakarta.variable} ${inter.variable} ${playfairDisplay.variable} ${dmSans.variable} h-full antialiased`}
     >
       <head>
         <link

@@ -5,9 +5,9 @@
 // This keeps the test surface narrow: prop in → text out, fallback when
 // prop absent.
 //
-// Block 2 restructure: MisconceptionList was removed in favour of the
-// KeyFindings numbered list (covered here instead of the old misconception
-// card tests).
+// Editorial reskin: section titles ("What We Noticed", recommendation
+// chrome) now live in the page chrome rather than inside the leaf
+// components, so the tests only assert each component's own surface.
 
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -22,7 +22,7 @@ const NARRATION_LINE = "Steady fit at Level 3A based on the responses.";
 const RECOMMENDATIONS_LEDE = "A short plan based on placement and patterns.";
 
 describe("PlacementCard narrationLine", () => {
-  it("renders narrationLine in the warm-sentence slot when present", () => {
+  it("renders narrationLine below the placement box when present", () => {
     const html = renderToString(
       <PlacementCard
         childName="Aiden"
@@ -33,12 +33,9 @@ describe("PlacementCard narrationLine", () => {
       />,
     );
     expect(html).toContain(NARRATION_LINE);
-    // Tier-aware hardcoded flavor must NOT also appear — replacement, not
-    // addition (the slot is "one warm sentence under the level," singular).
-    expect(html).not.toContain("strong conceptual understanding");
   });
 
-  it("falls back to the hardcoded flavor sentence when narrationLine is absent", () => {
+  it("renders only the placement label when narrationLine is absent", () => {
     const html = renderToString(
       <PlacementCard
         childName="Aiden"
@@ -47,7 +44,9 @@ describe("PlacementCard narrationLine", () => {
         tier="K_4"
       />,
     );
-    expect(html).toContain("strong conceptual understanding");
+    // Half-level letter is stripped for parent-facing display (R2).
+    expect(html).toContain("S.A.M Level 3");
+    expect(html).not.toContain(NARRATION_LINE);
   });
 });
 
@@ -68,10 +67,12 @@ describe("KeyFindings", () => {
     expect(html).toContain(STRENGTH_TWO);
     expect(html).toContain(GROWTH_ONE);
     expect(html).toContain(GROWTH_TWO);
-    expect(html).toContain("What We Noticed");
     // <ol> drives the numbering — keeps the renderer in charge of the
     // visible numbers (the brief: items must not include numbers themselves).
     expect(html).toContain("<ol");
+    // Numbered eyebrow per card — strengths first, then growth areas.
+    expect(html).toContain("Finding 01");
+    expect(html).toContain("Finding 04");
   });
 
   it("renders strengths-only when growth areas are empty", () => {
@@ -98,11 +99,13 @@ describe("KeyFindings", () => {
 });
 
 describe("RecommendationsCard narrationLede", () => {
-  it("renders narrationLede above the recommendations list when present", () => {
+  it("renders narrationLede above the recommendations box when present", () => {
     const html = renderToString(
       <RecommendationsCard
         recommendations={[]}
         narrationLede={RECOMMENDATIONS_LEDE}
+        childName="Aiden"
+        placementLabel="S.A.M Level 3"
       />,
     );
     expect(html).toContain(RECOMMENDATIONS_LEDE);
@@ -110,7 +113,11 @@ describe("RecommendationsCard narrationLede", () => {
 
   it("renders without the lede when absent", () => {
     const html = renderToString(
-      <RecommendationsCard recommendations={[]} />,
+      <RecommendationsCard
+        recommendations={[]}
+        childName="Aiden"
+        placementLabel="S.A.M Level 3"
+      />,
     );
     expect(html).not.toContain(RECOMMENDATIONS_LEDE);
   });

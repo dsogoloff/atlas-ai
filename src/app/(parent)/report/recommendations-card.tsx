@@ -1,90 +1,111 @@
-// Recommended Next Steps card for the parent diagnostic report.
+// "Our Recommendation" — placement + starting points for the parent
+// Assessment Report.
 //
-// Stitch port from module-d/04 (lines 265-287) + 05. Title was originally
-// "Ways to Support {childName} at Home"; retitled to "How We Can Support
-// Your Child" — name-free, parent-direct framing. One bulleted item per
-// recommendation; the parent receives an already-sorted array (page.tsx
-// owns the band-priority sort, so area_of_focus items appear first —
-// most-actionable to least).
+// Editorial reskin (docs/atlas-sample-report.html): renders a calm
+// paper-grey box containing the placement statement and a top-to-bottom
+// list of the recommendation items already produced by the engine. Each
+// list row shows the engine strand as the "unit name" with the primary
+// recommendation prose underneath. supplementary[] / notes remain hidden
+// in v1 per RC3 / RC4.
 //
-// Schema-vs-Stitch note: Stitch shows 3 hand-written bullets; the
-// schema (curriculum_recommendations) returns one row per (strand,
-// level) pair, up to 6. We render all available with a small uppercase
-// strand eyebrow per item (RC1+RC5), so the parent can map back to
-// the StrandMap above.
-//
-// supplementary[] and notes are intentionally hidden in v1
-// (RC3+RC4) — surface in v2 if pilot families ask.
+// The reference template includes an "Addresses Finding 0N" link per
+// unit; our data model does not currently link recommendations to
+// findings, so that anchor is omitted until a real link exists.
 
 import type { Recommendation } from "@/lib/report/types";
 
-// Phase 8: Recommendation.strand is still keyed by the engine's 6-value
-// enum (curriculum_recommendations rows haven't been remapped onto V2026
-// sub-strands). Use ENGINE_STRAND_LABELS, not the new sub-strand labels.
 import { ENGINE_STRAND_LABELS } from "./strand-labels";
 
 interface RecommendationsCardProps {
   /** Already sorted by page.tsx: area_of_focus > progressing > mastery
    *  > no_data, with STRAND_ORDER as the within-band tiebreaker. */
   recommendations: Recommendation[];
-  /** Optional Sonnet-generated intro sentence, rendered above the list. */
+  /** Optional Sonnet-generated intro sentence, rendered above the box. */
   narrationLede?: string;
+  /** Child first name, used in the placement statement inside the box. */
+  childName: string;
+  /** Pre-stripped placement label, e.g. "S.A.M Level 3". */
+  placementLabel: string;
 }
 
 export function RecommendationsCard({
   recommendations,
   narrationLede,
+  childName,
+  placementLabel,
 }: RecommendationsCardProps) {
   return (
-    <section aria-label="How we can support your child">
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border-2 border-sam-navy/5">
-        <h3 className="text-lg md:text-xl font-bold text-sam-navy mb-5 md:mb-6 flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-sam-teal"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-            aria-hidden="true"
-          >
-            tips_and_updates
-          </span>
-          How We Can Support Your Child
-        </h3>
+    <div>
+      {narrationLede && (
+        <p
+          className="text-[15px] leading-[1.65] mb-8 max-w-[560px]"
+          style={{
+            fontFamily: "var(--font-report-sans)",
+            color: "var(--color-report-text-secondary)",
+          }}
+        >
+          {narrationLede}
+        </p>
+      )}
 
-        {narrationLede && (
-          <p className="font-body-regular text-sam-navy/80 text-base md:text-lg leading-relaxed mb-5 md:mb-6">
-            {narrationLede}
-          </p>
-        )}
+      <div
+        className="p-8 max-sm:p-6 mt-2"
+        style={{
+          backgroundColor: "var(--color-report-paper)",
+          fontFamily: "var(--font-report-sans)",
+        }}
+      >
+        <p
+          className="text-base leading-[1.7] mb-2"
+          style={{ color: "var(--color-report-text)" }}
+        >
+          Place {childName} at{" "}
+          <strong
+            className="font-semibold"
+            style={{ color: "var(--color-report-navy)" }}
+          >
+            {placementLabel}
+          </strong>
+          , with a focused start on the areas surfaced by this assessment.
+        </p>
 
         {recommendations.length === 0 ? (
-          <p className="text-sam-gray-mid text-sm md:text-base leading-relaxed">
+          <p
+            className="text-[15px] leading-[1.65] mt-4"
+            style={{ color: "var(--color-report-text-secondary)" }}
+          >
             Recommendations will appear after the next assessment.
           </p>
         ) : (
-          <ul className="space-y-5 md:space-y-6">
-            {recommendations.map((rec) => (
-              <li
-                key={`${rec.strand}-${rec.level}`}
-                className="flex gap-4 items-start"
-              >
-                <span
-                  className="material-symbols-outlined text-sam-navy/30 mt-0.5 shrink-0"
-                  aria-hidden="true"
+          <ul className="list-none mt-6 p-0">
+            {recommendations.map((rec, idx) => {
+              const isLast = idx === recommendations.length - 1;
+              return (
+                <li
+                  key={`${rec.strand}-${rec.level}`}
+                  className={`py-4 text-[15px] flex flex-col gap-1 border-t${
+                    isLast ? " border-b" : ""
+                  } max-sm:gap-1`}
+                  style={{ borderColor: "var(--color-report-border)" }}
                 >
-                  check_circle
-                </span>
-                <div className="flex-1 space-y-1">
-                  <div className="text-[10px] md:text-xs font-bold text-sam-gray-mid uppercase tracking-wider">
+                  <span
+                    className="font-medium"
+                    style={{ color: "var(--color-report-navy)" }}
+                  >
                     {ENGINE_STRAND_LABELS[rec.strand]}
-                  </div>
-                  <p className="text-sam-navy/80 text-sm md:text-base leading-relaxed">
+                  </span>
+                  <p
+                    className="leading-[1.65]"
+                    style={{ color: "var(--color-report-text-secondary)" }}
+                  >
                     {rec.primary}
                   </p>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
-    </section>
+    </div>
   );
 }
