@@ -82,8 +82,12 @@
 
 import "server-only";
 
+import { after } from "next/server";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { emit } from "@/lib/analytics/emit";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import {
   createEngineState,
   nextQuestionRequest,
@@ -353,6 +357,17 @@ export async function sessionStartHandler({
     const msg = e instanceof Error ? e.message : "unknown";
     return fail("internal", 500, msg);
   }
+
+  // Funnel: a NEW assessment actually began (fresh session + first question
+  // served). Resume paths deliberately don't emit this. Fail-soft, off the
+  // response path.
+  after(() =>
+    emit(serviceClient, ANALYTICS_EVENTS.SHORT_TEST_STARTED, {
+      tenantId: parent.tenant_id,
+      childId: child.id,
+      sessionId,
+    }),
+  );
 
   // Fresh-session first pick: no responses persisted yet, so the served
   // question is question 1 (response_count + 1 = 1).

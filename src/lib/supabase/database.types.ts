@@ -9,6 +9,58 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          child_id: string | null
+          created_at: string
+          event_name: Database["public"]["Enums"]["analytics_event_name"]
+          id: number
+          props: Json
+          session_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          child_id?: string | null
+          created_at?: string
+          event_name: Database["public"]["Enums"]["analytics_event_name"]
+          id?: number
+          props?: Json
+          session_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          child_id?: string | null
+          created_at?: string
+          event_name?: Database["public"]["Enums"]["analytics_event_name"]
+          id?: number
+          props?: Json
+          session_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_sessions: {
         Row: {
           child_id: string
@@ -368,6 +420,71 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "misconceptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_satisfaction: {
+        Row: {
+          child_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          parent_id: string
+          rating: number
+          session_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          parent_id: string
+          rating: number
+          session_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          parent_id?: string
+          rating?: number
+          session_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_satisfaction_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_satisfaction_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_satisfaction_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_satisfaction_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1039,6 +1156,18 @@ export type Database = {
       }
     }
     Enums: {
+      analytics_event_name:
+        | "landing_viewed"
+        | "parent_consent_completed"
+        | "child_profile_created"
+        | "short_test_started"
+        | "short_test_item_answered"
+        | "short_test_completed"
+        | "short_result_viewed"
+        | "parent_report_generated"
+        | "parent_report_viewed"
+        | "center_followup_opted_in"
+        | "parent_satisfaction_submitted"
       assessment_status: "IN_PROGRESS" | "COMPLETED"
       center_status: "ACTIVE" | "INACTIVE"
       half_grade_level:

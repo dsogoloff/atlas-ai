@@ -5,6 +5,15 @@ vi.mock("@/lib/misconceptionClassifier/classifier", () => ({
   classify: vi.fn(),
 }));
 
+// The handler emits short_test_item_answered / short_test_completed via the
+// (synchronously-invoked) after() mock below. Stub emit() so those analytics
+// inserts don't land in the captured serviceClient insert log this suite
+// asserts on. emit()'s own behaviour is covered in
+// src/lib/analytics/emit.test.ts.
+vi.mock("@/lib/analytics/emit", () => ({
+  emit: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Stub the narration trigger so existing handler tests don't need to
 // script report_narrations queries. The trigger has its own unit tests
 // in src/lib/report/narration/trigger.test.ts covering happy path,

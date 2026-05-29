@@ -114,6 +114,8 @@ import { after } from "next/server";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { emit } from "@/lib/analytics/emit";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import {
   applyResponse,
   nextQuestionRequest,
@@ -513,6 +515,17 @@ export async function submitResponseHandler({
     return fail("internal", 500, `response insert failed: ${insertErr.message}`);
   }
 
+  // Funnel: a fresh item was answered (this path only runs on a first-time
+  // submit — idempotent retries return above without re-inserting). Fail-soft.
+  after(() =>
+    emit(serviceClient, ANALYTICS_EVENTS.SHORT_TEST_ITEM_ANSWERED, {
+      tenantId: parent.tenant_id,
+      childId: session.child_id,
+      sessionId: request.session_id,
+      props: { is_correct: isCorrect, question_number: postState.responseCount },
+    }),
+  );
+
   // (b) UPDATE current_estimate.
   const placement = placementEstimate(postState);
   const { error: estErr } = await serviceClient
@@ -531,6 +544,15 @@ export async function submitResponseHandler({
   if (term.done) {
     const closeMsg = await closeSession(serviceClient, request.session_id);
     if (closeMsg) return fail("internal", 500, closeMsg);
+
+    emitTestCompleted(
+      serviceClient,
+      parent.tenant_id,
+      session.child_id,
+      request.session_id,
+      postState.responseCount,
+      toWireReason(term.reason),
+    );
 
     return success({
       is_correct: isCorrect,
@@ -562,6 +584,15 @@ export async function submitResponseHandler({
     return fail("internal", 500, pickResult.message);
   }
   if (pickResult.kind === "exhausted") {
+    emitTestCompleted(
+      serviceClient,
+      parent.tenant_id,
+      session.child_id,
+      request.session_id,
+      postState.responseCount,
+      "bank-exhausted",
+    );
+
     return success({
       is_correct: isCorrect,
       time_flag: flag.flag,
@@ -626,6 +657,30 @@ async function persistSessionSummary(
 
   if (updateErr) return `summary update failed: ${updateErr.message}`;
   return null;
+}
+
+/**
+ * Funnel: emit short_test_completed off the response path. Called only from
+ * the two FRESH-submit terminal paths (engine-terminated and bank-exhausted),
+ * never the idempotent-retry branches — so one completed event per session.
+ * Fail-soft via emit().
+ */
+function emitTestCompleted(
+  serviceClient: SupabaseClient<Database>,
+  tenantId: string,
+  childId: string,
+  sessionId: string,
+  questionCount: number,
+  reason: TerminationReasonWire,
+): void {
+  after(() =>
+    emit(serviceClient, ANALYTICS_EVENTS.SHORT_TEST_COMPLETED, {
+      tenantId,
+      childId,
+      sessionId,
+      props: { question_count: questionCount, termination_reason: reason },
+    }),
+  );
 }
 
 function success(body: SubmitResponseBody): SubmitHandlerResult {
