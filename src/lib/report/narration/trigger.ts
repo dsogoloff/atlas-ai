@@ -36,6 +36,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { emit } from "@/lib/analytics/emit";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { assembleReportContent } from "@/lib/report/assemble";
 import { generateReportNarration } from "@/lib/report/narration/generate";
 import type { Database } from "@/lib/supabase/database.types";
@@ -111,6 +113,16 @@ export async function attemptNarration(
       });
       return;
     }
+
+    // 5. Funnel signal: the parent report has been produced for this
+    // completed session (data-only render is available even when narration
+    // status === "failed", so this fires regardless of narration outcome).
+    // Fail-soft and PII-free — emit() never throws; ids only, no names.
+    await emit(serviceClient, ANALYTICS_EVENTS.PARENT_REPORT_GENERATED, {
+      tenantId: narration.tenant_id,
+      childId: session.child_id,
+      sessionId: narration.session_id,
+    });
   } catch (err) {
     // Catch-all: assembleReportContent throws, generateReportNarration's
     // JSON.parse / callSonnet network error, or anything else. Narration
