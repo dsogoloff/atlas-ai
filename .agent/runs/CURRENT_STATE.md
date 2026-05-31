@@ -8,8 +8,8 @@
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
 **Origin head:** `016e4ea` — no-ff merge of PR #7 (lane/workflow-pr-ci). ATLAS-ASSESSMENT
-is protected by the "Branch Protection" GitHub ruleset (scope `~ALL`; requires PR + the
-`verify-bar` status check; no direct pushes). All work goes via `lane/*` branches opened
+is protected by the "Branch Protection" GitHub ruleset (scope `~DEFAULT_BRANCH`; requires
+PR + the `verify-bar` status check; no direct pushes). All work goes via `lane/*` branches opened
 as PRs; Dimitri merges attended after Vercel preview review. All three M2 lanes (consent,
 instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events
 wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off); ops runbook
@@ -25,7 +25,7 @@ shipped.
 | Comprehensive-test assembly | NOT STARTED | Config (engine reparameterization); gated on G1 (question bank). |
 | Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it). |
 | Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
-| Workflow → lane/PR + CI | MERGED `016e4ea` | PR #7. `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 + RUNBOOK step 8 reconciled. CI GREEN: 554 tests / 41 files, no ANTHROPIC_API_KEY (mocked). verify-bar is the required status check via "Branch Protection" ruleset (`~ALL` scope). Note: `~ALL` ruleset prevents deletion of merged lane branches on origin — `lane/workflow-pr-ci` remote ref remains but is harmless. |
+| Workflow → lane/PR + CI | MERGED `016e4ea` | PR #7. `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 + RUNBOOK step 8 reconciled. CI GREEN: 554 tests / 41 files, no ANTHROPIC_API_KEY (mocked). verify-bar is the required status check via "Branch Protection" ruleset. Ruleset rescoped `~ALL` → `~DEFAULT_BRANCH` 2026-05-31 (the `~ALL` scope blocked pushing/deleting lane branches and broke the flow; see DECISIONS). Stale `lane/workflow-pr-ci` remote ref deleted. |
 | Relay / run loop | NOT STARTED | Build per RUNBOOK.md; treat as a normal lane. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)

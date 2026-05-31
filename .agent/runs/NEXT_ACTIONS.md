@@ -15,9 +15,14 @@
 
 ## 0b. Workflow / infra
 - [x] **DONE 2026-05-31 — Dimitri selected `verify-bar` as the required status check.**
-  Implemented via the "Branch Protection" GitHub ruleset (scope `~ALL`; requires PR +
-  verify-bar check; no direct pushes). PR #7 (lane/workflow-pr-ci) merged as `016e4ea`;
-  CI ran GREEN (554 tests / 41 files). Required check is live.
+  Implemented via the "Branch Protection" GitHub ruleset (requires PR + verify-bar check;
+  no direct pushes). PR #7 (lane/workflow-pr-ci) merged as `016e4ea`; CI ran GREEN
+  (554 tests / 41 files). Required check is live.
+- [x] **DONE 2026-05-31 — Rescoped ruleset `~ALL` → `~DEFAULT_BRANCH`.** The initial `~ALL`
+  scope blocked pushing/deleting `lane/*` branches (required-check + deletion rules applied
+  to every ref), which broke the lane→PR flow. Rescoped to the default branch
+  (ATLAS-ASSESSMENT) via `gh api`, attended-authorized by Dimitri. Lane branches are now
+  pushable/deletable; ATLAS-ASSESSMENT stays fully protected. See DECISIONS 2026-05-31.
 
 ## 1. Report fix pass (immediate)
 - [x] Scrub page `<title>` metadata — remove "Diagnostic Excellence"; report is
