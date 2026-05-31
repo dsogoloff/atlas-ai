@@ -72,3 +72,111 @@ export function isMisconceptionClassifierLive(): boolean {
 export function isReportNarrationLive(): boolean {
   return process.env.REPORT_NARRATION_LIVE === "true";
 }
+
+// =============================================================================
+// §12 staged-rollout feature flags.
+//
+// Strategy §12 + BUSINESS_RULES ("Staged rollout: high-risk features behind
+// default-off feature flags; do not globally enable before the relevant
+// milestone gate"). ALL default OFF — only the literal string 'true' enables a
+// flag. Env-var backed, mirroring the LLM gates above; a single-tenant pilot
+// needs no per-tenant or runtime toggling (a DB-backed flag table is a
+// multi-tenant v2 concern, see ARCHITECTURE "v2 forward notes").
+//
+// Several of these gate features that are not built yet (comprehensive test,
+// center routing, sharing tiers, multi-tenant, franchisor dashboard). The flag
+// is an inert default-off guard until its feature lands — wiring the flag now
+// keeps the rollout posture correct and gives each feature a single switch.
+// Data-sharing flags (snapshot / full-history) gate behaviour that also
+// requires explicit parent opt-in + counsel review (G3) before going live;
+// the flag is a guard, NOT an authorisation to share.
+// =============================================================================
+
+/** Read one §12 rollout flag. Default-off: only 'true' enables. */
+function rolloutFlag(envVar: string): boolean {
+  return process.env[envVar] === "true";
+}
+
+export function isShortTestBetaEnabled(): boolean {
+  return rolloutFlag("ENABLE_SHORT_TEST_BETA");
+}
+export function isComprehensivePilotEnabled(): boolean {
+  return rolloutFlag("ENABLE_COMPREHENSIVE_PILOT");
+}
+export function isCenterRoutingEnabled(): boolean {
+  return rolloutFlag("ENABLE_CENTER_ROUTING");
+}
+export function isExternalCentersEnabled(): boolean {
+  return rolloutFlag("ENABLE_EXTERNAL_CENTERS");
+}
+export function isDiagnosticSnapshotSharingEnabled(): boolean {
+  return rolloutFlag("ENABLE_DIAGNOSTIC_SNAPSHOT_SHARING");
+}
+export function isFullHistorySharingEnabled(): boolean {
+  return rolloutFlag("ENABLE_FULL_HISTORY_SHARING");
+}
+export function isMachineGeneratedItemsEnabled(): boolean {
+  return rolloutFlag("ENABLE_MACHINE_GENERATED_ITEMS");
+}
+export function isInstructorAssignedPracticeEnabled(): boolean {
+  return rolloutFlag("ENABLE_INSTRUCTOR_ASSIGNED_PRACTICE");
+}
+export function isSocraticAssistantEnabled(): boolean {
+  return rolloutFlag("ENABLE_SOCRATIC_ASSISTANT");
+}
+export function isMultiTenantEnabled(): boolean {
+  return rolloutFlag("ENABLE_MULTI_TENANT");
+}
+export function isFranchisorDashboardEnabled(): boolean {
+  return rolloutFlag("ENABLE_FRANCHISOR_DASHBOARD");
+}
+
+/** Registry of the 11 §12 flags: strategy key → (env var, getter). Lets
+ *  callers/tests enumerate the set and assert the default-off invariant
+ *  without hand-listing every flag. */
+export const ROLLOUT_FLAGS = {
+  enable_short_test_beta: {
+    envVar: "ENABLE_SHORT_TEST_BETA",
+    get: isShortTestBetaEnabled,
+  },
+  enable_comprehensive_pilot: {
+    envVar: "ENABLE_COMPREHENSIVE_PILOT",
+    get: isComprehensivePilotEnabled,
+  },
+  enable_center_routing: {
+    envVar: "ENABLE_CENTER_ROUTING",
+    get: isCenterRoutingEnabled,
+  },
+  enable_external_centers: {
+    envVar: "ENABLE_EXTERNAL_CENTERS",
+    get: isExternalCentersEnabled,
+  },
+  enable_diagnostic_snapshot_sharing: {
+    envVar: "ENABLE_DIAGNOSTIC_SNAPSHOT_SHARING",
+    get: isDiagnosticSnapshotSharingEnabled,
+  },
+  enable_full_history_sharing: {
+    envVar: "ENABLE_FULL_HISTORY_SHARING",
+    get: isFullHistorySharingEnabled,
+  },
+  enable_machine_generated_items: {
+    envVar: "ENABLE_MACHINE_GENERATED_ITEMS",
+    get: isMachineGeneratedItemsEnabled,
+  },
+  enable_instructor_assigned_practice: {
+    envVar: "ENABLE_INSTRUCTOR_ASSIGNED_PRACTICE",
+    get: isInstructorAssignedPracticeEnabled,
+  },
+  enable_socratic_assistant: {
+    envVar: "ENABLE_SOCRATIC_ASSISTANT",
+    get: isSocraticAssistantEnabled,
+  },
+  enable_multi_tenant: {
+    envVar: "ENABLE_MULTI_TENANT",
+    get: isMultiTenantEnabled,
+  },
+  enable_franchisor_dashboard: {
+    envVar: "ENABLE_FRANCHISOR_DASHBOARD",
+    get: isFranchisorDashboardEnabled,
+  },
+} as const;
