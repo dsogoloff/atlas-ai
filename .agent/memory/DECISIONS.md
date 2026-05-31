@@ -3,6 +3,29 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-05-31
+
+* **Orchestration workflow moved to lane/* branch → PR → CI (verify-bar) → manual Codex →
+  Dimitri merges attended via Vercel preview.** ATLAS-ASSESSMENT is protected by the
+  "Branch Protection" GitHub ruleset (requires a pull request and the `verify-bar` status
+  check to pass; direct pushes rejected). The agent never merges or pushes to the protected
+  branch — merging is Dimitri's attended action. Rationale: protected branch rejects direct
+  pushes; lane PRs make report-fix changes reviewable with a Vercel preview before merge.
+  Implemented in PR #7 (no-ff merge `016e4ea`): `.github/workflows/verify.yml`,
+  `.github/pull_request_template.md`, CLAUDE.md step 6 + RUNBOOK step 8 reconciled. CI
+  passed GREEN: 554 tests / 41 files, no `ANTHROPIC_API_KEY` (classifier/narration mocked).
+
+* **Ruleset scope corrected `~ALL` → `~DEFAULT_BRANCH`.** As first activated, the "Branch
+  Protection" ruleset targeted `~ALL` branches, so the `required_status_checks`/`deletion`
+  rules applied to every ref — which blocked pushing a new `lane/*` branch to origin
+  (`Required status check "verify-bar" is expected`) and blocked deleting merged lane
+  branches. That breaks the lane→PR flow (you can't create the lane on origin to open a PR
+  from). Rescoped the ruleset's `conditions.ref_name.include` to `["~DEFAULT_BRANCH"]`
+  (ATLAS-ASSESSMENT is the default branch) via `gh api`, authorized attended by Dimitri.
+  ATLAS-ASSESSMENT remains fully protected (PR + `verify-bar`, no direct push, no deletion,
+  no non-fast-forward); `lane/*` branches are now pushable and deletable. Surfaced by
+  dogfooding the flow on the PR #8 memory lane.
+
 ## 2026-05-30
 
 * ⚑ **Admin/support tooling for the pilot = ops runbook first; admin UI deferred.**

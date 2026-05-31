@@ -4,15 +4,16 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-30 (workflow model updated: lane/PR/CI-gated; Dimitri merges attended).
+**As of:** 2026-05-31 (PR #7 merged; lane/PR/CI workflow live; origin head `016e4ea`).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `97b8646` — base commit for `lane/workflow-pr-ci`. ATLAS-ASSESSMENT is
-now a PROTECTED branch on origin; direct pushes are rejected. All work goes via `lane/*`
-branches opened as PRs; Dimitri merges attended after Vercel preview review. All three M2
-lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report
-analytics events wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off);
-ops runbook shipped.
+**Origin head:** `016e4ea` — no-ff merge of PR #7 (lane/workflow-pr-ci). ATLAS-ASSESSMENT
+is protected by the "Branch Protection" GitHub ruleset (scope `~DEFAULT_BRANCH`; requires
+PR + the `verify-bar` status check; no direct pushes). All work goes via `lane/*` branches opened
+as PRs; Dimitri merges attended after Vercel preview review. All three M2 lanes (consent,
+instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events
+wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off); ops runbook
+shipped.
 **Verify baseline:** 554 tests / 0 type errors; 1 known font lint warning.
 ## Lanes
 | Lane | State | Notes |
@@ -24,7 +25,7 @@ ops runbook shipped.
 | Comprehensive-test assembly | NOT STARTED | Config (engine reparameterization); gated on G1 (question bank). |
 | Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it). |
 | Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
-| Workflow → lane/PR + CI | IN PR (lane/workflow-pr-ci) | `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 reconciled, settings.local.json perms; awaiting CI green + Dimitri merge. |
+| Workflow → lane/PR + CI | MERGED `016e4ea` | PR #7. `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 + RUNBOOK step 8 reconciled. CI GREEN: 554 tests / 41 files, no ANTHROPIC_API_KEY (mocked). verify-bar is the required status check via "Branch Protection" ruleset. Ruleset rescoped `~ALL` → `~DEFAULT_BRANCH` 2026-05-31 (the `~ALL` scope blocked pushing/deleting lane branches and broke the flow; see DECISIONS). Stale `lane/workflow-pr-ci` remote ref deleted. |
 | Relay / run loop | NOT STARTED | Build per RUNBOOK.md; treat as a normal lane. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)

@@ -14,12 +14,15 @@
       new path (Dimitri to verify after first `pnpm dev`).
 
 ## 0b. Workflow / infra
-- **DEFERRED — Dimitri action required (cannot be done before first CI run):**
-  After CI runs the `verify-bar` job at least once on any PR targeting ATLAS-ASSESSMENT,
-  go to GitHub → repo Settings → Branches → ATLAS-ASSESSMENT branch protection rule →
-  "Require status checks to pass before merging" → search for `verify-bar` and select it
-  as a REQUIRED check. GitHub does not surface a status check in that list until it has
-  reported at least once, so this step cannot be completed before the first PR CI run.
+- [x] **DONE 2026-05-31 — Dimitri selected `verify-bar` as the required status check.**
+  Implemented via the "Branch Protection" GitHub ruleset (requires PR + verify-bar check;
+  no direct pushes). PR #7 (lane/workflow-pr-ci) merged as `016e4ea`; CI ran GREEN
+  (554 tests / 41 files). Required check is live.
+- [x] **DONE 2026-05-31 — Rescoped ruleset `~ALL` → `~DEFAULT_BRANCH`.** The initial `~ALL`
+  scope blocked pushing/deleting `lane/*` branches (required-check + deletion rules applied
+  to every ref), which broke the lane→PR flow. Rescoped to the default branch
+  (ATLAS-ASSESSMENT) via `gh api`, attended-authorized by Dimitri. Lane branches are now
+  pushable/deletable; ATLAS-ASSESSMENT stays fully protected. See DECISIONS 2026-05-31.
 
 ## 1. Report fix pass (immediate)
 - [x] Scrub page `<title>` metadata — remove "Diagnostic Excellence"; report is
