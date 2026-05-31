@@ -115,15 +115,15 @@ function Invoke-Ingest([string]$path) {
 
 # --- Bundle mode -----------------------------------------------------------
 function Get-SecretHits([string[]]$lines) {
-  # Scan ADDED lines only (reduce false positives from unchanged context).
+  # Scan ADDED lines only. Patterns match real secret VALUES, not the mere mention of a
+  # key NAME -- otherwise code, .env.example, or docs that reference a key (including this
+  # script's own pattern list) would falsely trip. A name alone is not a leak; a value is.
   $patterns = [ordered]@{
-    "anthropic key"     = 'sk-ant-'
-    "ANTHROPIC_API_KEY" = 'ANTHROPIC_API_KEY\s*[=:]'
-    "supabase service"  = 'SERVICE_ROLE_KEY\s*[=:]|SUPABASE_SERVICE'
-    "resend key"        = 'RESEND_API_KEY\s*[=:]|re_[A-Za-z0-9]{16,}'
-    "private key block" = 'BEGIN (RSA |EC )?PRIVATE KEY'
-    "bearer/jwt"        = 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.'
-    "generic secret"    = '(?i)(password|secret|api[_-]?key|token)\s*[=:]\s*[''"][^''"]{6,}'
+    "anthropic key"     = 'sk-ant-[A-Za-z0-9_-]{20,}'
+    "resend key"        = 're_[A-Za-z0-9]{20,}'
+    "private key block" = '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+    "jwt / service key" = 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{6,}'
+    "assigned secret"   = '(?i)(password|secret|api[_-]?key|service_role(_key)?|access[_-]?token|client[_-]?secret)\s*[=:]\s*[''"][^''"]{8,}[''"]'
   }
   $hits = New-Object System.Collections.Generic.List[string]
   foreach ($line in $lines) {
