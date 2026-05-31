@@ -52,15 +52,31 @@ export async function generateReportNarration(
     };
   }
 
+  // Strand-fabrication guard (BUSINESS_RULES "Claims & language" / strategy
+  // §2.4): narration must NOT assert specific strand strengths/weaknesses when
+  // there is no measured strand-level data. The voice-locked prompt's HARD
+  // RULE still demands strand_lede name specific sub-strands, so on a thin /
+  // no-data session (every sub-strand band === "no_data", i.e. total === 0)
+  // the model can only fabricate them. We suppress those data-dependent fields
+  // here, deterministically — strand_lede drops to a data-only render and
+  // strengths (which are inherently per-sub-strand claims) clear to empty.
+  // growth_areas survive: they are misconception-derived response patterns,
+  // not strand-mastery claims. This is a data-path guard, NOT a voice change.
+  const hasStrandData = content.strand_mastery.some((s) => s.total > 0);
+  const prose = validation.prose;
+
   return {
     session_id: content.session_id,
     tenant_id: content.tenant_id,
     generated_at: new Date().toISOString(),
     model: result.model,
     status: "ok",
-    placement_line: validation.prose.placement_line,
-    strand_lede: validation.prose.strand_lede,
-    key_findings: validation.prose.key_findings,
-    recommendations_lede: validation.prose.recommendations_lede,
+    placement_line: prose.placement_line,
+    strand_lede: hasStrandData ? prose.strand_lede : undefined,
+    key_findings: {
+      strengths: hasStrandData ? prose.key_findings.strengths : [],
+      growth_areas: prose.key_findings.growth_areas,
+    },
+    recommendations_lede: prose.recommendations_lede,
   };
 }

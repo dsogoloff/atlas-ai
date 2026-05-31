@@ -54,10 +54,23 @@ function makeServiceClient(opts: {
   session?: Record<string, unknown> | null;
   child?: Record<string, unknown> | null;
   upsertError?: { message: string } | null;
-}): { client: SupabaseClient<Database>; upserts: UpsertCall[] } {
+}): {
+  client: SupabaseClient<Database>;
+  upserts: UpsertCall[];
+  events: Record<string, unknown>[];
+} {
   const upserts: UpsertCall[] = [];
+  const events: Record<string, unknown>[] = [];
   const client = {
     from(table: string) {
+      if (table === "analytics_events") {
+        return {
+          insert: async (row: Record<string, unknown>) => {
+            events.push(row);
+            return { error: null };
+          },
+        };
+      }
       if (table === "assessment_sessions") {
         return {
           select: () => ({
@@ -96,7 +109,7 @@ function makeServiceClient(opts: {
       throw new Error(`unexpected table: ${table}`);
     },
   } as unknown as SupabaseClient<Database>;
-  return { client, upserts };
+  return { client, upserts, events };
 }
 
 // ---------------------------------------------------------------------------
@@ -194,6 +207,34 @@ describe("attemptNarration", () => {
     await attemptNarration(client, SESSION_ID);
 
     expect(upserts[0].options?.onConflict).toBe("session_id");
+  });
+
+  it("emits parent_report_generated after a successful upsert", async () => {
+    mockAssemble.mockResolvedValue(FAKE_REPORT_CONTENT);
+    mockGenerate.mockResolvedValue(FAKE_NARRATION_OK);
+    const { client, events } = makeServiceClient({
+      session: SESSION_ROW,
+      child: CHILD_ROW,
+    });
+
+    await attemptNarration(client, SESSION_ID);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].event_name).toBe("parent_report_generated");
+    expect(events[0].tenant_id).toBe(TENANT_ID);
+    expect(events[0].session_id).toBe(SESSION_ID);
+    expect(events[0].child_id).toBe(SESSION_ROW.child_id);
+  });
+
+  it("does not emit parent_report_generated when the session row is missing", async () => {
+    const { client, events } = makeServiceClient({
+      session: null,
+      child: CHILD_ROW,
+    });
+
+    await attemptNarration(client, SESSION_ID);
+
+    expect(events).toHaveLength(0);
   });
 
   it("writes status:'failed' rows from generate (audit) without throwing", async () => {

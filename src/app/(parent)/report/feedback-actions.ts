@@ -73,6 +73,65 @@ export async function recordReportViewed(sessionId: string): Promise<void> {
   }
 }
 
+/**
+ * Fire center_followup_opted_in when the parent acts on the report's primary
+ * "Schedule a conversation with a S.A.M center director" CTA — the funnel
+ * signal that the family opted into center follow-up. Same RLS ownership
+ * check as recordReportViewed (resolve + verify the session is the caller's
+ * before attributing). Best-effort, fail-soft, PII-free; never throws. Does
+ * NOT itself share any data with a center — it is an analytics signal only.
+ */
+export async function recordCenterFollowupOptIn(
+  sessionId: string,
+): Promise<void> {
+  try {
+    if (!UUID_RE.test(sessionId)) return;
+
+    const rls = await createClient();
+    const {
+      data: { user },
+    } = await rls.auth.getUser();
+    if (!user) return;
+
+    const { data: parent } = await rls
+      .from("parents")
+      .select("id, tenant_id")
+      .maybeSingle();
+    if (!parent) return;
+
+    const { data: session } = await rls
+      .from("assessment_sessions")
+      .select("id, child_id")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (!session) return;
+
+    // Close the dual-role bypass: confirm the session's child is the
+    // caller's own before attributing the opt-in.
+    const { data: ownedChild } = await rls
+      .from("children")
+      .select("id")
+      .eq("id", session.child_id)
+      .eq("parent_id", parent.id)
+      .maybeSingle();
+    if (!ownedChild) return;
+
+    await emit(
+      createServiceClient(),
+      ANALYTICS_EVENTS.CENTER_FOLLOWUP_OPTED_IN,
+      {
+        tenantId: parent.tenant_id,
+        childId: session.child_id,
+        sessionId: session.id,
+      },
+    );
+  } catch (e) {
+    console.error("[analytics] recordCenterFollowupOptIn threw", {
+      err: e instanceof Error ? e.message : "unknown",
+    });
+  }
+}
+
 export async function submitSatisfaction(
   input: SatisfactionInput,
 ): Promise<SatisfactionResult> {

@@ -37,6 +37,7 @@ import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
+import { CenterFollowupCta } from "./center-followup-cta";
 import { KeyFindings } from "./key-findings";
 import { ParentReportFeedback } from "./parent-report-feedback";
 import { PlacementCard } from "./placement-card";
@@ -59,8 +60,11 @@ const FOOTER_DISCLAIMER =
 const NEXT_STEPS_BODY =
   "A S.A.M. center director will reach out within two business days to discuss the findings and answer any questions. If you would like to move faster, you can schedule a conversation directly.";
 
+// Label resolved 2026-05-30 (DECISIONS): consultative wording, brand token
+// "S.A.M" with no trailing dot. Href stays the CTA_LINKS placeholder until
+// real scheduling is wired.
 const PRIMARY_CTA_LABEL =
-  "Schedule a conversation with a S.A.M. center director";
+  "Schedule a conversation with a S.A.M center director";
 
 const STRAND_PERF_LEDE_FALLBACK =
   "Performance is reported relative to expected proficiency for the assessed grade band.";
@@ -522,23 +526,11 @@ function NextSteps({ sessionId }: { sessionId: string }) {
       >
         {NEXT_STEPS_BODY}
       </p>
-      <a
+      <CenterFollowupCta
+        sessionId={sessionId}
+        label={PRIMARY_CTA_LABEL}
         href={CTA_LINKS.scheduleFreeClass}
-        className="flex justify-between items-center px-7 py-5 max-sm:px-6 max-sm:py-4 text-white text-[15px] max-sm:text-sm font-medium no-underline hover:opacity-95 transition-opacity"
-        style={{
-          backgroundColor: "var(--color-report-navy)",
-          fontFamily: "var(--font-report-sans)",
-        }}
-      >
-        <span>{PRIMARY_CTA_LABEL}</span>
-        <span
-          className="text-2xl ml-4 shrink-0"
-          style={{ fontFamily: "var(--font-report-serif)" }}
-          aria-hidden="true"
-        >
-          &rarr;
-        </span>
-      </a>
+      />
       <div
         className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-[12px] uppercase tracking-[0.1em]"
         style={{

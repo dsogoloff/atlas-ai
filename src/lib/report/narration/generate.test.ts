@@ -117,6 +117,59 @@ describe("generateReportNarration", () => {
     );
   });
 
+  it("suppresses strand_lede and strengths when there is no measured strand data (anti-fabrication guard)", async () => {
+    // Thin / no-data session: every applicable sub-strand has total === 0
+    // (band 'no_data'). The voice-locked prompt still demands strand_lede name
+    // specific sub-strands, so a model can only fabricate them here. The guard
+    // (BUSINESS_RULES "Claims & language" / §2.4) must strip the
+    // data-dependent fields deterministically, regardless of what the model
+    // returned — strand_lede absent, strengths empty — while keeping
+    // placement_line, recommendations_lede, and (misconception-derived)
+    // growth_areas.
+    const noStrandData: ReportContent = {
+      ...aidenGrade3Report,
+      strand_mastery: aidenGrade3Report.strand_mastery.map((s) => ({
+        ...s,
+        correct: 0,
+        total: 0,
+        percentage: 0,
+        band: "no_data" as const,
+      })),
+    };
+
+    // Canned response simulates a model that DID fabricate strand prose.
+    const cannedWithFabrication = {
+      placement_line: "Canned placement.",
+      strand_lede: "Strong in Fractions; focus on Geometry.", // fabricated
+      key_findings: {
+        strengths: ["Fractions: confident.", "Whole Numbers: solid."], // fabricated
+        growth_areas: ["Carrying error: regrouping slips."], // misconception-derived
+      },
+      recommendations_lede: "Canned recommendations lede.",
+    };
+    mockCallSonnet.mockResolvedValue({
+      text: JSON.stringify(cannedWithFabrication),
+      model: "claude-sonnet-4-6",
+      tokens: { input: 100, output: 50 },
+      elapsedMs: 1234,
+    });
+
+    const result = await generateReportNarration(noStrandData);
+
+    expect(result.status).toBe("ok");
+    expect(result.strand_lede).toBeUndefined();
+    expect(result.key_findings?.strengths).toEqual([]);
+    // growth_areas (misconception patterns, not strand claims) are preserved.
+    expect(result.key_findings?.growth_areas).toEqual(
+      cannedWithFabrication.key_findings.growth_areas,
+    );
+    // Non-strand prose is untouched.
+    expect(result.placement_line).toBe(cannedWithFabrication.placement_line);
+    expect(result.recommendations_lede).toBe(
+      cannedWithFabrication.recommendations_lede,
+    );
+  });
+
   it("resolves to status:'failed' with prose absent when Sonnet returns shape-invalid JSON", async () => {
     // Well-formed JSON but missing a required field — exercises the
     // Piece 3 validation gate. The brief: validation failure must NOT throw;
