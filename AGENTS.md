@@ -25,7 +25,67 @@ These rules override everything else in this file when in conflict:
 
 ---
 
-## 1. Before writing code
+## 1. ## Session autonomy
+
+Code runs sessions without gating on routine work. This rule is canonical —
+it applies to every session whether or not a session brief restates it.
+You may autonomously:
+- edit code
+- add/update tests
+- fix failing tests
+- refactor local code when behavior is preserved
+- run approved commands
+- call Codex review
+- resolve Codex technical findings
+ and any other step that is part of an approved session brief. Do not pause between
+steps for confirmation.
+
+You may not autonomously:
+- change business logic with user-visible economic/compliance impact
+- alter legal/privacy/data retention assumptions
+- add paid services
+- expose secrets
+- delete major code paths
+- perform production deploys
+- send external messages
+
+Required checks
+Before completion:
+- run relevant tests
+- run lint/typecheck if available
+- run Codex review
+- resolve blocker/high technical findings
+
+Stop and ask only at these genuine exceptions:
+
+1. Named decision points — a session brief explicitly says to stop, report,
+   and await input before a given step.
+
+2. Structurally dangerous operations — any deletion not explicitly named in
+   the brief, a repo-wide rewrite, a destructive or history-altering git
+   operation (force-push, reset --hard, branch deletion), or anything that
+   would be hard to undo.
+
+3. Genuine ambiguity — a point where a guess could be materially wrong and
+   the brief does not resolve it. Ask rather than guess.
+
+4. Blocked on access — you need a credential, a secret, or a production
+   resource you don't have.
+
+5. Goal conflict — the user's stated goal and the literal request appear to
+   conflict.
+
+"Proceed without asking" governs routine execution only. It is never a blanket
+licence to skip the brakes: exceptions 2 and 3 always stop, regardless of what
+a session brief says. When in doubt about whether something is routine or
+dangerous, treat it as dangerous and ask.
+
+This clause governs execution autonomy. The separate rule on not asking the
+founder technical questions still applies — defer non-essential technical
+choices to todo.md rather than surfacing them.
+
+
+## 2. Before writing code
 
 **Goal: understand the problem and the codebase before producing a diff.**
 
@@ -37,7 +97,7 @@ These rules override everything else in this file when in conflict:
 
 ---
 
-## 2. Writing code: simplicity first
+## 3. Writing code: simplicity first
 
 **Goal: the minimum code that solves the stated problem. Nothing speculative.**
 
@@ -52,7 +112,7 @@ The test: would a senior engineer reading the diff call this overcomplicated? If
 
 ---
 
-## 3. Surgical changes
+## 4. Surgical changes
 
 **Goal: clean, reviewable diffs. Change only what the request requires.**
 
@@ -66,7 +126,7 @@ The test: every changed line traces directly to the user's request. If a line fa
 
 ---
 
-## 4. Goal-driven execution
+## 5. Goal-driven execution
 
 **Goal: define success as something you can verify, then loop until verified.**
 
@@ -86,7 +146,7 @@ For every task:
 
 ---
 
-## 5. Tool use and verification
+## 6. Tool use and verification
 
 - Prefer running the code to guessing about the code. If a test suite exists, run it. If a linter exists, run it. If a type checker exists, run it.
 - Never report "done" based on a plausible-looking diff alone. Plausibility is not correctness.
@@ -97,7 +157,7 @@ For every task:
 
 ---
 
-## 6. Session hygiene
+## 7. Session hygiene
 
 - Context is the constraint. Long sessions with accumulated failed attempts perform worse than fresh sessions with a better prompt.
 - After two failed corrections on the same issue, stop. Summarize what you learned and ask the user to reset the session with a sharper prompt.
@@ -106,7 +166,7 @@ For every task:
 
 ---
 
-## 7. Communication style
+## 8. Communication style
 
 - Direct, not diplomatic. "This won't scale because X" beats "That's an interesting approach, but have you considered...".
 - Concise by default. Two or three short paragraphs unless the user asks for depth. No padding, no restating the question, no ceremonial closings.
@@ -116,20 +176,6 @@ For every task:
 
 ---
 
-## 8. When to ask, when to proceed
-
-**Ask before proceeding when:**
-- The request has two plausible interpretations and the choice materially affects the output.
-- The change touches something you've been told is load-bearing, versioned, or has a migration path.
-- You need a credential, a secret, or a production resource you don't have access to.
-- The user's stated goal and the literal request appear to conflict.
-
-**Proceed without asking when:**
-- The task is trivial and reversible (typo, rename a local variable, add a log line).
-- The ambiguity can be resolved by reading the code or running a command.
-- The user has already answered the question once in this session.
-
----
 
 ## 9. Self-improvement loop
 
@@ -209,4 +255,4 @@ This boilerplate synthesizes:
 - Community anti-sycophancy patterns (explicit banned phrases, direct-not-diplomatic).
 - The AGENTS.md open standard (cross-tool portability via symlinks).
 
-Read once. Edit sections 10 and 11 for your project. Prune the rest over time. This file gets better the more you use it.
+Read once. Edit sections 11 and 12 for your project. Prune the rest over time. This file gets better the more you use it.
