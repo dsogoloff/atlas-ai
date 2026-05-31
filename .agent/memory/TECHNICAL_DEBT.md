@@ -54,3 +54,9 @@ Resolve opportunistically; don't let them sweep into unrelated commits.
 ## Deploy-time (later)
 - Set `MISCONCEPTION_CLASSIFIER_LIVE=true` and confirm `ANTHROPIC_API_KEY` in Vercel — the
   classifier is live in code but stub in production until these are set.
+
+## Ops gap — no report-narration regen mechanism
+- There is no operator path to regenerate a report narration without having the child
+  re-take the assessment. `docs/ops-runbook.md` §3 documents this as a KNOWN GAP. A small
+  optional follow-on: a service-role script calling `attemptNarration` directly. Build only
+  if the pilot surfaces a real need. See NEXT_ACTIONS.md §3 optional item.

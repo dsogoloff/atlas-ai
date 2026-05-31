@@ -4,11 +4,11 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-30 (brand-dot scrub lane merged and pushed).
+**As of:** 2026-05-30 (feature-flags + ops-runbook lanes merged and pushed).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `47f9e59` — `merge(brand): scrub trailing dot from S.A.M client-facing copy`. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events wired; brand-dot scrub applied to 9 strings across 7 files.
-**Verify baseline:** 550 tests / 0 type errors; 1 known font lint warning.
+**Origin head:** `5709c13` — `merge(ops): ops runbook`. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off); ops runbook shipped.
+**Verify baseline:** 554 tests / 0 type errors; 1 known font lint warning.
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
@@ -17,8 +17,8 @@
 | Instructor portal | MERGED | `48c7378` (merge `a8a988c`). Roster, diagnostic view, notes, response-derived item review. Raw question content gated. |
 | Analytics + satisfaction | MERGED + PUSHED | `a16fd15` (merge `71205e5`). Event store, funnel, parent satisfaction island. 2 report-resident events unwired. |
 | Comprehensive-test assembly | NOT STARTED | Config (engine reparameterization); gated on G1 (question bank). |
-| Admin/support tooling | PARTIAL | To pilot grade. Not gated. |
-| Feature flags | PARTIAL | Only two LLM env flags today; need `enable_comprehensive_pilot` + the §12 set, default-off. |
+| Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it). |
+| Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
 | Relay / run loop | NOT STARTED | Build per RUNBOOK.md; treat as a normal lane. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
@@ -28,7 +28,7 @@
   `repo-memory-maintainer` in `.claude/agents/`. ROI test gates any further growth.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. Top: placement-bar / radar / sub-strand-pills PARKED (degraded branch; needs founder confirmation + on-screen check on a real assessment). Brand-dot scrub (1b) DONE. Next ungated: relay lane (2). Open §2.4 question: "Diagnostic" wording on marketing `page.tsx:74` — separate from brand-dot scrub, not yet resolved.
+See `NEXT_ACTIONS.md`. PARKED: placement-bar / radar / sub-strand-pills on degraded branch (needs Dimitri on-screen confirmation). M2 build: feature flags DONE, ops runbook DONE. Next ungated lane: relay (2). Open §2.4 question: "Diagnostic" wording on marketing `page.tsx:74` — not yet resolved.
 
 ## External gates (business — not build)
 G1 S.A.M. license (~2026-06-02) · G2 franchisor pilot approval (separate; routing

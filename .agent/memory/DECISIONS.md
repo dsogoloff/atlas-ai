@@ -5,6 +5,27 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-05-30
 
+* ⚑ **Admin/support tooling for the pilot = ops runbook first; admin UI deferred.**
+  Decision by Dimitri 2026-05-30. Rationale: no admin role exists in the schema; an admin
+  UI surfacing child data is privacy-sensitive; the pilot can be operated via
+  Supabase/Vercel dashboards. `docs/ops-runbook.md` shipped (merge `5709c13`). Admin UI
+  remains deferred indefinitely unless Dimitri directs otherwise. OPTIONAL follow-on: a
+  service-role script calling `attemptNarration` to regenerate a report narration without
+  a re-take (noted as a KNOWN GAP in ops-runbook §3; build only if the pilot needs it).
+
+* **Feature-flag mechanism = env-var boolean getters (not DB-backed) for the
+  single-tenant pilot.** 11 §12 staged-rollout flags added to `src/lib/env.ts`, all
+  default-off (only `'true'` enables): `enable_short_test_beta`,
+  `enable_comprehensive_pilot`, `enable_center_routing`, `enable_external_centers`,
+  `enable_diagnostic_snapshot_sharing`, `enable_full_history_sharing`,
+  `enable_machine_generated_items`, `enable_instructor_assigned_practice`,
+  `enable_socratic_assistant`, `enable_multi_tenant`, `enable_franchisor_dashboard`.
+  `ROLLOUT_FLAGS` registry exported for introspection. New `src/lib/env.test.ts` pins the
+  default-off invariant. `.env.example` documents all 11 (commented/off) + the previously
+  missing `REPORT_NARRATION_LIVE` entry. DB-backed per-tenant flag table deferred to
+  multi-tenant v2. Fix `efccf4f`, merge `a9d45ba`. Verify GREEN: 554 tests. Codex
+  SKIPPED (relay not wired).
+
 * **Brand-dot scrub applied to client-facing copy.** Lane `brand-dot-scrub`, fix
   `ffa77e5`, merged `47f9e59`, pushed; origin head `47f9e59`. Trailing dot removed from
   "S.A.M" in 9 rendered strings across 7 files: parent report footer disclaimer and

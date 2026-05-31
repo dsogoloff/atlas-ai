@@ -59,8 +59,19 @@
 - [ ] Finalize `.mcp.json` once transport is confirmed.
 
 ## 3. M2 build (not gated on G1)
-- [ ] Admin/support tooling to pilot grade.
-- [ ] Feature flags incl. `enable_comprehensive_pilot` (default-off); flesh out §12 set.
+- [x] Feature flags — DONE 2026-05-30 (fix `efccf4f`, merge `a9d45ba`). 11 §12 rollout
+      flags added to `src/lib/env.ts`, all default-off (only `'true'` enables); `ROLLOUT_FLAGS`
+      registry; new `src/lib/env.test.ts` pins the default-off invariant; `.env.example`
+      documents all 11 + `REPORT_NARRATION_LIVE`. Verify GREEN: 554 tests.
+- [x] Admin/support tooling — ops runbook DONE 2026-05-30 (merge `5709c13`).
+      `docs/ops-runbook.md` covers family/child lookup, sessions/reports, consent
+      (per-child; revoke = boolean flip; G3 for anything broader), audit/analytics tables,
+      env flags, common support scenarios, hard don'ts. Admin UI deferred by decision
+      2026-05-30 (no admin role in schema; privacy-sensitive; pilot operable via
+      Supabase/Vercel dashboards).
+- [ ] OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs
+      it — no operator mechanism exists today to regenerate a narration without a re-take;
+      see `docs/ops-runbook.md` §3 KNOWN GAP).
 
 ## 4. Gated on G1 (S.A.M. license, ~2026-06-02)
 - [ ] CONVERSION Stage 4 — DB load, ~130-item L1–4 MVP cut (real question bank).
