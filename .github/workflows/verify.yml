@@ -1,0 +1,55 @@
+name: verify
+
+# The verify bar, run on every PR into the protected branch. ATLAS-ASSESSMENT rejects
+# direct pushes, so this is the gate before Dimitri merges a lane PR attended.
+#
+# No secrets are referenced. The suite must pass WITHOUT ANTHROPIC_API_KEY: the
+# misconception classifier and report narration are fail-soft and flag-gated, and the
+# test suite already mocks them. If a test ever needs a live key to pass, that is a bug
+# in the test, not a reason to add a secret here.
+
+on:
+  pull_request:
+    branches: [ATLAS-ASSESSMENT]
+
+# Cancel an in-flight run when the PR head is updated, so only the latest commit is graded.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Job name is the required-check identifier. Keep it stable: branch protection on
+  # ATLAS-ASSESSMENT selects "verify-bar" as the required status check.
+  verify-bar:
+    name: verify-bar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # pnpm must be installed before setup-node so the pnpm store cache resolves.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.3
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint

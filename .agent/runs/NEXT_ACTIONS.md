@@ -13,6 +13,14 @@
 - [ ] Confirm no stray `package-lock.json` in or above the repo; `pnpm install` in the
       new path (Dimitri to verify after first `pnpm dev`).
 
+## 0b. Workflow / infra
+- **DEFERRED — Dimitri action required (cannot be done before first CI run):**
+  After CI runs the `verify-bar` job at least once on any PR targeting ATLAS-ASSESSMENT,
+  go to GitHub → repo Settings → Branches → ATLAS-ASSESSMENT branch protection rule →
+  "Require status checks to pass before merging" → search for `verify-bar` and select it
+  as a REQUIRED check. GitHub does not surface a status check in that list until it has
+  reported at least once, so this step cannot be completed before the first PR CI run.
+
 ## 1. Report fix pass (immediate)
 - [x] Scrub page `<title>` metadata — remove "Diagnostic Excellence"; report is
       "Assessment Report" everywhere (§2.4). DONE 2026-05-30 (`c487f1c`, merged `a74c613`).

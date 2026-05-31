@@ -4,10 +4,15 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-30 (feature-flags + ops-runbook lanes merged and pushed).
+**As of:** 2026-05-30 (workflow model updated: lane/PR/CI-gated; Dimitri merges attended).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `5709c13` — `merge(ops): ops runbook`. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off); ops runbook shipped.
+**Origin head:** `97b8646` — base commit for `lane/workflow-pr-ci`. ATLAS-ASSESSMENT is
+now a PROTECTED branch on origin; direct pushes are rejected. All work goes via `lane/*`
+branches opened as PRs; Dimitri merges attended after Vercel preview review. All three M2
+lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report
+analytics events wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off);
+ops runbook shipped.
 **Verify baseline:** 554 tests / 0 type errors; 1 known font lint warning.
 ## Lanes
 | Lane | State | Notes |
@@ -19,6 +24,7 @@
 | Comprehensive-test assembly | NOT STARTED | Config (engine reparameterization); gated on G1 (question bank). |
 | Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it). |
 | Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
+| Workflow → lane/PR + CI | IN PR (lane/workflow-pr-ci) | `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 reconciled, settings.local.json perms; awaiting CI green + Dimitri merge. |
 | Relay / run loop | NOT STARTED | Build per RUNBOOK.md; treat as a normal lane. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
