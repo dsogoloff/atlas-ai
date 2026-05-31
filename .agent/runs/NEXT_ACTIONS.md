@@ -40,23 +40,16 @@
   on the unreliable branch — which would need a product/credibility call. Needs on-screen
   confirmation against a real assessment (Dimitri runs the dev server).
 
-## 1b. Brand-dot scrub — client-facing copy (queued 2026-05-30; not gated)
-- [ ] Fix the official "S.A.M" brand token (two dots, NO trailing dot) wherever
-      client-facing copy renders it mid-sentence as "S.A.M." — per BUSINESS_RULES §
-      "Claims & language". Scope is COPY-ONLY (rendered strings); leave code comments,
-      logs, type docs, tests, and genuine sentence-final "S.A.M." (e.g. footer
-      "by S.A.M. All rights reserved." is correct). Already-correct: the placement-label
-      path (`src/lib/report/assemble.ts:79-82`) and the voice-locked narration prompt.
-      12 strings across 7 files:
-      `src/app/(parent)/report/page.tsx:57,60` (`:63` CTA label fixed in `43b24c8`);
-      `src/app/(parent)/report/parent-report-feedback.tsx:114`;
-      `src/app/(instructor)/instructor/page.tsx:37`;
-      `src/app/(instructor)/instructor/student/[childId]/page.tsx:405`;
-      `src/app/(auth)/signup/signup-form.tsx:214,235,291`;
-      `src/app/(child)/assessment/components/QuestionShell.tsx:66`;
-      `src/app/(marketing)/page.tsx:74`; `src/app/layout.tsx:42` (description metadata).
-      NOTE: `(marketing)/page.tsx:74` also says "Diagnostic" — a separate §2.4 question,
-      do NOT fold it into the brand-dot fix.
+## 1b. Brand-dot scrub — client-facing copy — DONE 2026-05-30 (fix `ffa77e5`, merge `47f9e59`)
+- [x] Scrubbed trailing dot from "S.A.M" in 9 client-facing rendered strings across 7
+      files: parent report footer disclaimer + next-steps body; parent-report-feedback;
+      instructor portal empty-state + item-review note; signup center-selector labels
+      (x3 in signup-form.tsx); assessment QuestionShell top bar; marketing hero pill.
+      Left untouched: code comments/logs/type docs/tests; marketing footer sentence-final
+      "S.A.M." (correct); layout.tsx description metadata. Verify GREEN (550 tests, 0
+      type errors, 1 known font lint warning). Codex skipped (relay not wired).
+- NOTE: `(marketing)/page.tsx:74` "Diagnostic" wording is a SEPARATE §2.4 open question
+  — NOT part of this scrub and NOT yet resolved. See Parked-for-Dimitri below.
 
 ## 2. Relay / unattended run loop (not gated)
 - [ ] Build the Code↔Codex relay + run loop per RUNBOOK.md (treat as a normal lane:

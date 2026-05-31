@@ -4,10 +4,10 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-30 (report-narration-events lane merged and pushed).
+**As of:** 2026-05-30 (brand-dot scrub lane merged and pushed).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `fbe8c5b` — `merge(report): narration anti-fabrication guard + analytics events wired`. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events now wired.
+**Origin head:** `47f9e59` — `merge(brand): scrub trailing dot from S.A.M client-facing copy`. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events wired; brand-dot scrub applied to 9 strings across 7 files.
 **Verify baseline:** 550 tests / 0 type errors; 1 known font lint warning.
 ## Lanes
 | Lane | State | Notes |
@@ -28,7 +28,7 @@
   `repo-memory-maintainer` in `.claude/agents/`. ROI test gates any further growth.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. Top: placement-bar / radar / sub-strand-pills PARKED (degraded branch; needs founder confirmation + on-screen check on a real assessment). Next ungated: brand-dot scrub (1b), relay lane (2).
+See `NEXT_ACTIONS.md`. Top: placement-bar / radar / sub-strand-pills PARKED (degraded branch; needs founder confirmation + on-screen check on a real assessment). Brand-dot scrub (1b) DONE. Next ungated: relay lane (2). Open §2.4 question: "Diagnostic" wording on marketing `page.tsx:74` — separate from brand-dot scrub, not yet resolved.
 
 ## External gates (business — not build)
 G1 S.A.M. license (~2026-06-02) · G2 franchisor pilot approval (separate; routing

@@ -5,6 +5,17 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-05-30
 
+* **Brand-dot scrub applied to client-facing copy.** Lane `brand-dot-scrub`, fix
+  `ffa77e5`, merged `47f9e59`, pushed; origin head `47f9e59`. Trailing dot removed from
+  "S.A.M" in 9 rendered strings across 7 files: parent report footer disclaimer and
+  next-steps body (`page.tsx`), parent-report-feedback, instructor portal empty-state and
+  item-review note, signup center-selector labels (x3 in `signup-form.tsx`), assessment
+  QuestionShell top bar, marketing hero pill. Deliberately excluded: code comments / logs
+  / type docs / tests; marketing footer sentence-final "S.A.M." (grammatically correct);
+  `layout.tsx` description metadata. The "Diagnostic" wording at `(marketing)/page.tsx:74`
+  is a separate §2.4 open question — not touched and not resolved. Verify GREEN: 550
+  tests, 0 type errors, 1 known font lint warning. Codex SKIPPED (relay not wired).
+
 * **Narration anti-fabrication guard implemented (§2.4 / credibility).** Lane
   `report-narration-events`, fix `43b24c8`, merged `fbe8c5b`, pushed; origin head
   `fbe8c5b`. When every sub-strand band is `no_data` / total 0, `strand_lede` is
