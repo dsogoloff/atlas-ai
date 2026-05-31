@@ -4,8 +4,6 @@ Known debt and recurring environment hazards. None are release blockers unless n
 Resolve opportunistically; don't let them sweep into unrelated commits.
 
 ## Report (open bugs — being addressed in the report fix pass)
-- Page `<title>` metadata still reads "Atlas Assessment | Diagnostic Excellence" — the
-  §2.4 scrub didn't reach the document title. Remove "Diagnostic" everywhere it survives.
 - Placement bar renders as muted gray text, no navy fill (should be navy bar + white
   text). `placement-card.tsx` styling not applied on the degraded branch.
 - Narration fabricates strand findings when strand-level data is absent (names specific

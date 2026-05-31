@@ -3,6 +3,23 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-05-30
+
+* ⚑ **Report CTA label resolved (consultative wording).** Label is **"Schedule a
+  conversation with a S.A.M center director"**. The commercial alternative "Schedule a
+  free class" was explicitly rejected. Href stays a placeholder until real scheduling is
+  wired; this decision covers the label only. Brand token is "S.A.M" with no trailing
+  dot, consistent with BUSINESS_RULES §"Claims & language". Label to be applied when the
+  CTA is wired.
+
+* **Report bug 1 fixed — page `<title>` scrub (§2.4).** `src/app/layout.tsx:40` title
+  changed from `"Atlas Assessment | Diagnostic Excellence"` to
+  `"Atlas Assessment | Assessment Report"`. Lane: `report-title-scrub` off
+  `ATLAS-ASSESSMENT`. Fix commit `c487f1c`, merged `--no-ff` as `a74c613`, pushed to
+  origin. Verify bar GREEN (547 tests, 0 type errors, 1 known font lint warning) pre- and
+  post-merge. Codex review SKIPPED — relay not wired, no `.mcp.json` in this repo.
+  Remaining report bugs (3) and unwired analytics events (2) remain open.
+
 ## 2026-05-29
 
 * ⚑ **Comprehensive test = longer parameterization of the existing adaptive engine**, not
@@ -95,7 +112,6 @@ licensed-asset treatment of S.A.M. content (see BUSINESS\_RULES.md).
 
 ## Open / unconfirmed (need Dimitri)
 
-* Report CTA wording (free-class vs. consultative center-director).
 * Franchisor pilot-approval routing (Sam vs. franchisor) — G2.
 * License scope specifics (geography, duration, derivative/brand rights) — G1.
 * Pricing model — all options still open.
