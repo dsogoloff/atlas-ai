@@ -30,8 +30,17 @@ Summary-in / summary-out — raw output stays in the spoke's context.
 6. Send the diff to **Codex** via the relay for review.
 7. `codex-finding-resolver` applies accepted findings; re-verify. (Reject findings that
    conflict with BUSINESS_RULES or the voice-locked narration prompt — log why.)
-8. Merge the lane into `ATLAS-ASSESSMENT` (`--no-ff`), verify on the merged base, push.
-9. Update `CURRENT_STATE.md` (what changed, new head) and `NEXT_ACTIONS.md` (tick item).
+8. Push the `lane/*` branch to origin and open a PR targeting `ATLAS-ASSESSMENT` via
+   `gh pr create`. The PR template (`.github/pull_request_template.md`) auto-populates
+   the description with VISIBLE CHANGE / PREVIEW / verify-bar / Codex / Dimitri-decides
+   sections. CI (`verify-bar` job in `.github/workflows/verify.yml`) runs the bar
+   automatically. Codex review remains a **manual** harness for now (relay not wired) —
+   note in the PR when skipped. **STOP here.** Merging into `ATLAS-ASSESSMENT` is
+   Dimitri's attended action via the GitHub merge button after he reviews the Vercel
+   preview. Direct push or merge to `ATLAS-ASSESSMENT` is impossible — the branch is
+   protected on origin and rejects direct pushes.
+9. Update `CURRENT_STATE.md` (what changed, PR status, current origin head) and
+   `NEXT_ACTIONS.md` (tick item once Dimitri merges).
 10. Append any new durable decision to `DECISIONS.md`; new debt to `TECHNICAL_DEBT.md`.
 
 ## Gate-park protocol (the core of unattended operation)
@@ -46,8 +55,9 @@ Integrity hazards (data loss, consent semantics, irreversible deletes, anything 
 corrupt the repo or leak child data) are treated as gates too — park, don't proceed.
 
 ## Commit discipline
-- Verify bar green before every commit (baseline 547 tests). Conventional-ish messages.
-- Migrations: file + `seed.sql` mirror (AGENTS.md). One lane = one branch = one merge.
+- Verify bar green before every commit (baseline 554 tests). Conventional-ish messages.
+- Migrations: file + `seed.sql` mirror (AGENTS.md). One lane = one branch = one PR
+  (Dimitri merges attended).
 - Never commit secrets. Never commit `input/`/`output/` of the conversion pipeline
   (gitignored); `conversion.log` is tracked.
 

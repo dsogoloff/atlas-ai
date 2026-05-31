@@ -41,14 +41,18 @@ current state are in `.agent/memory/PROJECT_BRIEF.md`.
 ## Workflow (per request)
 1. Classify: technical vs. business/strategy. Business/strategy → gate.
 2. Technical → proceed without asking unless a human gate (above) is triggered.
-3. Independent file-modifying lanes → git worktree + branch off `ATLAS-ASSESSMENT`,
-   `pnpm install` in it. Delegate implementation to a `general-purpose` worker with a
-   scoped prompt + the relevant memory files.
+3. Every unit of work → a `lane/*` branch off `ATLAS-ASSESSMENT` (worktree for parallel
+   lanes), `pnpm install` in it. Delegate implementation to a `general-purpose` worker
+   with a scoped prompt + the relevant memory files.
 4. Run the verify bar via the `verify` agent: `pnpm test` + `tsc --noEmit` + `pnpm lint`.
-5. Send the diff to Codex via the relay; `codex-finding-resolver` applies accepted
-   findings (reject any that conflict with BUSINESS_RULES or the voice-locked narration
-   prompt — log why); re-verify.
-6. Merge the lane into `ATLAS-ASSESSMENT` (`--no-ff`), verify on the merged base, push.
+5. Send the diff to Codex via the relay (manual harness for now); `codex-finding-resolver`
+   applies accepted findings (reject any that conflict with BUSINESS_RULES or the
+   voice-locked narration prompt — log why); re-verify.
+6. Push the `lane/*` branch to origin and open a PR into `ATLAS-ASSESSMENT` via
+   `gh pr create` (fill the PR template). CI runs the `verify-bar` check on the PR.
+   **You never push to or merge `ATLAS-ASSESSMENT` directly — the remote rejects it.**
+   Stop at "PR opened, CI green, Codex reviewed." **Merging is Dimitri's attended action**
+   (the merge button) after he reviews the Vercel preview.
 7. Update repo memory via the `repo-memory-maintainer` agent: `CURRENT_STATE.md`,
    `NEXT_ACTIONS.md`, and `DECISIONS.md` (canonical decision log — NOT a `DECISION_LOG.md`).
 
@@ -77,7 +81,8 @@ unattended. See `.agent/runs/RUNBOOK.md` and `.mcp.json`. Relay is local-only an
 never carry secrets, child data, or licensed S.A.M. question text off-box.
 
 ## Environment
-- Branch `ATLAS-ASSESSMENT`. Repo `dsogoloff/atlas-ai`. pnpm. Verify baseline: 547 tests.
+- Branch `ATLAS-ASSESSMENT` (protected — rejects direct pushes; work via `lane/*` PRs).
+  Repo `dsogoloff/atlas-ai`. pnpm. Verify baseline: 554 tests.
 - Dimitri runs `pnpm dev` and the local Supabase stack himself — you do not.
 - Migrations emit a migration file AND a `seed.sql` mirror (AGENTS.md).
 - Secrets (`ANTHROPIC_API_KEY`, `MISCONCEPTION_CLASSIFIER_LIVE`, Supabase/Resend keys)
