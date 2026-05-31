@@ -211,7 +211,7 @@ export function SignupForm({ centers }: Props) {
       {centers.length === 1 ? (
         <div className="space-y-2">
           <label className="font-caption text-caption text-sam-navy ml-1">
-            Your S.A.M. Center
+            Your S.A.M Center
           </label>
           <div className="flex items-center gap-3 px-4 py-3 bg-sam-cream border border-sam-orange/20 rounded-2xl">
             <span
@@ -232,7 +232,7 @@ export function SignupForm({ centers }: Props) {
             className="font-caption text-caption text-sam-navy ml-1"
             htmlFor="center"
           >
-            Your S.A.M. Center
+            Your S.A.M Center
           </label>
           <select
             className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all bg-white aria-[invalid=true]:border-sam-red"
@@ -288,7 +288,7 @@ export function SignupForm({ centers }: Props) {
               misconceptions, and response patterns — never the questions
               themselves) with instructors at{" "}
               <span className="font-semibold text-sam-navy">
-                {selectedCenter?.name ?? "the S.A.M. center I&rsquo;ve selected"}
+                {selectedCenter?.name ?? "the S.A.M center I&rsquo;ve selected"}
               </span>{" "}
               for as long as my child is enrolled there. I can change or remove
               the center any time from my account settings; a 30-day grace

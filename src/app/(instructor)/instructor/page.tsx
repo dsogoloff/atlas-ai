@@ -34,7 +34,7 @@ export default async function InstructorHomePage() {
     return (
       <InstructorNotice
         title="Instructor access required"
-        body="This portal is for S.A.M. center instructors. Your account doesn't have an active instructor profile at a center."
+        body="This portal is for S.A.M center instructors. Your account doesn't have an active instructor profile at a center."
       />
     );
   }
