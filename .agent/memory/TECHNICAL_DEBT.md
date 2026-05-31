@@ -3,19 +3,16 @@
 Known debt and recurring environment hazards. None are release blockers unless noted.
 Resolve opportunistically; don't let them sweep into unrelated commits.
 
-## Report (open bugs — being addressed in the report fix pass)
+## Report (open bugs)
 - Placement bar renders as muted gray text, no navy fill (should be navy bar + white
-  text). `placement-card.tsx` styling not applied on the degraded branch.
-- Narration fabricates strand findings when strand-level data is absent (names specific
-  strengths/weaknesses while stating "no strand-level data"). Self-contradictory; §2.4 /
-  credibility risk. Fix in the narration generation path.
+  text). `placement-card.tsx` styling not applied on the degraded branch. **PARKED —
+  degraded/unreliable branch; see NEXT_ACTIONS (needs founder confirmation + on-screen
+  check on a real assessment).**
 - No radar / no sub-strand pill list on the degraded ("Read with a caveat") branch —
   diagnose data-path vs. render regression; confirm on screen with a real completed
-  assessment, not a 2-min speed-run or a print export.
-
-## Analytics (deferred wiring)
-- `center_followup_opted_in` and `parent_report_generated` not yet emitted — both require
-  touching the protected report component, so they belong in the report fix pass.
+  assessment, not a 2-min speed-run or a print export. **PARKED — degraded/unreliable
+  branch; see NEXT_ACTIONS (needs founder confirmation + on-screen check on a real
+  assessment).**
 
 ## Migrations / types
 - `database.types.ts` was hand-edited across lanes; it auto-merged clean and passes

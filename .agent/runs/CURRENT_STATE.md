@@ -4,15 +4,15 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-30 (report-title-scrub lane merged and pushed).
+**As of:** 2026-05-30 (report-narration-events lane merged and pushed).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `a74c613` — `merge(report): scrub "Diagnostic Excellence" from page <title> (§2.4 bug 1)`. All three M2 lanes (consent, instructor, analytics) are merged; report bug 1 of 4 now fixed.
-**Verify baseline:** 547 tests / 40 files; 0 type errors; 1 known font lint warning.
+**Origin head:** `fbe8c5b` — `merge(report): narration anti-fabrication guard + analytics events wired`. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events now wired.
+**Verify baseline:** 550 tests / 0 type errors; 1 known font lint warning.
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
-| Report reskin (layout) | MERGED, BUGS OPEN | `204166b`. Editorial format in; bug 1 of 4 fixed (`a74c613`). 3 report bugs + 2 unwired analytics events remain open. |
+| Report reskin (layout) | MERGED, BUGS OPEN | `204166b`. Editorial format in; bugs 1 & 2 fixed (`a74c613`, `fbe8c5b`); both analytics events wired. Bugs 1 & 3 (placement bar / radar / sub-strand pills on the `unreliable` degraded branch) PARKED — see NEXT_ACTIONS. |
 | Consent (per-child + gate + classifier-live) | MERGED | `4dc9dc1`+`0a99f76`. Gate server-side, per `child_id`, fails closed. Classifier live in code; needs Vercel env. |
 | Instructor portal | MERGED | `48c7378` (merge `a8a988c`). Roster, diagnostic view, notes, response-derived item review. Raw question content gated. |
 | Analytics + satisfaction | MERGED + PUSHED | `a16fd15` (merge `71205e5`). Event store, funnel, parent satisfaction island. 2 report-resident events unwired. |
@@ -28,7 +28,7 @@
   `repo-memory-maintainer` in `.claude/agents/`. ROI test gates any further growth.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. Top: the report fix pass (3 remaining bugs + 2 unwired analytics events).
+See `NEXT_ACTIONS.md`. Top: placement-bar / radar / sub-strand-pills PARKED (degraded branch; needs founder confirmation + on-screen check on a real assessment). Next ungated: brand-dot scrub (1b), relay lane (2).
 
 ## External gates (business — not build)
 G1 S.A.M. license (~2026-06-02) · G2 franchisor pilot approval (separate; routing

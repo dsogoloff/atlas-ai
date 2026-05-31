@@ -16,18 +16,29 @@
 ## 1. Report fix pass (immediate)
 - [x] Scrub page `<title>` metadata — remove "Diagnostic Excellence"; report is
       "Assessment Report" everywhere (§2.4). DONE 2026-05-30 (`c487f1c`, merged `a74c613`).
-- [ ] Fix placement bar — navy fill + white text (the reference styling), incl. the
-      degraded/"unreliable" branch.
-- [ ] Narration: when strand-level data is absent, do NOT assert specific strand
-      strengths/weaknesses (kill the fabrication). §2.4 / credibility.
-- [ ] Diagnose missing radar + sub-strand pill list on the degraded branch
-      (data-path vs. render regression); confirm on SCREEN with a real completed
-      assessment, not a speed-run/print.
-- [ ] Wire the two report-resident analytics events: `center_followup_opted_in`,
-      `parent_report_generated`.
-- [ ] Wire report CTA: label is **"Schedule a conversation with a S.A.M center director"**
-      (decided 2026-05-30; commercial "Schedule a free class" rejected). Href stays
-      placeholder until real scheduling is wired; apply label when CTA is wired.
+- [x] Narration anti-fabrication guard: when every sub-strand band is `no_data` / total 0,
+      `strand_lede` suppressed and `key_findings.strengths` cleared deterministically
+      post-validation; placement_line, recommendations_lede, and misconception-derived
+      growth_areas kept. Data-path guard only — voice-locked Step-4 prompt untouched.
+      New test added. DONE 2026-05-30 (fix `43b24c8`, merge `fbe8c5b`).
+- [x] Wire `parent_report_generated` (emitted after report_narrations upsert; fail-soft,
+      PII-free, service client) and `center_followup_opted_in` (new server action
+      `recordCenterFollowupOptIn` in `feedback-actions.ts` + client wrapper
+      `center-followup-cta.tsx` firing on CTA click). New tests added.
+      DONE 2026-05-30 (fix `43b24c8`, merge `fbe8c5b`).
+- [x] Wire report CTA: label **"Schedule a conversation with a S.A.M center director"**
+      applied in `page.tsx`. Href stays placeholder. DONE 2026-05-30 (`43b24c8`/`fbe8c5b`).
+- **PARKED — needs Dimitri:** Placement bar (navy fill + white text) and radar / sub-strand
+  pill list are missing on the degraded/"unreliable" assessment branch. Plain-English
+  context: on a speed-run with too few clean responses the report intentionally shows only
+  a red "Score not reliable" banner — no placement bar, no radar, no sub-strand pills —
+  because the score is not trustworthy (this matches the rule against asserting strand
+  findings when data is absent). On a REAL completed assessment the full report DOES show
+  the navy placement bar + radar + pills. Question for Dimitri: (a) leave the unreliable
+  branch as-is (recommended) and just confirm the full report looks right on a real
+  completed assessment on screen; or (b) you want some styled placement/summary shown even
+  on the unreliable branch — which would need a product/credibility call. Needs on-screen
+  confirmation against a real assessment (Dimitri runs the dev server).
 
 ## 1b. Brand-dot scrub — client-facing copy (queued 2026-05-30; not gated)
 - [ ] Fix the official "S.A.M" brand token (two dots, NO trailing dot) wherever
@@ -37,7 +48,7 @@
       "by S.A.M. All rights reserved." is correct). Already-correct: the placement-label
       path (`src/lib/report/assemble.ts:79-82`) and the voice-locked narration prompt.
       12 strings across 7 files:
-      `src/app/(parent)/report/page.tsx:57,60,63`;
+      `src/app/(parent)/report/page.tsx:57,60` (`:63` CTA label fixed in `43b24c8`);
       `src/app/(parent)/report/parent-report-feedback.tsx:114`;
       `src/app/(instructor)/instructor/page.tsx:37`;
       `src/app/(instructor)/instructor/student/[childId]/page.tsx:405`;
@@ -69,6 +80,9 @@
 - [ ] Offline (v2); multi-tenant scale-out (M5); remaining S.A.M. levels + public items.
 
 ## Parked-for-Dimitri (rollup)
+- **Placement bar / radar / sub-strand pills on the degraded branch (item 1, report fix
+  pass) — PARKED.** See the PARKED entry under section 1 above for the plain-English
+  question. Needs on-screen check on a real completed assessment.
 - **Parent-report pricing ($49 on the parent report) — PARKED, and CONFLICTS with a hard
   rule.** Requested 2026-05-30; not actioned. Adding a consumer price to the parent report
   violates BUSINESS_RULES "No consumer paywall — families never pay Atlas directly," and

@@ -5,6 +5,34 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-05-30
 
+* **Narration anti-fabrication guard implemented (§2.4 / credibility).** Lane
+  `report-narration-events`, fix `43b24c8`, merged `fbe8c5b`, pushed; origin head
+  `fbe8c5b`. When every sub-strand band is `no_data` / total 0, `strand_lede` is
+  suppressed and `key_findings.strengths` cleared deterministically post-validation;
+  `placement_line`, `recommendations_lede`, and misconception-derived `growth_areas` are
+  kept. Implementation is a data-path guard only — the voice-locked Step-4 prompt is
+  untouched. New test added. Verify bar GREEN: 550 tests (+3), 0 type errors, 1 known font
+  lint warning, pre- and post-merge. Codex review SKIPPED (relay not wired, no
+  `.mcp.json`).
+
+* **Both report-resident funnel events wired.** `parent_report_generated` emitted after
+  successful `report_narrations` upsert (fail-soft, PII-free, service client) in
+  `trigger.ts`. `center_followup_opted_in` wired via new server action
+  `recordCenterFollowupOptIn` in `feedback-actions.ts` (mirrors `recordReportViewed` RLS
+  ownership check) and new client wrapper `center-followup-cta.tsx` firing on CTA click.
+  Href stays `CTA_LINKS` placeholder. New tests added. Same commit/merge as above.
+
+* **Report CTA label applied in `page.tsx`.** "Schedule a conversation with a S.A.M center
+  director" (no trailing dot) applied at the CTA render site. The `:63` entry is resolved
+  from the brand-dot scrub list.
+
+* **Bugs 1 (placement bar) and 3 (radar / sub-strand pills) PARKED pending founder
+  confirmation.** These affect only the degraded/"unreliable" branch (speed-run with too
+  few clean responses). The banner-only render on that branch is consistent with §2.4
+  (no strand findings asserted when data absent). Needs on-screen check against a real
+  completed assessment by Dimitri (he runs the dev server). See NEXT_ACTIONS.md PARKED
+  entry for the full question.
+
 * ⚑ **Report CTA label resolved (consultative wording).** Label is **"Schedule a
   conversation with a S.A.M center director"**. The commercial alternative "Schedule a
   free class" was explicitly rejected. Href stays a placeholder until real scheduling is
