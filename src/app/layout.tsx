@@ -37,7 +37,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Atlas Assessment | Diagnostic Excellence",
+  title: "Atlas Assessment | Assessment Report",
   description:
     "S.A.M. Atlas Assessment — an AI-adaptive Singapore Math diagnostic that pinpoints a child's level and learning gaps in ~15 minutes. Powered by Inspirea Labs.",
 };
