@@ -63,7 +63,7 @@ export function QuestionShell({
         <header className="border-b border-sam-gray-light bg-white/80 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-6 px-6">
             <span className="font-display-child text-lg font-bold tracking-tight text-sam-red">
-              S.A.M. Assessment
+              S.A.M Assessment
             </span>
             <ProgressChrome progress={progress} tier="G5_8" />
           </div>

@@ -111,7 +111,7 @@ export function ParentReportFeedback({
               color: "var(--color-report-text-secondary)",
             }}
           >
-            Your rating is shared with the S.A.M. team to improve future
+            Your rating is shared with the S.A.M team to improve future
             assessments.
           </p>
 

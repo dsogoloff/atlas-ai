@@ -55,10 +55,10 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const FOOTER_DISCLAIMER =
-  "This is an early-pilot assessment designed to identify likely skill gaps and support placement. It is not a validated diagnostic, and the recommended placement should be confirmed with a S.A.M. center instructor.";
+  "This is an early-pilot assessment designed to identify likely skill gaps and support placement. It is not a validated diagnostic, and the recommended placement should be confirmed with a S.A.M center instructor.";
 
 const NEXT_STEPS_BODY =
-  "A S.A.M. center director will reach out within two business days to discuss the findings and answer any questions. If you would like to move faster, you can schedule a conversation directly.";
+  "A S.A.M center director will reach out within two business days to discuss the findings and answer any questions. If you would like to move faster, you can schedule a conversation directly.";
 
 // Label resolved 2026-05-30 (DECISIONS): consultative wording, brand token
 // "S.A.M" with no trailing dot. Href stays the CTA_LINKS placeholder until
