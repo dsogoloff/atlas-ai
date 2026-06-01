@@ -311,6 +311,17 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           tier={reportContent.placement.tier}
           narrationLine={narrationProse?.placement_line}
         />
+        <Link
+          href={`/report/how-it-works?child=${child.id}`}
+          className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium hover:opacity-70 transition-opacity print:hidden"
+          style={{
+            fontFamily: "var(--font-report-sans)",
+            color: "var(--color-report-navy)",
+          }}
+        >
+          How this report works
+          <span aria-hidden="true">&rarr;</span>
+        </Link>
       </Hero>
 
       {(reportContent.time_flag === "rushed" ||
