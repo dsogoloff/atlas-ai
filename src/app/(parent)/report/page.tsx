@@ -176,7 +176,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           style={{ borderColor: "var(--color-report-border)" }}
         >
           <p
-            className="text-base leading-[1.7] max-w-[560px]"
+            className="text-lg leading-[1.7] max-w-[660px]"
             style={{
               fontFamily: "var(--font-report-sans)",
               color: "var(--color-report-text-secondary)",
@@ -188,7 +188,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           </p>
           <Link
             href={`/assessment?child_id=${child.id}`}
-            className="mt-7 inline-flex items-center gap-4 px-7 py-5 text-white text-[15px] font-medium hover:opacity-95 transition-opacity"
+            className="mt-7 inline-flex items-center gap-4 px-7 py-5 text-white text-[17px] font-medium hover:opacity-95 transition-opacity"
             style={{
               backgroundColor: "var(--color-report-navy)",
               fontFamily: "var(--font-report-sans)",
@@ -380,7 +380,7 @@ function ReportShell({ children }: { children: React.ReactNode }) {
       }}
     >
       <article
-        className="max-w-[720px] mx-auto min-h-screen"
+        className="max-w-[850px] mx-auto min-h-screen"
         style={{ backgroundColor: "var(--color-report-paper-white)" }}
       >
         {children}
@@ -392,7 +392,7 @@ function ReportShell({ children }: { children: React.ReactNode }) {
 function Topbar({ reportId }: { reportId: string | null }) {
   return (
     <div
-      className="flex justify-between items-center px-12 max-sm:px-6 py-5 border-b text-[11px] max-sm:text-[10px] uppercase tracking-[0.12em] print:hidden"
+      className="flex justify-between items-center px-12 max-sm:px-6 py-5 border-b text-[12px] max-sm:text-[11px] uppercase tracking-[0.12em] print:hidden"
       style={{
         borderColor: "var(--color-report-border)",
         color: "var(--color-report-text-light)",
@@ -427,7 +427,7 @@ function Hero({
       style={{ borderColor: "var(--color-report-border)" }}
     >
       <div
-        className="text-[11px] uppercase tracking-[0.16em] mb-4"
+        className="text-[12px] uppercase tracking-[0.16em] mb-4"
         style={{
           fontFamily: "var(--font-report-sans)",
           color: "var(--color-report-text-light)",
@@ -447,7 +447,7 @@ function Hero({
       </h1>
       {metaLine && (
         <div
-          className="text-sm mt-2.5"
+          className="text-base mt-2.5"
           style={{
             fontFamily: "var(--font-report-sans)",
             color: "var(--color-report-text-secondary)",
@@ -487,7 +487,7 @@ function Section({
       </h2>
       {lede && (
         <p
-          className="text-[15px] leading-[1.65] mb-8 max-w-[560px]"
+          className="text-[17px] leading-[1.65] mb-8 max-w-[660px]"
           style={{
             fontFamily: "var(--font-report-sans)",
             color: "var(--color-report-text-secondary)",
@@ -518,7 +518,7 @@ function NextSteps({ sessionId }: { sessionId: string }) {
         Next Steps
       </h2>
       <p
-        className="text-base leading-[1.7] mb-7 max-w-[560px]"
+        className="text-lg leading-[1.7] mb-7 max-w-[660px]"
         style={{
           fontFamily: "var(--font-report-sans)",
           color: "var(--color-report-text)",
@@ -532,7 +532,7 @@ function NextSteps({ sessionId }: { sessionId: string }) {
         href={CTA_LINKS.scheduleFreeClass}
       />
       <div
-        className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-[12px] uppercase tracking-[0.1em]"
+        className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-[13px] uppercase tracking-[0.1em]"
         style={{
           fontFamily: "var(--font-report-sans)",
           color: "var(--color-report-text-light)",
@@ -564,7 +564,7 @@ function NextSteps({ sessionId }: { sessionId: string }) {
 function Footer() {
   return (
     <footer
-      className="px-12 max-sm:px-6 pt-9 pb-12 text-center text-[11px] tracking-[0.08em] leading-[1.7]"
+      className="px-12 max-sm:px-6 pt-9 pb-12 text-center text-[12px] tracking-[0.08em] leading-[1.7]"
       style={{
         fontFamily: "var(--font-report-sans)",
         color: "var(--color-report-text-light)",
@@ -577,7 +577,7 @@ function Footer() {
         Atlas AI &middot; Powered by Inspirea Labs
       </div>
       <p
-        className="mt-4 italic max-w-[520px] mx-auto leading-[1.6]"
+        className="mt-4 italic max-w-[600px] mx-auto leading-[1.6]"
         style={{
           letterSpacing: "0",
           textTransform: "none",
@@ -612,7 +612,7 @@ function MinimalError({ title, body }: { title: string; body: string }) {
           {title}
         </h1>
         <p
-          className="text-[15px] leading-[1.65]"
+          className="text-[17px] leading-[1.65]"
           style={{
             fontFamily: "var(--font-report-sans)",
             color: "var(--color-report-text-secondary)",
@@ -622,7 +622,7 @@ function MinimalError({ title, body }: { title: string; body: string }) {
         </p>
         <Link
           href="/dashboard"
-          className="mt-8 inline-flex items-center gap-2 px-6 py-3 text-white text-[15px] font-medium hover:opacity-95 transition-opacity"
+          className="mt-8 inline-flex items-center gap-2 px-6 py-3 text-white text-[17px] font-medium hover:opacity-95 transition-opacity"
           style={{
             backgroundColor: "var(--color-report-navy)",
             fontFamily: "var(--font-report-sans)",

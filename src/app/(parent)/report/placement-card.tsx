@@ -52,7 +52,7 @@ export function PlacementCard({
       </div>
       {narrationLine && (
         <p
-          className="mt-5 text-[15px] leading-relaxed"
+          className="mt-5 text-[17px] leading-relaxed"
           style={{
             fontFamily: "var(--font-report-sans)",
             color: "var(--color-report-text-secondary)",

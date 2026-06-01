@@ -38,7 +38,7 @@ export function RecommendationsCard({
     <div>
       {narrationLede && (
         <p
-          className="text-[15px] leading-[1.65] mb-8 max-w-[560px]"
+          className="text-[17px] leading-[1.65] mb-8 max-w-[660px]"
           style={{
             fontFamily: "var(--font-report-sans)",
             color: "var(--color-report-text-secondary)",
@@ -56,7 +56,7 @@ export function RecommendationsCard({
         }}
       >
         <p
-          className="text-base leading-[1.7] mb-2"
+          className="text-lg leading-[1.7] mb-2"
           style={{ color: "var(--color-report-text)" }}
         >
           Place {childName} at{" "}
@@ -71,7 +71,7 @@ export function RecommendationsCard({
 
         {recommendations.length === 0 ? (
           <p
-            className="text-[15px] leading-[1.65] mt-4"
+            className="text-[17px] leading-[1.65] mt-4"
             style={{ color: "var(--color-report-text-secondary)" }}
           >
             Recommendations will appear after the next assessment.
@@ -83,7 +83,7 @@ export function RecommendationsCard({
               return (
                 <li
                   key={`${rec.strand}-${rec.level}`}
-                  className={`py-4 text-[15px] flex flex-col gap-1 border-t${
+                  className={`py-4 text-[17px] flex flex-col gap-1 border-t${
                     isLast ? " border-b" : ""
                   } max-sm:gap-1`}
                   style={{ borderColor: "var(--color-report-border)" }}
