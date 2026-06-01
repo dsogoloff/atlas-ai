@@ -5,6 +5,16 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-05-31
 
+* **Relay built in MANUAL mode first.** `tools/relay/manual_codex_review.ps1` bundles a
+  lane diff for Codex review and validates the JSON reply against
+  `tools/schemas/codex_review.schema.json`; `codex-finding-resolver` then applies accepted
+  findings. Automated transport and `.mcp.json` deferred until Codex reachability is
+  confirmed (parked). Script is ASCII-only for PS 5.1 compatibility; secret scrub matches
+  secret values (not key names) to avoid false positives; local-only (`tools/relay/.reviews/`
+  gitignored). Tooling-only lane (no app code changed). Implemented in PR #9, merge
+  `164a1b2`. CI GREEN: 554 tests / 41 files. Codex review SKIPPED (manual harness; no
+  Codex endpoint wired this session).
+
 * **Orchestration workflow moved to lane/* branch → PR → CI (verify-bar) → manual Codex →
   Dimitri merges attended via Vercel preview.** ATLAS-ASSESSMENT is protected by the
   "Branch Protection" GitHub ruleset (requires a pull request and the `verify-bar` status

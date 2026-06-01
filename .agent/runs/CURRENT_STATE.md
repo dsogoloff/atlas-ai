@@ -4,10 +4,10 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-31 (PR #7 merged; lane/PR/CI workflow live; origin head `016e4ea`).
+**As of:** 2026-05-31 (PR #9 merged; manual-mode relay live; origin head `164a1b2`).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `016e4ea` — no-ff merge of PR #7 (lane/workflow-pr-ci). ATLAS-ASSESSMENT
+**Origin head:** `164a1b2` — no-ff merge of PR #9 (lane/relay-manual-loop). ATLAS-ASSESSMENT
 is protected by the "Branch Protection" GitHub ruleset (scope `~DEFAULT_BRANCH`; requires
 PR + the `verify-bar` status check; no direct pushes). All work goes via `lane/*` branches opened
 as PRs; Dimitri merges attended after Vercel preview review. All three M2 lanes (consent,
@@ -26,7 +26,7 @@ shipped.
 | Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it). |
 | Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
 | Workflow → lane/PR + CI | MERGED `016e4ea` | PR #7. `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 + RUNBOOK step 8 reconciled. CI GREEN: 554 tests / 41 files, no ANTHROPIC_API_KEY (mocked). verify-bar is the required status check via "Branch Protection" ruleset. Ruleset rescoped `~ALL` → `~DEFAULT_BRANCH` 2026-05-31 (the `~ALL` scope blocked pushing/deleting lane branches and broke the flow; see DECISIONS). Stale `lane/workflow-pr-ci` remote ref deleted. |
-| Relay / run loop | NOT STARTED | Build per RUNBOOK.md; treat as a normal lane. |
+| Relay / run loop | MERGED `164a1b2` (manual mode) | PR #9. `tools/relay/manual_codex_review.ps1` + `tools/schemas/codex_review.schema.json` + `tools/relay/README.md`. Automated transport (`.mcp.json`) parked pending Codex-reachability answer. CI GREEN: 554 tests / 41 files. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
 - **CONVERSION** — 5-stage CLI in `scripts/conversion/`; Stages 1–3 built/verified;

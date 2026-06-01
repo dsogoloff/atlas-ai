@@ -63,11 +63,16 @@
   — NOT part of this scrub and NOT yet resolved. See Parked-for-Dimitri below.
 
 ## 2. Relay / unattended run loop (not gated)
-- [ ] Build the Code↔Codex relay + run loop per RUNBOOK.md (treat as a normal lane:
-      verify bar, security rules — local-only, no secrets/child data/licensed content).
-- [ ] **PARKED — needs Dimitri:** is Codex reachable programmatically (automated relay)
-      or is review a manual PS1 hop for now? Determines whether step 6 runs unattended.
-- [ ] Finalize `.mcp.json` once transport is confirmed.
+- [x] **DONE 2026-05-31 — Manual-mode relay built & merged (PR #9, `164a1b2`).**
+      `tools/relay/manual_codex_review.ps1` bundles a lane diff (with local-only secret
+      scrub) into a Codex review request; `-FindingsFile` validates the JSON reply against
+      `tools/schemas/codex_review.schema.json`; `codex-finding-resolver` then applies
+      accepted findings. ASCII-only script (PS 5.1 compatibility). Local-only; `.gitignore`
+      excludes `tools/relay/.reviews/`. CI GREEN: 554 tests / 41 files.
+- [ ] **PARKED — needs Dimitri:** is Codex reachable programmatically (automated relay)?
+      Answer determines whether the automated-relay upgrade runs unattended. Until
+      confirmed, review stays a manual PS1 hop.
+- [ ] Finalize `.mcp.json` once Codex reachability is confirmed.
 
 ## 3. M2 build (not gated on G1)
 - [x] Feature flags — DONE 2026-05-30 (fix `efccf4f`, merge `a9d45ba`). 11 §12 rollout
@@ -103,6 +108,6 @@
   violates BUSINESS_RULES "No consumer paywall — families never pay Atlas directly," and
   pricing models are Dimitri-owned/unconfirmed regardless. Needs Dimitri before any build;
   as written it is contrary to the locked B2B2C model.
-- Codex reachability / relay mode (item 2).
+- Codex reachability (automated relay upgrade) — manual-mode relay is live (PR #9); automated transport + `.mcp.json` parked until reachability confirmed (item 2).
 - Franchisor pilot-approval routing — G2 (business gate).
 - G1 license scope specifics; pricing model (business gates).
