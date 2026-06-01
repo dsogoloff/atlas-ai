@@ -35,7 +35,13 @@ shipped.
   `repo-memory-maintainer` in `.claude/agents/`. ROI test gates any further growth.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. PARKED: placement-bar / radar / sub-strand-pills on degraded branch (needs Dimitri on-screen confirmation). M2 build: feature flags DONE, ops runbook DONE. Next ungated lane: relay (2). Open §2.4 question: "Diagnostic" wording on marketing `page.tsx:74` — not yet resolved.
+See `NEXT_ACTIONS.md`. **The ungated technical queue is drained** — every lane that can run without a Dimitri answer or the G1 license is merged (workflow→PR/CI, feature flags, ops runbook, manual-mode relay). What remains:
+- **In-flight:** PR #10 (this memory lane) open — records the PR #9 relay merge; merge attended.
+- **PARKED — needs Dimitri on-screen:** placement-bar / radar / sub-strand pills on the degraded/"unreliable" report branch (visual check against a *real completed* assessment).
+- **PARKED — needs Dimitri answer:** is Codex reachable programmatically? Gates only the automated-relay upgrade (+`.mcp.json`); manual mode works today.
+- **G1-gated (~2026-06-02):** CONVERSION Stage 4 (DB load), comprehensive-test assembly, curriculum-recommendation table.
+- **OPTIONAL (no gate; only if pilot needs it):** service-role report-narration regen script (`docs/ops-runbook.md` §3 KNOWN GAP).
+- Open §2.4 question: "Diagnostic" wording on marketing `page.tsx:74` — not yet resolved.
 
 ## External gates (business — not build)
 G1 S.A.M. license (~2026-06-02) · G2 franchisor pilot approval (separate; routing
