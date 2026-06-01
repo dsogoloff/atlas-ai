@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas-ai/tools/schemas/codex_review.schema.json",
+  "title": "Codex review result",
+  "description": "Contract for the structured findings Codex returns for a lane diff. Produced by the manual review hop (tools/relay/manual_codex_review.ps1) and consumed by the codex-finding-resolver agent. Local-only: never carries secrets, child PII, or licensed S.A.M. question text.",
+  "type": "object",
+  "required": ["review", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "review": {
+      "type": "object",
+      "description": "Metadata about what was reviewed.",
+      "required": ["base", "reviewed_commit"],
+      "additionalProperties": false,
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "The lane branch under review, e.g. lane/relay-manual-loop."
+        },
+        "base": {
+          "type": "string",
+          "description": "The base the diff was taken against, normally ATLAS-ASSESSMENT."
+        },
+        "reviewed_commit": {
+          "type": "string",
+          "description": "Full or short SHA of the lane head that was reviewed.",
+          "minLength": 7
+        },
+        "reviewer": {
+          "type": "string",
+          "description": "Reviewer identity. Manual hop sets this to 'codex'.",
+          "default": "codex"
+        },
+        "summary": {
+          "type": "string",
+          "description": "One-paragraph overall verdict from the reviewer."
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Zero or more findings. An empty array means the reviewer found nothing to change.",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "description": "A single review finding. The resolver treats Codex as an independent reviewer, not an oracle: it confirms each finding against the code before applying.",
+      "required": ["id", "file", "severity", "category", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable handle for the finding within this review, e.g. F1, F2."
+        },
+        "file": {
+          "type": "string",
+          "description": "Repo-relative path of the file the finding applies to."
+        },
+        "location": {
+          "type": "object",
+          "description": "Optional line range within the file.",
+          "additionalProperties": false,
+          "properties": {
+            "start_line": { "type": "integer", "minimum": 1 },
+            "end_line": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "severity": {
+          "type": "string",
+          "description": "blocker/high must be resolved before the PR is mergeable (AGENTS.md required checks); medium/low/info are discretionary.",
+          "enum": ["blocker", "high", "medium", "low", "info"]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "correctness",
+            "security",
+            "performance",
+            "style",
+            "test",
+            "architecture",
+            "docs",
+            "other"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "What is wrong and why it matters. Plain, specific, points at the code."
+        },
+        "suggested_fix": {
+          "type": "string",
+          "description": "Optional concrete fix. The resolver may apply, adapt, or reject it."
+        }
+      }
+    }
+  }
+}

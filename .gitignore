@@ -51,6 +51,9 @@ supabase/snippets/
 # Throwaway exploration scripts (seed scripts for visual gates, etc.)
 tmp/
 
+# Relay review payloads (local-only diffs/findings — never committed)
+tools/relay/.reviews/
+
 # Claude Code per-developer config
 .claude/
 
