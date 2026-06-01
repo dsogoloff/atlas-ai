@@ -69,7 +69,7 @@ export function StrandMap({ rows }: StrandMapProps) {
         return (
           <div
             key={row.strand}
-            className="flex justify-between items-center gap-4 py-3.5 border-b text-sm max-sm:flex-col max-sm:items-start max-sm:gap-2"
+            className="flex justify-between items-center gap-4 py-3.5 border-b text-base max-sm:flex-col max-sm:items-start max-sm:gap-2"
             style={{ borderColor: "var(--color-report-border)" }}
             aria-label={ariaSummary}
           >
@@ -94,7 +94,7 @@ export function StrandMap({ rows }: StrandMapProps) {
                 {value}
               </span>
               <span
-                className="text-[10px] uppercase tracking-[0.14em] px-3 py-1 border min-w-[110px] text-center"
+                className="text-[11px] uppercase tracking-[0.14em] px-3 py-1 border min-w-[110px] text-center"
                 style={{
                   fontFamily: "var(--font-report-sans)",
                   borderColor: pill.borderVar,

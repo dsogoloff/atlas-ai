@@ -35,7 +35,7 @@ export function CenterFollowupCta({
     <a
       href={href}
       onClick={handleClick}
-      className="flex justify-between items-center px-7 py-5 max-sm:px-6 max-sm:py-4 text-white text-[15px] max-sm:text-sm font-medium no-underline hover:opacity-95 transition-opacity"
+      className="flex justify-between items-center px-7 py-5 max-sm:px-6 max-sm:py-4 text-white text-[17px] max-sm:text-base font-medium no-underline hover:opacity-95 transition-opacity"
       style={{
         backgroundColor: "var(--color-report-navy)",
         fontFamily: "var(--font-report-sans)",

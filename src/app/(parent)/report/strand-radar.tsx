@@ -188,7 +188,7 @@ export function StrandRadar({ rows }: StrandRadarProps) {
               y={y.toFixed(2)}
               textAnchor={textAnchor}
               dominantBaseline={dominantBaseline}
-              fontSize="12"
+              fontSize="13"
               fontWeight="500"
               fill={labelColor}
               style={{

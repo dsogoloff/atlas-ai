@@ -115,11 +115,11 @@ export function TimeFlagBanner({
       </span>
       <div className="flex-1 space-y-2">
         <h3
-          className={`font-headline-adult font-bold text-base md:text-lg ${styles.title}`}
+          className={`font-headline-adult font-bold text-lg md:text-xl ${styles.title}`}
         >
           {variant.title}
         </h3>
-        <p className="font-body-regular text-sam-navy/90 text-sm md:text-base leading-relaxed">
+        <p className="font-body-regular text-sam-navy/90 text-base md:text-lg leading-relaxed">
           {variant.body(childName)}
         </p>
         {showCta && (

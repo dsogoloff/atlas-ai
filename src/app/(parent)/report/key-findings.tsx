@@ -35,7 +35,7 @@ export function KeyFindings({ strengths, growthAreas }: KeyFindingsProps) {
   if (items.length === 0) {
     return (
       <p
-        className="text-[15px] leading-[1.65]"
+        className="text-[17px] leading-[1.65]"
         style={{
           fontFamily: "var(--font-report-sans)",
           color: "var(--color-report-text-secondary)",
@@ -57,7 +57,7 @@ export function KeyFindings({ strengths, growthAreas }: KeyFindingsProps) {
         >
           <div className="flex items-baseline gap-3 mb-2.5">
             <span
-              className="text-[10px] uppercase tracking-[0.14em] font-semibold"
+              className="text-[11px] uppercase tracking-[0.14em] font-semibold"
               style={{
                 fontFamily: "var(--font-report-sans)",
                 color:
