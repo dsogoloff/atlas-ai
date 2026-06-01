@@ -38,10 +38,10 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
 import { CenterFollowupCta } from "./center-followup-cta";
-import { KeyFindings } from "./key-findings";
+import { FindingsList } from "./findings-list";
 import { ParentReportFeedback } from "./parent-report-feedback";
 import { PlacementCard } from "./placement-card";
-import { RecommendationsCard } from "./recommendations-card";
+import { PlacementRecommendation } from "./placement-recommendation";
 import { StrandMap } from "./strand-map";
 import { StrandRadar } from "./strand-radar";
 import { TimeFlagBanner } from "./time-flag-banner";
@@ -68,13 +68,6 @@ const PRIMARY_CTA_LABEL =
 
 const STRAND_PERF_LEDE_FALLBACK =
   "Performance is reported relative to expected proficiency for the assessed grade band.";
-
-/** Strip the trailing half-level letter for parent-facing display (R2).
- *  Mirrors the same helper in placement-card.tsx so the page-level chrome
- *  (recommendation box) can show the stripped label without re-importing. */
-function stripHalfLevel(samLevel: string): string {
-  return samLevel.replace(/[A-Za-z]$/, "").trimEnd();
-}
 
 // =============================================================================
 // Page
@@ -297,7 +290,6 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   );
 
   const childFirstName = firstName(reportContent.child.display_name);
-  const placementLabel = stripHalfLevel(reportContent.placement.sam_level);
   const metaLine = buildMetaLine(reportContent);
 
   return (
@@ -347,22 +339,30 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
         <StrandMap rows={reportContent.strand_mastery} />
       </Section>
 
-      {narrationProse?.key_findings && (
-        <Section title="What We Noticed">
-          <KeyFindings
-            strengths={narrationProse.key_findings.strengths}
-            growthAreas={narrationProse.key_findings.growth_areas}
-          />
+      {narrationProse?.key_findings?.strengths.length ? (
+        <Section title="Strengths">
+          <FindingsList items={narrationProse.key_findings.strengths} />
         </Section>
-      )}
+      ) : null}
 
-      <Section title="Our Recommendation">
-        <RecommendationsCard
-          recommendations={reportContent.recommendations}
-          narrationLede={narrationProse?.recommendations_lede}
-          childName={childFirstName}
-          placementLabel={placementLabel}
-        />
+      {narrationProse?.key_findings?.growth_areas.length ? (
+        <Section title="Areas to confirm with your instructor">
+          <FindingsList items={narrationProse.key_findings.growth_areas} />
+          <p
+            className="mt-8 max-w-[660px] text-[17px] leading-[1.65]"
+            style={{
+              fontFamily: "var(--font-report-sans)",
+              color: "var(--color-report-text-secondary)",
+            }}
+          >
+            Your S.A.M instructor receives a detailed curriculum focus tailored
+            to your child.
+          </p>
+        </Section>
+      ) : null}
+
+      <Section title="Placement recommendation">
+        <PlacementRecommendation samLevel={reportContent.placement.sam_level} />
       </Section>
 
       <NextSteps sessionId={latestSession.id} />
