@@ -33,6 +33,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deriveTier } from "@/lib/tier/derive";
 
 import { ChildCard } from "./child-card";
+import { ProfileMenu } from "./profile-menu";
 
 // Cookies + auth.getUser → no static prerender.
 export const dynamic = "force-dynamic";
@@ -113,9 +114,10 @@ export default async function ParentDashboardPage() {
 
   return (
     <>
-      {/* TopAppBar — port verbatim from Stitch source 01, alt text
-          corrected from source 02/04. Nav, notifications, profile
-          dropdown all # / no-handler placeholders for v1 (Phase 1 Q7). */}
+      {/* TopAppBar — ported from Stitch source 01. The profile menu now wires
+          Sign out (Phase 1 Q7 deferral). The "Resources" placeholder link was
+          removed (no destination); the notifications bell stays a placeholder
+          until that feature lands. */}
       <header className="bg-[#FEFBF6] sticky top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-black text-sam-navy font-display-child">
@@ -126,15 +128,9 @@ export default async function ParentDashboardPage() {
           <nav className="hidden md:flex space-x-8">
             <a
               className="text-sam-red border-b-2 border-sam-red pb-1 font-display-child font-semibold transition-colors"
-              href="#"
+              href="/dashboard"
             >
               Family Dashboard
-            </a>
-            <a
-              className="text-sam-navy/60 font-display-child font-semibold hover:text-sam-red transition-colors"
-              href="#"
-            >
-              Resources
             </a>
           </nav>
           <div className="flex items-center gap-4">
@@ -144,18 +140,7 @@ export default async function ParentDashboardPage() {
             >
               <span className="material-symbols-outlined">notifications</span>
             </button>
-            <div className="flex items-center gap-2 cursor-pointer group">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-sam-teal">
-                <img
-                  alt="Parent profile avatar"
-                  className="w-full h-full object-cover"
-                  src="/img/placeholder-avatar.svg"
-                />
-              </div>
-              <span className="material-symbols-outlined text-sam-navy group-hover:text-sam-red transition-colors">
-                expand_more
-              </span>
-            </div>
+            <ProfileMenu name={parent.name} email={user.email} />
           </div>
         </div>
       </header>
