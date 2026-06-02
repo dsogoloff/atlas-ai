@@ -856,3 +856,140 @@ begin
     null_strand_skip, null_level_oor, null_pair_ambig;
 end
 $$;
+
+-- =============================================================================
+-- Dev demo report — a viewable COMPLETED assessment so the parent report and
+-- the instructor view render immediately after `supabase db reset`, with no
+-- test-taking and no live narration API key.
+--
+-- Scope (deliberate): a COMPLETED session + placement + a report_narrations
+-- row (placement line / strengths / focus areas), plus a separate instructor
+-- login. NO `responses` are seeded, so strand_mastery stays empty (radar reads
+-- "not assessed") and the instructor banner shows "Overall 0%". Seeding valid
+-- responses (10+ NOT NULL columns + per-question lookups) is a follow-up.
+--
+-- Center is matched by `name like '%Singapore HQ'` to avoid depending on the
+-- em-dash in the placeholder name. Ids keep the v4/variant nibbles (4 at pos
+-- 13, 8 at pos 17) per the seed-UUID note above. Idempotent via on-conflict.
+-- =============================================================================
+
+-- Instructor identity (GoTrue), distinct from the dev parent so the two roles
+-- are separate logins.  instructor@atlas.local / instructor-password
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  is_sso_user, is_anonymous,
+  confirmation_token, recovery_token, email_change_token_new, email_change
+)
+values (
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'instructor@atlas.local',
+  crypt('instructor-password', gen_salt('bf', 10)),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"name":"Dev Instructor"}'::jsonb,
+  now(),
+  now(),
+  false,
+  false,
+  '', '', '', ''
+)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+)
+values (
+  gen_random_uuid(),
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  'email',
+  '{"sub":"dddddddd-dddd-4ddd-8ddd-dddddddddddd","email":"instructor@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
+  now(), now(), now()
+)
+on conflict (provider_id, provider) do nothing;
+
+-- Instructor profile at the first placeholder center.
+with t as (select id from tenants where slug = 'inspirea_singapore_math'),
+     c as (
+       select id from centers
+       where tenant_id = (select id from tenants where slug = 'inspirea_singapore_math')
+         and name like '%Singapore HQ'
+       limit 1
+     )
+insert into instructors (id, auth_user_id, tenant_id, center_id, email, name, status)
+select
+  'ffffffff-ffff-4fff-8fff-ffffffffffff',
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  t.id,
+  c.id,
+  'instructor@atlas.local',
+  'Dev Instructor',
+  'ACTIVE'::instructor_status
+from t, c
+on conflict (id) do nothing;
+
+-- Link the dev child to that center so the instructor can see them (RLS keys
+-- off children.home_center_id).
+update children
+set home_center_id = (
+  select id from centers
+  where tenant_id = (select id from tenants where slug = 'inspirea_singapore_math')
+    and name like '%Singapore HQ'
+  limit 1
+)
+where id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+-- A COMPLETED assessment for the dev child. current_estimate is the persisted
+-- PlacementEstimate (overall_level '2B' -> "S.A.M Level 2B"; tier K_4).
+-- session_time_flag 'normal' -> full report, no caveat banner.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into assessment_sessions (
+  id, tenant_id, child_id, status, current_estimate, session_time_flag,
+  started_at, completed_at
+)
+select
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  t.id,
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  'COMPLETED'::assessment_status,
+  '{"overall_level":"2B","confidence":0.72,"strand_levels":{"number_sense":"2B","operations_algorithms":"2A","fractions_decimals":"1B","measurement":"2A","geometry":"2B","data_statistics":"2A"}}'::jsonb,
+  'normal'::session_time_flag,
+  now() - interval '20 minutes',
+  now()
+from t
+on conflict (id) do nothing;
+
+-- The narration row (status 'ok') that backs the report's prose sections:
+-- placement line, Strengths, and the focus areas. Plain demo prose — no
+-- "diagnostic/validated/guaranteed" and no prescriptions on the parent side.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into report_narrations (
+  session_id, tenant_id, generated_at, model, status,
+  placement_line, strand_lede, findings_strengths, findings_growth_areas,
+  recommendations_lede
+)
+select
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  t.id,
+  now(),
+  'seed-fixture',
+  'ok',
+  'Dev settled into a steady rhythm, and this placement is a solid, workable starting point.',
+  'Dev shows strong number work, with a few specific areas worth a closer look with an instructor.',
+  array[
+    'Solid number sense to 100: counts, compares, and orders with confidence.',
+    'Reads bar models well, including for multi-step problems.'
+  ]::text[],
+  array[
+    'Bar-model drawing: reads bar models but does not yet construct them independently.',
+    'Fraction equal-parts: treats a larger denominator as a larger fraction.',
+    'Multiplication as scaling: works procedurally, leaning on repeated addition only.'
+  ]::text[],
+  'A focused start on the areas above will help Dev build fluency.'
+from t
+on conflict (session_id) do nothing;
