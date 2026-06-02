@@ -25,7 +25,9 @@ import Link from "next/link";
 
 import { timeFlagBadge } from "@/lib/display/progress";
 import { assembleReportContent } from "@/lib/report/assemble";
+import { splitEntryPoint } from "@/lib/report/entry-point";
 import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
+import { resolveNarrationProse } from "@/lib/report/narration/resolve";
 import type { StrandMastery, MasteryBand } from "@/lib/report/strand-mastery";
 import type { Recommendation, ReportContent } from "@/lib/report/types";
 import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
@@ -142,6 +144,22 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
     }
   }
 
+  // Strengths reuse the parent report's narration prose (findings_strengths).
+  // Read-only; instructor sees the same per-run strengths the parent does.
+  let strengths: string[] = [];
+  if (report && session) {
+    const { data: narrationRow } = await supabase
+      .from("report_narrations")
+      .select(
+        "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
+      )
+      .eq("session_id", session.id)
+      .maybeSingle();
+    strengths =
+      resolveNarrationProse(narrationRow ?? null, report.time_flag)?.key_findings
+        ?.strengths ?? [];
+  }
+
   const items = session ? await fetchItemReview(supabase, session.id) : [];
 
   return (
@@ -171,6 +189,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
               <ReliabilityNote flag={report.time_flag} />
             )}
             <StrandSection rows={report.strand_mastery} />
+            <StrengthsSection items={strengths} />
             <MisconceptionSection items={report.misconceptions} />
             <RecommendationSection items={report.recommendations} />
             <ItemReviewSection items={items} />
@@ -246,6 +265,9 @@ async function fetchItemReview(
 // =============================================================================
 
 function PlacementBanner({ report }: { report: ReportContent }) {
+  // Entry point reads the existing half-level (A/B) from sam_level — no new
+  // field. Provisional copy; easy to reword after the S.A.M. discussion.
+  const { half } = splitEntryPoint(report.placement.sam_level);
   return (
     <section className="mt-6 bg-sam-navy rounded-2xl p-6 md:p-8 text-white">
       <p className="text-xs font-bold uppercase tracking-wider text-white/60">
@@ -254,10 +276,34 @@ function PlacementBanner({ report }: { report: ReportContent }) {
       <p className="font-display-child text-3xl md:text-4xl mt-2">
         {report.placement.sam_level}
       </p>
+      {half && (
+        <p className="font-headline-adult text-white/80 mt-2">
+          Entry point: {half}
+        </p>
+      )}
       <p className="font-headline-adult text-white/80 mt-3">
         Overall {report.placement.overall_percentage}% across assessed items ·{" "}
         {report.placement.tier === "K_4" ? "K–4 band" : "Grades 5–8 band"}
       </p>
+    </section>
+  );
+}
+
+function StrengthsSection({ items }: { items: string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <SectionHeading>Strengths</SectionHeading>
+      <ul className="space-y-3">
+        {items.map((s, i) => (
+          <li
+            key={i}
+            className="bg-white rounded-2xl border border-sam-gray-light/40 p-5"
+          >
+            <p className="font-headline-adult text-sam-navy">{s}</p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
