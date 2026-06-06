@@ -4,17 +4,20 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-05-31 (PR #9 merged; manual-mode relay live; origin head `164a1b2`).
+**As of:** 2026-06-05 (PRs #13 & #14 attended-merged; PRs #16, #17, #18 open; origin head `103049c`).
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `164a1b2` — no-ff merge of PR #9 (lane/relay-manual-loop). ATLAS-ASSESSMENT
-is protected by the "Branch Protection" GitHub ruleset (scope `~DEFAULT_BRANCH`; requires
-PR + the `verify-bar` status check; no direct pushes). All work goes via `lane/*` branches opened
-as PRs; Dimitri merges attended after Vercel preview review. All three M2 lanes (consent,
-instructor, analytics) are merged; report bugs 1 & 2 fixed; both report analytics events
-wired; brand-dot scrub applied; 11 §12 rollout flags added (default-off); ops runbook
-shipped.
-**Verify baseline:** 554 tests / 0 type errors; 1 known font lint warning.
+**Origin head:** `103049c` — reflects attended merges since last snapshot: PR #13
+(lane/report-three-sections) and PR #14 (lane/parent-logout / dev-seed-completed-report).
+ATLAS-ASSESSMENT is protected by the "Branch Protection" GitHub ruleset (scope
+`~DEFAULT_BRANCH`; requires PR + the `verify-bar` status check; no direct pushes). All work
+goes via `lane/*` branches opened as PRs; Dimitri merges attended after Vercel preview
+review. All three M2 lanes (consent, instructor, analytics) are merged; report bugs 1 & 2
+fixed; both report analytics events wired; brand-dot scrub applied; 11 §12 rollout flags
+added (default-off); ops runbook shipped; parent Sign-Out wired; dev-seed completed report
+added; three-section report layout shipped.
+**Verify baseline:** 563 tests / 0 type errors; 2 known lint warnings (no-img-element in
+profile-menu.tsx, no-page-custom-font in layout.tsx).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
@@ -26,7 +29,12 @@ shipped.
 | Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it). |
 | Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
 | Workflow → lane/PR + CI | MERGED `016e4ea` | PR #7. `.github/workflows/verify.yml` (verify-bar job), `.github/pull_request_template.md`, CLAUDE.md step 6 + RUNBOOK step 8 reconciled. CI GREEN: 554 tests / 41 files, no ANTHROPIC_API_KEY (mocked). verify-bar is the required status check via "Branch Protection" ruleset. Ruleset rescoped `~ALL` → `~DEFAULT_BRANCH` 2026-05-31 (the `~ALL` scope blocked pushing/deleting lane branches and broke the flow; see DECISIONS). Stale `lane/workflow-pr-ci` remote ref deleted. |
-| Relay / run loop | MERGED `164a1b2` (manual mode) | PR #9. `tools/relay/manual_codex_review.ps1` + `tools/schemas/codex_review.schema.json` + `tools/relay/README.md`. Automated transport (`.mcp.json`) parked pending Codex-reachability answer. CI GREEN: 554 tests / 41 files. |
+| Relay / run loop | MERGED `164a1b2` (manual mode) | PR #9. `tools/relay/manual_codex_review.ps1` + `tools/schemas/codex_review.schema.json` + `tools/relay/README.md`. Automated transport (`.mcp.json`) parked pending Codex CLI auth (credential blocker confirmed — see PR #17). CI GREEN: 554 tests / 41 files. |
+| Report three sections | MERGED (PR #13) | lane/report-three-sections. Strengths / Areas to confirm / Placement recommendation, two-tier layout. |
+| Dev-seed + parent logout | MERGED (PR #14) | lane/dev-seed-completed-report + lane/parent-logout. Dev demo completed report seeded; instructor login added; Sign Out wired in parent profile menu. |
+| Marketing §2.4 line-74 wording | OPEN PR #16 — not merged | lane/marketing-assessment-wording. `(marketing)/page.tsx:74` hero pill "Diagnostic Suite" → "Assessment Suite". CI GREEN, Vercel preview pass. DONE-pending-merge. |
+| Codex reachability docs | OPEN PR #17 — not merged | lane/codex-reachability-finding. `tools/relay/README.md` updated with 2026-06-05 reachability check results (NOT reachable — credential blocker). CI GREEN. |
+| Memory update (this lane) | OPEN PR #18 — not merged | lane/memory-session-2026-06-05. Run-state memory update for this session. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
 - **CONVERSION** — 5-stage CLI in `scripts/conversion/`; Stages 1–3 built/verified;
@@ -35,13 +43,15 @@ shipped.
   `repo-memory-maintainer` in `.claude/agents/`. ROI test gates any further growth.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. **The ungated technical queue is drained** — every lane that can run without a Dimitri answer or the G1 license is merged (workflow→PR/CI, feature flags, ops runbook, manual-mode relay). What remains:
-- **In-flight:** PR #10 (this memory lane) open — records the PR #9 relay merge; merge attended.
-- **PARKED — needs Dimitri on-screen:** placement-bar / radar / sub-strand pills on the degraded/"unreliable" report branch (visual check against a *real completed* assessment).
-- **PARKED — needs Dimitri answer:** is Codex reachable programmatically? Gates only the automated-relay upgrade (+`.mcp.json`); manual mode works today.
+See `NEXT_ACTIONS.md`. In-flight open PRs this session (all need Dimitri to merge attended after Vercel preview review):
+- **PR #16** (lane/marketing-assessment-wording) — §2.4 hero pill line-74 fix. DONE-pending-merge.
+- **PR #17** (lane/codex-reachability-finding) — relay README reachability check documented. DONE-pending-merge.
+- **PR #18** (lane/memory-session-2026-06-05) — this memory update. DONE-pending-merge.
+- **PARKED — needs Dimitri answer:** 5 remaining visible "diagnostic" occurrences on the marketing page (lines 84, 135, 170, 298, 313) — §2.4 call required before a follow-up lane.
+- **PARKED — needs Dimitri action:** Codex CLI auth (`codex login` or set `OPENAI_API_KEY` on this box) to unblock automated relay + `.mcp.json`.
+- **PARKED — needs Dimitri on-screen:** placement-bar / radar / sub-strand pills on the degraded/"unreliable" report branch (visual check against a real completed assessment).
 - **G1-gated (~2026-06-02):** CONVERSION Stage 4 (DB load), comprehensive-test assembly, curriculum-recommendation table.
 - **OPTIONAL (no gate; only if pilot needs it):** service-role report-narration regen script (`docs/ops-runbook.md` §3 KNOWN GAP).
-- Open §2.4 question: "Diagnostic" wording on marketing `page.tsx:74` — not yet resolved.
 
 ## External gates (business — not build)
 G1 S.A.M. license (~2026-06-02) · G2 franchisor pilot approval (separate; routing

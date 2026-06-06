@@ -3,6 +3,26 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-05
+
+* **§2.4 marketing hero pill line-74 fix shipped as PR #16 (lane/marketing-assessment-wording,
+  DONE-pending-merge).** `(marketing)/page.tsx:74` hero pill changed from
+  "S.A.M Mathematical Diagnostic Suite" → "S.A.M Mathematical Assessment Suite". CI GREEN,
+  Vercel preview pass. Five additional visible parent/educator-facing occurrences of
+  "diagnostic" on the marketing page (lines 84, 135, 170, 298, 313) were left untouched by
+  design (lane scoped to line 74); these are flagged for a Dimitri §2.4 call before any
+  follow-up lane. Line 131 is a non-rendered code comment — not a concern.
+
+* **Codex confirmed NOT programmatically reachable on this box — credential blocker, not
+  transport.** Evidence documented in PR #17 (lane/codex-reachability-finding,
+  DONE-pending-merge): codex-cli 0.130.0 installed; api.openai.com reachable (Cloudflare
+  cf-ray returned); but no `~/.codex/auth.json` and no `OPENAI_API_KEY`; `codex exec`
+  returns `401 Unauthorized: Missing bearer or basic authentication`. Manual-mode relay
+  (`manual_codex_review.ps1`) remains the fallback. Automated-relay upgrade and `.mcp.json`
+  remain PARKED pending Dimitri authenticating the CLI (`codex login`) or providing
+  `OPENAI_API_KEY` on this box. `tools/relay/README.md` updated with a
+  "Reachability check — 2026-06-05" section. CI GREEN.
+
 ## 2026-05-31
 
 * **Relay built in MANUAL mode first.** `tools/relay/manual_codex_review.ps1` bundles a
