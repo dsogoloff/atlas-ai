@@ -37,6 +37,16 @@ current state are in `.agent/memory/PROJECT_BRIEF.md`.
   unattended *progress on the technical queue*, not unattended decisions.
 - No technical questions to Dimitri during build. Plain-English step-by-step for any
   action he must take; minimal jargon. Short by default; surface concerns early.
+- **Gate the founder ONLY on (canonical, every session):** (a) business/strategy
+  decisions; (b) public/parent-facing CLAIMS language (strategy §2.4 —
+  diagnostic/validated/accurate/guaranteed, forward-outcome claims); (c) changes to the
+  voice-locked narration prompt; (d) actions on the hard-deny list / hazardous to repo
+  integrity; (e) spending money or external-facing sends. Decide everything technical,
+  presentational, and reversible autonomously and note it in the PR — do NOT gate on
+  UI/layout/copy-wording, component choices, refactors, naming, formatting, or any
+  reversible call a senior engineer would just make. Batch any genuinely gateable items
+  into one list at the end of a PR; never stop mid-task for a presentational choice. Do
+  not run `pnpm dev` or `supabase` — those are the founder's.
 
 ## Workflow (per request)
 1. Classify: technical vs. business/strategy. Business/strategy → gate.
