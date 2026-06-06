@@ -167,7 +167,7 @@ export default function LandingPage() {
                   query_stats
                 </span>
                 <h3 className="font-headline-adult mb-2">
-                  Diagnostic Precision
+                  Misconception Mapping
                 </h3>
               </div>
               <div className="text-[28px] font-black text-sam-yellow leading-tight">
