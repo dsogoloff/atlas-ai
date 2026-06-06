@@ -71,7 +71,7 @@ export default function LandingPage() {
               >
                 stars
               </span>
-              S.A.M Mathematical Diagnostic Suite
+              S.A.M Mathematical Assessment Suite
             </div>
             <h1 className="font-display-child text-[64px] leading-tight text-sam-navy">
               Unlocking Math Potential,{" "}
