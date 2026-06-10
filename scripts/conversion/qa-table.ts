@@ -41,11 +41,14 @@ import { fileURLToPath } from "node:url";
 
 import type { Stage3Question } from "./stage4-load";
 import {
+  UNIT_TOKENS,
   assembleBank,
   auditQuestion,
   findGeneratedMigration,
   findWorksheet,
+  isSingleNumberKey,
   loadArtifacts,
+  normalizeAnswer,
   parseExternalId,
   storedAnswerOf,
   type BankRow,
@@ -55,28 +58,11 @@ import {
   type WorksheetArtifacts,
 } from "./stage5-audit";
 
-// ---------------------------------------------------------------------------
-// P1 judge normalizer — duplicated from PR #25 until merge — keep in sync
-// with src/lib/responseSubmit/correctness.ts (normalizeAnswer +
-// isSingleNumberKey + the unit-token set). The QA table must classify
-// answers with EXACTLY the normalizer the grading fix uses.
-// ---------------------------------------------------------------------------
-
-const SINGLE_NUMBER_KEY_RE = /^-?(?:\d+|\d{1,3}(?: \d{3})+)(?:\.\d+)?$/;
-
-/** Duplicated from PR #25 (correctness.ts) until merge — keep in sync. */
-export function isSingleNumberKey(normalizedKey: string): boolean {
-  return SINGLE_NUMBER_KEY_RE.test(normalizedKey);
-}
-
-const UNIT_TOKENS = "km|cm|mm|kg|ml|min|am|pm|m|g|l|h|s";
-const UNIT_SPACING_RE = new RegExp(`(\\d) ?(${UNIT_TOKENS})\\b`, "g");
-
-/** Duplicated from PR #25 (correctness.ts) until merge — keep in sync. */
-export function normalizeAnswer(raw: string): string {
-  const collapsed = raw.toLowerCase().replace(/[\s,]+/g, " ").trim();
-  return collapsed.replace(UNIT_SPACING_RE, "$1 $2");
-}
+// The P1 judge normalizer (PR #25 duplicate — keep in sync with
+// src/lib/responseSubmit/correctness.ts) now lives in stage5-audit.ts so
+// the audit's key-agreement comparison and this table classify with
+// EXACTLY the same normalizer. Re-exported here for existing consumers.
+export { isSingleNumberKey, normalizeAnswer } from "./stage5-audit";
 
 const PLAIN_NUMERIC_RE = /^-?\d+(?:\.\d+)?$/;
 

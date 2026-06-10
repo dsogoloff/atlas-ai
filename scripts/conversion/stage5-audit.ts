@@ -22,7 +22,13 @@
 //     src/lib/responseSubmit/correctness.ts only numeric-coerces
 //     /^-?\d+(\.\d+)?$/ — anything else requires an exact string match
 //     from a child on a decimal keypad, which is flagged); must agree
-//     with the parsed answer key after trivial normalization.
+//     with the parsed answer key after normalization (including the P1
+//     judge normalizer). A key entry that is a printed 1-based OPTION
+//     NUMBER is resolved against the source task's options when those are
+//     recorded; a key entry that is a worked solution has its FINAL
+//     answer extracted before comparing. Where neither resolution is
+//     mechanically certain the check is a skip (UNVERIFIABLE), never a
+//     guessed MISMATCH.
 //   * DRAG_DROP — items / correct_order same multiset, >= 2 entries;
 //     correct_order must agree with the parsed key sequence.
 //   * misconception codes must be among the seeded vocabulary
@@ -234,6 +240,235 @@ export function tokenizeKeyList(raw: string): string[] {
         .toLowerCase(),
     )
     .filter((t) => t.length > 0);
+}
+
+// ---------------------------------------------------------------------------
+// P1 judge normalizer — duplicated from PR #25 until merge — keep in sync
+// with src/lib/responseSubmit/correctness.ts (normalizeAnswer +
+// isSingleNumberKey + the unit-token set). Lives here (not qa-table.ts)
+// so the audit's key-agreement comparison and the QA table classify with
+// EXACTLY the same normalizer; qa-table.ts re-exports these.
+// ---------------------------------------------------------------------------
+
+const SINGLE_NUMBER_KEY_RE = /^-?(?:\d+|\d{1,3}(?: \d{3})+)(?:\.\d+)?$/;
+
+/** Duplicated from PR #25 (correctness.ts) until merge — keep in sync. */
+export function isSingleNumberKey(normalizedKey: string): boolean {
+  return SINGLE_NUMBER_KEY_RE.test(normalizedKey);
+}
+
+export const UNIT_TOKENS = "km|cm|mm|kg|ml|min|am|pm|m|g|l|h|s";
+const UNIT_SPACING_RE = new RegExp(`(\\d) ?(${UNIT_TOKENS})\\b`, "g");
+
+/** Duplicated from PR #25 (correctness.ts) until merge — keep in sync. */
+export function normalizeAnswer(raw: string): string {
+  const collapsed = raw.toLowerCase().replace(/[\s,]+/g, " ").trim();
+  return collapsed.replace(UNIT_SPACING_RE, "$1 $2");
+}
+
+/** Equivalence used by the key-agreement comparisons: the audit's own
+ *  normalization (BOTH stacked-fraction readings), digit-group-space
+ *  stripping, separator-insensitive listing, and the P1 judge normalizer
+ *  (PR #25: case / whitespace / comma / unit-spacing) — so pure
+ *  formatting noise can never flag a mismatch. stripDigitGroupSpaces is
+ *  deliberately never applied to the separator/P1 variants ("1, 2" must
+ *  never equal "12"). */
+export function answersEquivalent(a: string, b: string): boolean {
+  const sepNorm = (s: string): string => s.replace(/[,;]/g, " ").replace(/\s+/g, " ").trim();
+  const variants = (s: string): Set<string> => {
+    const out = new Set<string>();
+    for (const base of [normalizeAnswerText(s), normalizeAnswerText(s, false)]) {
+      out.add(base);
+      out.add(stripDigitGroupSpaces(base));
+      out.add(sepNorm(base));
+      out.add(normalizeAnswer(base)); // P1 judge normalizer (PR #25)
+    }
+    return out;
+  };
+  const va = variants(a);
+  for (const v of variants(b)) {
+    if (va.has(v)) return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Key option-marker resolution (pure).
+//
+// Marker-interpretation conventions vendored (minimally) from PR #28's
+// scripts/conversion/mc-index-audit.ts (rederiveMcIndex): "(N)" is an
+// explicit, definitive 1-based option marker (S.A.M. prints option numbers
+// in parentheses); a bare small integer is plausibly a printed 1-based
+// option number (the Level 3 key prints bare option numbers). Dedupe into
+// a shared module when both lanes are merged.
+// ---------------------------------------------------------------------------
+
+export interface OptionMarker {
+  /** 1-based option number as printed in the key. */
+  ordinal: number;
+  /** true for "(N)" (definitive); false for a bare integer (a reading). */
+  explicit: boolean;
+}
+
+/** Parse a key entry as an option marker, when it is one. */
+export function parseOptionMarker(rawKey: string): OptionMarker | null {
+  const norm = normalizeAnswerText(rawKey);
+  const paren = /^\((\d+)\)/.exec(norm);
+  if (paren) return { ordinal: Number(paren[1]), explicit: true };
+  const compact = stripDigitGroupSpaces(norm);
+  if (/^\d+$/.test(compact) && Number(compact) >= 1) {
+    return { ordinal: Number(compact), explicit: false };
+  }
+  return null;
+}
+
+/** Largest bare integer still plausibly a printed 1-based option number
+ *  when the source task's options were NOT captured (every MC question in
+ *  the S.A.M. L1-4 bank prints 4 options). */
+export const MAX_PLAUSIBLE_OPTION_ORDINAL = 4;
+
+export type MarkerResolution =
+  | { kind: "resolved"; value: string; basis: string }
+  | { kind: "unresolvable"; basis: string }
+  | { kind: "not-marker" };
+
+/** Resolve a parsed key entry that is an option MARKER (not a value) to
+ *  the option text it designates, using the source task's options from
+ *  the stage2/stage3 record when available. Without options, an explicit
+ *  "(N)" marker — or a bare integer small enough to be a printed option
+ *  number — CANNOT be resolved and the comparison must be UNVERIFIABLE
+ *  (never guessed); a larger bare integer is treated as a literal value. */
+export function resolveKeyOptionMarker(
+  rawKey: string,
+  options: readonly string[] | null,
+): MarkerResolution {
+  const marker = parseOptionMarker(rawKey);
+  if (!marker) return { kind: "not-marker" };
+  if (options && options.length > 0) {
+    if (marker.ordinal <= options.length) {
+      const value = options[marker.ordinal - 1];
+      return {
+        kind: "resolved",
+        value,
+        basis:
+          `key ${JSON.stringify(rawKey)} read as 1-based option number -> ` +
+          `option ${String(marker.ordinal)} = ${JSON.stringify(value)}`,
+      };
+    }
+    if (marker.explicit) {
+      return {
+        kind: "unresolvable",
+        basis: `explicit option marker ${JSON.stringify(rawKey)} out of range for ${String(options.length)} recorded options`,
+      };
+    }
+    return { kind: "not-marker" }; // bare integer beyond the options — a value.
+  }
+  if (marker.explicit) {
+    return {
+      kind: "unresolvable",
+      basis: `explicit option marker ${JSON.stringify(rawKey)} but the source task's options were not captured`,
+    };
+  }
+  if (marker.ordinal <= MAX_PLAUSIBLE_OPTION_ORDINAL) {
+    return {
+      kind: "unresolvable",
+      basis:
+        `bare key ${JSON.stringify(rawKey)} is plausibly a printed 1-based option number ` +
+        `(S.A.M. keys print bare option numbers) but the source task's options were not captured`,
+    };
+  }
+  return { kind: "not-marker" };
+}
+
+// ---------------------------------------------------------------------------
+// Worked-solution key handling (pure).
+// ---------------------------------------------------------------------------
+
+const UNIT_TOKEN_SET: ReadonlySet<string> = new Set(UNIT_TOKENS.split("|"));
+
+/** Trailing quantity of a sentence key ("Casey had walked 2 km 400 m." →
+ *  "2 km 400 m"): one or more number(+unit) tokens anchored at the end,
+ *  preceded by start-of-line or whitespace (so "9:25 am" never yields a
+ *  bogus "25 am"). */
+const QUANTITY_TAIL_RE = new RegExp(
+  `(?<=^|\\s)(-?\\d+(?:\\.\\d+)?(?:\\s*(?:${UNIT_TOKENS})\\b)?` +
+    `(?:\\s+-?\\d+(?:\\.\\d+)?(?:\\s*(?:${UNIT_TOKENS})\\b)?)*)\\s*[.!?]*\\s*$`,
+  "i",
+);
+
+export type WorkedKeyExtraction =
+  | {
+      kind: "extracted";
+      /** The final answer token(s) of the worked solution. */
+      value: string;
+      /** true when the last equation's LEFT side restates a quantity given
+       *  in the stem — a working/conversion line (e.g. "5 km 250 m =
+       *  5250 m" under a stem containing "5 km 250 m"), so the extracted
+       *  right-most value is NOT the question's final answer. */
+      intermediate: boolean;
+      basis: string;
+    }
+  | { kind: "uncertain"; basis: string }
+  | { kind: "not-worked" };
+
+/** When a parsed key entry is a worked solution ("=" chains, multiple
+ *  lines, sentence text), extract the FINAL answer token(s): the last
+ *  line's last-equation right-most value, or a sentence's trailing
+ *  quantity. Conservative — anything not mechanically extractable is
+ *  "uncertain" so the caller marks UNVERIFIABLE rather than guessing. */
+export function extractWorkedKeyFinalAnswer(rawKey: string, stem: string): WorkedKeyExtraction {
+  const pre = rawKey.normalize("NFKC").replace(/[−–—]/g, "-");
+  const lines = pre
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  if (lines.length === 0) return { kind: "not-worked" };
+  // A pure word key ("smaller than") with no digits and no equation is a
+  // literal answer, not a worked solution — leave it to the plain compare.
+  if (lines.length === 1 && !pre.includes("=") && !/\d/.test(pre)) {
+    return { kind: "not-worked" };
+  }
+  const words = pre.match(/[a-zA-Z]+/g) ?? [];
+  const hasSentenceText = words.some((w) => w.length > 1 && !UNIT_TOKEN_SET.has(w.toLowerCase()));
+  if (lines.length === 1 && !pre.includes("=") && !hasSentenceText) {
+    return { kind: "not-worked" };
+  }
+
+  const last = lines[lines.length - 1];
+  if (last.includes("=")) {
+    const segments = last.split("=");
+    const rhs = segments[segments.length - 1].trim();
+    const lhs = segments.slice(0, -1).join("=").trim();
+    if (!/\d/.test(rhs)) {
+      return {
+        kind: "uncertain",
+        basis: `last equation of ${JSON.stringify(last)} has no value on its right side`,
+      };
+    }
+    const intermediate = lhs.length > 0 && normalizeAnswerText(stem).includes(normalizeAnswerText(lhs));
+    return {
+      kind: "extracted",
+      value: rhs,
+      intermediate,
+      basis: intermediate
+        ? `last equation's right-most value ${JSON.stringify(rhs)}, but its left side ` +
+          `${JSON.stringify(lhs)} restates a quantity given in the stem (working/conversion line)`
+        : `last equation's right-most value ${JSON.stringify(rhs)}`,
+    };
+  }
+  const tail = QUANTITY_TAIL_RE.exec(last);
+  if (tail) {
+    return {
+      kind: "extracted",
+      value: tail[1],
+      intermediate: false,
+      basis: `trailing quantity ${JSON.stringify(tail[1])} of the key's final line`,
+    };
+  }
+  return {
+    kind: "uncertain",
+    basis: `no final value mechanically extractable from the key's last line ${JSON.stringify(last)}`,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -685,6 +920,11 @@ export function auditMultipleChoice(
 export function auditNumericEntry(
   content: Record<string, unknown>,
   key: KeyInfo | null,
+  /** Options of the SOURCE task (stage2/stage3 record), when the worksheet
+   *  printed options but the bank row was loaded as NUMERIC_ENTRY — lets a
+   *  key entry that is a printed 1-based option number resolve to the
+   *  option value instead of string-comparing the marker itself. */
+  sourceOptions: readonly string[] | null = null,
 ): CheckResult[] {
   const checks: CheckResult[] = [];
   const stem = typeof content.stem === "string" ? content.stem : "";
@@ -738,51 +978,94 @@ export function auditNumericEntry(
 
   if (!key || normalizeAnswerText(key.raw_answer).length === 0) {
     checks.push({ name: "key-agreement", status: "skip", detail: "no parsed answer-key entry available" });
+  } else if (answersEquivalent(stored, key.raw_answer)) {
+    // answersEquivalent covers both stacked-fraction readings ("4\n9" →
+    // "4/9" vs a multi-line equation key that must NOT join), digit-group
+    // spaces, separator-insensitive listings, and the P1 judge normalizer.
+    checks.push({
+      name: "key-agreement",
+      status: "pass",
+      detail: "stored answer equals parsed key (after trivial normalization)",
+    });
   } else {
     const normStored = normalizeAnswerText(stored);
-    // Two key readings: with the stacked-fraction join ("4\n9" → "4/9")
-    // and without (a multi-line equation key like "...= 8\n2 + ..." must
-    // NOT be joined into "8/2").
     const keyVariants = [...new Set([
       normalizeAnswerText(key.raw_answer),
       normalizeAnswerText(key.raw_answer, false),
     ])];
-    // Separator-insensitive variant: keys list multi-part answers one per
-    // line where the stored answer joins them with commas. Deliberately
-    // NOT combined with digit-space stripping ("1, 2" must never equal "12").
-    const sepNorm = (s: string): string =>
-      s.replace(/[,;]/g, " ").replace(/\s+/g, " ").trim();
-    const exact = keyVariants.some(
-      (normKey) =>
-        normStored === normKey ||
-        stripDigitGroupSpaces(normStored) === stripDigitGroupSpaces(normKey) ||
-        sepNorm(normStored) === sepNorm(normKey),
-    );
-    if (exact) {
+    const escaped = normStored.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const contained =
+      normStored.length > 0 &&
+      keyVariants.some((normKey) =>
+        new RegExp(`(?<![\\w])${escaped}(?![\\w])`).test(normKey),
+      );
+    const rawShort = JSON.stringify(key.raw_answer.slice(0, 120));
+    if (contained) {
       checks.push({
         name: "key-agreement",
         status: "pass",
-        detail: "stored answer equals parsed key (after trivial normalization)",
+        detail: `stored answer found inside the key's worked solution: ${rawShort}`,
       });
     } else {
-      const escaped = normStored.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const contained =
-        normStored.length > 0 &&
-        keyVariants.some((normKey) =>
-          new RegExp(`(?<![\\w])${escaped}(?![\\w])`).test(normKey),
+      // The raw marker/key is kept in every detail below for transparency.
+      const marker = resolveKeyOptionMarker(key.raw_answer, sourceOptions);
+      if (marker.kind === "resolved") {
+        checks.push(
+          answersEquivalent(stored, marker.value)
+            ? {
+                name: "key-agreement",
+                status: "pass",
+                detail: `stored answer equals the key-designated option: ${marker.basis}`,
+              }
+            : {
+                name: "key-agreement",
+                status: "fail",
+                detail: `stored ${JSON.stringify(stored)} contradicts the key-designated option: ${marker.basis}`,
+              },
         );
-      if (contained) {
+      } else if (marker.kind === "unresolvable") {
         checks.push({
           name: "key-agreement",
-          status: "pass",
-          detail: `stored answer found inside the key's worked solution: ${JSON.stringify(key.raw_answer.slice(0, 120))}`,
+          status: "skip",
+          detail: `cannot verify mechanically: ${marker.basis}`,
         });
       } else {
-        checks.push({
-          name: "key-agreement",
-          status: "fail",
-          detail: `stored ${JSON.stringify(stored)} does not match parsed key ${JSON.stringify(key.raw_answer.slice(0, 120))}`,
-        });
+        const worked = extractWorkedKeyFinalAnswer(key.raw_answer, stem);
+        if (worked.kind === "extracted" && answersEquivalent(stored, worked.value)) {
+          checks.push({
+            name: "key-agreement",
+            status: "pass",
+            detail: `stored answer equals the worked-solution key's final value (raw key ${rawShort}): ${worked.basis}`,
+          });
+        } else if (worked.kind === "extracted" && worked.intermediate) {
+          checks.push({
+            name: "key-agreement",
+            status: "skip",
+            detail:
+              `cannot verify mechanically: parsed key ${rawShort} is a worked-solution ` +
+              `working line — ${worked.basis} — the question's final answer was not captured by the key parse`,
+          });
+        } else if (worked.kind === "extracted") {
+          checks.push({
+            name: "key-agreement",
+            status: "fail",
+            detail:
+              `stored ${JSON.stringify(stored)} does not match the worked-solution key's ` +
+              `final value (raw key ${rawShort}): ${worked.basis}`,
+          });
+        } else if (worked.kind === "uncertain") {
+          checks.push({
+            name: "key-agreement",
+            status: "skip",
+            detail: `cannot verify mechanically: parsed key ${rawShort} appears to be a worked solution — ${worked.basis}`,
+          });
+        } else {
+          checks.push({
+            name: "key-agreement",
+            status: "fail",
+            detail: `stored ${JSON.stringify(stored)} does not match parsed key ${rawShort}`,
+          });
+        }
       }
     }
   }
@@ -967,7 +1250,10 @@ export function auditQuestion(
       checks = auditMultipleChoice(row.content, key);
       break;
     case "NUMERIC_ENTRY":
-      checks = auditNumericEntry(row.content, key);
+      // The source task's options (stage3 record), when the worksheet
+      // printed options but the row was loaded as NUMERIC_ENTRY — lets a
+      // key entry that is a printed option number resolve to its value.
+      checks = auditNumericEntry(row.content, key, s3?.options ?? null);
       break;
     case "DRAG_DROP":
       checks = auditDragDrop(row.content, key);
