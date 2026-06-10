@@ -8,6 +8,10 @@
 // ALL question fixtures below are SYNTHETIC — fabricated math questions
 // written for these tests. No real S.A.M. licensed text appears here.
 
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -15,21 +19,30 @@ import {
   buildMigrationFile,
   buildQuestionsInsert,
   buildSeedBlock,
+  categorizeSkipReason,
+  collectUnknownMisconceptionCodes,
   deriveHalfGradeLevel,
   escapeSqlString,
+  formatStage4AuditLine,
   mapSubStrandToStrand,
   parseDragDropContent,
+  parseSeedMisconceptionCodes,
   renderValuesRow,
   replaceSeedBlock,
   taxLevelNumber,
   validateAndMapRecord,
+  KNOWN_MISCONCEPTION_CODES,
   MIGRATION_MARKER,
   SEED_BEGIN_MARKER,
   SEED_END_MARKER,
   type LoadRow,
   type Stage3Question,
   type TaxonomyContent,
+  type WorksheetLoadReport,
 } from "../../../scripts/conversion/stage4-load";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const SEED_PATH = resolve(HERE, "../../..", "supabase/seed.sql");
 
 // ---------------------------------------------------------------------------
 // Fixtures (synthetic)
@@ -44,6 +57,7 @@ const TAX_CONTENT: TaxonomyContent[] = [
 ];
 
 const contentByKey = new Map(TAX_CONTENT.map((c) => [c.key, c]));
+const VALID_CODES: ReadonlySet<string> = new Set(KNOWN_MISCONCEPTION_CODES);
 
 /** A fully valid synthetic NUMERIC_ENTRY record; tests override fields. */
 function baseRecord(overrides: Partial<Stage3Question> = {}): Stage3Question {
@@ -318,7 +332,7 @@ describe("buildContentJson", () => {
 
 describe("validateAndMapRecord", () => {
   it("maps a valid record to a load row (active, derived strand/level)", () => {
-    const result = validateAndMapRecord(baseRecord(), contentByKey);
+    const result = validateAndMapRecord(baseRecord(), contentByKey, VALID_CODES);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.row.external_id).toBe("SAM-TEST-Q05");
@@ -333,6 +347,7 @@ describe("validateAndMapRecord", () => {
     const result = validateAndMapRecord(
       baseRecord({ image_required: true, image_alt: "A picture graph of pets." }),
       contentByKey,
+      VALID_CODES,
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.row.is_active).toBe(false);
@@ -342,6 +357,7 @@ describe("validateAndMapRecord", () => {
     const result = validateAndMapRecord(
       baseRecord({ content_key: "l9-imaginary-1" }),
       contentByKey,
+      VALID_CODES,
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -357,7 +373,7 @@ describe("validateAndMapRecord", () => {
       baseRecord({ representation: "INTERPRETIVE_DANCE" }),
     ];
     for (const record of bad) {
-      expect(validateAndMapRecord(record, contentByKey).ok).toBe(false);
+      expect(validateAndMapRecord(record, contentByKey, VALID_CODES).ok).toBe(false);
     }
   });
 
@@ -365,6 +381,7 @@ describe("validateAndMapRecord", () => {
     const result = validateAndMapRecord(
       baseRecord({ format: "MULTIPLE_CHOICE", options: null, correct_index: null }),
       contentByKey,
+      VALID_CODES,
     );
     expect(result.ok).toBe(false);
   });
@@ -377,6 +394,7 @@ describe("validateAndMapRecord", () => {
         correct_answer: "triangle, square, circle",
       }),
       contentByKey,
+      VALID_CODES,
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -395,12 +413,133 @@ describe("validateAndMapRecord", () => {
         difficulty_seed: -0.5,
       }),
       contentByKey,
+      VALID_CODES,
     );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.row.strand).toBe("operations_algorithms");
       expect(result.row.level).toBe("3A"); // l3 cuts ≈ -0.94/-0.69/-0.24
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Misconception vocabulary — seed.sql drift + unknown-code rejection
+// ---------------------------------------------------------------------------
+
+describe("misconception vocabulary", () => {
+  it("KNOWN_MISCONCEPTION_CODES matches the seeded set in supabase/seed.sql exactly", () => {
+    const seedCodes = parseSeedMisconceptionCodes(readFileSync(SEED_PATH, "utf-8"));
+    expect([...seedCodes].sort()).toEqual([...KNOWN_MISCONCEPTION_CODES].sort());
+    expect(seedCodes.length).toBe(21);
+  });
+
+  it("parseSeedMisconceptionCodes throws on SQL without a misconceptions insert", () => {
+    expect(() => parseSeedMisconceptionCodes("select 1;")).toThrow(
+      /insert into misconceptions/,
+    );
+  });
+
+  it("collectUnknownMisconceptionCodes finds bad codes in tags and distractor values, deduplicated", () => {
+    const q = baseRecord({
+      misconception_tags: ["NS_COUNTING_ERROR", "ZZ_MADE_UP", "ZZ_MADE_UP"],
+      distractor_misconceptions: { "0": "ZZ_MADE_UP", "1": "QQ_ALSO_FAKE", "2": "GE_PERIMETER_AREA" },
+    });
+    expect(collectUnknownMisconceptionCodes(q, VALID_CODES)).toEqual([
+      "ZZ_MADE_UP",
+      "QQ_ALSO_FAKE",
+    ]);
+  });
+
+  it("collectUnknownMisconceptionCodes returns [] when every code is seeded", () => {
+    expect(collectUnknownMisconceptionCodes(baseRecord(), VALID_CODES)).toEqual([]);
+  });
+
+  it("validateAndMapRecord routes unknown tag codes to the skip list, naming the code", () => {
+    const result = validateAndMapRecord(
+      baseRecord({ misconception_tags: ["NS_TOTALLY_INVENTED"] }),
+      contentByKey,
+      VALID_CODES,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasons.join(" ")).toContain(
+        "unknown misconception code 'NS_TOTALLY_INVENTED'",
+      );
+    }
+  });
+
+  it("validateAndMapRecord routes unknown distractor-map codes to the skip list", () => {
+    const result = validateAndMapRecord(
+      baseRecord({
+        format: "MULTIPLE_CHOICE",
+        options: ["1", "2", "3"],
+        correct_index: 0,
+        correct_answer: null,
+        distractor_misconceptions: { "1": "OP_FAKE_CODE" },
+      }),
+      contentByKey,
+      VALID_CODES,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reasons.join(" ")).toContain("unknown misconception code 'OP_FAKE_CODE'");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Load report (conversion.log audit line)
+// ---------------------------------------------------------------------------
+
+describe("categorizeSkipReason", () => {
+  it("buckets every reason shape the loader emits", () => {
+    expect(categorizeSkipReason("stage3 status=failed: API timeout")).toBe("stage3-failed");
+    expect(
+      categorizeSkipReason("duplicate external_id (already loaded from an earlier worksheet/record)"),
+    ).toBe("duplicate-external-id");
+    expect(
+      categorizeSkipReason("unknown misconception code 'ZZ' (not in the seeded misconception set)"),
+    ).toBe("unknown-misconception-code");
+    expect(categorizeSkipReason("content_key 'l9-imaginary-1' not in taxonomy")).toBe(
+      "unknown-content-key",
+    );
+    expect(categorizeSkipReason("NUMERIC_ENTRY without correct_answer")).toBe("invalid-fields");
+    expect(categorizeSkipReason("representation 'X' invalid")).toBe("invalid-fields");
+  });
+});
+
+describe("formatStage4AuditLine", () => {
+  const base: WorksheetLoadReport = {
+    source: "Synthetic Worksheet.pdf",
+    loaded: 18,
+    contentIdAssigned: 18,
+    reviewFlags: 5,
+    imageInactive: 3,
+    imagesUploaded: 2,
+    imagesDeferred: 1,
+    skipped: 0,
+    skipReasonCounts: {},
+  };
+
+  it("renders the full per-worksheet load report on one greppable line", () => {
+    expect(formatStage4AuditLine(base, "2026-06-10T00:00:00.000Z")).toBe(
+      "2026-06-10T00:00:00.000Z | stage4 | Synthetic Worksheet.pdf | " +
+        "loaded=18 content_id=18 review_flags=5 inactive_image=3 " +
+        "images_uploaded=2 images_deferred=1 skipped=0",
+    );
+  });
+
+  it("appends sorted skip-reason categories when records were skipped", () => {
+    const line = formatStage4AuditLine(
+      {
+        ...base,
+        skipped: 3,
+        skipReasonCounts: { "unknown-misconception-code": 1, "stage3-failed": 2 },
+      },
+      "2026-06-10T00:00:00.000Z",
+    );
+    expect(line).toContain("skipped=3 (stage3-failed=2, unknown-misconception-code=1)");
   });
 });
 

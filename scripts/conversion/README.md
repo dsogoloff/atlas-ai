@@ -110,7 +110,8 @@ No stage3 outputs → clear message, exit 0 (same convention as Stage 1).
 
 Stage 4 validates every tagged record (content_key must exist in the
 `docs/sam-v2026-taxonomy.md` §7 taxonomy, format ↔ answer agreement, the
-four NOT-NULL norm fields, DRAG_DROP mappability) and emits:
+four NOT-NULL norm fields, DRAG_DROP mappability, and every misconception
+code) and emits:
 
 - `supabase/migrations/<timestamp>_load_sam_questions.sql` — the questions
   INSERT in the established tenant-CTE pattern, `content_id` resolved at
@@ -123,7 +124,21 @@ four NOT-NULL norm fields, DRAG_DROP mappability) and emits:
   validation, with reasons. Skips never abort the run.
 - `output/<worksheet>/stage4-upload-manifest.json` — image staging record
   (below).
-- one `stage4` audit line per worksheet in `conversion.log`.
+- one `stage4` load-report line per worksheet in `conversion.log`:
+  `loaded= content_id= review_flags= inactive_image= images_uploaded=
+  images_deferred= skipped= (per-category breakdown)`.
+
+**Misconception-code validation.** Every code in `misconception_tags` and
+in `distractor_misconceptions` values must be one of the 21 codes seeded
+into the `misconceptions` table (`supabase/seed.sql` "Misconception
+taxonomy" insert; mirrored by migrations `20260509000000` and
+`20260511000000`). The seeded set is parsed from seed.sql at run time and
+cross-checked against `KNOWN_MISCONCEPTION_CODES` in `stage4-load.ts`
+(drift aborts the run; a unit test also pins the two together). A record
+referencing an unknown code goes to the skip list with a `console.error`
+naming the code + external_id and is counted under
+`unknown-misconception-code` in the load report — codes are never silently
+dropped and never invented.
 
 Column mapping (decided + documented in the Stage 4 PR): old `strand` enum
 derived from the record's V2026 sub_strand (word-problem arithmetic in
@@ -145,7 +160,10 @@ the private `question-images` bucket under
 `SUPABASE_SERVICE_ROLE_KEY`, from `.env.local` or the environment). When
 creds or the local stack are unavailable, uploads are skipped with a clear
 message and the manifest records every pending upload — re-run
-`pnpm convert:load` to retry. Activating an image question is a separate,
+`pnpm convert:load` to retry. Upload staging is per-question best-effort:
+a missing page render or a failed upload logs an error, defers that entry
+to the manifest, and never blocks the batch — the question row still loads
+(inactive) either way. Activating an image question is a separate,
 manual curation step (curated crop → bucket → `image_path` → flip
 `is_active`).
 

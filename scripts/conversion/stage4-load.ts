@@ -20,6 +20,19 @@
 //     duplication). Existing hand-written blocks are never touched.
 //   * DB layer — `on conflict (tenant_id, external_id) do nothing`.
 //
+// Misconception-code validation: every code in misconception_tags and in
+// distractor_misconceptions values must be one of the codes seeded into
+// the misconceptions table (supabase/seed.sql "Misconception taxonomy"
+// block; mirrored by migrations 20260509000000 + 20260511000000). An
+// unknown code routes the record to the skip list with a console.error
+// naming the code + external_id — never silently dropped, never invented.
+// The seeded set is parsed from seed.sql at run time and cross-checked
+// against KNOWN_MISCONCEPTION_CODES below; any drift aborts the run.
+//
+// Per-run load report: one `stage4` line per worksheet is appended to
+// scripts/conversion/conversion.log with loaded / content_id / review-flag
+// / inactive-image / image-upload / skip-category counts.
+//
 // Run via: pnpm convert:load
 
 import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
@@ -86,6 +99,72 @@ export const HALF_GRADE_LEVELS = [
   "7A", "7B",
   "8A", "8B",
 ] as const;
+
+/** The 21 misconception codes seeded into the misconceptions table.
+ *  Source of truth: supabase/seed.sql "Misconception taxonomy" insert
+ *  (19 starter codes) + the Item #11 Phase 1 codes mirrored from
+ *  20260511000000_sam_l2_misconception_taxonomy.sql (NS_ZERO_VALUE,
+ *  WP_KEYWORD_TRAP; the four MD_ codes are likewise mirrored from
+ *  20260509000000_misconception_classifier_audit.sql). Stage 3 prompts
+ *  with exactly this vocabulary (FALLBACK_MISCONCEPTIONS in
+ *  stage3-tag.ts). A drift test in src/lib/taxonomy/stage4-load.test.ts
+ *  pins this constant to the seed.sql insert, and main() re-checks at run
+ *  time. NEVER add a code here without seeding it first. */
+export const KNOWN_MISCONCEPTION_CODES = [
+  "NS_COUNTING_ERROR",
+  "NS_PLACE_VALUE_CONFUSION",
+  "NS_MAGNITUDE_MISJUDGE",
+  "NS_ZERO_VALUE",
+  "OP_NO_REGROUPING",
+  "OP_SUBTRACTION_DIRECTION",
+  "OP_MULT_AS_REPEATED_ADD",
+  "OP_DIV_REMAINDER",
+  "WP_OPERATION_SELECTION",
+  "WP_IRRELEVANT_INFO",
+  "WP_MULTI_STEP_SEQUENCE",
+  "WP_KEYWORD_TRAP",
+  "FR_NUM_DENOM_INDEPENDENT",
+  "FR_FRACTION_AS_TWO_NUMS",
+  "FR_COMMON_DENOMINATOR",
+  "GE_PERIMETER_AREA",
+  "GE_SHAPE_PROPERTY",
+  "MD_UNIT_CONFUSION",
+  "MD_RULER_ZERO_POINT",
+  "MD_TIME_READING",
+  "MD_CHART_SCALE",
+] as const;
+
+/** Parse the misconception codes out of seed.sql's
+ *  `insert into misconceptions ... (values ...) as v(...)` block.
+ *  Anchored the same way as the taxonomy drift tests
+ *  (src/lib/taxonomy/seed.test.ts): from the insert to the `) as v(`
+ *  close, so quoted description text elsewhere can't false-positive.
+ *  Each VALUES row starts on its own line as `('CODE',`. */
+export function parseSeedMisconceptionCodes(seedSql: string): string[] {
+  const insertStart = seedSql.indexOf("insert into misconceptions");
+  if (insertStart === -1) {
+    throw new Error("seed.sql: no `insert into misconceptions` block found");
+  }
+  const valuesStart = seedSql.indexOf("(values", insertStart);
+  if (valuesStart === -1) {
+    throw new Error("seed.sql: no (values block after the misconceptions insert");
+  }
+  const valuesEnd = seedSql.indexOf(") as v(", valuesStart);
+  if (valuesEnd === -1) {
+    throw new Error("seed.sql: no values-close after the misconceptions insert");
+  }
+  const block = seedSql.slice(valuesStart, valuesEnd);
+  const codes: string[] = [];
+  const rowRe = /^\s*\('([A-Z][A-Z0-9_]+)'/gm;
+  let m: RegExpExecArray | null;
+  while ((m = rowRe.exec(block)) !== null) {
+    if (!codes.includes(m[1])) codes.push(m[1]);
+  }
+  if (codes.length === 0) {
+    throw new Error("seed.sql: misconceptions insert yielded zero codes");
+  }
+  return codes;
+}
 
 export type OperationType = (typeof VALID_OPERATION_TYPES)[number];
 export type Representation = (typeof VALID_REPRESENTATIONS)[number];
@@ -446,9 +525,31 @@ export function buildContentJson(
 // Per-record validation + mapping.
 // ---------------------------------------------------------------------------
 
+/** Every misconception code the record references (misconception_tags
+ *  items + distractor_misconceptions values) that is NOT in the seeded
+ *  vocabulary, deduplicated in first-seen order. */
+export function collectUnknownMisconceptionCodes(
+  q: Stage3Question,
+  validCodes: ReadonlySet<string>,
+): string[] {
+  const unknown: string[] = [];
+  const see = (code: unknown): void => {
+    if (typeof code !== "string" || code.length === 0) return;
+    if (!validCodes.has(code) && !unknown.includes(code)) unknown.push(code);
+  };
+  if (Array.isArray(q.misconception_tags)) {
+    for (const code of q.misconception_tags) see(code);
+  }
+  if (q.distractor_misconceptions) {
+    for (const code of Object.values(q.distractor_misconceptions)) see(code);
+  }
+  return unknown;
+}
+
 export function validateAndMapRecord(
   q: Stage3Question,
   contentByKey: Map<string, TaxonomyContent>,
+  validMisconceptionCodes: ReadonlySet<string>,
 ): { ok: true; row: LoadRow } | { ok: false; reasons: string[] } {
   const reasons: string[] = [];
 
@@ -490,6 +591,11 @@ export function validateAndMapRecord(
     q.misconception_tags.some((t) => typeof t !== "string" || t.length === 0)
   ) {
     reasons.push("misconception_tags missing or contains non-string entries");
+  }
+  // Founder rule: never silently drop or invent a misconception code — an
+  // unknown code fails the whole record into the skip list.
+  for (const code of collectUnknownMisconceptionCodes(q, validMisconceptionCodes)) {
+    reasons.push(`unknown misconception code '${code}' (not in the seeded misconception set)`);
   }
   if (!(VALID_FORMATS as readonly string[]).includes(q.format)) {
     reasons.push(`format '${String(q.format)}' invalid`);
@@ -934,16 +1040,59 @@ async function stagePageImages(
 }
 
 // ---------------------------------------------------------------------------
-// Audit log.
+// Audit log — per-run load report (one line per worksheet).
 // ---------------------------------------------------------------------------
 
-async function appendAuditLine(
-  source: string,
-  loadedCount: number,
-  skippedCount: number,
-): Promise<void> {
-  const line = `${new Date().toISOString()} | stage4 | ${source} | ${loadedCount} loaded | ${skippedCount} skipped\n`;
-  await appendFile(LOG_FILE, line, "utf8");
+/** Stable reason-category buckets for the load report. A skipped record
+ *  counts once per distinct category across all of its reasons, so the
+ *  category sum can exceed the skipped total. */
+export function categorizeSkipReason(reason: string): string {
+  if (reason.startsWith("stage3 status=failed")) return "stage3-failed";
+  if (reason.startsWith("duplicate external_id")) return "duplicate-external-id";
+  if (reason.includes("unknown misconception code")) return "unknown-misconception-code";
+  if (reason.includes("not in taxonomy")) return "unknown-content-key";
+  return "invalid-fields";
+}
+
+export interface WorksheetLoadReport {
+  source: string;
+  loaded: number;
+  /** Rows whose content_key resolved against the taxonomy — the insert's
+   *  tax_content subselect assigns content_id for every one of these. */
+  contentIdAssigned: number;
+  /** Total stage3 review_flags carried by the LOADED rows. */
+  reviewFlags: number;
+  /** Image-essential rows loaded with is_active=false. */
+  imageInactive: number;
+  imagesUploaded: number;
+  /** Manifest entries not uploaded (missing creds, missing local page
+   *  file, or upload failure) — retried on the next convert:load run. */
+  imagesDeferred: number;
+  skipped: number;
+  skipReasonCounts: Record<string, number>;
+}
+
+export function formatStage4AuditLine(
+  report: WorksheetLoadReport,
+  timestamp: string,
+): string {
+  const categories = Object.entries(report.skipReasonCounts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([category, count]) => `${category}=${String(count)}`)
+    .join(", ");
+  const skipped =
+    report.skipped > 0 ? `skipped=${String(report.skipped)} (${categories})` : "skipped=0";
+  return (
+    `${timestamp} | stage4 | ${report.source} | ` +
+    `loaded=${String(report.loaded)} content_id=${String(report.contentIdAssigned)} ` +
+    `review_flags=${String(report.reviewFlags)} inactive_image=${String(report.imageInactive)} ` +
+    `images_uploaded=${String(report.imagesUploaded)} images_deferred=${String(report.imagesDeferred)} ` +
+    skipped
+  );
+}
+
+async function appendAuditLine(report: WorksheetLoadReport): Promise<void> {
+  await appendFile(LOG_FILE, `${formatStage4AuditLine(report, new Date().toISOString())}\n`, "utf8");
 }
 
 // ---------------------------------------------------------------------------
@@ -954,6 +1103,24 @@ async function main(): Promise<void> {
   const taxonomy = await loadTaxonomy();
   const contentByKey = new Map(taxonomy.content.map((c) => [c.key, c]));
   console.log(`Loaded taxonomy: ${taxonomy.content.length} content items.`);
+
+  // Misconception vocabulary — parsed from seed.sql (the seeded source of
+  // truth) and cross-checked against the in-code constant. Any drift means
+  // someone changed the seeded set without updating this loader (or vice
+  // versa): abort rather than validate against the wrong vocabulary.
+  const seedCodes = parseSeedMisconceptionCodes(await readFile(SEED_FILE, "utf8"));
+  const validMisconceptionCodes: ReadonlySet<string> = new Set(seedCodes);
+  {
+    const expected = [...KNOWN_MISCONCEPTION_CODES].sort();
+    const actual = [...seedCodes].sort();
+    if (expected.length !== actual.length || expected.some((c, i) => c !== actual[i])) {
+      throw new Error(
+        `seed.sql misconception codes drifted from KNOWN_MISCONCEPTION_CODES in stage4-load.ts ` +
+          `(seed: ${actual.join(", ")}). Reconcile before loading.`,
+      );
+    }
+  }
+  console.log(`Loaded misconception vocabulary: ${seedCodes.length} codes (seed.sql).`);
 
   const worksheets = await discoverStage3();
   if (worksheets.length === 0) {
@@ -985,6 +1152,7 @@ async function main(): Promise<void> {
     const skipped: SkippedRecord[] = [];
     const rows: LoadRow[] = [];
     const imageRows: Array<{ external_id: string; task_number: number }> = [];
+    let loadedReviewFlags = 0;
 
     for (const q of ws.data.questions) {
       if (q.status === "failed") {
@@ -1005,7 +1173,15 @@ async function main(): Promise<void> {
         });
         continue;
       }
-      const result = validateAndMapRecord(q, contentByKey);
+      // Unknown misconception codes are a hard, loud failure for the
+      // record — name every bad code so it can't slip past in the noise.
+      for (const code of collectUnknownMisconceptionCodes(q, validMisconceptionCodes)) {
+        console.error(
+          `  [ERROR] ${q.external_id}: unknown misconception code '${code}' — ` +
+            `not one of the ${String(validMisconceptionCodes.size)} seeded codes; record skipped`,
+        );
+      }
+      const result = validateAndMapRecord(q, contentByKey, validMisconceptionCodes);
       if (!result.ok) {
         console.log(`  ${q.external_id}: SKIP (${result.reasons.join("; ")})`);
         skipped.push({
@@ -1017,6 +1193,7 @@ async function main(): Promise<void> {
       }
       seenExternalIds.add(q.external_id);
       rows.push(result.row);
+      loadedReviewFlags += Array.isArray(q.review_flags) ? q.review_flags.length : 0;
       if (q.image_required) {
         imageRows.push({ external_id: q.external_id, task_number: q.task_number });
       }
@@ -1035,18 +1212,47 @@ async function main(): Promise<void> {
       "utf8",
     );
 
-    // Image staging uploads + manifest.
+    // Image staging uploads + manifest. Per-question best-effort: a
+    // missing page render or a failed upload defers THAT entry to the
+    // manifest (retried on the next run) and never blocks the batch —
+    // the question row above is already staged (inactive) either way.
     const manifest = await stagePageImages(ws, imageRows, supabase, uploadSkipReason);
     const manifestPath = path.join(OUTPUT_DIR, ws.folder, "stage4-upload-manifest.json");
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
     const uploadedCount = manifest.entries.filter((e) => e.uploaded).length;
+    if (supabase) {
+      for (const entry of manifest.entries) {
+        if (!entry.uploaded) {
+          console.error(
+            `  [ERROR] ${entry.external_id}: page image not staged (${entry.error ?? "unknown"}) — question still loads inactive; deferred to manifest`,
+          );
+        }
+      }
+    }
     console.log(
       `  images: ${uploadedCount}/${manifest.entries.length} page render(s) uploaded to ${QUESTION_IMAGE_BUCKET}/${STAGING_PREFIX}/ (manifest: ${path.relative(process.cwd(), manifestPath)})`,
     );
 
-    await appendAuditLine(ws.data.source, rows.length, skipped.length);
+    const skipReasonCounts: Record<string, number> = {};
+    for (const record of skipped) {
+      for (const category of new Set(record.reasons.map(categorizeSkipReason))) {
+        skipReasonCounts[category] = (skipReasonCounts[category] ?? 0) + 1;
+      }
+    }
+    const report: WorksheetLoadReport = {
+      source: ws.data.source,
+      loaded: rows.length,
+      contentIdAssigned: rows.length,
+      reviewFlags: loadedReviewFlags,
+      imageInactive: rows.filter((r) => !r.is_active).length,
+      imagesUploaded: uploadedCount,
+      imagesDeferred: manifest.entries.length - uploadedCount,
+      skipped: skipped.length,
+      skipReasonCounts,
+    };
+    await appendAuditLine(report);
     console.log(
-      `  summary: loaded=${rows.length}  skipped=${skipped.length}  active=${rows.filter((r) => r.is_active).length}  inactive=${rows.filter((r) => !r.is_active).length}`,
+      `  summary: loaded=${rows.length}  skipped=${skipped.length}  active=${rows.filter((r) => r.is_active).length}  inactive=${report.imageInactive}  review_flags=${loadedReviewFlags}`,
     );
   }
 
