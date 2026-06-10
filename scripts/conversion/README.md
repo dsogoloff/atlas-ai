@@ -12,7 +12,7 @@ build. Run from the repo root.
 | 1 | **Extract** — PDF → per-page PNG + per-page text | done |
 | 2 | **Segment** — extraction → per-question records + answer-key pairing | done (DRAFT output) |
 | 3 | **Tag** — AI-assisted: content_key / misconceptions / norm fields | done (DRAFT output) |
-| 4 | Load — write to `questions` (and mirror to `seed.sql`) | not yet |
+| 4 | **Load** — generate the `questions` migration + `seed.sql` mirror | done |
 
 ## How to run Stage 1
 
@@ -96,6 +96,68 @@ taxonomy and the final stem. Outputs in each worksheet folder:
 **Output is DRAFT for human review.** No DB writes. Per-question failures
 log the error and continue — Stage 3 never aborts a worksheet because of a
 single bad call.
+
+## How to run Stage 4
+
+After Stage 3 has produced `output/<worksheet>/stage3-tagged.json` (and the
+founder has reviewed `stage3-review.md`):
+
+```bash
+pnpm convert:load
+```
+
+No stage3 outputs → clear message, exit 0 (same convention as Stage 1).
+
+Stage 4 validates every tagged record (content_key must exist in the
+`docs/sam-v2026-taxonomy.md` §7 taxonomy, format ↔ answer agreement, the
+four NOT-NULL norm fields, DRAG_DROP mappability) and emits:
+
+- `supabase/migrations/<timestamp>_load_sam_questions.sql` — the questions
+  INSERT in the established tenant-CTE pattern, `content_id` resolved at
+  insert time via `tax_content.code = <content_key>`. **Prod path.**
+- `supabase/seed.sql` — the identical INSERT mirrored between
+  `-- BEGIN/END stage4-generated-questions` markers (AGENTS.md §11: the
+  migration is a no-op on dev reset because migrations run before seed.sql
+  creates the tenant; the seed mirror is the dev/CI path).
+- `output/<worksheet>/stage4-skipped.json` — records that failed
+  validation, with reasons. Skips never abort the run.
+- `output/<worksheet>/stage4-upload-manifest.json` — image staging record
+  (below).
+- one `stage4` audit line per worksheet in `conversion.log`.
+
+Column mapping (decided + documented in the Stage 4 PR): old `strand` enum
+derived from the record's V2026 sub_strand (word-problem arithmetic in
+`whole_numbers`/`money` → `operations_algorithms`, per the hand-seeded
+SAM-L2-Q11/Q14/Q17 precedent); `level` (half-grade) derived from
+`difficulty_seed` via a band-cut table anchored on the hand-seeded L2
+difficulty ranges (a documented tunable in `stage4-load.ts`); DRAG_DROP
+`items`/`correct_order` synthesized from Stage 3's `correct_answer` string
+plus the stem (unmappable → skip list).
+
+**Image staging.** `image_required=true` questions load with
+`is_active=false`, carry `image_alt` in content jsonb, and get **no**
+`image_path` — Stage 1 renders whole PAGES, and a full page would leak
+neighboring questions/answers to the child, so it must never become the
+displayed question image. The question's source-page PNGs are uploaded to
+the private `question-images` bucket under
+`conversion-staging/<external_id>/page-NN.png` as curation source material
+(creds: `SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_URL` +
+`SUPABASE_SERVICE_ROLE_KEY`, from `.env.local` or the environment). When
+creds or the local stack are unavailable, uploads are skipped with a clear
+message and the manifest records every pending upload — re-run
+`pnpm convert:load` to retry. Activating an image question is a separate,
+manual curation step (curated crop → bucket → `image_path` → flip
+`is_active`).
+
+**Idempotency.** Re-running replaces the seed.sql marker block (never
+duplicates, never touches hand-written blocks), rewrites the existing
+generated migration in place (found by its `-- stage4-load:generated-migration`
+marker rather than creating a second file), and uploads with `upsert`. The
+DB layer is additionally protected by
+`on conflict (tenant_id, external_id) do nothing`.
+
+Unit tests for the pure mapping/SQL functions live at
+`src/lib/taxonomy/stage4-load.test.ts` (vitest only discovers `src/**`).
 
 ## Why `input/` and `output/` are gitignored
 
