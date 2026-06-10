@@ -6,9 +6,31 @@ the only hub; Codex is a spoke. Summary-in / summary-out.
 
 **Mode: manual.** Codex is not wired programmatically yet, so review is a copy-paste hop
 driven by `manual_codex_review.ps1`. The automated transport (an MCP server + `.mcp.json`)
-is **parked** until Codex reachability is confirmed — see `.agent/runs/NEXT_ACTIONS.md` §2.
-There is intentionally no `.mcp.json` in the repo yet; adding one before the transport is
-known would be guesswork.
+is **parked** — see the reachability check below. There is intentionally no `.mcp.json` in
+the repo yet; adding one before the transport is known would be guesswork.
+
+### Reachability check — 2026-06-05 (NOT reachable: blocked on auth)
+
+Tested whether Codex can be driven programmatically from this environment:
+
+- **CLI present:** `@openai/codex` (codex-cli `0.130.0`) is installed and on `PATH`.
+- **Network egress works:** `codex exec` reaches `api.openai.com` (Cloudflare `cf-ray`
+  returned on the response).
+- **But unauthenticated:** there is no `~/.codex/auth.json` (`codex login status` →
+  "Not logged in") and no `OPENAI_API_KEY` in the environment. A round-trip
+  (`codex exec "Reply with exactly: PONG"`) fails with
+  `401 Unauthorized: Missing bearer or basic authentication in header`.
+
+**Conclusion:** Codex is **not** programmatically reachable here. The blocker is a missing
+credential, not transport or code. **Manual mode stays the fallback.**
+
+**To unblock the automated relay** (a human/credential step — see `NEXT_ACTIONS.md` §2):
+1. Authenticate the CLI: run `codex login` (ChatGPT account) **or** export `OPENAI_API_KEY`.
+2. Re-run the round-trip above and confirm a non-401 reply.
+3. Only then finalize `.mcp.json` + the MCP transport as a normal verify-barred build lane.
+
+Credential safety still applies: the relay is local-only and must never carry secrets,
+child PII, or licensed S.A.M. question text off-box.
 
 ## The loop
 
