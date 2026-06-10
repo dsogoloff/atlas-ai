@@ -59,11 +59,17 @@
       Left untouched: code comments/logs/type docs/tests; marketing footer sentence-final
       "S.A.M." (correct); layout.tsx description metadata. Verify GREEN (550 tests, 0
       type errors, 1 known font lint warning). Codex skipped (relay not wired).
-- [x] **DONE-pending-merge (PR #16) — `(marketing)/page.tsx:74` hero pill "Diagnostic Suite" →
-  "Assessment Suite".** lane/marketing-assessment-wording. CI GREEN, Vercel preview pass.
-  Dimitri merges attended. NOTE: 5 further visible "diagnostic" occurrences remain on the
-  marketing page (lines 84, 135, 170, 298, 313) — parked pending §2.4 call with Dimitri.
-  See Parked-for-Dimitri below.
+- [x] **MERGED PR #16 — `(marketing)/page.tsx:74` hero pill "Diagnostic Suite" →
+  "Assessment Suite".** lane/marketing-assessment-wording. Merged in origin head `d4743c7`.
+  NOTE: 5 further visible "diagnostic" occurrences remain on the marketing page (lines 84,
+  135, 170, 298, 313) — parked pending §2.4 call with Dimitri. See Parked-for-Dimitri below.
+- [x] **MERGED PR #20 — remaining rendered "diagnostic" claims scrubbed to "assessment"
+  (§2.4).** lane/marketing-diagnostic-scrub (commit `e6d9515`). Merged in origin head
+  `d4743c7`.
+- [ ] **DONE-pending-merge PR #21 — lane/marketing-precision-claim** — removes the
+  unbacked "98% accuracy" precision claim (`e52258c`) and renames the "Diagnostic
+  Precision" card heading to "Misconception Mapping" (`32f35d6`). Awaiting Dimitri's
+  attended merge after Vercel preview review.
 
 ## 2. Relay / unattended run loop (not gated)
 - [x] **DONE 2026-05-31 — Manual-mode relay built & merged (PR #9, `164a1b2`).**
@@ -100,10 +106,36 @@
       it — no operator mechanism exists today to regenerate a narration without a re-take;
       see `docs/ops-runbook.md` §3 KNOWN GAP).
 
-## 4. Gated on G1 (S.A.M. license, ~2026-06-02)
-- [ ] CONVERSION Stage 4 — DB load, ~130-item L1–4 MVP cut (real question bank).
-- [ ] Comprehensive-test assembly — engine reparameterization (config); needs the bank.
+## 4. G1 LIFTED (2026-06-10) — CONVERSION Stage 4 built; founder actions needed before data loads
+
+**G1 status:** S.A.M. founder granted permission to digitize the entire test library
+(session brief 2026-06-10). Stage 4 fully unblocked.
+
+- [x] CONVERSION Stage 4 — DB load script built (PR #23, lane/conversion-stage4-load,
+  commit `40d32b3`, worktree `atlas-stage4`). `pnpm convert:load` emits timestamped
+  questions migration + byte-identical seed.sql mirror; idempotent; image_required rows
+  load `is_active=false`; staging-prefix uploads to private `question-images` bucket.
+  Verify GREEN: 604 tests / 44 files. DONE-pending-merge.
+- [x] Content-id backfill built (PR #22, lane/questions-content-id-backfill, commits
+  `5b249f5`+`c6e1485`, worktree `atlas-backfill`). Maps all 11 SAM-L2 questions to
+  `content_id`. Seed.sql mirror placed AFTER the tax_content seed block (ordering matters;
+  new test pins this). DONE-pending-merge.
+- [ ] **Dimitri: merge PR #22 + PR #23** (attended, Vercel preview).
+- [ ] **Dimitri: copy `.claude/settings.local.json`** into each active worktree root
+  (`atlas-stage4`, `atlas-backfill`) and any future worktrees. (Gitignored; not auto-present.)
+- [ ] **Dimitri: drop worksheet PDFs + answer-key PDFs** for each level into
+  `scripts/conversion/input/`, then re-run Stage 1→2→3→4 pipeline (`pnpm convert` each
+  stage). `input/` is empty — gitignored artifacts were lost when the repo moved to the
+  short path.
+- [ ] **Radar acceptance check** (after PR #22 merges + `supabase db reset`): run
+  `supabase db reset`, confirm reset output shows `sam-l2 total=11 mapped=11 unmapped=0`.
+  Demo report radar will still read "not assessed" (seed has zero responses rows by design).
+  Real acceptance: complete one fresh dev assessment, open its report, confirm radar
+  populates with strand data.
+- [ ] Comprehensive-test assembly — engine reparameterization (config); needs the full bank.
 - [ ] Curriculum-recommendation table population.
+- [ ] Full-library digitization (levels beyond L1–4 MVP cut) — separate planned follow-up;
+  no timeline set.
 
 ## 5. Deferred (do not build now)
 - [ ] 4-beat findings depth + narration voice re-tune (re-opens voice-locked Step 4
@@ -119,16 +151,22 @@
   violates BUSINESS_RULES "No consumer paywall — families never pay Atlas directly," and
   pricing models are Dimitri-owned/unconfirmed regardless. Needs Dimitri before any build;
   as written it is contrary to the locked B2B2C model.
-- **§2.4 marketing page — 5 remaining visible "diagnostic" occurrences — PARKED (new,
-  2026-06-05).** PR #16 fixed only `(marketing)/page.tsx:74` (hero pill). Five further
-  parent/educator-facing strings were left untouched by design (lane scoped to line 74):
-  line 84 "rigorous diagnostic journey", line 135 "Diagnostic Strands" heading, line 170
-  "Diagnostic Precision" card, line 298 "world-class diagnostic tools", line 313
-  "Diagnostic Suites". (Line 131 is a non-rendered code comment — not a concern.)
-  Question for Dimitri: (a) should these 5 be scrubbed to "assessment" in a follow-up
-  lane? (b) if yes, what is the preferred replacement wording for each?
-- **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability now confirmed as a
+- **§2.4 marketing page wording — RESOLVED pending PR #21 merge (updated 2026-06-10).**
+  PR #16 fixed the hero pill (line 74); merged PR #20 (lane/marketing-diagnostic-scrub)
+  scrubbed the remaining rendered "diagnostic" strings; open PR #21
+  (lane/marketing-precision-claim) removes the unbacked "98% accuracy" claim and renames
+  the "Diagnostic Precision" card (line 170) to "Misconception Mapping". Needs Dimitri
+  attended merge after Vercel preview review to close out.
+- **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability confirmed as a
   credential blocker (not transport). Automated relay + `.mcp.json` unblocked once Dimitri
   runs `codex login` or supplies `OPENAI_API_KEY` on this box (see item 2 above).
+- **Founder actions for conversion run — PARKED (new, 2026-06-10).** (1) Merge PRs #21,
+  #22, #23. (2) Copy `.claude/settings.local.json` into `atlas-stage4/` and
+  `atlas-backfill/` worktree roots. (3) Drop worksheet + answer-key PDFs into
+  `scripts/conversion/input/` for each level, then re-run pipeline. See section 4 above.
+- **Main checkout `CLAUDE.md` regression — PARKED (new, 2026-06-10).** Main checkout has
+  an uncommitted `CLAUDE.md` with older garbled content (`\\_` artifacts). Founder to run
+  `git checkout -- CLAUDE.md` to discard, or explain if intentional.
 - Franchisor pilot-approval routing — G2 (business gate).
-- G1 license scope specifics; pricing model (business gates).
+- Pricing model (business gate); G1 license scope specifics (now LIFTED for digitization
+  permission; geography/duration/derivative rights remain open).
