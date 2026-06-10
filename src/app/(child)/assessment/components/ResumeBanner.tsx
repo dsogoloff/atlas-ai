@@ -1,8 +1,8 @@
 "use client";
 
 // Brief banner shown on top of the running view when the session was
-// resumed (HTTP 409 from /start). Auto-dismisses after ~4s; accessible
-// via aria-live="polite" so a screen reader announces it once.
+// resumed (body.resumed from /start). Auto-dismisses after ~4s;
+// accessible via aria-live="polite" so a screen reader announces it once.
 
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";

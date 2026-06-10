@@ -99,28 +99,59 @@ afterEach(() => {
 });
 
 describe("startSession", () => {
-  it("200 → ok with status 200 and body", async () => {
+  it("200 fresh → ok with resumed:false and body", async () => {
     mockFetchOnce(200, startBody);
     const r = await startSession("child-id");
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.status).toBe(200);
+      expect(r.resumed).toBe(false);
       expect(r.body.session_id).toBe(startBody.session_id);
     }
   });
 
-  it("409 (resume) → ok with status 409 and body (NOT an error)", async () => {
+  it("200 with body.resumed → ok with resumed:true (resume flows into the session)", async () => {
     const resumeBody: StartResponseBody = {
       ...startBody,
-      error: { code: "session_in_progress", message: "resumed" },
+      response_count: 3,
+      resumed: true,
     };
-    mockFetchOnce(409, resumeBody);
+    mockFetchOnce(200, resumeBody);
     const r = await startSession("child-id");
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.status).toBe(409);
-      expect(r.body.error?.code).toBe("session_in_progress");
+      expect(r.resumed).toBe(true);
+      expect(r.body.response_count).toBe(3);
     }
+  });
+
+  // P3 regression: the legacy resume shape was HTTP 409 + body.error
+  // "session_in_progress" wrapped around a complete session payload.
+  // Treating it as an error trapped returning children in a sterile
+  // "Something went wrong" → Try again loop. Any complete session
+  // payload must route into the in-progress flow.
+  it("legacy 409 (resume payload) → ok with resumed:true (NOT an error)", async () => {
+    const legacyResumeBody = {
+      ...startBody,
+      response_count: 3,
+      error: { code: "session_in_progress", message: "resumed" },
+    };
+    mockFetchOnce(409, legacyResumeBody);
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.resumed).toBe(true);
+      expect(r.body.session_id).toBe(startBody.session_id);
+    }
+  });
+
+  // P3 hardening: even an error status carrying a complete session
+  // payload resolves to the session — "Try again" must never loop while
+  // a live session is being handed to us.
+  it("error status with a complete session payload → ok (routes into the session)", async () => {
+    mockFetchOnce(500, { ...startBody, resumed: true });
+    const r = await startSession("child-id");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.resumed).toBe(true);
   });
 
   it.each<[number, ApiErrorKind]>([
