@@ -858,6 +858,75 @@ end
 $$;
 
 -- =============================================================================
+-- Per-question content_id backfill for the v1 SAM-L2 bank
+-- =============================================================================
+-- MIRRORED FROM: supabase/migrations/20260610000000_backfill_question_content_ids.sql
+--
+-- AGENTS.md §11: the migration's UPDATE matches ZERO rows during
+-- `supabase db reset` (the tenant and the SAM-L2 questions only exist
+-- after seed.sql runs), so the same UPDATE is re-run here — after the
+-- questions INSERT and after the tax_content seed it looks up — so the
+-- dev DB matches what prod looks like post-migration. The migration is
+-- the production path.
+--
+-- Per-question mapping rationale + skip list live in the migration
+-- header. Skipped on purpose: PLACEHOLDER-Q-IMG-GRID-001 (dev-only
+-- visual-gate fixture, is_active=false — not real content). The
+-- `content_id is null` guard keeps re-runs and later manual corrections
+-- safe. The sentinel comments mark the shared block;
+-- src/lib/taxonomy/content-id-backfill.test.ts asserts it stays
+-- byte-identical between this file and the migration.
+
+-- BEGIN sam-l2-content-id-backfill
+update questions q
+set content_id = tc.id
+from tenants t,
+     tax_content tc,
+     (values
+       ('SAM-L2-Q01', 'l1-whole_numbers-2'),
+       ('SAM-L2-Q07', 'l1-whole_numbers-8'),
+       ('SAM-L2-Q09', 'l1-whole_numbers-9'),
+       ('SAM-L2-Q10', 'l1-whole_numbers-8'),
+       ('SAM-L2-Q11', 'l2-whole_numbers-4'),
+       ('SAM-L2-Q14', 'l2-whole_numbers-3'),
+       ('SAM-L2-Q17', 'l1-whole_numbers-9'),
+       ('SAM-L2-Q19', 'l2-whole_numbers-1'),
+       ('SAM-L2-Q20', 'l2-whole_numbers-1'),
+       ('SAM-L2-Q21', 'l2-whole_numbers-1'),
+       ('SAM-L2-Q22', 'l2-whole_numbers-1')
+     ) as m(external_id, content_code)
+where t.slug = 'inspirea_singapore_math'
+  and q.tenant_id = t.id
+  and q.external_id = m.external_id
+  and q.content_id is null
+  and tc.tenant_id = t.id
+  and tc.code = m.content_code;
+
+-- Summary notice — visible at production apply time and during
+-- `supabase db reset` (where the migration pass reports 0/0/0; the
+-- seed.sql mirror pass reports the real counts).
+do $$
+declare
+  sam_total     int;
+  sam_mapped    int;
+  sam_unmapped  int;
+begin
+  select count(*),
+         count(*) filter (where q.content_id is not null),
+         count(*) filter (where q.content_id is null)
+    into sam_total, sam_mapped, sam_unmapped
+    from questions q
+    join tenants t on t.id = q.tenant_id
+   where t.slug = 'inspirea_singapore_math'
+     and q.external_id like 'SAM-L2-%';
+
+  raise notice '[per-question content_id backfill] sam-l2 total=% mapped=% unmapped=%',
+    sam_total, sam_mapped, sam_unmapped;
+end
+$$;
+-- END sam-l2-content-id-backfill
+
+-- =============================================================================
 -- Dev demo report — a viewable COMPLETED assessment so the parent report and
 -- the instructor view render immediately after `supabase db reset`, with no
 -- test-taking and no live narration API key.
