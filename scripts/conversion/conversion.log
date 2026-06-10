@@ -16,3 +16,9 @@
 2026-06-10T13:59:34.531Z | stage2-warn | answer key missing entry for task 16
 2026-06-10T15:10:08.375Z | stage3 | Level 1 Placement Worksheet.pdf | 28 tagged | 0 failed
 2026-06-10T15:13:06.097Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T15:17:47.383Z | stage1 | Level 2 Placement Worksheet Answer Key.pdf | 1 pages | output/Level 2 Placement Worksheet Answer Key/
+2026-06-10T15:17:51.583Z | stage1 | Level 2 Placement Worksheet.pdf | 15 pages | output/Level 2 Placement Worksheet/
+2026-06-10T15:17:57.735Z | stage2 | Level 2 Placement Worksheet.pdf | 22 questions | key: Level 2 Placement Worksheet Answer Key.pdf
+2026-06-10T15:25:32.367Z | stage3 | Level 2 Placement Worksheet.pdf | 22 tagged | 0 failed
+2026-06-10T15:26:39.438Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T15:26:39.458Z | stage4 | Level 2 Placement Worksheet.pdf | loaded=22 content_id=22 review_flags=38 inactive_image=8 images_uploaded=0 images_deferred=8 skipped=0
