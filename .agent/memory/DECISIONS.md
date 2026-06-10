@@ -3,6 +3,33 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-10
+
+* ⚑ **G1 LIFTED — S.A.M. founder granted permission to digitize the entire test library
+  (2026-06-10).** Stage 4 (DB load script) fully unblocked. Geography, duration, and
+  derivative/brand rights of the license remain open (see Open / unconfirmed below).
+
+* **Marketing §2.4 — remaining "diagnostic" scrub merged (PR #20); precision-claim fix
+  open (PR #21).** PR #20 (`lane/marketing-diagnostic-scrub`, commit `e6d9515`, merged in
+  `d4743c7`) scrubbed the remaining rendered "diagnostic" claims to "assessment". PR #21
+  (`lane/marketing-precision-claim`, commits `e52258c`+`32f35d6`, DONE-pending-merge)
+  removes the unbacked "98% accuracy" precision claim and renames the "Diagnostic
+  Precision" card heading to "Misconception Mapping". PR #21 awaits Dimitri's attended
+  merge after Vercel preview review.
+
+* **CONVERSION Stage 4 DB load script built (PR #23, lane/conversion-stage4-load,
+  commit `40d32b3`, worktree `atlas-stage4`).** `pnpm convert:load` emits a timestamped
+  questions migration + byte-identical `seed.sql` mirror; idempotent; `image_required`
+  rows load `is_active=false`; source pages upload to private `question-images` bucket
+  under `conversion-staging/<external_id>/`; missing creds → graceful skip + manifest.
+  Verify GREEN: 604 tests / 44 files. DONE-pending-merge.
+
+* **Content-id backfill built (PR #22, lane/questions-content-id-backfill, commits
+  `5b249f5`+`c6e1485`, worktree `atlas-backfill`).** Maps all 11 SAM-L2 questions to
+  `content_id`. Seed.sql mirror placed AFTER the `tax_content` seed block (ordering
+  matters; new drift test pins this). Verify GREEN: 569 tests / 44 files.
+  DONE-pending-merge.
+
 ## 2026-06-05
 
 * **§2.4 marketing hero pill line-74 fix shipped as PR #16 (lane/marketing-assessment-wording,
