@@ -12,9 +12,11 @@
 //     options without a parallel migration to text-keyed maps.
 //   * NUMERIC_ENTRY   — content.correct_answer (string). Both sides pass
 //     through normalizeAnswer() first (case/whitespace/separator/unit-spacing
-//     tolerance — see its comment), then numeric coercion when both sides
-//     parse as numbers (handles "007" === "7", "7.0" === "7"); otherwise
-//     normalized exact string match.
+//     tolerance — see its comment). A key shaped like ONE number (incl.
+//     S.A.M. thousands grouping, "42 800") compares with all grouping
+//     stripped from both sides; list-shaped keys keep separator semantics.
+//     Then numeric coercion when both sides parse as numbers (handles
+//     "007" === "7", "7.0" === "7"); otherwise normalized exact match.
 //   * DRAG_DROP       — content.correct_order (array). JSON.stringify
 //     equality after normalizeAnswer() on each string token of both sides.
 //     Works for arrays of primitives because JSON.stringify is order-stable
@@ -33,6 +35,16 @@ import type { Enums, Json } from "@/lib/supabase/database.types";
 export type QuestionFormat = Enums<"question_format">;
 
 const NUMERIC_RE = /^-?\d+(?:\.\d+)?$/;
+
+// A stored key shaped like ONE number: plain digits ("1000") or S.A.M.
+// thousands grouping — groups of exactly 3 after the first ("42 800",
+// "1 234 567"). Applied to the normalized key, where commas have already
+// become spaces. The KEY's shape selects the comparison mode, never the
+// child's input: list keys like "10 17 20" (groups that are not exactly
+// 3 digits) keep list semantics. Inherently ambiguous keys such as
+// "10 170 200" read as one grouped number — S.A.M. notation makes that
+// the right default.
+const SINGLE_NUMBER_KEY_RE = /^-?(?:\d+|\d{1,3}(?: \d{3})+)(?:\.\d+)?$/;
 
 // Unit tokens that appear (or plausibly appear) after a number in bank
 // answers — seed.sql today uses km / m / am ("1 km 750 m", "9:25 am");
@@ -83,6 +95,15 @@ export function judgeAnswer(
       const correct = readString(obj, "correct_answer", format);
       const a = normalizeAnswer(answerGiven);
       const c = normalizeAnswer(correct);
+      // Single-number keys: strip all grouping from both sides so
+      // "42 800", "42,800" and "42800" all match a key of "42 800".
+      if (SINGLE_NUMBER_KEY_RE.test(c)) {
+        const aStripped = a.replace(/ /g, "");
+        if (NUMERIC_RE.test(aStripped)) {
+          return Number(aStripped) === Number(c.replace(/ /g, ""));
+        }
+        return a === c;
+      }
       if (NUMERIC_RE.test(a) && NUMERIC_RE.test(c)) {
         return Number(a) === Number(c);
       }

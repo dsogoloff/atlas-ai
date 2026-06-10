@@ -138,6 +138,24 @@ describe("judgeAnswer / NUMERIC_ENTRY normalization (P1 live cases)", () => {
       true,
     );
   });
+  it("single-number key '42 800' matches all grouping forms", () => {
+    // The STORED key's shape selects the mode: one grouped number, so all
+    // grouping (spaces/commas) is stripped from both sides before compare.
+    // S.A.M. uses space-grouped thousands as standard notation.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42 800")).toBe(
+      true,
+    );
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42,800")).toBe(
+      true,
+    );
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42800")).toBe(
+      true,
+    );
+  });
+  it("single-number key '1000' (ungrouped) accepts grouped child input", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("1000"), "1 000")).toBe(true);
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("1000"), "1,000")).toBe(true);
+  });
 });
 
 describe("judgeAnswer / NUMERIC_ENTRY normalization — wrong answers stay wrong", () => {
@@ -169,11 +187,16 @@ describe("judgeAnswer / NUMERIC_ENTRY normalization — wrong answers stay wrong
       judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "1017 20"),
     ).toBe(false);
   });
-  it("rejects '42800' vs '42 800' (digits never join across a separator)", () => {
-    // Pinned WRONG: "42 800" is two separated digit groups after
-    // normalization; collapsing the space entirely would make "1017 20"
-    // ambiguous, so unspaced "42800" does not match.
-    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42800")).toBe(
+  it("rejects '101720' vs list key '10, 17, 20' (list keys never collapse)", () => {
+    // The two modes must not cross: "10 17 20" has groups that are not
+    // exactly 3 digits, so it is a LIST key — digits never join, and a
+    // single-number submission cannot match it.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "101720")).toBe(
+      false,
+    );
+  });
+  it("rejects '42 8000' vs single-number key '42 800'", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42 8000")).toBe(
       false,
     );
   });
