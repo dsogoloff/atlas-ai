@@ -1014,13 +1014,15 @@ interface Stage2KeyOutput {
   }>;
 }
 
-interface WorksheetArtifacts {
+export interface WorksheetArtifacts {
   source: string;
+  answerKeySource: string | null;
+  testLevelLabel: string | null;
   byExternalId: Map<string, Stage3Question>;
   keyByTask: Map<number, KeyInfo>;
 }
 
-async function loadArtifacts(artifactsDir: string): Promise<Map<string, WorksheetArtifacts>> {
+export async function loadArtifacts(artifactsDir: string): Promise<Map<string, WorksheetArtifacts>> {
   const bySource = new Map<string, WorksheetArtifacts>();
   let entries;
   try {
@@ -1040,6 +1042,8 @@ async function loadArtifacts(artifactsDir: string): Promise<Map<string, Workshee
     }
     const ws: WorksheetArtifacts = {
       source: s3.source,
+      answerKeySource: s3.answer_key_source ?? null,
+      testLevelLabel: s3.test_level_label ?? null,
       byExternalId: new Map(s3.questions.map((q) => [q.external_id, q])),
       keyByTask: new Map(),
     };
@@ -1070,7 +1074,7 @@ export function parseExternalId(externalId: string): { level: number; task: numb
   return { level: Number(m[1]), task: Number(m[2]) };
 }
 
-function findWorksheet(
+export function findWorksheet(
   artifacts: Map<string, WorksheetArtifacts>,
   externalId: string,
 ): WorksheetArtifacts | null {
@@ -1086,7 +1090,7 @@ function stemExcerpt(row: BankRow, max = 70): string {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
-function storedAnswerOf(row: BankRow): string {
+export function storedAnswerOf(row: BankRow): string {
   if (row.format === "MULTIPLE_CHOICE") {
     const options = Array.isArray(row.content.options) ? (row.content.options as string[]) : [];
     const ci = row.content.correct_index;
@@ -1101,7 +1105,7 @@ function storedAnswerOf(row: BankRow): string {
   return `correct_order=${JSON.stringify(row.content.correct_order)}`;
 }
 
-async function findGeneratedMigration(): Promise<{ name: string; sql: string } | null> {
+export async function findGeneratedMigration(): Promise<{ name: string; sql: string } | null> {
   let entries: string[] = [];
   try {
     entries = await readdir(MIGRATIONS_DIR);
@@ -1124,17 +1128,23 @@ function extractInsertStatement(sql: string): string | null {
   return sql.slice(start, end + "do nothing;".length).replace(/\r\n/g, "\n");
 }
 
-async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const artIdx = args.indexOf("--artifacts");
-  const artifactsDir =
-    artIdx !== -1 && args[artIdx + 1] ? path.resolve(args[artIdx + 1]) : DEFAULT_ARTIFACTS;
+export interface BankAssembly {
+  handRows: BankRow[];
+  generatedRows: BankRow[];
+  /** Generated rows that actually land (external_id not shadowed by a hand row). */
+  effectiveGenerated: BankRow[];
+  /** Generated rows shadowed by hand-seeded rows (on conflict do nothing). */
+  shadowedDuplicates: BankRow[];
+  placeholderRow: BankRow | null;
+  /** Exactly what the SQL inserts: hand rows + effective generated + placeholder. */
+  bank: BankRow[];
+  /** §11 parity: generated INSERT byte-identical in migration and seed mirror. */
+  parityOk: boolean;
+}
 
-  const seedSql = await readFile(SEED_FILE, "utf8");
-  const migration = await findGeneratedMigration();
-  if (!migration) throw new Error("no *_load_sam_questions.sql migration with the stage4 marker found");
-
-  // --- Bank assembly (exactly what the SQL inserts) -----------------------
+/** Assemble the effective question bank from the committed SQL — shared by
+ *  the Stage 5 audit and the QA-table generator (qa-table.ts). */
+export function assembleBank(seedSql: string, migrationSql: string): BankAssembly {
   const seedBegin = seedSql.indexOf(SEED_BEGIN_MARKER);
   const seedEnd = seedSql.indexOf(SEED_END_MARKER);
   if (seedBegin === -1 || seedEnd === -1) {
@@ -1146,12 +1156,12 @@ async function main(): Promise<void> {
   const handRows = parseQuestionInserts(seedWithoutGenerated, "hand-seeded").filter((r) =>
     r.external_id.startsWith("SAM-"),
   );
-  const generatedRows = parseQuestionInserts(migration.sql, "generated");
+  const generatedRows = parseQuestionInserts(migrationSql, "generated");
   const placeholderRow = parsePlaceholderRow(seedSql);
 
   // §11 parity: the generated INSERT must be byte-identical (modulo EOL)
   // in the migration and the seed.sql mirror.
-  const migInsert = extractInsertStatement(migration.sql);
+  const migInsert = extractInsertStatement(migrationSql);
   const seedInsert = extractInsertStatement(seedGeneratedBlock);
   const parityOk = migInsert !== null && migInsert === seedInsert;
 
@@ -1166,6 +1176,31 @@ async function main(): Promise<void> {
 
   const bank: BankRow[] = [...handRows, ...effectiveGenerated];
   if (placeholderRow) bank.push(placeholderRow);
+
+  return {
+    handRows,
+    generatedRows,
+    effectiveGenerated,
+    shadowedDuplicates,
+    placeholderRow,
+    bank,
+    parityOk,
+  };
+}
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const artIdx = args.indexOf("--artifacts");
+  const artifactsDir =
+    artIdx !== -1 && args[artIdx + 1] ? path.resolve(args[artIdx + 1]) : DEFAULT_ARTIFACTS;
+
+  const seedSql = await readFile(SEED_FILE, "utf8");
+  const migration = await findGeneratedMigration();
+  if (!migration) throw new Error("no *_load_sam_questions.sql migration with the stage4 marker found");
+
+  // --- Bank assembly (exactly what the SQL inserts) -----------------------
+  const { handRows, generatedRows, shadowedDuplicates, placeholderRow, bank, parityOk } =
+    assembleBank(seedSql, migration.sql);
 
   const artifacts = await loadArtifacts(artifactsDir);
   if (artifacts.size === 0) {

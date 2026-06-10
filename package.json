@@ -15,7 +15,8 @@
     "convert:segment": "tsx scripts/conversion/stage2-segment.ts",
     "convert:tag": "tsx scripts/conversion/stage3-tag.ts",
     "convert:load": "tsx scripts/conversion/stage4-load.ts",
-    "convert:audit": "tsx scripts/conversion/stage5-audit.ts"
+    "convert:audit": "tsx scripts/conversion/stage5-audit.ts",
+    "convert:qa": "tsx scripts/conversion/qa-table.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.80",
