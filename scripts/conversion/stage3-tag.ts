@@ -644,12 +644,66 @@ function buildTaggingToolSchema(misconceptionCodes: string[]): Record<string, un
 
 const TOOL_NAME = "submit_tagging";
 
+// Rate-limit resilience: the org-level input-tokens-per-minute cap trips on
+// long serial runs (every call carries the taxonomy), and the SDK's default
+// 2 retries can exhaust before the token bucket refills. Retry 429/529/5xx
+// here with retry-after-aware backoff; anything else still fails the question.
+const MAX_RATE_LIMIT_RETRIES = 5;
+
+function errorStatus(err: unknown): number | null {
+  if (typeof err === "object" && err !== null && "status" in err) {
+    const status = (err as { status?: unknown }).status;
+    if (typeof status === "number") return status;
+  }
+  return null;
+}
+
+function retryAfterSeconds(err: unknown): number | null {
+  if (typeof err !== "object" || err === null || !("headers" in err)) return null;
+  const headers = (err as { headers?: unknown }).headers;
+  let raw: string | null = null;
+  if (headers instanceof Headers) {
+    raw = headers.get("retry-after");
+  } else if (typeof headers === "object" && headers !== null) {
+    const value = (headers as Record<string, unknown>)["retry-after"];
+    if (typeof value === "string") raw = value;
+  }
+  if (raw === null) return null;
+  const seconds = Number(raw);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+}
+
+async function createWithRetry(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+): Promise<Anthropic.Message> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await client.messages.create(params);
+    } catch (err) {
+      const status = errorStatus(err);
+      const retryable =
+        status === 429 || status === 529 || (status !== null && status >= 500);
+      if (!retryable || attempt >= MAX_RATE_LIMIT_RETRIES) throw err;
+      const retryAfter = retryAfterSeconds(err);
+      const waitMs =
+        retryAfter !== null
+          ? retryAfter * 1000
+          : Math.min(60_000, 15_000 * 2 ** attempt);
+      console.log(
+        `    HTTP ${status}; retry ${attempt + 1}/${MAX_RATE_LIMIT_RETRIES} in ${Math.round(waitMs / 1000)}s`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
 async function tagQuestion(
   client: Anthropic,
   input: PromptInput,
 ): Promise<{ ok: true; data: LlmTagged } | { ok: false; error: string }> {
   try {
-    const response = await client.messages.create({
+    const response = await createWithRetry(client, {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: SYSTEM_PROMPT,
