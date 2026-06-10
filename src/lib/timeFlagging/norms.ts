@@ -72,7 +72,9 @@ import type {
  * `time_flag_config_version`. Do not derive it from build hashes or git
  * SHAs — those obscure real config changes.
  */
-export const TIME_FLAG_CONFIG_VERSION = "synthetic-v1.2026-05" as const;
+// 2026-06 bump: TEXT_ENTRY added to inputSecondsByFormat (QA Bucket 2
+// format reclassification). No existing-format values changed.
+export const TIME_FLAG_CONFIG_VERSION = "synthetic-v1.2026-06" as const;
 
 /**
  * `null` in `secondsPerOperation` cells signals "this op is off-curriculum
@@ -295,6 +297,10 @@ const REPRESENTATION_MULTIPLIER: Record<RepresentationKind, number> = {
 const INPUT_SECONDS_BY_FORMAT: Record<QuestionFormat, number> = {
   MULTIPLE_CHOICE: 2,
   NUMERIC_ENTRY: 5,
+  // Typing a word/phrase ("smaller than", "Five hundred and eight") on a
+  // full keyboard — slower than the numeric keypad, comparable to a
+  // short drag-and-drop rearrangement.
+  TEXT_ENTRY: 6,
   DRAG_DROP: 6,
 };
 

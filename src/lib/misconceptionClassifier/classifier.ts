@@ -5,7 +5,8 @@
 //   * is_correct  → method='none' (R2 lock — only run on incorrect)
 //   * DRAG_DROP   → method='none' (R1 lock — DD detection deferred to v1.x)
 //   * MULTIPLE_CHOICE with distractor map hit → method='distractor-map'
-//   * MULTIPLE_CHOICE without map / NUMERIC_ENTRY → Haiku (live or stub)
+//   * MULTIPLE_CHOICE without map / NUMERIC_ENTRY / TEXT_ENTRY → Haiku
+//     (live or stub)
 //
 // Failure-soft mode (S2 lock): the router NEVER throws to the caller.
 // If the Haiku branch fails (taxonomy load error, prompt build error,
@@ -58,7 +59,7 @@ export async function classify(
     // a tagged distractor. Haiku is the catch-all.
   }
 
-  // Haiku branch (NE, or MC fallback). Wrap in try/catch so any failure
+  // Haiku branch (NE / TE, or MC fallback). Wrap in try/catch so any failure
   // (taxonomy load, prompt build, LLM call) resolves to method='failed'.
   try {
     const taxonomy = await loadTaxonomy(serviceClient, tenantId);
