@@ -97,6 +97,17 @@ taxonomy and the final stem. Outputs in each worksheet folder:
 log the error and continue — Stage 3 never aborts a worksheet because of a
 single bad call.
 
+**Per-level sequential runs (skip-existing).** The pipeline is run
+level-by-level (L1 → L4) with all earlier levels still present in
+`output/`. Stage 3 therefore SKIPS any worksheet folder that already has a
+`stage3-tagged.json` (`[skip] <folder> — stage3-tagged.json exists`), so
+re-running never re-spends API calls on — or silently re-tags — worksheets
+that were already tagged and loaded. Pass `--force` to re-tag everything,
+or `--only "<folder-name>"` to restrict the run to a single output folder
+(both pass straight through: `pnpm convert:tag --force`). Stage 2 applies
+the same guard on `stage2-questions.json` (`pnpm convert:segment --force`
+re-segments).
+
 ## How to run Stage 4
 
 After Stage 3 has produced `output/<worksheet>/stage3-tagged.json` (and the

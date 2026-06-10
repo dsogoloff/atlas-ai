@@ -12,7 +12,7 @@
 //
 // Run via: pnpm convert:segment
 
-import { appendFile, readdir, readFile, writeFile } from "node:fs/promises";
+import { access, appendFile, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -736,13 +736,27 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Skip-existing guard for per-level sequential runs: Stage 2 is
+  // deterministic/free, but re-segmenting rewrites stage2-questions.json and
+  // appends duplicate audit lines. `--force` re-segments everything.
+  const force = process.argv.includes("--force");
   const pairing = pairDocs(docs);
+  let segmented = 0;
   for (const ws of worksheets) {
+    const outPath = path.join(OUTPUT_DIR, ws.folder, "stage2-questions.json");
+    const exists = await access(outPath).then(() => true, () => false);
+    if (!force && exists) {
+      console.log(`[skip] ${ws.folder} — stage2-questions.json exists (use --force to re-segment)`);
+      continue;
+    }
     const key = pairing.get(ws.folder) ?? null;
     await processWorksheet(ws, key);
+    segmented += 1;
   }
 
-  console.log(`\nStage 2 done: ${worksheets.length} worksheet(s) segmented.`);
+  console.log(
+    `\nStage 2 done: ${segmented} worksheet(s) segmented, ${worksheets.length - segmented} skipped.`,
+  );
   if (warnings.length > 0) {
     console.log(`(${warnings.length} warning(s) — see above and conversion.log)`);
     const lines = warnings
