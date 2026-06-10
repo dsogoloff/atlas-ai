@@ -167,12 +167,16 @@ export default function LandingPage() {
                   query_stats
                 </span>
                 <h3 className="font-headline-adult mb-2">
-                  Assessment Precision
+                  Misconception Mapping
                 </h3>
               </div>
-              <div className="text-[48px] font-black text-sam-yellow">98%</div>
+              <div className="text-[28px] font-black text-sam-yellow leading-tight">
+                Misconception-tagged
+              </div>
               <p className="text-white/70 text-xs">
-                Accuracy in identifying core mathematical misconceptions.
+                Every response is tagged to the specific mathematical
+                misconception it reveals, so reports show exactly where to focus
+                next.
               </p>
             </div>
             {/* Card 3 */}
