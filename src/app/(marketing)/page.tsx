@@ -71,7 +71,7 @@ export default function LandingPage() {
               >
                 stars
               </span>
-              S.A.M Mathematical Diagnostic Suite
+              S.A.M Mathematical Assessment Suite
             </div>
             <h1 className="font-display-child text-[64px] leading-tight text-sam-navy">
               Unlocking Math Potential,{" "}
@@ -81,7 +81,7 @@ export default function LandingPage() {
               at a Time.
             </h1>
             <p className="text-body-regular text-sam-gray-dark max-w-lg text-lg">
-              A rigorous diagnostic journey designed for young learners. We turn
+              A rigorous assessment journey designed for young learners. We turn
               complex data into actionable progress reports for parents and
               instructors.
             </p>
@@ -132,7 +132,7 @@ export default function LandingPage() {
         <section className="mb-stack-lg">
           <div className="text-center mb-stack-lg">
             <h2 className="font-display-child text-sam-navy mb-2">
-              Diagnostic Strands
+              Assessment Strands
             </h2>
             <p className="text-sam-gray-mid font-body-regular">
               Comprehensive coverage of mathematical foundations.
@@ -299,7 +299,7 @@ export default function LandingPage() {
               Atlas Assessment
             </span>
             <p className="text-sam-gray-mid text-sm mt-4">
-              Empowering educators with world-class diagnostic tools.
+              Empowering educators with world-class assessment tools.
             </p>
           </div>
           <div className="col-span-2 md:col-span-1">
@@ -314,7 +314,7 @@ export default function LandingPage() {
               </li>
               <li>
                 <a className="hover:text-sam-red" href="#">
-                  Diagnostic Suites
+                  Assessment Suites
                 </a>
               </li>
               <li>

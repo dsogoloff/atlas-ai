@@ -6,3 +6,77 @@
 2026-05-25T19:06:26.006Z | stage2 | Level 2 Placement Worksheet.pdf | 22 questions | key: Level 2 Placement Worksheet Answer Key.pdf
 2026-05-25T21:56:38.216Z | stage2 | Level 2 Placement Worksheet.pdf | 22 questions | key: Level 2 Placement Worksheet Answer Key.pdf
 2026-05-26T00:02:12.907Z | stage3 | Level 2 Placement Worksheet.pdf | 22 tagged | 0 failed
+2026-06-10T13:05:07.936Z | stage4 | synthetic-smoke.pdf | 4 loaded | 2 skipped
+2026-06-10T13:05:27.162Z | stage4 | synthetic-smoke.pdf | 4 loaded | 2 skipped
+2026-06-10T13:59:21.380Z | stage1 | Level 1 Placement Worksheet Answer Key.pdf | 2 pages | output/Level 1 Placement Worksheet Answer Key/
+2026-06-10T13:59:24.441Z | stage1 | Level 1 Placement Worksheet.pdf | 16 pages | output/Level 1 Placement Worksheet/
+2026-06-10T13:59:34.530Z | stage2 | Level 1 Placement Worksheet.pdf | 28 questions | key: Level 1 Placement Worksheet Answer Key.pdf
+2026-06-10T13:59:34.531Z | stage2-warn | answer key missing entry for task 8
+2026-06-10T13:59:34.531Z | stage2-warn | answer key missing entry for task 14
+2026-06-10T13:59:34.531Z | stage2-warn | answer key missing entry for task 16
+2026-06-10T15:10:08.375Z | stage3 | Level 1 Placement Worksheet.pdf | 28 tagged | 0 failed
+2026-06-10T15:13:06.097Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T15:17:47.383Z | stage1 | Level 2 Placement Worksheet Answer Key.pdf | 1 pages | output/Level 2 Placement Worksheet Answer Key/
+2026-06-10T15:17:51.583Z | stage1 | Level 2 Placement Worksheet.pdf | 15 pages | output/Level 2 Placement Worksheet/
+2026-06-10T15:17:57.735Z | stage2 | Level 2 Placement Worksheet.pdf | 22 questions | key: Level 2 Placement Worksheet Answer Key.pdf
+2026-06-10T15:25:32.367Z | stage3 | Level 2 Placement Worksheet.pdf | 22 tagged | 0 failed
+2026-06-10T15:26:39.438Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T15:26:39.458Z | stage4 | Level 2 Placement Worksheet.pdf | loaded=22 content_id=22 review_flags=38 inactive_image=8 images_uploaded=0 images_deferred=8 skipped=0
+2026-06-10T15:48:26.126Z | stage1 | Level 3 Placement Worksheet Answer Key.pdf | 1 pages | output/Level 3 Placement Worksheet Answer Key/
+2026-06-10T15:48:30.891Z | stage1 | Level 3 Placement Worksheet.pdf | 15 pages | output/Level 3 Placement Worksheet/
+2026-06-10T15:48:36.228Z | stage2 | Level 3 Placement Worksheet.pdf | 23 questions | key: Level 3 Placement Worksheet Answer Key.pdf
+2026-06-10T15:48:36.229Z | stage2-warn | task 1: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 2
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 3
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 4
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 5
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 6
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 7
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 8
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 9
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 10
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 11
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 12
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 13
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 14
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 15
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 16
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 17
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 18
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 19
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 20
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 21
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 22
+2026-06-10T15:48:36.229Z | stage2-warn | answer key missing entry for task 23
+2026-06-10T15:57:01.979Z | stage2 | Level 3 Placement Worksheet.pdf | 23 questions | key: Level 3 Placement Worksheet Answer Key.pdf
+2026-06-10T15:57:01.980Z | stage2-warn | task 1: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 4: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 6: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 7: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 9: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 11: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 12: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 15: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 19: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 20: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | task 23: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T15:57:01.980Z | stage2-warn | answer key missing entry for task 16
+2026-06-10T16:05:28.227Z | stage3 | Level 3 Placement Worksheet.pdf | 23 tagged | 0 failed
+2026-06-10T16:08:20.072Z | stage3 | Level 3 Placement Worksheet.pdf | 23 tagged | 3 failed
+2026-06-10T16:13:10.434Z | stage3 | Level 3 Placement Worksheet.pdf | 23 tagged | 13 failed
+2026-06-10T16:25:48.454Z | stage3 | Level 3 Placement Worksheet.pdf | 23 tagged | 0 failed
+2026-06-10T16:26:03.424Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T16:26:03.444Z | stage4 | Level 2 Placement Worksheet.pdf | loaded=22 content_id=22 review_flags=38 inactive_image=8 images_uploaded=0 images_deferred=8 skipped=0
+2026-06-10T16:26:03.488Z | stage4 | Level 3 Placement Worksheet.pdf | loaded=20 content_id=20 review_flags=52 inactive_image=10 images_uploaded=0 images_deferred=10 skipped=3 (invalid-fields=3)
+2026-06-10T16:27:23.362Z | stage1 | Level 4 Placement Worksheet Answer Key.pdf | 1 pages | output/Level 4 Placement Worksheet Answer Key/
+2026-06-10T16:27:29.212Z | stage1 | Level 4 Placement Worksheet.pdf | 15 pages | output/Level 4 Placement Worksheet/
+2026-06-10T16:27:35.120Z | stage2 | Level 4 Placement Worksheet.pdf | 27 questions | key: Level 4 Placement Worksheet Answer Key.pdf
+2026-06-10T16:27:35.121Z | stage2-warn | task 5: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T16:27:35.121Z | stage2-warn | task 9: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T16:27:35.121Z | stage2-warn | answer key missing entry for task 19
+2026-06-10T16:27:35.121Z | stage2-warn | answer key missing entry for task 22
+2026-06-10T16:34:36.159Z | stage3 | Level 4 Placement Worksheet.pdf | 27 tagged | 0 failed
+2026-06-10T16:34:53.388Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T16:34:53.404Z | stage4 | Level 2 Placement Worksheet.pdf | loaded=22 content_id=22 review_flags=38 inactive_image=8 images_uploaded=0 images_deferred=8 skipped=0
+2026-06-10T16:34:53.425Z | stage4 | Level 3 Placement Worksheet.pdf | loaded=20 content_id=20 review_flags=52 inactive_image=10 images_uploaded=0 images_deferred=10 skipped=3 (invalid-fields=3)
+2026-06-10T16:34:53.437Z | stage4 | Level 4 Placement Worksheet.pdf | loaded=25 content_id=25 review_flags=51 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=2 (invalid-fields=2)

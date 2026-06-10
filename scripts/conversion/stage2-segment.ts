@@ -12,7 +12,7 @@
 //
 // Run via: pnpm convert:segment
 
-import { appendFile, readdir, readFile, writeFile } from "node:fs/promises";
+import { access, appendFile, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -26,7 +26,7 @@ interface Stage1Page {
   text: string;
 }
 
-interface Stage1Extraction {
+export interface Stage1Extraction {
   source: string;
   extractedAt: string;
   pageCount: number;
@@ -45,7 +45,7 @@ interface ClassifiedDoc {
 type FormatGuess = "MULTIPLE_CHOICE" | "NUMERIC_ENTRY" | "DRAG_DROP" | "UNKNOWN";
 type AnswerKind = "OPTION" | "VALUE";
 
-interface AnswerEntry {
+export interface AnswerEntry {
   raw_answer: string;
   answer_kind: AnswerKind;
   answer_value: string | number | null;
@@ -182,16 +182,122 @@ function pairDocs(docs: ClassifiedDoc[]): Map<string, ClassifiedDoc | null> {
 // 3. Parse the answer key
 // ---------------------------------------------------------------------------
 
-function parseAnswerKey(
+// Mathematical Alphanumeric Symbols digits (U+1D7CE..U+1D7FF): bold,
+// double-struck, sans-serif, sans-serif bold, monospace — each a run of
+// ten code points 0..9. Answer keys occasionally render fraction digits
+// in mathematical bold (e.g. 𝟒/𝟗); normalize them to ASCII.
+export function normalizeMathDigits(text: string): string {
+  return text.replace(/[\u{1D7CE}-\u{1D7FF}]/gu, (ch) => {
+    const cp = ch.codePointAt(0) as number;
+    return String((cp - 0x1d7ce) % 10);
+  });
+}
+
+const TAB_TABLE_HEADER = /Task\s*\t.*Answer.*Task\s*\t.*Answer/i;
+// "N." followed by whitespace then the answer, or by end-of-line (empty
+// answer, e.g. L3 task 16). A tab may appear after the period ("10. \t1").
+// Decimal-looking lines ("1.5") do NOT match — no separator after the dot.
+const NUMBERED_TASK = /^\s*(\d+)\.(?:[ \t]+(.*))?$/;
+
+type AnswerKeyFormat = "TAB_TABLE" | "NUMBERED_LIST";
+
+function detectAnswerKeyFormat(lines: string[]): AnswerKeyFormat {
+  if (lines.some((l) => TAB_TABLE_HEADER.test(l))) return "TAB_TABLE";
+  const numbered = lines.filter((l) => NUMBERED_TASK.test(l)).length;
+  return numbered >= 3 ? "NUMBERED_LIST" : "TAB_TABLE";
+}
+
+export function parseAnswerKey(
   keyExtraction: Stage1Extraction,
 ): { raw: string; byTask: Map<number, AnswerEntry> } {
   const raw = keyExtraction.pages.map((p) => p.text).join("\n");
-  const lines = raw.split("\n");
+  const lines = raw.split("\n").map((l) => l.replace(/\r$/, ""));
+  const byTask =
+    detectAnswerKeyFormat(lines) === "NUMBERED_LIST"
+      ? parseNumberedListKey(lines)
+      : parseTabTableKey(lines);
+  return { raw, byTask };
+}
 
+// --- Format B: single-column numbered list ("1. 3" / "2. Five hundred...").
+// Seen first on the Level 3 key. Quirks handled: tab after the period
+// ("10. \t1"); stacked bold-digit fractions (numerator line(s) above
+// denominator line(s) — "𝟒" / "𝟗" -> 4/9); genuinely empty answers
+// ("16." with nothing after) -> no entry -> downstream missing-entry
+// warning; trailing footer text ("Seriously Addictive Maths") not absorbed.
+
+const KEY_NOISE =
+  /Seriously\s+Addictive|Placement\s+Worksheet|Copyright|copyright owner|Answer\s*Key/i;
+// Continuation lines we trust as answer content: digits (already
+// normalized), whitespace, and number punctuation only.
+const NUMERIC_CONTINUATION = /^[\d\s.,/$–—-]+$/;
+
+function parseNumberedListKey(lines: string[]): Map<number, AnswerEntry> {
+  const byTask = new Map<number, AnswerEntry>();
+  let pending: { task: number; parts: string[] } | null = null;
+
+  function commitPending(): void {
+    if (!pending) return;
+    const parts = pending.parts.map((p) => p.trim()).filter((p) => p.length > 0);
+    // Empty answer (e.g. L3 task 16): no entry — surfaces downstream as the
+    // normal "answer key missing entry for task N" warning.
+    if (parts.length > 0) {
+      byTask.set(pending.task, buildNumberedListEntry(parts));
+    }
+    pending = null;
+  }
+
+  for (const rawLine of lines) {
+    const line = normalizeMathDigits(rawLine);
+    if (line.trim().length === 0) continue;
+
+    const task = NUMBERED_TASK.exec(line);
+    if (task) {
+      commitPending();
+      const rest = (task[2] ?? "").trim();
+      pending = { task: Number(task[1]), parts: rest.length > 0 ? [rest] : [] };
+      continue;
+    }
+    if (!pending) continue; // header/page-number noise before the first task
+
+    const trimmed = line.trim();
+    if (KEY_NOISE.test(trimmed) || !NUMERIC_CONTINUATION.test(trimmed)) {
+      // Obvious non-answer text (footer/header) — close the open entry and
+      // drop the line. It stays in answer_key_raw for human review.
+      commitPending();
+      continue;
+    }
+    pending.parts.push(trimmed);
+  }
+  commitPending();
+  return byTask;
+}
+
+function buildNumberedListEntry(parts: string[]): AnswerEntry {
+  // Stacked fraction reconstruction: when an answer wraps as bare numeric
+  // lines, the line break is the fraction bar. "4" / "9" -> "4/9";
+  // "2" / "11 , 6" / "11 , 9" / "11 , 10" / "11" -> "2/11, 6/11, 9/11, 10/11".
+  if (parts.length >= 2 && parts.every((p) => /^[\d\s,]+$/.test(p))) {
+    const value = parts
+      .map((p) => p.replace(/\s+/g, " ").trim())
+      .join("/")
+      .replace(/\s*,\s*/g, ", ")
+      .replace(/\s*\/\s*/g, "/");
+    return {
+      raw_answer: parts.join("\n"),
+      answer_kind: "VALUE",
+      answer_value: value,
+    };
+  }
+  return buildAnswerEntry(parts.join("\n").trim());
+}
+
+// --- Format A: two-column tab table ("Task\tAnswer\tTask\tAnswer"), as on
+// the Level 1/2 keys. Behavior unchanged from the original parser.
+
+function parseTabTableKey(lines: string[]): Map<number, AnswerEntry> {
   // Find the header "Task ... Answer ... Task ... Answer" then iterate.
-  const headerIdx = lines.findIndex((l) =>
-    /Task\s*\t.*Answer.*Task\s*\t.*Answer/i.test(l),
-  );
+  const headerIdx = lines.findIndex((l) => TAB_TABLE_HEADER.test(l));
   const body = headerIdx >= 0 ? lines.slice(headerIdx + 1) : lines;
 
   const byTask = new Map<number, AnswerEntry>();
@@ -251,7 +357,7 @@ function parseAnswerKey(
   }
   commitPending();
 
-  return { raw, byTask };
+  return byTask;
 }
 
 function buildAnswerEntry(rawAnswer: string): AnswerEntry {
@@ -736,13 +842,27 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Skip-existing guard for per-level sequential runs: Stage 2 is
+  // deterministic/free, but re-segmenting rewrites stage2-questions.json and
+  // appends duplicate audit lines. `--force` re-segments everything.
+  const force = process.argv.includes("--force");
   const pairing = pairDocs(docs);
+  let segmented = 0;
   for (const ws of worksheets) {
+    const outPath = path.join(OUTPUT_DIR, ws.folder, "stage2-questions.json");
+    const exists = await access(outPath).then(() => true, () => false);
+    if (!force && exists) {
+      console.log(`[skip] ${ws.folder} — stage2-questions.json exists (use --force to re-segment)`);
+      continue;
+    }
     const key = pairing.get(ws.folder) ?? null;
     await processWorksheet(ws, key);
+    segmented += 1;
   }
 
-  console.log(`\nStage 2 done: ${worksheets.length} worksheet(s) segmented.`);
+  console.log(
+    `\nStage 2 done: ${segmented} worksheet(s) segmented, ${worksheets.length - segmented} skipped.`,
+  );
   if (warnings.length > 0) {
     console.log(`(${warnings.length} warning(s) — see above and conversion.log)`);
     const lines = warnings
@@ -752,8 +872,16 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err: unknown) => {
-  const message = err instanceof Error ? (err.stack ?? err.message) : String(err);
-  console.error("Stage 2 failed:", message);
-  process.exit(1);
-});
+// Only run when executed directly (pnpm convert:segment / tsx) — the module
+// is also imported by unit tests for parseAnswerKey.
+const isDirectRun =
+  typeof process.argv[1] === "string" &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main().catch((err: unknown) => {
+    const message = err instanceof Error ? (err.stack ?? err.message) : String(err);
+    console.error("Stage 2 failed:", message);
+    process.exit(1);
+  });
+}

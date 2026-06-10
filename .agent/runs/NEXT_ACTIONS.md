@@ -59,8 +59,11 @@
       Left untouched: code comments/logs/type docs/tests; marketing footer sentence-final
       "S.A.M." (correct); layout.tsx description metadata. Verify GREEN (550 tests, 0
       type errors, 1 known font lint warning). Codex skipped (relay not wired).
-- NOTE: `(marketing)/page.tsx:74` "Diagnostic" wording is a SEPARATE §2.4 open question
-  — NOT part of this scrub and NOT yet resolved. See Parked-for-Dimitri below.
+- [x] **DONE-pending-merge (PR #16) — `(marketing)/page.tsx:74` hero pill "Diagnostic Suite" →
+  "Assessment Suite".** lane/marketing-assessment-wording. CI GREEN, Vercel preview pass.
+  Dimitri merges attended. NOTE: 5 further visible "diagnostic" occurrences remain on the
+  marketing page (lines 84, 135, 170, 298, 313) — parked pending §2.4 call with Dimitri.
+  See Parked-for-Dimitri below.
 
 ## 2. Relay / unattended run loop (not gated)
 - [x] **DONE 2026-05-31 — Manual-mode relay built & merged (PR #9, `164a1b2`).**
@@ -69,10 +72,18 @@
       `tools/schemas/codex_review.schema.json`; `codex-finding-resolver` then applies
       accepted findings. ASCII-only script (PS 5.1 compatibility). Local-only; `.gitignore`
       excludes `tools/relay/.reviews/`. CI GREEN: 554 tests / 41 files.
-- [ ] **PARKED — needs Dimitri:** is Codex reachable programmatically (automated relay)?
-      Answer determines whether the automated-relay upgrade runs unattended. Until
-      confirmed, review stays a manual PS1 hop.
-- [ ] Finalize `.mcp.json` once Codex reachability is confirmed.
+- [x] **ANSWERED 2026-06-05 (PR #17) — Codex is NOT programmatically reachable on this box.**
+      Evidence: codex-cli 0.130.0 installed; api.openai.com reachable (cf-ray returned);
+      but no `~/.codex/auth.json` (`codex login status` → "Not logged in") and no
+      `OPENAI_API_KEY`; `codex exec` returns `401 Unauthorized: Missing bearer or basic
+      authentication`. Credential blocker, not transport. Documented in
+      `tools/relay/README.md` ("Reachability check — 2026-06-05" section). Manual-mode
+      relay (`manual_codex_review.ps1`) remains the fallback.
+- [ ] **PARKED — needs Dimitri action:** run `codex login` (or provide `OPENAI_API_KEY` on
+      this box) to unblock the automated-relay upgrade and `.mcp.json` finalization.
+      Plain-English: open a terminal, run `codex login`, follow the browser prompt, then
+      tell the agent "Codex auth done." The agent will then wire the automated relay.
+- [ ] Finalize `.mcp.json` once Codex CLI is authenticated (blocked on item above).
 
 ## 3. M2 build (not gated on G1)
 - [x] Feature flags — DONE 2026-05-30 (fix `efccf4f`, merge `a9d45ba`). 11 §12 rollout
@@ -108,6 +119,16 @@
   violates BUSINESS_RULES "No consumer paywall — families never pay Atlas directly," and
   pricing models are Dimitri-owned/unconfirmed regardless. Needs Dimitri before any build;
   as written it is contrary to the locked B2B2C model.
-- Codex reachability (automated relay upgrade) — manual-mode relay is live (PR #9); automated transport + `.mcp.json` parked until reachability confirmed (item 2).
+- **§2.4 marketing page — 5 remaining visible "diagnostic" occurrences — PARKED (new,
+  2026-06-05).** PR #16 fixed only `(marketing)/page.tsx:74` (hero pill). Five further
+  parent/educator-facing strings were left untouched by design (lane scoped to line 74):
+  line 84 "rigorous diagnostic journey", line 135 "Diagnostic Strands" heading, line 170
+  "Diagnostic Precision" card, line 298 "world-class diagnostic tools", line 313
+  "Diagnostic Suites". (Line 131 is a non-rendered code comment — not a concern.)
+  Question for Dimitri: (a) should these 5 be scrubbed to "assessment" in a follow-up
+  lane? (b) if yes, what is the preferred replacement wording for each?
+- **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability now confirmed as a
+  credential blocker (not transport). Automated relay + `.mcp.json` unblocked once Dimitri
+  runs `codex login` or supplies `OPENAI_API_KEY` on this box (see item 2 above).
 - Franchisor pilot-approval routing — G2 (business gate).
 - G1 license scope specifics; pricing model (business gates).

@@ -12,8 +12,14 @@
 // misconception vocabulary in supabase/seed.sql — no DB writes.
 //
 // Run via: pnpm convert:tag
+//
+// Per-level sequential runs: a folder that already has stage3-tagged.json is
+// SKIPPED, so re-running for the next level never re-invokes the API (or
+// silently changes tags) for worksheets that were already tagged/loaded.
+//   --force          re-tag every discovered worksheet
+//   --only <folder>  restrict the run to one output/<folder>
 
-import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -229,6 +235,22 @@ const REPO_ROOT = path.resolve(HERE, "..", "..");
 const ENV_LOCAL = path.join(REPO_ROOT, ".env.local");
 const TAXONOMY_FILE = path.join(REPO_ROOT, "docs", "sam-v2026-taxonomy.md");
 const SEED_FILE = path.join(REPO_ROOT, "supabase", "seed.sql");
+
+// CLI flags. `pnpm convert:tag --force` passes args straight through to tsx,
+// so process.argv is [node, stage3-tag.ts, ...flags].
+const CLI_ARGS = process.argv.slice(2);
+const FORCE = CLI_ARGS.includes("--force");
+const ONLY_INDEX = CLI_ARGS.indexOf("--only");
+const ONLY_FOLDER = ONLY_INDEX >= 0 ? (CLI_ARGS[ONLY_INDEX + 1] ?? null) : null;
+
+async function fileExists(p: string): Promise<boolean> {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function parseEnvFile(content: string): Map<string, string> {
   const env = new Map<string, string>();
@@ -622,12 +644,66 @@ function buildTaggingToolSchema(misconceptionCodes: string[]): Record<string, un
 
 const TOOL_NAME = "submit_tagging";
 
+// Rate-limit resilience: the org-level input-tokens-per-minute cap trips on
+// long serial runs (every call carries the taxonomy), and the SDK's default
+// 2 retries can exhaust before the token bucket refills. Retry 429/529/5xx
+// here with retry-after-aware backoff; anything else still fails the question.
+const MAX_RATE_LIMIT_RETRIES = 5;
+
+function errorStatus(err: unknown): number | null {
+  if (typeof err === "object" && err !== null && "status" in err) {
+    const status = (err as { status?: unknown }).status;
+    if (typeof status === "number") return status;
+  }
+  return null;
+}
+
+function retryAfterSeconds(err: unknown): number | null {
+  if (typeof err !== "object" || err === null || !("headers" in err)) return null;
+  const headers = (err as { headers?: unknown }).headers;
+  let raw: string | null = null;
+  if (headers instanceof Headers) {
+    raw = headers.get("retry-after");
+  } else if (typeof headers === "object" && headers !== null) {
+    const value = (headers as Record<string, unknown>)["retry-after"];
+    if (typeof value === "string") raw = value;
+  }
+  if (raw === null) return null;
+  const seconds = Number(raw);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+}
+
+async function createWithRetry(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+): Promise<Anthropic.Message> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await client.messages.create(params);
+    } catch (err) {
+      const status = errorStatus(err);
+      const retryable =
+        status === 429 || status === 529 || (status !== null && status >= 500);
+      if (!retryable || attempt >= MAX_RATE_LIMIT_RETRIES) throw err;
+      const retryAfter = retryAfterSeconds(err);
+      const waitMs =
+        retryAfter !== null
+          ? retryAfter * 1000
+          : Math.min(60_000, 15_000 * 2 ** attempt);
+      console.log(
+        `    HTTP ${status}; retry ${attempt + 1}/${MAX_RATE_LIMIT_RETRIES} in ${Math.round(waitMs / 1000)}s`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
 async function tagQuestion(
   client: Anthropic,
   input: PromptInput,
 ): Promise<{ ok: true; data: LlmTagged } | { ok: false; error: string }> {
   try {
-    const response = await client.messages.create({
+    const response = await createWithRetry(client, {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: SYSTEM_PROMPT,
@@ -1079,6 +1155,10 @@ async function main(): Promise<void> {
   console.log(`Loaded misconception vocabulary: ${misconceptions.length} codes.`);
   console.log(`Model: ${MODEL}`);
 
+  if (ONLY_INDEX >= 0 && ONLY_FOLDER === null) {
+    throw new Error(`--only requires a folder name (e.g. --only "Level 2 Placement Worksheet").`);
+  }
+
   const stage2 = await discoverStage2();
   if (stage2.length === 0) {
     console.log(
@@ -1088,13 +1168,30 @@ async function main(): Promise<void> {
   }
   console.log(`Found ${stage2.length} Stage 2 worksheet output(s).`);
 
+  const selected =
+    ONLY_FOLDER === null ? stage2 : stage2.filter((ws) => ws.folder === ONLY_FOLDER);
+  if (ONLY_FOLDER !== null && selected.length === 0) {
+    console.log(`No Stage 2 output folder named '${ONLY_FOLDER}'. Nothing to tag.`);
+    return;
+  }
+
   const client = new Anthropic({ apiKey, timeout: REQUEST_TIMEOUT_MS });
 
-  for (const ws of stage2) {
+  let skipped = 0;
+  for (const ws of selected) {
+    // Skip-existing guard: never re-tag (and never re-spend API calls on) a
+    // worksheet that already has a stage3 output, unless --force is given.
+    if (!FORCE && (await fileExists(path.join(OUTPUT_DIR, ws.folder, "stage3-tagged.json")))) {
+      console.log(`[skip] ${ws.folder} — stage3-tagged.json exists (use --force to re-tag)`);
+      skipped += 1;
+      continue;
+    }
     await processWorksheet(client, ws, taxonomy, misconceptions);
   }
 
-  console.log(`\nStage 3 done.`);
+  console.log(
+    `\nStage 3 done.${skipped > 0 ? ` (${skipped} worksheet(s) skipped — already tagged)` : ""}`,
+  );
 }
 
 main().catch((err: unknown) => {
