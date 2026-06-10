@@ -15,7 +15,7 @@
 --
 -- Dual-axis reminder (unchanged from 20260525000003): questions.level is
 -- the engine's half-grade placement axis; content_id is the S.A.M. V2026
--- taxonomy axis. Tagging Q11 with L1 content does not move its 2A level.
+-- taxonomy axis. Tagging Q17 with L1 content does not move its 2A level.
 --
 -- ── Mapping (external_id → tax_content.code) ──────────────────────────
 --   SAM-L2-Q01 → l1-whole_numbers-2 "Number Bonds"
