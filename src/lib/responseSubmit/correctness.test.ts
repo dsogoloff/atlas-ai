@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Json } from "@/lib/supabase/database.types";
 
-import { judgeAnswer } from "./correctness";
+import { judgeAnswer, normalizeAnswer } from "./correctness";
 
 // Fixture helpers mirror real seed shapes (supabase/seed.sql:162-198):
 //   * MULTIPLE_CHOICE: { stem, options[], correct_index }
@@ -85,6 +85,100 @@ describe("judgeAnswer / NUMERIC_ENTRY", () => {
   });
 });
 
+describe("normalizeAnswer", () => {
+  it("lowercases and collapses whitespace runs", () => {
+    expect(normalizeAnswer("  Smaller   THAN  ")).toBe("smaller than");
+  });
+  it("treats comma and space as equivalent list separators", () => {
+    expect(normalizeAnswer("10, 17, 20")).toBe("10 17 20");
+    expect(normalizeAnswer("10,17,20")).toBe("10 17 20");
+  });
+  it("canonicalizes unit spacing after a digit", () => {
+    expect(normalizeAnswer("1km 750m")).toBe("1 km 750 m");
+    expect(normalizeAnswer("9:25am")).toBe("9:25 am");
+  });
+  it("does not split a unit token embedded in a longer word", () => {
+    // "mins" is not the token "min" (word boundary), so it stays untouched.
+    expect(normalizeAnswer("5 mins")).toBe("5 mins");
+  });
+});
+
+describe("judgeAnswer / NUMERIC_ENTRY normalization (P1 live cases)", () => {
+  // Real child answers that were wrongly graded incorrect before
+  // normalization landed — all three must grade correct.
+  it("grades '1km 750m' correct against '1 km 750 m'", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "1km 750m"),
+    ).toBe(true);
+  });
+  it("grades '9:25am' correct against '9:25 am'", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("9:25 am"), "9:25am")).toBe(
+      true,
+    );
+  });
+  it("grades '10 17 20' correct against '10, 17, 20'", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "10 17 20"),
+    ).toBe(true);
+  });
+  it("is case-insensitive for free-text answers", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("cylinder"), "Cylinder")).toBe(
+      true,
+    );
+  });
+  it("collapses repeated internal whitespace", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "1  km   750 m"),
+    ).toBe(true);
+  });
+  it("accepts a comma where the bank uses a thousands space ('42,800' vs '42 800')", () => {
+    // Pinned: comma/space separator equivalence makes thousands-grouping
+    // punctuation interchangeable.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42,800")).toBe(
+      true,
+    );
+  });
+});
+
+describe("judgeAnswer / NUMERIC_ENTRY normalization — wrong answers stay wrong", () => {
+  it("rejects reordered list '10 20 17' vs '10, 17, 20' (order significant)", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "10 20 17"),
+    ).toBe(false);
+  });
+  it("rejects '9:35 am' vs '9:25 am'", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("9:25 am"), "9:35 am")).toBe(
+      false,
+    );
+  });
+  it("rejects '2 km 750 m' vs '1 km 750 m'", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "2 km 750 m"),
+    ).toBe(false);
+  });
+  it("rejects '1km750' vs '1 km 750 m'", () => {
+    // Pinned WRONG: the answer is missing the trailing unit ("m"), and we
+    // never invent units the child did not type — "1km750" normalizes to
+    // "1 km 750", which is not "1 km 750 m".
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "1km750"),
+    ).toBe(false);
+  });
+  it("rejects '1017 20' vs '10, 17, 20' (separators collapse, digits never join)", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "1017 20"),
+    ).toBe(false);
+  });
+  it("rejects '42800' vs '42 800' (digits never join across a separator)", () => {
+    // Pinned WRONG: "42 800" is two separated digit groups after
+    // normalization; collapsing the space entirely would make "1017 20"
+    // ambiguous, so unspaced "42800" does not match.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42800")).toBe(
+      false,
+    );
+  });
+});
+
 describe("judgeAnswer / DRAG_DROP", () => {
   it("matches when client sends JSON.stringify of correct_order", () => {
     const order = ["A", "B", "C"];
@@ -99,6 +193,29 @@ describe("judgeAnswer / DRAG_DROP", () => {
         ddContent(["A", "B", "C"], ["A", "B", "C"]),
         JSON.stringify(["A", "C", "B"]),
       ),
+    ).toBe(false);
+  });
+  it("normalizes string tokens on both sides (case/unit spacing)", () => {
+    expect(
+      judgeAnswer(
+        "DRAG_DROP",
+        ddContent(["750 m", "1 km"], ["750 m", "1 km"]),
+        JSON.stringify(["750m", "1KM"]),
+      ),
+    ).toBe(true);
+  });
+  it("still rejects reordered tokens after normalization", () => {
+    expect(
+      judgeAnswer(
+        "DRAG_DROP",
+        ddContent(["750 m", "1 km"], ["750 m", "1 km"]),
+        JSON.stringify(["1 km", "750 m"]),
+      ),
+    ).toBe(false);
+  });
+  it("grades non-JSON answers wrong instead of throwing", () => {
+    expect(
+      judgeAnswer("DRAG_DROP", ddContent(["A", "B"], ["A", "B"]), "not json"),
     ).toBe(false);
   });
   it("works against the seed-shape fixture (fraction ordering)", () => {
