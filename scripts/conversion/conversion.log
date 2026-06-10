@@ -68,3 +68,15 @@
 2026-06-10T16:26:03.424Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
 2026-06-10T16:26:03.444Z | stage4 | Level 2 Placement Worksheet.pdf | loaded=22 content_id=22 review_flags=38 inactive_image=8 images_uploaded=0 images_deferred=8 skipped=0
 2026-06-10T16:26:03.488Z | stage4 | Level 3 Placement Worksheet.pdf | loaded=20 content_id=20 review_flags=52 inactive_image=10 images_uploaded=0 images_deferred=10 skipped=3 (invalid-fields=3)
+2026-06-10T16:27:23.362Z | stage1 | Level 4 Placement Worksheet Answer Key.pdf | 1 pages | output/Level 4 Placement Worksheet Answer Key/
+2026-06-10T16:27:29.212Z | stage1 | Level 4 Placement Worksheet.pdf | 15 pages | output/Level 4 Placement Worksheet/
+2026-06-10T16:27:35.120Z | stage2 | Level 4 Placement Worksheet.pdf | 27 questions | key: Level 4 Placement Worksheet Answer Key.pdf
+2026-06-10T16:27:35.121Z | stage2-warn | task 5: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T16:27:35.121Z | stage2-warn | task 9: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-10T16:27:35.121Z | stage2-warn | answer key missing entry for task 19
+2026-06-10T16:27:35.121Z | stage2-warn | answer key missing entry for task 22
+2026-06-10T16:34:36.159Z | stage3 | Level 4 Placement Worksheet.pdf | 27 tagged | 0 failed
+2026-06-10T16:34:53.388Z | stage4 | Level 1 Placement Worksheet.pdf | loaded=12 content_id=12 review_flags=26 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=16 (invalid-fields=16)
+2026-06-10T16:34:53.404Z | stage4 | Level 2 Placement Worksheet.pdf | loaded=22 content_id=22 review_flags=38 inactive_image=8 images_uploaded=0 images_deferred=8 skipped=0
+2026-06-10T16:34:53.425Z | stage4 | Level 3 Placement Worksheet.pdf | loaded=20 content_id=20 review_flags=52 inactive_image=10 images_uploaded=0 images_deferred=10 skipped=3 (invalid-fields=3)
+2026-06-10T16:34:53.437Z | stage4 | Level 4 Placement Worksheet.pdf | loaded=25 content_id=25 review_flags=51 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=2 (invalid-fields=2)
