@@ -39,15 +39,20 @@ lint warnings (no-img-element in profile-menu.tsx, no-page-custom-font in layout
 | Marketing §2.4 diagnostic scrub | MERGED PR #20 | lane/marketing-diagnostic-scrub. Remaining rendered "diagnostic" claims → "assessment" (commit `e6d9515`). Merged in origin head `d4743c7`. |
 | Marketing §2.4 precision claim | OPEN PR #21 — not merged | lane/marketing-precision-claim. Removes unbacked "98% accuracy" claim; card heading "Diagnostic Precision" → "Misconception Mapping" (commits `e52258c`+`32f35d6`). Awaiting attended merge. |
 | Content-id backfill | OPEN PR #22 — not merged | lane/questions-content-id-backfill. Worktree `atlas-backfill` (commits `5b249f5`+`c6e1485`). Migration `20260610000000_backfill_question_content_ids.sql` + seed.sql mirror maps all 11 SAM-L2 questions to `content_id`. New drift test. Verify GREEN: 569 tests / 44 files. DONE-pending-merge. |
-| CONVERSION Stage 4 — DB load | OPEN PR #23 — not merged | lane/conversion-stage4-load. Worktree `atlas-stage4` (commit `40d32b3`). `pnpm convert:load` reads `output/*/stage3-tagged.json`, validates taxonomy, emits timestamped questions migration + byte-identical seed.sql mirror; idempotent. image_required questions load `is_active=false`; source pages upload to private `question-images` bucket under `conversion-staging/<external_id>/`; missing creds → graceful skip + manifest. Verify GREEN: 604 tests / 44 files. DONE-pending-merge. |
+| CONVERSION Stage 4 — DB load + L1–4 run | OPEN PR #23 — not merged | lane/conversion-stage4-load. Worktree `atlas-stage4`. Loader built (`40d32b3`+guards `903650a`) AND the full L1–4 run executed: 79 rows loaded (L1 12 / L2 22 / L3 20 / L4 25; 49 active, 30 inactive image-essential), all with content_id, in migration `20260610151306` + seed.sql marker block (commits `97bcf49`, `23da354`, `9b2db6c`, `8e71b08`). Parser fix `5c13070`, 429-retry `506936d`, skip-guards `a1685d6`. Verify GREEN: 630 tests / 45 files; CI verify-bar pass. DONE-pending-merge. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
-- **CONVERSION** — 5-stage CLI in `scripts/conversion/`; Stages 1–3 built/verified;
-  Stage 4 (DB load) built (PR #23, DONE-pending-merge). G1 LIFTED. Full ~130-question
-  L1–4 conversion run BLOCKED: `scripts/conversion/input/` is empty (gitignored artifacts
-  lost in repo move); founder must drop worksheet PDFs + answer-key PDFs into input/ to
-  re-run Stages 1→2→3→4. Full library digitization (beyond L1–4 MVP cut) is a separate
-  planned follow-up.
+- **CONVERSION** — 5-stage CLI in `scripts/conversion/`. **L1–4 MVP run COMPLETE
+  2026-06-10 (PR #23):** 100 questions tagged (0 failed), **79 loaded** (49 active,
+  30 inactive image-essential), all with content_id; 21 skipped (drag-drop answers
+  unmappable / missing key entries / malformed MC). Cumulative migration
+  `20260610151306_load_sam_questions.sql` + seed.sql marker block. Session fixes en
+  route: numbered-list answer-key parser (`5c13070`), stage3 429-retry (`506936d`),
+  stage2/3 skip-existing guards (`a1685d6`). Images: 0 uploaded (local storage down
+  during runs) — per-worksheet upload manifests in output folders; 30 inactive
+  questions need curated per-question images before activation. Founder PDFs for ALL
+  levels (0A–7) now live in main-checkout `input/`. Full-library digitization
+  (0A–0C, 5–7) is a separate planned follow-up.
 - **AGENTS / fleet** — `product-manager` / `verify` / `audit` / `codex-finding-resolver` /
   `repo-memory-maintainer` in `.claude/agents/`. ROI test gates any further growth.
 - **Active worktrees** — `atlas-stage4` (PR #23), `atlas-backfill` (PR #22),
@@ -60,10 +65,10 @@ See `NEXT_ACTIONS.md`. Open PRs needing Dimitri's attended merge (Vercel preview
 - **PR #22** (lane/questions-content-id-backfill) — content_id backfill migration. DONE-pending-merge.
 - **PR #23** (lane/conversion-stage4-load) — CONVERSION Stage 4 DB load script. DONE-pending-merge.
 
-Founder actions required before conversion run can proceed:
-1. Merge PRs #21, #22, #23 (attended, after Vercel preview).
-2. Copy `.claude/settings.local.json` into each active worktree root (`atlas-stage4`, `atlas-backfill`) and any future worktrees.
-3. Drop each level's worksheet PDF + answer-key PDF into `scripts/conversion/input/`, then re-run Stage 1→2→3→4 pipeline.
+Founder actions (conversion run COMPLETE 2026-06-10 — these remain):
+1. Merge PRs #21, #22, #23, #24 (attended, after Vercel preview).
+2. After merging #22/#23: `supabase db reset`, complete one fresh dev assessment, confirm the report radar populates (see Radar acceptance below).
+3. Curate per-question images for the 30 inactive image-essential questions (upload manifests in each worksheet's output folder); full-page renders must never ship (they leak neighboring questions).
 
 Radar acceptance (after PR #22 merges + `supabase db reset`): demo report radar still reads "not assessed" (seed has zero responses rows by design). Real acceptance = complete one fresh dev assessment, open its report, confirm radar populates. Reset output should show `sam-l2 total=11 mapped=11 unmapped=0`.
 

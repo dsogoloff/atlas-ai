@@ -106,36 +106,47 @@
       it — no operator mechanism exists today to regenerate a narration without a re-take;
       see `docs/ops-runbook.md` §3 KNOWN GAP).
 
-## 4. G1 LIFTED (2026-06-10) — CONVERSION Stage 4 built; founder actions needed before data loads
+## 4. G1 LIFTED (2026-06-10) — CONVERSION L1–4 run COMPLETE; merge + radar check remain
 
 **G1 status:** S.A.M. founder granted permission to digitize the entire test library
 (session brief 2026-06-10). Stage 4 fully unblocked.
 
 - [x] CONVERSION Stage 4 — DB load script built (PR #23, lane/conversion-stage4-load,
-  commit `40d32b3`, worktree `atlas-stage4`). `pnpm convert:load` emits timestamped
-  questions migration + byte-identical seed.sql mirror; idempotent; image_required rows
-  load `is_active=false`; staging-prefix uploads to private `question-images` bucket.
-  Verify GREEN: 604 tests / 44 files. DONE-pending-merge.
+  `40d32b3` + supplement guards `903650a`: 21-code misconception validation fails loudly,
+  per-run load report in conversion.log; image_required rows load `is_active=false`;
+  staging-prefix uploads to private `question-images` bucket). DONE-pending-merge.
 - [x] Content-id backfill built (PR #22, lane/questions-content-id-backfill, commits
   `5b249f5`+`c6e1485`, worktree `atlas-backfill`). Maps all 11 SAM-L2 questions to
   `content_id`. Seed.sql mirror placed AFTER the tax_content seed block (ordering matters;
   new test pins this). DONE-pending-merge.
+- [x] **L1–4 conversion run COMPLETE 2026-06-10** (founder provided all 0A–7 PDFs;
+  run sequential L1→L4 in worktree `atlas-stage4`, all on PR #23): 100 tagged / 0 failed;
+  **79 loaded** (L1 12, L2 22, L3 20, L4 25 — 49 active, 30 inactive image-essential),
+  all rows with content_id; 21 skipped (drag-drop answers unmappable to items/order,
+  missing answer-key entries, 2 malformed MC). Migration `20260610151306` + seed.sql
+  marker block; commits `97bcf49`/`23da354`/`9b2db6c`/`8e71b08`. En-route fixes:
+  numbered-list answer-key parser (`5c13070` — L3/L4 keys), stage3 429-retry
+  (`506936d`), stage2/3 skip-existing guards (`a1685d6`). Verify GREEN 630 tests /
+  45 files; CI verify-bar pass. The 11 hand-seeded SAM-L2 rows win over generated
+  duplicates via `on conflict do nothing` (by design).
 - [ ] **Dimitri: merge PR #22 + PR #23** (attended, Vercel preview).
-- [ ] **Dimitri: copy `.claude/settings.local.json`** into each active worktree root
-  (`atlas-stage4`, `atlas-backfill`) and any future worktrees. (Gitignored; not auto-present.)
-- [ ] **Dimitri: drop worksheet PDFs + answer-key PDFs** for each level into
-  `scripts/conversion/input/`, then re-run Stage 1→2→3→4 pipeline (`pnpm convert` each
-  stage). `input/` is empty — gitignored artifacts were lost when the repo moved to the
-  short path.
-- [ ] **Radar acceptance check** (after PR #22 merges + `supabase db reset`): run
-  `supabase db reset`, confirm reset output shows `sam-l2 total=11 mapped=11 unmapped=0`.
-  Demo report radar will still read "not assessed" (seed has zero responses rows by design).
-  Real acceptance: complete one fresh dev assessment, open its report, confirm radar
-  populates with strand data.
-- [ ] Comprehensive-test assembly — engine reparameterization (config); needs the full bank.
+- [ ] **Radar acceptance check** (after merges + `supabase db reset`): reset output
+  shows the backfill notice (`sam-l2 total=11 mapped=11 unmapped=0`) and the 79-row
+  load. Demo report radar will still read "not assessed" (seed has zero responses rows
+  by design). Real acceptance: complete one fresh dev assessment, open its report,
+  confirm radar populates with strand data. Could not be verified in-session: local
+  Supabase stack was down (assistant never starts it).
+- [ ] **Image curation** — 30 inactive image-essential questions need curated
+  per-question images (full-page renders leak neighboring questions; never ship them).
+  Upload manifests sit in each `output/<worksheet>/stage4-upload-manifest.json`;
+  re-run `pnpm convert:load` with the local stack up to push staging uploads.
+- [ ] Question-bank QA pass — review stage3-review.md sheets (founder gate from the
+  original pipeline design): 0A/0B→L1 mapping convention on the L1 worksheet, 21
+  skipped questions (recoverable via human-authored equivalents), per-question flags.
+- [ ] Comprehensive-test assembly — engine reparameterization (config); needs the bank.
 - [ ] Curriculum-recommendation table population.
-- [ ] Full-library digitization (levels beyond L1–4 MVP cut) — separate planned follow-up;
-  no timeline set.
+- [ ] Full-library digitization (0A–0C, 5–7; PDFs already in input/) — separate planned
+  follow-up; no timeline set.
 
 ## 5. Deferred (do not build now)
 - [ ] 4-beat findings depth + narration voice re-tune (re-opens voice-locked Step 4
