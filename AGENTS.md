@@ -84,6 +84,18 @@ This clause governs execution autonomy. The separate rule on not asking the
 founder technical questions still applies — defer non-essential technical
 choices to todo.md rather than surfacing them.
 
+### Gating policy (canonical — applies every session)
+
+Gate the founder ONLY on: (a) business/strategy decisions; (b) public/parent-facing
+CLAIMS language (strategy §2.4 — diagnostic/validated/accurate/guaranteed, forward-outcome
+claims); (c) changes to the voice-locked narration prompt; (d) actions on the hard-deny
+list / hazardous to repo integrity; (e) spending money or external-facing sends. Decide
+everything technical, presentational, and reversible autonomously and note it in the PR —
+do NOT gate on UI/layout/copy-wording, component choices, refactors, naming, formatting,
+or any reversible call a senior engineer would just make. Batch any genuinely gateable
+items into one list at the end of a PR; never stop mid-task for a presentational choice.
+Do not run `pnpm dev` or `supabase` — those are the founder's.
+
 
 ## 2. Before writing code
 
