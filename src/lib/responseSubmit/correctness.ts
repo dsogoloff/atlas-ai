@@ -46,6 +46,18 @@ const NUMERIC_RE = /^-?\d+(?:\.\d+)?$/;
 // the right default.
 const SINGLE_NUMBER_KEY_RE = /^-?(?:\d+|\d{1,3}(?: \d{3})+)(?:\.\d+)?$/;
 
+/**
+ * Mode selector for NUMERIC_ENTRY grading, exported so tests can pin the
+ * partition directly. Takes the NORMALIZED stored key; returns true for
+ * single-number mode (strip grouping from both sides), false for list
+ * mode (separators significant, digits never join). Because judgeAnswer
+ * branches if/else on this one boolean of the key alone, exactly one
+ * mode ever runs for a given question — the paths cannot cross.
+ */
+export function isSingleNumberKey(normalizedKey: string): boolean {
+  return SINGLE_NUMBER_KEY_RE.test(normalizedKey);
+}
+
 // Unit tokens that appear (or plausibly appear) after a number in bank
 // answers — seed.sql today uses km / m / am ("1 km 750 m", "9:25 am");
 // the rest are the S.A.M. measurement set so future questions normalize
@@ -97,7 +109,7 @@ export function judgeAnswer(
       const c = normalizeAnswer(correct);
       // Single-number keys: strip all grouping from both sides so
       // "42 800", "42,800" and "42800" all match a key of "42 800".
-      if (SINGLE_NUMBER_KEY_RE.test(c)) {
+      if (isSingleNumberKey(c)) {
         const aStripped = a.replace(/ /g, "");
         if (NUMERIC_RE.test(aStripped)) {
           return Number(aStripped) === Number(c.replace(/ /g, ""));

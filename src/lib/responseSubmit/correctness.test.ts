@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { Json } from "@/lib/supabase/database.types";
 
-import { judgeAnswer, normalizeAnswer } from "./correctness";
+import {
+  isSingleNumberKey,
+  judgeAnswer,
+  normalizeAnswer,
+} from "./correctness";
 
 // Fixture helpers mirror real seed shapes (supabase/seed.sql:162-198):
 //   * MULTIPLE_CHOICE: { stem, options[], correct_index }
@@ -199,6 +203,51 @@ describe("judgeAnswer / NUMERIC_ENTRY normalization — wrong answers stay wrong
     expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42 8000")).toBe(
       false,
     );
+  });
+});
+
+describe("single-number vs list mode — mutual exclusivity", () => {
+  // judgeAnswer branches if/else on isSingleNumberKey(normalizedKey): a
+  // boolean of the KEY alone. Exactly one mode runs per question, so the
+  // paths cannot cross. These tests pin the partition on the boundary
+  // shapes, then pin each side's behavior.
+  it("partitions key shapes: one grouped number vs a list", () => {
+    // Single-number shapes (strip-grouping mode):
+    expect(isSingleNumberKey(normalizeAnswer("42 800"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("42,800"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("42800"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("1 234 567"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("3.5"))).toBe(true);
+    // List shapes (separator-significant mode):
+    expect(isSingleNumberKey(normalizeAnswer("10, 17, 20"))).toBe(false);
+    expect(isSingleNumberKey(normalizeAnswer("10 17 20"))).toBe(false);
+    expect(isSingleNumberKey(normalizeAnswer("9 68 81"))).toBe(false);
+    // Non-numeric keys are never single-number mode:
+    expect(isSingleNumberKey(normalizeAnswer("1 km 750 m"))).toBe(false);
+    expect(isSingleNumberKey(normalizeAnswer("9:25 am"))).toBe(false);
+  });
+  it("list keys never apply single-number stripping", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "101720"),
+    ).toBe(false);
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "1017 20"),
+    ).toBe(false);
+  });
+  it("single-number keys never apply list semantics to reject grouping", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42800")).toBe(
+      true,
+    );
+  });
+  it("pins the ambiguous boundary: 3-digit-grouped lists read as one number", () => {
+    // "10 170 200" is shape-ambiguous (a list of three numbers OR one
+    // grouped number 10 170 200). S.A.M. uses space-grouped thousands as
+    // standard notation, so single-number mode is the chosen default —
+    // pinned here so any future change to the partition is deliberate.
+    expect(isSingleNumberKey(normalizeAnswer("10 170 200"))).toBe(true);
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10 170 200"), "10170200"),
+    ).toBe(true);
   });
 });
 
