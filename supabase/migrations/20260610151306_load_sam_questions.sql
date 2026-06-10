@@ -6,7 +6,7 @@
 -- this file by the marker comment above and rewrites it in place
 -- rather than creating a second migration.
 --
--- Generated at: 2026-06-10T15:26:39.458Z
+-- Generated at: 2026-06-10T16:26:03.488Z
 --
 -- AGENTS.md §11 parity: this migration is the PRODUCTION path. On a
 -- dev `supabase db reset` it is a no-op (migrations run before
@@ -242,7 +242,127 @@ from t,
     ('SAM-L2-Q22', 'number_sense', '2A', -1, 'NUMERIC_ENTRY',
      '{"stem":"What comes next in the number pattern below?\n\n860   840   820   800   ?","correct_answer":"780"}',
      array['NS_COUNTING_ERROR','NS_PLACE_VALUE_CONFUSION'],
-     13, 'PATTERN', 1, 'SYMBOLIC', true, 'l2-whole_numbers-1')
+     13, 'PATTERN', 1, 'SYMBOLIC', true, 'l2-whole_numbers-1'),
+
+    -- SAM-L3-Q01 | l2-whole_numbers-1 | number_sense / 1A | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q01', 'number_sense', '1A', -1.8, 'MULTIPLE_CHOICE',
+     '{"stem":"What number does the figure below show?","options":["120","201","210","1200"],"correct_index":2,"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION","1":"NS_ZERO_VALUE","3":"NS_MAGNITUDE_MISJUDGE"},"image_alt":"A base-ten block figure representing a 3-digit number using hundreds, tens, and ones blocks.","image_required":true}',
+     array['NS_PLACE_VALUE_CONFUSION','NS_ZERO_VALUE','NS_MAGNITUDE_MISJUDGE'],
+     7, 'IDENTIFY', 1, 'PICTORIAL', false, 'l2-whole_numbers-1'),
+
+    -- SAM-L3-Q02 | l2-whole_numbers-1 | number_sense / 1A | NUMERIC_ENTRY
+    ('SAM-L3-Q02', 'number_sense', '1A', -1.8, 'NUMERIC_ENTRY',
+     '{"stem":"Write 508 in words.","correct_answer":"Five hundred and eight"}',
+     array['NS_ZERO_VALUE','NS_PLACE_VALUE_CONFUSION'],
+     4, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l2-whole_numbers-1'),
+
+    -- SAM-L3-Q03 | l2-whole_numbers-1 | number_sense / 1A | MULTIPLE_CHOICE
+    ('SAM-L3-Q03', 'number_sense', '1A', -1.8, 'MULTIPLE_CHOICE',
+     '{"stem":"In the number 804, what does the digit ''8'' stand for?","options":["8","80","800","8000"],"correct_index":2,"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION","1":"NS_PLACE_VALUE_CONFUSION","3":"NS_PLACE_VALUE_CONFUSION"}}',
+     array['NS_PLACE_VALUE_CONFUSION'],
+     11, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l2-whole_numbers-1'),
+
+    -- SAM-L3-Q05 | l2-whole_numbers-2 | operations_algorithms / 2B | NUMERIC_ENTRY
+    ('SAM-L3-Q05', 'operations_algorithms', '2B', -0.5, 'NUMERIC_ENTRY',
+     '{"stem":"An oven costs $645. It costs $297 more than a vacuum cleaner. How much do the oven and vacuum cleaner cost altogether?","correct_answer":"993"}',
+     array['WP_MULTI_STEP_SEQUENCE','OP_NO_REGROUPING','WP_KEYWORD_TRAP'],
+     22, 'ADDITION', 2, 'WORD_PROBLEM_MULTI', true, 'l2-whole_numbers-2'),
+
+    -- SAM-L3-Q06 | l2-measurement-1 | measurement / 1B | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q06', 'measurement', '1B', -1.5, 'MULTIPLE_CHOICE',
+     '{"stem":"How long is the thumb drive as shown below?","options":["7 cm","10 cm","3 cm","4 cm"],"correct_index":3,"distractor_misconceptions":{"0":"MD_RULER_ZERO_POINT","1":"MD_RULER_ZERO_POINT","2":"NS_COUNTING_ERROR"},"image_alt":"A thumb drive placed against a ruler, with the ruler''s scale visible, used to measure the object''s length in centimetres.","image_required":true}',
+     array['MD_RULER_ZERO_POINT','NS_COUNTING_ERROR'],
+     9, 'MEASUREMENT', 1, 'PICTORIAL', false, 'l2-measurement-1'),
+
+    -- SAM-L3-Q07 | l2-whole_numbers-3 | operations_algorithms / 2A | MULTIPLE_CHOICE
+    ('SAM-L3-Q07', 'operations_algorithms', '2A', -1.2, 'MULTIPLE_CHOICE',
+     '{"stem":"Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes are there in each box? Which of the following shows the correct answer?","options":["5 × 6 = 30","6 × 5 = 30","30 ÷ 5 = 6","30 ÷ 6 = 5"],"correct_index":2,"distractor_misconceptions":{"0":"WP_OPERATION_SELECTION","1":"WP_OPERATION_SELECTION","3":"WP_IRRELEVANT_INFO"}}',
+     array['WP_OPERATION_SELECTION','WP_IRRELEVANT_INFO'],
+     25, 'DIVISION', 1, 'WORD_PROBLEM_SINGLE', true, 'l2-whole_numbers-3'),
+
+    -- SAM-L3-Q08 | l2-measurement-2 | measurement / 1B | NUMERIC_ENTRY | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q08', 'measurement', '1B', -1.5, 'NUMERIC_ENTRY',
+     '{"stem":"What is the mass of the cylinder?","correct_answer":"250","image_alt":"A scale or balance showing a cylinder being weighed, with a reading that must be interpreted to determine the mass in grams.","image_required":true}',
+     array['MD_UNIT_CONFUSION'],
+     7, 'MEASUREMENT', 1, 'PICTORIAL', false, 'l2-measurement-2'),
+
+    -- SAM-L3-Q09 | l2-measurement-3 | measurement / 2A | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q09', 'measurement', '2A', -1.2, 'MULTIPLE_CHOICE',
+     '{"stem":"Kelvin had dinner at the time shown below. What time did he have dinner?","options":["5:35 am","5:35 pm","7:25 am","7:25 pm"],"correct_index":3,"distractor_misconceptions":{"0":"MD_TIME_READING","1":"MD_TIME_READING","2":"MD_TIME_READING"},"image_alt":"An analog clock face showing a time in the evening that students must read correctly to identify the dinner time.","image_required":true}',
+     array['MD_TIME_READING'],
+     14, 'MEASUREMENT', 1, 'PICTORIAL', false, 'l2-measurement-3'),
+
+    -- SAM-L3-Q10 | l2-whole_numbers-4 | number_sense / 2A | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q10', 'number_sense', '2A', -1.2, 'MULTIPLE_CHOICE',
+     '{"stem":"A gardener planted 75 orchids, 25 lilies and 50 roses. How many flowers did he plant in all? Which model is correct for this question?","options":["Model 1","Model 2","Model 3","Model 4"],"correct_index":0,"distractor_misconceptions":{"1":"WP_OPERATION_SELECTION","2":"WP_OPERATION_SELECTION","3":"WP_OPERATION_SELECTION"},"image_alt":"Four bar model diagrams representing different ways to model an addition word problem with three quantities.","image_required":true}',
+     array['WP_OPERATION_SELECTION','WP_MULTI_STEP_SEQUENCE'],
+     25, 'ADDITION', 2, 'BAR_MODEL_REQUIRED', false, 'l2-whole_numbers-4'),
+
+    -- SAM-L3-Q11 | l2-whole_numbers-3 | number_sense / 2A | MULTIPLE_CHOICE
+    ('SAM-L3-Q11', 'number_sense', '2A', -1.2, 'MULTIPLE_CHOICE',
+     '{"stem":"Which of the following is equal to 18?","options":["9 × 2","9 × 3","9 ÷ 2","6 ÷ 3"],"correct_index":1,"distractor_misconceptions":{"0":"OP_MULT_AS_REPEATED_ADD","2":"WP_OPERATION_SELECTION","3":"WP_OPERATION_SELECTION"}}',
+     array['OP_MULT_AS_REPEATED_ADD','WP_OPERATION_SELECTION'],
+     8, 'MULTIPLICATION', 1, 'SYMBOLIC', true, 'l2-whole_numbers-3'),
+
+    -- SAM-L3-Q12 | l2-measurement-4 | measurement / 2A | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q12', 'measurement', '2A', -1.2, 'MULTIPLE_CHOICE',
+     '{"stem":"How much money is there?","options":["$68.80","$70.85","$80.55","$83.95"],"correct_index":1,"distractor_misconceptions":{"0":"NS_COUNTING_ERROR","2":"MD_UNIT_CONFUSION","3":"NS_COUNTING_ERROR"},"image_alt":"A collection of currency notes and coins showing various denominations including $50, $10, $5, $2, $2, $1, 50¢, 20¢, 10¢, and 5¢.","image_required":true}',
+     array['NS_COUNTING_ERROR','MD_UNIT_CONFUSION'],
+     5, 'COUNTING', 1, 'PICTORIAL', false, 'l2-measurement-4'),
+
+    -- SAM-L3-Q13 | l2-fractions-1 | fractions_decimals / 2A | NUMERIC_ENTRY | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q13', 'fractions_decimals', '2A', -1.2, 'NUMERIC_ENTRY',
+     '{"stem":"What fraction of the figure below is shaded?","correct_answer":"4/9","image_alt":"A figure divided into equal parts, some of which are shaded, used to identify the shaded fraction.","image_required":true}',
+     array['NS_COUNTING_ERROR','FR_FRACTION_AS_TWO_NUMS'],
+     8, 'IDENTIFY', 1, 'PICTORIAL', false, 'l2-fractions-1'),
+
+    -- SAM-L3-Q14 | l2-fractions-1 | fractions_decimals / 2A | DRAG_DROP
+    ('SAM-L3-Q14', 'fractions_decimals', '2A', -1.2, 'DRAG_DROP',
+     '{"stem":"Arrange the fractions in order. Begin with the smallest. 10/11, 6/11, 9/11, 2/11","items":["10/11","6/11","9/11","2/11"],"correct_order":["2/11","6/11","9/11","10/11"]}',
+     array['FR_FRACTION_AS_TWO_NUMS','NS_MAGNITUDE_MISJUDGE'],
+     13, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l2-fractions-1'),
+
+    -- SAM-L3-Q15 | l2-fractions-2 | fractions_decimals / 1B | MULTIPLE_CHOICE
+    ('SAM-L3-Q15', 'fractions_decimals', '1B', -1.5, 'MULTIPLE_CHOICE',
+     '{"stem":"What is 1/6 + 3/6?","options":["4/12","6/12","4/6","5/6"],"correct_index":2,"distractor_misconceptions":{"0":"FR_NUM_DENOM_INDEPENDENT","1":"FR_NUM_DENOM_INDEPENDENT"}}',
+     array['FR_NUM_DENOM_INDEPENDENT'],
+     5, 'FRACTION_OP', 1, 'SYMBOLIC', true, 'l2-fractions-2'),
+
+    -- SAM-L3-Q17 | l2-data_representation-1 | data_statistics / 2A | NUMERIC_ENTRY | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q17', 'data_statistics', '2A', -1.2, 'NUMERIC_ENTRY',
+     '{"stem":"The picture graph below shows the favourite fruits of some Class 2 students in a school. How many more students like pears than oranges?","correct_answer":"3","image_alt":"A picture graph showing the favourite fruits of Class 2 students, with rows or columns for different fruits including pears and oranges, each symbol representing a fixed number of students.","image_required":true}',
+     array['MD_CHART_SCALE','NS_COUNTING_ERROR','WP_KEYWORD_TRAP'],
+     24, 'SUBTRACTION', 2, 'PICTORIAL', false, 'l2-data_representation-1'),
+
+    -- SAM-L3-Q18 | l2-geometry-2 | geometry / 1A | NUMERIC_ENTRY
+    ('SAM-L3-Q18', 'geometry', '1A', -1.8, 'NUMERIC_ENTRY',
+     '{"stem":"Name a 3-dimensional shape that has 2 flat faces and a curved surface.","correct_answer":"cylinder"}',
+     array['GE_SHAPE_PROPERTY'],
+     13, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l2-geometry-2'),
+
+    -- SAM-L3-Q19 | l2-geometry-1 | geometry / 1B | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q19', 'geometry', '1B', -1.5, 'MULTIPLE_CHOICE',
+     '{"stem":"Continue the pattern.","options":["(1)","(2)","(3)","(4)"],"correct_index":1,"distractor_misconceptions":{"0":"GE_SHAPE_PROPERTY","2":"GE_SHAPE_PROPERTY","3":"GE_SHAPE_PROPERTY"},"image_alt":"A sequence of 2D shapes forming a repeating pattern, with the next shape in the pattern to be identified from four options.","image_required":true}',
+     array['GE_SHAPE_PROPERTY'],
+     3, 'PATTERN', 1, 'PICTORIAL', false, 'l2-geometry-1'),
+
+    -- SAM-L3-Q20 | l3-whole_numbers-1 | number_sense / 2B | MULTIPLE_CHOICE | INACTIVE (image-essential; awaiting curated image)
+    ('SAM-L3-Q20', 'number_sense', '2B', -0.8, 'MULTIPLE_CHOICE',
+     '{"stem":"What number does the figure below show?","options":["342","243","2403","2430"],"correct_index":2,"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION","1":"NS_PLACE_VALUE_CONFUSION","3":"NS_ZERO_VALUE"},"image_alt":"A place-value diagram or base-ten blocks figure representing a 4-digit number within 10 000.","image_required":true}',
+     array['NS_PLACE_VALUE_CONFUSION','NS_ZERO_VALUE'],
+     7, 'IDENTIFY', 1, 'PICTORIAL', false, 'l3-whole_numbers-1'),
+
+    -- SAM-L3-Q21 | l3-whole_numbers-1 | number_sense / 3A | NUMERIC_ENTRY
+    ('SAM-L3-Q21', 'number_sense', '3A', -0.5, 'NUMERIC_ENTRY',
+     '{"stem":"What is the missing number below? 7602 = ___ hundreds 2 ones","correct_answer":"76"}',
+     array['NS_PLACE_VALUE_CONFUSION','NS_ZERO_VALUE'],
+     12, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l3-whole_numbers-1'),
+
+    -- SAM-L3-Q22 | l3-whole_numbers-1 | number_sense / 3B | NUMERIC_ENTRY
+    ('SAM-L3-Q22', 'number_sense', '3B', 0.2, 'NUMERIC_ENTRY',
+     '{"stem":"What is the greatest 4-digit even number?","correct_answer":"9998"}',
+     array['NS_MAGNITUDE_MISJUDGE','NS_PLACE_VALUE_CONFUSION'],
+     7, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l3-whole_numbers-1')
   ) as v(external_id, strand, level, difficulty, format,
          content, misconception_tags,
          word_count, operation_type, num_operations, representation,
