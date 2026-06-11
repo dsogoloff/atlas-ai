@@ -625,6 +625,50 @@ describe("submitResponseHandler — idempotent retry", () => {
   });
 });
 
+// ===========================================================================
+// Consent gate (M2 readiness / COPPA Gate-B) — comprehensive session
+// ===========================================================================
+
+describe("submitResponseHandler — consent gate (comprehensive session)", () => {
+  function rlsComprehensive(): RlsMockOpts {
+    return {
+      user: { id: "u1" },
+      parent: { data: PARENT, error: null },
+      children: { data: [{ id: CHILD_ID }], error: null },
+      session: { data: SESSION_IN_PROGRESS_COMPREHENSIVE, error: null },
+    };
+  }
+
+  it("fails closed with 403 and accepts no response when a comprehensive session has no valid consent", async () => {
+    // The session reports test_type='comprehensive', but the gate is
+    // independent of test_type and runs BEFORE the idempotency check and
+    // any response insert. An empty consent_records result models both
+    // "never consented" and "consent revoked mid-assessment". Either way
+    // the handler must refuse further responses — exactly as for a short
+    // session — and write nothing.
+    const svc = makeServiceClient({
+      consent_records: [{ data: [], error: null }],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsComprehensive()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("consent_required");
+    expect(result.error.status).toBe(403);
+
+    // No response accepted and no state mutated.
+    expect(svc.inserts.some((i) => i.table === "responses")).toBe(false);
+    expect(svc.inserts).toHaveLength(0);
+    expect(svc.updates).toHaveLength(0);
+  });
+});
+
 describe("submitResponseHandler — auth failures", () => {
   it("returns 401 when auth.getUser yields no user", async () => {
     const svc = makeServiceClient({});
