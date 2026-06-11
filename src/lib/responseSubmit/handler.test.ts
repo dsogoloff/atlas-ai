@@ -126,7 +126,11 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
           };
         }
         if (table === "children") {
-          return { data: { grade_level: null }, error: null };
+          // grade_level=null → seedPosteriors uniform fallback (replay path);
+          // birth_year is read by the comprehensive-engine tier derivation
+          // (deriveTier) on the comprehensive branch. A K-4-aged birth_year
+          // keeps the default tier K_4 (hardCap 26) for comprehensive tests.
+          return { data: { grade_level: null, birth_year: 2018 }, error: null };
         }
         // Consent gate (M2): default to "consent on file" so legacy submit
         // scripts don't have to stage it. The consent-gate test stages an
@@ -1346,17 +1350,30 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
   });
 
   it("comprehensive session terminating: emits comprehensive_test_completed + placement_recommendation_created", async () => {
-    const p = priors(24);
+    // Comprehensive-engine lane: termination is now the comprehensive
+    // budget/floor/SE rule, not shouldTerminate's flat MAX_QUESTIONS=25.
+    // The deterministic terminating route is the per-tier HARD CAP. The
+    // default child fixture (birth_year 2018) derives tier K_4 (hardCap 26),
+    // so 25 priors → post-state 26 = hardCap → max-questions-reached → done,
+    // independent of SE/floor.
+    //
+    // Queue note: the comprehensive branch adds replayStrandCounts (a
+    // responses read) before persistSessionSummary. An empty responses result
+    // short-circuits strand counting (returns {} without a questions read), so
+    // we slot one `[]` between the insert's response slot and the aggregation
+    // rows; the questions queue is unchanged.
+    const p = priors(25);
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null },
-        { data: p.responses, error: null },
-        { data: null, error: null },
-        { data: aggRows(25, 0), error: null },
+        { data: null, error: null }, // existing-response check
+        { data: p.responses, error: null }, // replayEngineState
+        { data: null, error: null }, // response insert next()
+        { data: [], error: null }, // replayStrandCounts (empty → {} )
+        { data: aggRows(26, 0), error: null }, // persistSessionSummary
       ],
       questions: [
-        { data: QUESTION, error: null },
-        { data: p.questions, error: null },
+        { data: QUESTION, error: null }, // load question
+        { data: p.questions, error: null }, // replayEngineState
       ],
       assessment_sessions: [
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
@@ -1376,6 +1393,7 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.body.done).toBe(true);
+    expect(result.body.termination_reason).toBe("max-questions-reached");
     expect(eventNames()).toContain("comprehensive_test_completed");
     expect(eventNames()).not.toContain("short_test_completed");
     expect(eventNames()).toContain("placement_recommendation_created");

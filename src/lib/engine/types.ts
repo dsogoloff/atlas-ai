@@ -130,8 +130,17 @@ export interface NextQuestionRequest {
   /** IRT difficulty target. Layer 2 picks among items in [target ± width]. */
   targetDifficulty: number;
   width: number;
-  /** For diagnostics / test assertions. */
-  reason: "max-variance-strand" | "round-robin-fallback";
+  /** For diagnostics / test assertions.
+   *
+   * "comprehensive-floor" / "comprehensive-adapt" (comprehensive-engine lane)
+   * are emitted by the comprehensive router (src/lib/engine/comprehensive.ts):
+   * phase-1 per-strand coverage floor vs. phase-2 max-variance deepening.
+   * Additive — the short path keeps emitting "max-variance-strand". */
+  reason:
+    | "max-variance-strand"
+    | "round-robin-fallback"
+    | "comprehensive-floor"
+    | "comprehensive-adapt";
 }
 
 export interface TerminationDecision {
