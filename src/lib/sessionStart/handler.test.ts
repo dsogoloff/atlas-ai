@@ -219,14 +219,18 @@ const PARENT_OK: MockResult = {
   error: null,
 };
 const CHILD_OK: MockResult = {
-  data: { id: CHILD_ID },
+  // grade_level/birth_year are read by the comprehensive-engine tier
+  // derivation (deriveTier) on the comprehensive first-pick branch. null grade
+  // + a K-4-aged birth_year keeps short-path fixtures realistic (grade_level
+  // is nullable text; birth_year is NOT NULL in the schema).
+  data: { id: CHILD_ID, grade_level: null, birth_year: 2018 },
   error: null,
 };
 
 // Item #10 Phase 3 — child fixture with grade_level set, used by the
 // grade-aware-seeding describe block at the end of this file.
 const CHILD_GRADE_K: MockResult = {
-  data: { id: CHILD_ID, grade_level: "K" },
+  data: { id: CHILD_ID, grade_level: "K", birth_year: 2018 },
   error: null,
 };
 

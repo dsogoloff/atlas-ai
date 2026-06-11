@@ -100,16 +100,22 @@ import { emit } from "@/lib/analytics/emit";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { isComprehensivePilotEnabled } from "@/lib/env";
 import {
+  comprehensiveNextQuestionRequest,
+  comprehensiveBudget,
+} from "@/lib/engine/comprehensive";
+import {
   createEngineState,
   nextQuestionRequest,
   shouldTerminate,
 } from "@/lib/engine/engine";
+import { STRANDS } from "@/lib/engine/levels";
 import { ACTIVE_PRIOR_VERSION, PRIORS_V1 } from "@/lib/engine/priors";
 import type {
   GradeKey,
   NextQuestionRequest,
   Strand,
 } from "@/lib/engine/types";
+import { deriveTier } from "@/lib/tier/derive";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import {
   discoverEmptyBankStrands,
@@ -186,7 +192,7 @@ export async function sessionStartHandler({
   // ---------------------------------------------------------------------------
   const { data: child, error: childErr } = await rlsClient
     .from("children")
-    .select("id, grade_level")
+    .select("id, grade_level, birth_year")
     .eq("id", request.child_id)
     .eq("parent_id", parent.id)
     .maybeSingle();
@@ -307,13 +313,36 @@ export async function sessionStartHandler({
   // either (a) the picker serves OR (b) every strand is excluded
   // (truly bank-unservable for this tenant).
   // ---------------------------------------------------------------------------
-  // TODO(comprehensive-engine): comprehensive sessions currently run short
-  // engine params; reparameterize item cap / confidence stop here (separate
-  // session).
+  // Comprehensive parameterization (comprehensive-engine lane):
+  // priors are identical to short (createEngineState below). What differs for
+  // a comprehensive session is the FIRST-pick router — short uses the engine's
+  // pure max-variance nextQuestionRequest; comprehensive uses the phase-1
+  // coverage-floor router (comprehensiveNextQuestionRequest) so the very first
+  // item already targets the per-strand floor. The budget / stopping rule
+  // reparameterization lives downstream in responseSubmit; this hook only
+  // changes which strand the first question comes from.
   const state = createEngineState({
     grade: child.grade_level as GradeKey | null,
     config: PRIORS_V1,
   });
+
+  // In-scope strands for comprehensive routing: every strand minus the
+  // empty-bank ones (the in-scope-band approximation documented in
+  // comprehensive.ts). For comprehensive, derive the per-strand floor from the
+  // child's tier.
+  const inScopeStrands =
+    testType === "comprehensive"
+      ? new Set<Strand>(STRANDS.filter((s) => !emptyBankStrands.has(s)))
+      : null;
+  const comprehensivePerStrandFloorN =
+    testType === "comprehensive"
+      ? comprehensiveBudget(
+          deriveTier({
+            grade_level: child.grade_level,
+            birth_year: child.birth_year,
+          }),
+        ).perStrandFloorN
+      : 0;
 
   const excludedStrands = new Set<Strand>(emptyBankStrands);
   let pickedQuestion: PickedQuestionRow | null = null;
@@ -321,7 +350,16 @@ export async function sessionStartHandler({
   let lastAttemptedStrand: Strand | null = null;
 
   while (true) {
-    const req = nextQuestionRequest(state, excludedStrands);
+    const req =
+      testType === "comprehensive" && inScopeStrands !== null
+        ? comprehensiveNextQuestionRequest({
+            state,
+            strandCounts: {},
+            inScopeStrands,
+            excludedStrands,
+            perStrandFloorN: comprehensivePerStrandFloorN,
+          })
+        : nextQuestionRequest(state, excludedStrands);
     if (req === null) {
       // No strand can serve. Roll back and surface 422.
       break;
