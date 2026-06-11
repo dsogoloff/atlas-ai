@@ -26,14 +26,21 @@ export const StartRequestSchema = z.object({
 export type StartRequest = z.infer<typeof StartRequestSchema>;
 
 // ---------------------------------------------------------------------------
-// Response (success — covers 200 OK and 409 Conflict resume)
+// Response (success — fresh start AND resume both return 200)
 // ---------------------------------------------------------------------------
 //
-// Body shape is identical for 200 and 409. The 409 case carries an
-// inline `error.code='session_in_progress'` so clients can distinguish
-// "you started a fresh session" from "you reconnected to an existing
-// one" without inspecting the HTTP status. Per the design memo gate
-// approval — keeps the resume payload usable while flagging it.
+// Body shape is identical for fresh and resumed sessions. A resumed
+// session with real progress (≥1 answered question) carries
+// `resumed: true` so clients can distinguish "you started a fresh
+// session" from "you reconnected to an existing one".
+//
+// HISTORY (P3 session-resume loop): resume used to ride an HTTP 409 +
+// `body.error.code='session_in_progress'` envelope. Encoding a SUCCESS
+// as an error status meant anything keying off the status line saw a
+// failure, and a child returning to an in-progress assessment got a
+// sterile "Something went wrong" → Try again → 409 loop (every retry
+// re-hit the same live session). Resume is a success; it is now a 200
+// and "you resumed" is data, not an error.
 
 export interface StartResponseBody {
   session_id: string;
@@ -45,8 +52,11 @@ export interface StartResponseBody {
    *  number of past answers (so the displayed question number is
    *  `response_count + 1`). */
   response_count: number;
-  /** Present iff the session already existed (HTTP 409). */
-  error?: { code: "session_in_progress"; message: string };
+  /** Present (and true) iff an existing IN_PROGRESS session with ≥1
+   *  answered question was resumed — drives the client's resume banner.
+   *  Absent for fresh sessions AND zero-progress resumes, which should
+   *  look fresh to the child (see handler.ts header). */
+  resumed?: true;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,5 +79,5 @@ export interface StartError {
 }
 
 export type StartHandlerResult =
-  | { ok: true; status: 200 | 409; body: StartResponseBody }
+  | { ok: true; status: 200; body: StartResponseBody }
   | { ok: false; error: StartError };

@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { Json } from "@/lib/supabase/database.types";
 
-import { judgeAnswer } from "./correctness";
+import {
+  isSingleNumberKey,
+  judgeAnswer,
+  normalizeAnswer,
+} from "./correctness";
 
 // Fixture helpers mirror real seed shapes (supabase/seed.sql:162-198):
 //   * MULTIPLE_CHOICE: { stem, options[], correct_index }
@@ -85,6 +89,168 @@ describe("judgeAnswer / NUMERIC_ENTRY", () => {
   });
 });
 
+describe("normalizeAnswer", () => {
+  it("lowercases and collapses whitespace runs", () => {
+    expect(normalizeAnswer("  Smaller   THAN  ")).toBe("smaller than");
+  });
+  it("treats comma and space as equivalent list separators", () => {
+    expect(normalizeAnswer("10, 17, 20")).toBe("10 17 20");
+    expect(normalizeAnswer("10,17,20")).toBe("10 17 20");
+  });
+  it("canonicalizes unit spacing after a digit", () => {
+    expect(normalizeAnswer("1km 750m")).toBe("1 km 750 m");
+    expect(normalizeAnswer("9:25am")).toBe("9:25 am");
+  });
+  it("does not split a unit token embedded in a longer word", () => {
+    // "mins" is not the token "min" (word boundary), so it stays untouched.
+    expect(normalizeAnswer("5 mins")).toBe("5 mins");
+  });
+});
+
+describe("judgeAnswer / NUMERIC_ENTRY normalization (P1 live cases)", () => {
+  // Real child answers that were wrongly graded incorrect before
+  // normalization landed — all three must grade correct.
+  it("grades '1km 750m' correct against '1 km 750 m'", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "1km 750m"),
+    ).toBe(true);
+  });
+  it("grades '9:25am' correct against '9:25 am'", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("9:25 am"), "9:25am")).toBe(
+      true,
+    );
+  });
+  it("grades '10 17 20' correct against '10, 17, 20'", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "10 17 20"),
+    ).toBe(true);
+  });
+  it("is case-insensitive for free-text answers", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("cylinder"), "Cylinder")).toBe(
+      true,
+    );
+  });
+  it("collapses repeated internal whitespace", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "1  km   750 m"),
+    ).toBe(true);
+  });
+  it("accepts a comma where the bank uses a thousands space ('42,800' vs '42 800')", () => {
+    // Pinned: comma/space separator equivalence makes thousands-grouping
+    // punctuation interchangeable.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42,800")).toBe(
+      true,
+    );
+  });
+  it("single-number key '42 800' matches all grouping forms", () => {
+    // The STORED key's shape selects the mode: one grouped number, so all
+    // grouping (spaces/commas) is stripped from both sides before compare.
+    // S.A.M. uses space-grouped thousands as standard notation.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42 800")).toBe(
+      true,
+    );
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42,800")).toBe(
+      true,
+    );
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42800")).toBe(
+      true,
+    );
+  });
+  it("single-number key '1000' (ungrouped) accepts grouped child input", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("1000"), "1 000")).toBe(true);
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("1000"), "1,000")).toBe(true);
+  });
+});
+
+describe("judgeAnswer / NUMERIC_ENTRY normalization — wrong answers stay wrong", () => {
+  it("rejects reordered list '10 20 17' vs '10, 17, 20' (order significant)", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "10 20 17"),
+    ).toBe(false);
+  });
+  it("rejects '9:35 am' vs '9:25 am'", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("9:25 am"), "9:35 am")).toBe(
+      false,
+    );
+  });
+  it("rejects '2 km 750 m' vs '1 km 750 m'", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "2 km 750 m"),
+    ).toBe(false);
+  });
+  it("rejects '1km750' vs '1 km 750 m'", () => {
+    // Pinned WRONG: the answer is missing the trailing unit ("m"), and we
+    // never invent units the child did not type — "1km750" normalizes to
+    // "1 km 750", which is not "1 km 750 m".
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("1 km 750 m"), "1km750"),
+    ).toBe(false);
+  });
+  it("rejects '1017 20' vs '10, 17, 20' (separators collapse, digits never join)", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "1017 20"),
+    ).toBe(false);
+  });
+  it("rejects '101720' vs list key '10, 17, 20' (list keys never collapse)", () => {
+    // The two modes must not cross: "10 17 20" has groups that are not
+    // exactly 3 digits, so it is a LIST key — digits never join, and a
+    // single-number submission cannot match it.
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "101720")).toBe(
+      false,
+    );
+  });
+  it("rejects '42 8000' vs single-number key '42 800'", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42 8000")).toBe(
+      false,
+    );
+  });
+});
+
+describe("single-number vs list mode — mutual exclusivity", () => {
+  // judgeAnswer branches if/else on isSingleNumberKey(normalizedKey): a
+  // boolean of the KEY alone. Exactly one mode runs per question, so the
+  // paths cannot cross. These tests pin the partition on the boundary
+  // shapes, then pin each side's behavior.
+  it("partitions key shapes: one grouped number vs a list", () => {
+    // Single-number shapes (strip-grouping mode):
+    expect(isSingleNumberKey(normalizeAnswer("42 800"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("42,800"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("42800"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("1 234 567"))).toBe(true);
+    expect(isSingleNumberKey(normalizeAnswer("3.5"))).toBe(true);
+    // List shapes (separator-significant mode):
+    expect(isSingleNumberKey(normalizeAnswer("10, 17, 20"))).toBe(false);
+    expect(isSingleNumberKey(normalizeAnswer("10 17 20"))).toBe(false);
+    expect(isSingleNumberKey(normalizeAnswer("9 68 81"))).toBe(false);
+    // Non-numeric keys are never single-number mode:
+    expect(isSingleNumberKey(normalizeAnswer("1 km 750 m"))).toBe(false);
+    expect(isSingleNumberKey(normalizeAnswer("9:25 am"))).toBe(false);
+  });
+  it("list keys never apply single-number stripping", () => {
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "101720"),
+    ).toBe(false);
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10, 17, 20"), "1017 20"),
+    ).toBe(false);
+  });
+  it("single-number keys never apply list semantics to reject grouping", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", neContent("42 800"), "42800")).toBe(
+      true,
+    );
+  });
+  it("pins the ambiguous boundary: 3-digit-grouped lists read as one number", () => {
+    // "10 170 200" is shape-ambiguous (a list of three numbers OR one
+    // grouped number 10 170 200). S.A.M. uses space-grouped thousands as
+    // standard notation, so single-number mode is the chosen default —
+    // pinned here so any future change to the partition is deliberate.
+    expect(isSingleNumberKey(normalizeAnswer("10 170 200"))).toBe(true);
+    expect(
+      judgeAnswer("NUMERIC_ENTRY", neContent("10 170 200"), "10170200"),
+    ).toBe(true);
+  });
+});
+
 describe("judgeAnswer / DRAG_DROP", () => {
   it("matches when client sends JSON.stringify of correct_order", () => {
     const order = ["A", "B", "C"];
@@ -99,6 +265,29 @@ describe("judgeAnswer / DRAG_DROP", () => {
         ddContent(["A", "B", "C"], ["A", "B", "C"]),
         JSON.stringify(["A", "C", "B"]),
       ),
+    ).toBe(false);
+  });
+  it("normalizes string tokens on both sides (case/unit spacing)", () => {
+    expect(
+      judgeAnswer(
+        "DRAG_DROP",
+        ddContent(["750 m", "1 km"], ["750 m", "1 km"]),
+        JSON.stringify(["750m", "1KM"]),
+      ),
+    ).toBe(true);
+  });
+  it("still rejects reordered tokens after normalization", () => {
+    expect(
+      judgeAnswer(
+        "DRAG_DROP",
+        ddContent(["750 m", "1 km"], ["750 m", "1 km"]),
+        JSON.stringify(["1 km", "750 m"]),
+      ),
+    ).toBe(false);
+  });
+  it("grades non-JSON answers wrong instead of throwing", () => {
+    expect(
+      judgeAnswer("DRAG_DROP", ddContent(["A", "B"], ["A", "B"]), "not json"),
     ).toBe(false);
   });
   it("works against the seed-shape fixture (fraction ordering)", () => {

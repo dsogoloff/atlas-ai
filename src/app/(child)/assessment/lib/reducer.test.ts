@@ -29,7 +29,7 @@ const resumeBody: StartResponseBody = {
   ...startBody,
   // Resume scenario: 3 responses already persisted from a prior tab/session.
   response_count: 3,
-  error: { code: "session_in_progress", message: "resumed" },
+  resumed: true,
 };
 
 const submitNext: SubmitResponseBody = {
