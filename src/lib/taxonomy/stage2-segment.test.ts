@@ -14,6 +14,8 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeMathDigits,
   parseAnswerKey,
+  reattributeOrphanOptionBlocks,
+  type SegmentedQuestion,
   type Stage1Extraction,
 } from "../../../scripts/conversion/stage2-segment";
 
@@ -149,6 +151,193 @@ describe("parseAnswerKey — numbered-list format", () => {
 
   it("ignores header noise and the stray page number", () => {
     expect([...byTask.keys()].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 8, 9]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Format A: tab table — fullRow right-column continuation (memo M3 fix).
+// The right column of a "N\ta\tN\ta" row can carry a worked solution that
+// wraps onto following lines; the old parser committed the right column
+// immediately and dropped the continuation.
+// ---------------------------------------------------------------------------
+
+const TAB_TABLE_CONTINUATION_KEY = [
+  "Answer Key – Level 9", // synthetic
+  "Task \tAnswer \tTask \tAnswer",
+  "1 \t(2) \t7 \t4 km 600 m = 4600 m",
+  "4600 ÷ 2 = 2300",
+  "2300 m = 2 km 300 m",
+  "Tom ran 2 km 300 m.",
+  "2 \t9 \t8 \t(1)",
+  "3 \t(4) \t9 \t30 - 2 = 28",
+  "She gave away",
+  "28 apples.",
+  "Seriously Addictive Maths", // footer — must not be absorbed into task 9
+].join("\n");
+
+describe("parseAnswerKey — tab-table fullRow continuation", () => {
+  const { byTask } = parseAnswerKey(extraction(TAB_TABLE_CONTINUATION_KEY));
+
+  it("accumulates the right column's multi-line worked solution", () => {
+    const entry = byTask.get(7);
+    expect(entry?.raw_answer).toBe(
+      "4 km 600 m = 4600 m\n4600 ÷ 2 = 2300\n2300 m = 2 km 300 m\nTom ran 2 km 300 m.",
+    );
+  });
+
+  it("still extracts a clean value when a bare-number line exists", () => {
+    expect(byTask.get(9)?.answer_value).toBe("28");
+    expect(byTask.get(9)?.raw_answer).toContain("She gave away");
+  });
+
+  it("the left column and single-line right columns are unaffected", () => {
+    expect(byTask.get(1)).toMatchObject({ answer_kind: "OPTION", answer_value: 2 });
+    expect(byTask.get(2)?.answer_value).toBe("9");
+    expect(byTask.get(3)).toMatchObject({ answer_kind: "OPTION", answer_value: 4 });
+    expect(byTask.get(8)).toMatchObject({ answer_kind: "OPTION", answer_value: 1 });
+  });
+
+  it("does not absorb the trailing footer into the last open entry", () => {
+    expect(byTask.get(9)?.raw_answer).not.toContain("Seriously Addictive");
+  });
+
+  it("creates no spurious entries", () => {
+    expect([...byTask.keys()].sort((a, b) => a - b)).toEqual([1, 2, 3, 7, 8, 9]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Orphan option-block re-attribution (memo M2 fix). Synthetic fixtures
+// reproducing the L3 page-14 (Q22/Q23) and page-4 (Q03/Q04) shapes —
+// fabricated question text, real line STRUCTURE.
+// ---------------------------------------------------------------------------
+
+function seg(task_number: number, pages: number[], rawLines: string[]): SegmentedQuestion {
+  return {
+    task_number,
+    pages,
+    page_images: pages.map((p) => `page-${String(p).padStart(2, "0")}.png`),
+    raw_text: rawLines.join("\n"),
+  };
+}
+
+describe("reattributeOrphanOptionBlocks", () => {
+  it("re-attaches an orphan (1)..(4) block that follows the next task's Answer: line", () => {
+    // The Q22/Q23 shape: task 12's options landed inside task 13's block,
+    // after "Answer:", with task 13's own diagram line following.
+    const segments = [
+      seg(12, [14], ["12. \tWhat is the largest 4-digit odd number?"]),
+      seg(13, [14], [
+        "13. What is the missing number in the pattern below.",
+        "Answer:",
+        "(1) 2000 \t(2) \t2002",
+        "(3) 8887 \t(4) \t8889 \t( \t)",
+        "? \t111 \t222 \t333 \t444",
+      ]),
+    ];
+    const moves = reattributeOrphanOptionBlocks(segments);
+    expect(moves).toEqual([
+      {
+        from_task: 13,
+        to_task: 12,
+        lines: ["(1) 2000 \t(2) \t2002", "(3) 8887 \t(4) \t8889 \t( \t)"],
+      },
+    ]);
+    expect(segments[0].raw_text).toBe(
+      [
+        "12. \tWhat is the largest 4-digit odd number?",
+        "(1) 2000 \t(2) \t2002",
+        "(3) 8887 \t(4) \t8889 \t( \t)",
+      ].join("\n"),
+    );
+    expect(segments[1].raw_text).toBe(
+      [
+        "13. What is the missing number in the pattern below.",
+        "Answer:",
+        "? \t111 \t222 \t333 \t444",
+      ].join("\n"),
+    );
+  });
+
+  it("re-attaches when the previous task ends with a bare answer circle (Q03/Q04 shape)", () => {
+    const segments = [
+      seg(3, [4], [
+        "3. \tIn the number 507, what does the digit ‘5’",
+        "stand for?",
+        "( \t)",
+      ]),
+      seg(4, [4], [
+        "4. \tArrange the numbers in order. Begin with the",
+        "greatest.",
+        "2000 \t808 \t200 \t888",
+        "Answer: \t, \t, \t,",
+        "(1) \t5 ones \t(2) \t5 \ttens",
+        "(3) \t5 hundreds \t(4) \t5 \tthousands",
+      ]),
+    ];
+    const moves = reattributeOrphanOptionBlocks(segments);
+    expect(moves).toHaveLength(1);
+    expect(moves[0]).toMatchObject({ from_task: 4, to_task: 3 });
+    expect(segments[0].raw_text.endsWith(
+      "(1) \t5 ones \t(2) \t5 \ttens\n(3) \t5 hundreds \t(4) \t5 \tthousands",
+    )).toBe(true);
+    expect(segments[1].raw_text).not.toContain("(1)");
+    expect(segments[1].raw_text).toContain("Answer: \t, \t, \t,");
+  });
+
+  it("leaves a genuine MC task alone (options not preceded by Answer:)", () => {
+    const segments = [
+      seg(10, [8], ["10. \tWhat is 6 + 6?"]),
+      seg(11, [8], [
+        "11. Which of the following is equal to 14?",
+        "(1) \t7 × 2 \t(2) \t7 × 3",
+        "(3) \t7 ÷ 2 \t(4) \t4 ÷ 2 \t( \t)",
+      ]),
+    ];
+    expect(reattributeOrphanOptionBlocks(segments)).toEqual([]);
+    expect(segments[1].raw_text).toContain("(1)");
+  });
+
+  it("does not move a block when the previous task already has option markers", () => {
+    const segments = [
+      seg(5, [6], [
+        "5. Pick one.",
+        "(1) \ta \t(2) \tb",
+        "(3) \tc \t(4) \td \t( \t)",
+      ]),
+      seg(6, [6], [
+        "6. What is the missing number?",
+        "Answer:",
+        "(1) 1 \t(2) \t2",
+        "(3) 3 \t(4) \t4 \t( \t)",
+      ]),
+    ];
+    expect(reattributeOrphanOptionBlocks(segments)).toEqual([]);
+  });
+
+  it("does not move a block across pages", () => {
+    const segments = [
+      seg(7, [9], ["7. \tWhat is the smallest 3-digit number?"]),
+      seg(8, [10], [
+        "8. What comes next?",
+        "Answer:",
+        "(1) 10 \t(2) \t20",
+        "(3) 30 \t(4) \t40 \t( \t)",
+      ]),
+    ];
+    expect(reattributeOrphanOptionBlocks(segments)).toEqual([]);
+  });
+
+  it("requires the run's markers to be exactly (1)..(4) in order", () => {
+    const segments = [
+      seg(1, [2], ["1. \tName a shape."]),
+      seg(2, [2], [
+        "2. What is the missing number?",
+        "Answer:",
+        "(1) 5 \t(3) \t6", // (2) missing — not a complete option block
+      ]),
+    ];
+    expect(reattributeOrphanOptionBlocks(segments)).toEqual([]);
   });
 });
 

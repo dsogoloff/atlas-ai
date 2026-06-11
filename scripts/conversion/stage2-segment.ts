@@ -334,7 +334,12 @@ function parseTabTableKey(lines: string[]): Map<number, AnswerEntry> {
       if (full) {
         const [, n1, a1, n2, a2] = full;
         byTask.set(Number(n1), buildAnswerEntry(a1.trim()));
-        byTask.set(Number(n2), buildAnswerEntry(a2.trim()));
+        // The RIGHT column's answer may continue on the following lines
+        // (multi-line worked solutions, e.g. an L4 entry whose conversion
+        // steps wrap under the row). Open the continuation accumulator
+        // exactly like the halfRow path instead of committing immediately
+        // — committing here truncated those entries to their first line.
+        pending = { task: Number(n2), parts: [a2.trim()] };
         continue;
       }
       const half = halfRow.exec(line);
@@ -349,6 +354,15 @@ function parseTabTableKey(lines: string[]): Map<number, AnswerEntry> {
         continue;
       }
     } else if (pending) {
+      // Footer/header noise (e.g. the trailing "Seriously Addictive
+      // Maths" line) must not be absorbed into an open accumulator — now
+      // that fullRow right-column answers also accumulate, the last table
+      // row's accumulator stays open until EOF. Mirror the numbered-list
+      // parser: commit and drop the noise line.
+      if (KEY_NOISE.test(line.trim())) {
+        commitPending();
+        continue;
+      }
       pending.parts.push(line.trim());
     }
     // Otherwise: orphan line outside any task (e.g. stray diagram block
@@ -512,7 +526,7 @@ function buildContentStream(pages: CleanedPage[]): PageLine[] {
 
 const QUESTION_MARKER = /^\s*(\d+)\.\s/;
 
-interface SegmentedQuestion {
+export interface SegmentedQuestion {
   task_number: number;
   pages: number[];
   page_images: string[];
@@ -565,6 +579,87 @@ function segmentQuestions(stream: PageLine[]): SegmentedQuestion[] {
     }
   }
   return segments;
+}
+
+// ---------------------------------------------------------------------------
+// 5b. Orphan option-block re-attribution (root-cause memo M2).
+//
+// PDF text reading order can emit a task's option block AFTER the next
+// task's stem opener (observed twice: L3 page 14, where task 22's
+// "(1) 1000 … (4) 9999 ( )" landed inside task 23's block; L3 page 4,
+// same shape for tasks 3/4). Segmentation then attributes the options to
+// the WRONG task: the real MC task loses its options and the absorbing
+// task fails downstream checks.
+//
+// Observed orphan signature (deliberately conservative — both real cases
+// match all conditions, and a legitimate MC task matches none):
+//   1. Inside a task block, a CONTIGUOUS run of option-marker lines whose
+//      markers are exactly (1)..(4) in order…
+//   2. …immediately preceded by an "Answer:" line — a genuine MC task in
+//      these worksheets never prints "Answer:" before its options (it
+//      uses the trailing "( )" circle instead), while a numeric/ordering
+//      task's own block ends at its answer blank.
+//   3. The PREVIOUS task shares a page with the current one and contains
+//      NO option markers of its own (it is exactly the option-less task
+//      the orphan block belongs to).
+// When all three hold, the run is moved to the end of the previous task's
+// raw_text. (The hypothesized "block BEGINS with option markers" shape
+// cannot occur: segmentation only opens a block at an "N." stem line.)
+// Mutates `segments` in place; returns the moves for warn() reporting.
+// ---------------------------------------------------------------------------
+
+const OPTION_MARKER_LINE = /^\s*\(\s*\d\s*\)/;
+const ANSWER_LABEL_LINE = /^\s*Answer\s*:/i;
+
+export interface OptionBlockMove {
+  from_task: number;
+  to_task: number;
+  lines: string[];
+}
+
+export function reattributeOrphanOptionBlocks(
+  segments: SegmentedQuestion[],
+): OptionBlockMove[] {
+  const moves: OptionBlockMove[] = [];
+  for (let s = 1; s < segments.length; s += 1) {
+    const current = segments[s];
+    const previous = segments[s - 1];
+
+    // Condition 3 — previous task: shares a page, has no option markers.
+    if (!previous.pages.some((p) => current.pages.includes(p))) continue;
+    if (/\(\s*[1-4]\s*\)/.test(previous.raw_text)) continue;
+
+    const lines = current.raw_text.split("\n");
+
+    // Find a contiguous option-marker run immediately after an "Answer:" line.
+    let runStart = -1;
+    for (let i = 1; i < lines.length; i += 1) {
+      if (OPTION_MARKER_LINE.test(lines[i]) && ANSWER_LABEL_LINE.test(lines[i - 1])) {
+        runStart = i;
+        break;
+      }
+    }
+    if (runStart === -1) continue;
+    let runEnd = runStart;
+    while (runEnd + 1 < lines.length && OPTION_MARKER_LINE.test(lines[runEnd + 1])) {
+      runEnd += 1;
+    }
+    const run = lines.slice(runStart, runEnd + 1);
+
+    // Condition 1 — the run's markers are exactly (1)..(4), in order.
+    const markers = run
+      .flatMap((l) => [...l.matchAll(/\(\s*(\d)\s*\)/g)])
+      .map((m) => Number(m[1]));
+    if (markers.length !== 4 || markers.some((n, i) => n !== i + 1)) continue;
+
+    // Re-attribute: move the run to the end of the previous task's block.
+    previous.raw_text = `${previous.raw_text.replace(/\s+$/g, "")}\n${run.join("\n")}`;
+    current.raw_text = [...lines.slice(0, runStart), ...lines.slice(runEnd + 1)]
+      .join("\n")
+      .replace(/\s+$/g, "");
+    moves.push({ from_task: current.task_number, to_task: previous.task_number, lines: run });
+  }
+  return moves;
 }
 
 // ---------------------------------------------------------------------------
@@ -777,6 +872,16 @@ async function processWorksheet(
   const cleanedPages = cleanWorksheetPages(ws.extraction);
   const stream = buildContentStream(cleanedPages);
   const segments = segmentQuestions(stream);
+
+  // Re-attach orphan option blocks the PDF reading order misplaced
+  // (memo M2 — the L3 Q22/Q23 and Q03/Q04 shape). Loud via warn(), so
+  // every move lands in conversion.log for human review.
+  for (const move of reattributeOrphanOptionBlocks(segments)) {
+    warn(
+      `task ${move.from_task}: re-attributed ${move.lines.length} orphan option line(s) ` +
+        `to task ${move.to_task} (PDF reading-order interleave)`,
+    );
+  }
 
   const evalText = findEvalResultsText(cleanedPages);
   const evalByTask = evalText ? parseEvalResults(evalText) : new Map<number, EvalKeyEntry>();

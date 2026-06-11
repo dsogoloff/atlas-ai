@@ -22,9 +22,12 @@ import {
   categorizeSkipReason,
   collectUnknownMisconceptionCodes,
   deriveHalfGradeLevel,
+  detectFlagContradictions,
+  detectOptionsDivergence,
   escapeSqlString,
   formatStage4AuditLine,
   mapSubStrandToStrand,
+  normalizeOptionText,
   parseDragDropContent,
   parseSeedMisconceptionCodes,
   renderValuesRow,
@@ -489,6 +492,146 @@ describe("misconception vocabulary", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Deterministic load gates (root-cause memo leverage #1)
+// ---------------------------------------------------------------------------
+
+describe("detectFlagContradictions", () => {
+  // The SAM-L3-Q11 review flag VERBATIM (the proven case: the model's flag
+  // said "corrected to 0" while the emitted field stayed 1). This is flag
+  // metadata authored by the pipeline's model, not licensed question text.
+  const Q11_FLAG =
+    "correct_index corrected to 0 (option 1 in answer key = 9×2=18); verify answer key '1' maps to option (1) 9×2";
+
+  it("skips the verbatim SAM-L3-Q11 shape: flag says index 0, record emits 1", () => {
+    const reasons = detectFlagContradictions(
+      baseRecord({
+        format: "MULTIPLE_CHOICE",
+        options: ["9 × 2", "9 × 3", "9 ÷ 2", "6 ÷ 3"],
+        correct_index: 1,
+        correct_answer: null,
+        review_flags: [Q11_FLAG, "answer key kind=VALUE but format=MULTIPLE_CHOICE"],
+      }),
+    );
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0]).toContain("flag contradiction");
+    expect(reasons[0]).toContain("correct_index should be 0");
+    expect(reasons[0]).toContain("emits 1");
+    expect(reasons[0]).toContain(Q11_FLAG);
+  });
+
+  it("passes when the stated correction AGREES with the emitted field", () => {
+    const reasons = detectFlagContradictions(
+      baseRecord({
+        format: "MULTIPLE_CHOICE",
+        options: ["9 × 2", "9 × 3", "9 ÷ 2", "6 ÷ 3"],
+        correct_index: 0,
+        correct_answer: null,
+        review_flags: [Q11_FLAG],
+      }),
+    );
+    expect(reasons).toEqual([]);
+  });
+
+  it("recognizes the 'should be' phrasing", () => {
+    const reasons = detectFlagContradictions(
+      baseRecord({
+        format: "MULTIPLE_CHOICE",
+        options: ["1", "2", "3", "4"],
+        correct_index: 3,
+        correct_answer: null,
+        review_flags: ["correct_index should be 2 per the answer key"],
+      }),
+    );
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0]).toContain("should be 2");
+  });
+
+  it("detects correct_answer corrections that contradict the emitted value", () => {
+    const reasons = detectFlagContradictions(
+      baseRecord({
+        correct_answer: "5250",
+        review_flags: ["correct_answer corrected to 1 km 750 m; verify against the key"],
+      }),
+    );
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0]).toContain('correct_answer should be "1 km 750 m"');
+  });
+
+  it("passes correct_answer corrections that agree (up to whitespace/case)", () => {
+    const reasons = detectFlagContradictions(
+      baseRecord({
+        correct_answer: "1 km 750 m",
+        review_flags: ["correct_answer corrected to 1 KM  750 M; verify against the key"],
+      }),
+    );
+    expect(reasons).toEqual([]);
+  });
+
+  it("ignores ordinary advisory flags", () => {
+    const reasons = detectFlagContradictions(
+      baseRecord({
+        review_flags: [
+          "answer key kind=VALUE but format=MULTIPLE_CHOICE",
+          "topic inherited via fill-down",
+          "image not provided — verify the figure",
+        ],
+      }),
+    );
+    expect(reasons).toEqual([]);
+  });
+});
+
+describe("detectOptionsDivergence", () => {
+  it("passes verbatim options (whitespace/case differences are trivial)", () => {
+    expect(
+      detectOptionsDivergence(["9 × 2", "9 × 3"], ["9  ×  2", "9 × 3"]),
+    ).toBeNull();
+    expect(detectOptionsDivergence(["Model 1"], ["model 1"])).toBeNull();
+  });
+
+  it("flags reconstructed option text (the M4 shape)", () => {
+    // Stage 2 parsed mojibake fragments; stage 3 invented plausible
+    // fractions — divergence must skip the record.
+    const reason = detectOptionsDivergence(
+      ["4/12", "6/12", "4/6", "5/6"],
+      ['$ #%', '& #%', '& "', "' \""],
+    );
+    expect(reason).not.toBeNull();
+    expect(reason).toContain("options divergence");
+    expect(reason).toContain('stage3 "4/12" vs stage2 "$ #%"');
+  });
+
+  it("flags value-equivalent rewrites (synthetic Q03 shape)", () => {
+    const reason = detectOptionsDivergence(
+      ["8", "80", "800", "8000"],
+      ["8 ones", "8 tens", "8 hundreds", "8 thousands"],
+    );
+    expect(reason).not.toBeNull();
+    expect(reason).toContain("options divergence");
+  });
+
+  it("flags a length mismatch", () => {
+    const reason = detectOptionsDivergence(["1", "2", "3"], ["1", "2", "3", "4"]);
+    expect(reason).not.toBeNull();
+    expect(reason).toContain("3 options");
+  });
+
+  it("does not apply without a stage2 options_guess or without stage3 options", () => {
+    expect(detectOptionsDivergence(["1", "2"], null)).toBeNull();
+    expect(detectOptionsDivergence(["1", "2"], [])).toBeNull();
+    expect(detectOptionsDivergence(null, ["1", "2"])).toBeNull();
+  });
+});
+
+describe("normalizeOptionText", () => {
+  it("folds unicode, dashes, whitespace, and case", () => {
+    expect(normalizeOptionText("  10  000 ")).toBe("10 000");
+    expect(normalizeOptionText("9 − 3")).toBe("9 - 3");
+    expect(normalizeOptionText("Model 1")).toBe("model 1");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Load report (conversion.log audit line)
 // ---------------------------------------------------------------------------
 
@@ -506,6 +649,19 @@ describe("categorizeSkipReason", () => {
     );
     expect(categorizeSkipReason("NUMERIC_ENTRY without correct_answer")).toBe("invalid-fields");
     expect(categorizeSkipReason("representation 'X' invalid")).toBe("invalid-fields");
+  });
+
+  it("buckets the deterministic gate reasons", () => {
+    expect(
+      categorizeSkipReason(
+        'flag contradiction: review flag states correct_index should be 0 but the record emits 1 — flag: "…"',
+      ),
+    ).toBe("flag-contradiction");
+    expect(
+      categorizeSkipReason(
+        'options divergence: stage3 options are not verbatim from the stage2 extraction — [0] stage3 "4/12" vs stage2 "$ #%"',
+      ),
+    ).toBe("options-divergence");
   });
 });
 
