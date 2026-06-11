@@ -66,10 +66,10 @@
 - [x] **MERGED PR #20 — remaining rendered "diagnostic" claims scrubbed to "assessment"
   (§2.4).** lane/marketing-diagnostic-scrub (commit `e6d9515`). Merged in origin head
   `d4743c7`.
-- [ ] **DONE-pending-merge PR #21 — lane/marketing-precision-claim** — removes the
+- [x] **MERGED PR #21 — lane/marketing-precision-claim** (merge `a3d7d46`) — removes the
   unbacked "98% accuracy" precision claim (`e52258c`) and renames the "Diagnostic
-  Precision" card heading to "Misconception Mapping" (`32f35d6`). Awaiting Dimitri's
-  attended merge after Vercel preview review.
+  Precision" card heading to "Misconception Mapping" (`32f35d6`). §2.4 scrub complete
+  across PRs #16/#20/#21.
 
 ## 2. Relay / unattended run loop (not gated)
 - [x] **DONE 2026-05-31 — Manual-mode relay built & merged (PR #9, `164a1b2`).**
@@ -129,7 +129,11 @@
   (`506936d`), stage2/3 skip-existing guards (`a1685d6`). Verify GREEN 630 tests /
   45 files; CI verify-bar pass. The 11 hand-seeded SAM-L2 rows win over generated
   duplicates via `on conflict do nothing` (by design).
-- [ ] **Dimitri: merge PR #22 + PR #23** (attended, Vercel preview).
+- [x] **MERGED PR #22 (`016357e`) + PR #23 (`1ebb01e`)** — attended 2026-06-10.
+- **SESSION SPLIT (2026-06-10):** all further CONVERSION / question-bank work (image
+  curation reruns, QA pass, full-library digitization) runs in a SEPARATE session.
+  Other sessions must not touch `scripts/conversion/` or taxonomy migrations;
+  coordinate via repo memory only.
 - [ ] **Radar acceptance check** (after merges + `supabase db reset`): reset output
   shows the backfill notice (`sam-l2 total=11 mapped=11 unmapped=0`) and the 79-row
   load. Demo report radar will still read "not assessed" (seed has zero responses rows
@@ -148,6 +152,14 @@
 - [ ] Full-library digitization (0A–0C, 5–7; PDFs already in input/) — separate planned
   follow-up; no timeline set.
 
+## 4b. Assessment mascot (IN PROGRESS 2026-06-10 — lane/assessment-mascot)
+- [ ] Integrate dachshund mascot (3 poses at `stitch/mascot/mascot1.png` waving /
+      `mascot2.png` thinking / `mascot3.png` celebrating) into the child assessment flow.
+      K_4 = lightweight transform animation; G5_8 = static/subtle. Pose art will be
+      swapped later by file replacement at the same paths (current waving/thinking art
+      carries a tag the founder is removing in the swap — no branding added in code).
+      G3 cleared 2026-06-10 (counsel approved consent flow).
+
 ## 5. Deferred (do not build now)
 - [ ] 4-beat findings depth + narration voice re-tune (re-opens voice-locked Step 4
       prompt; hold until after the SAM deck).
@@ -162,12 +174,9 @@
   violates BUSINESS_RULES "No consumer paywall — families never pay Atlas directly," and
   pricing models are Dimitri-owned/unconfirmed regardless. Needs Dimitri before any build;
   as written it is contrary to the locked B2B2C model.
-- **§2.4 marketing page wording — RESOLVED pending PR #21 merge (updated 2026-06-10).**
-  PR #16 fixed the hero pill (line 74); merged PR #20 (lane/marketing-diagnostic-scrub)
-  scrubbed the remaining rendered "diagnostic" strings; open PR #21
-  (lane/marketing-precision-claim) removes the unbacked "98% accuracy" claim and renames
-  the "Diagnostic Precision" card (line 170) to "Misconception Mapping". Needs Dimitri
-  attended merge after Vercel preview review to close out.
+- **§2.4 marketing page wording — RESOLVED (PR #21 merged `a3d7d46`, 2026-06-10).**
+  Scrub complete across PRs #16/#20/#21 (hero pill, rendered "diagnostic" strings,
+  98%-accuracy claim removal + "Misconception Mapping" card rename).
 - **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability confirmed as a
   credential blocker (not transport). Automated relay + `.mcp.json` unblocked once Dimitri
   runs `codex login` or supplies `OPENAI_API_KEY` on this box (see item 2 above).
