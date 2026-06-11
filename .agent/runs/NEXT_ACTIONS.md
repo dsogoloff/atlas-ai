@@ -96,15 +96,56 @@
       flags added to `src/lib/env.ts`, all default-off (only `'true'` enables); `ROLLOUT_FLAGS`
       registry; new `src/lib/env.test.ts` pins the default-off invariant; `.env.example`
       documents all 11 + `REPORT_NARRATION_LIVE`. Verify GREEN: 554 tests.
-- [x] Admin/support tooling — ops runbook DONE 2026-05-30 (merge `5709c13`).
-      `docs/ops-runbook.md` covers family/child lookup, sessions/reports, consent
-      (per-child; revoke = boolean flip; G3 for anything broader), audit/analytics tables,
-      env flags, common support scenarios, hard don'ts. Admin UI deferred by decision
-      2026-05-30 (no admin role in schema; privacy-sensitive; pilot operable via
+- [x] Admin/support tooling — ops runbook DONE 2026-05-30 (merge `5709c13`). Operator
+      stuck-session gap + consent-revoke companion insert + §7 new scenario closed by PR #43
+      (lane/ops-runbook-gaps, docs/ops-runbook.md — awaiting merge). Admin UI deferred by
+      decision 2026-05-30 (no admin role in schema; privacy-sensitive; pilot operable via
       Supabase/Vercel dashboards).
 - [ ] OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs
       it — no operator mechanism exists today to regenerate a narration without a re-take;
-      see `docs/ops-runbook.md` §3 KNOWN GAP).
+      see `docs/ops-runbook.md` §3 KNOWN GAP — now explicitly documented in PR #43 as an
+      optional code follow-on).
+
+## 3b. Comprehensive-test instrumentation (M2 KPI coverage) — 2026-06-11
+
+- [x] **OPEN PR #41 — lane/comprehensive-instructor-analytics.** Instrument-only:
+      migration 20260611090000_comprehensive_instructor_analytics.sql; 6 new
+      analytics_event_name enum values; new assessment_test_type enum +
+      assessment_sessions.test_type column (default 'short'); instructor_usefulness table +
+      RLS; events wired: comprehensive_test_started/_item_answered/_completed (test_type='comprehensive'),
+      short_test_started/_item_answered/_completed (test_type='short'),
+      instructor_report_viewed (tracker island + server action),
+      placement_recommendation_created (fires once at session completion, both terminal
+      paths; PII-free), instructor_usefulness_submitted (1-5 + optional note; RLS table +
+      server action + client island), short_result_viewed (parent report view, test_type='short').
+      sessionStart honors a comprehensive? flag only when ENABLE_COMPREHENSIVE_PILOT is on
+      (fail-safe to short). Hand-edited database.types.ts to match DDL. Adaptive ENGINE
+      PARAMS UNCHANGED — TODO(comprehensive-engine) marker left for the separate
+      comprehensive-assembly session. Verify GREEN: 882 tests / 54 files; tsc clean; lint
+      0 errors (2 pre-existing warnings). Codex SKIPPED (relay credential-blocked).
+      **Dimitri: merge after Vercel preview review; then run `supabase db reset` to apply
+      migration 20260611090000 and confirm instructor usefulness card + analytics.**
+
+- [x] **OPEN PR #42 — lane/consent-gate-comprehensive (STACKED on PR #41).**
+      Regression test only: asserts dual server-side consent gate (sessionStart +
+      responseSubmit) fails closed for a comprehensive session (test_type='comprehensive',
+      ENABLE_COMPREHENSIVE_PILOT on, no consent) — 403 consent_required, no session
+      created / no response accepted. NO handler fix needed (gate runs unconditionally
+      before test_type resolution). Verify GREEN: 884 tests / 54 files.
+      **MERGE #41 FIRST.** GitHub auto-retargets this PR's base to ATLAS-ASSESSMENT once
+      #41 merges.
+
+- [ ] **Comprehensive-engine reparameterization** — item cap / confidence stop / routing
+      depth for the comprehensive test type. DEFERRED to the SEPARATE
+      comprehensive-assembly session (decision 2026-06-11). TODO(comprehensive-engine)
+      marker in codebase identifies the hook point.
+
+- [x] **OPEN PR #43 — lane/ops-runbook-gaps (docs only).** docs/ops-runbook.md §3
+      rewritten (stuck/abandoned sessions + Option A reset-by-delete / Option B
+      force-close); §4 consent revoke + companion vpc_audit_log insert + revoke-all-children
+      variant; §7 new "child can't start a new assessment" scenario. Narration-regen KNOWN
+      GAP documented as optional code follow-on (not closed). No DB changes.
+      **Dimitri: can merge in any order relative to #41/#42; no supabase db reset needed.**
 
 ## 4. G1 LIFTED (2026-06-10) — CONVERSION L1–4 run COMPLETE; merge + radar check remain
 
@@ -194,13 +235,14 @@
 - **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability confirmed as a
   credential blocker (not transport). Automated relay + `.mcp.json` unblocked once Dimitri
   runs `codex login` or supplies `OPENAI_API_KEY` on this box (see item 2 above).
-- **Founder actions for conversion run — PARKED (new, 2026-06-10).** (1) Merge PRs #21,
-  #22, #23. (2) Copy `.claude/settings.local.json` into `atlas-stage4/` and
-  `atlas-backfill/` worktree roots. (3) Drop worksheet + answer-key PDFs into
-  `scripts/conversion/input/` for each level, then re-run pipeline. See section 4 above.
-- **Main checkout `CLAUDE.md` regression — PARKED (new, 2026-06-10).** Main checkout has
-  an uncommitted `CLAUDE.md` with older garbled content (`\\_` artifacts). Founder to run
-  `git checkout -- CLAUDE.md` to discard, or explain if intentional.
+- **Attend-merge PRs #41 / #43 / #42 (in order) — PARKED awaiting Dimitri (new, 2026-06-11).**
+  PR #41 (comprehensive instrumentation + migration) → PR #43 (ops-runbook docs, any order
+  relative to #41) → PR #42 (consent regression, stacked: merge AFTER #41). After #41 merges:
+  run `supabase db reset` to apply migration 20260611090000 and confirm instructor usefulness
+  card + analytics. PR #42 base auto-retargets to ATLAS-ASSESSMENT once #41 is merged.
+- **Founder actions for conversion run — PARKED (updated, 2026-06-10).** Image curation for
+  30 inactive image-essential questions (upload manifests in each worksheet output folder).
+  Radar acceptance check: complete one fresh dev assessment, confirm radar populates.
 - Franchisor pilot-approval routing — G2 (business gate).
 - Pricing model (business gate); G1 license scope specifics (now LIFTED for digitization
   permission; geography/duration/derivative rights remain open).
