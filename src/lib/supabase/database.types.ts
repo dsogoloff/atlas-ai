@@ -1209,7 +1209,11 @@ export type Database = {
         | "ALGEBRA"
         | "COUNTING"
         | "IDENTIFY"
-      question_format: "MULTIPLE_CHOICE" | "NUMERIC_ENTRY" | "DRAG_DROP"
+      question_format:
+        | "MULTIPLE_CHOICE"
+        | "NUMERIC_ENTRY"
+        | "DRAG_DROP"
+        | "TEXT_ENTRY"
       representation_kind:
         | "SYMBOLIC"
         | "PICTORIAL"
@@ -1414,7 +1418,12 @@ export const Constants = {
         "COUNTING",
         "IDENTIFY",
       ],
-      question_format: ["MULTIPLE_CHOICE", "NUMERIC_ENTRY", "DRAG_DROP"],
+      question_format: [
+        "MULTIPLE_CHOICE",
+        "NUMERIC_ENTRY",
+        "DRAG_DROP",
+        "TEXT_ENTRY",
+      ],
       representation_kind: [
         "SYMBOLIC",
         "PICTORIAL",

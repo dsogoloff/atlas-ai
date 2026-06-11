@@ -202,6 +202,10 @@ const summary = fromSessionSummaryJson(
 - Whenever a new exported function is added to the timeFlagging module.
 - Whenever the TIME_FLAG_CONFIG_VERSION bumps (note the version transition
   here so future readers can trace which calls produced which historical data).
+  - `synthetic-v1.2026-05` → `synthetic-v1.2026-06`: TEXT_ENTRY (6s) added
+    to `inputSecondsByFormat` for the QA Bucket 2 format reclassification.
+    No values changed for the pre-existing formats, so rows flagged under
+    2026-05 are numerically identical to what 2026-06 would have produced.
 
 ## Calibration handoff
 

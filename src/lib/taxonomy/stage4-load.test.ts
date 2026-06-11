@@ -21,15 +21,19 @@ import {
   buildSeedBlock,
   categorizeSkipReason,
   collectUnknownMisconceptionCodes,
+  computeDeltaRows,
   deriveHalfGradeLevel,
   detectFlagContradictions,
   detectOptionsDivergence,
   escapeSqlString,
   formatStage4AuditLine,
   mapSubStrandToStrand,
+  mintMigrationFileName,
   normalizeOptionText,
   parseDragDropContent,
+  parseGeneratedMigrationExternalIds,
   parseSeedMisconceptionCodes,
+  planMigrationWrite,
   renderValuesRow,
   replaceSeedBlock,
   taxLevelNumber,
@@ -781,7 +785,7 @@ describe("buildMigrationFile / buildSeedBlock parity", () => {
     const migration = buildMigrationFile([SAMPLE_ROW], "2026-06-10T00:00:00.000Z");
     const seedBlock = buildSeedBlock(
       [SAMPLE_ROW],
-      "20260610000000_load_sam_questions.sql",
+      ["20260610000000_load_sam_questions.sql"],
       "2026-06-10T00:00:00.000Z",
     );
     expect(migration).toContain(insert);
@@ -820,5 +824,182 @@ describe("replaceSeedBlock", () => {
   it("is idempotent: replacing with the same block changes nothing", () => {
     const once = replaceSeedBlock(existing, blockV1);
     expect(replaceSeedBlock(once, blockV1)).toBe(once);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Delta-migration planning — generated migrations are immutable history
+// ---------------------------------------------------------------------------
+
+const SECOND_ROW: LoadRow = {
+  ...SAMPLE_ROW,
+  external_id: "SAM-TEST-Q02",
+  content: { stem: "What is 9 less than 20?", correct_answer: "11" },
+};
+
+describe("parseGeneratedMigrationExternalIds", () => {
+  it("round-trips the external_ids out of a generated migration file", () => {
+    const sql = buildMigrationFile([SAMPLE_ROW, SECOND_ROW], "2026-06-10T00:00:00.000Z");
+    expect(parseGeneratedMigrationExternalIds(sql)).toEqual([
+      "SAM-TEST-Q01",
+      "SAM-TEST-Q02",
+    ]);
+  });
+
+  it("only reads tuple-opening lines — content json on its own line never matches", () => {
+    // A stem that CONTAINS a tuple-looking fragment must not leak an id:
+    // the content json renders on a continuation line (no leading "('").
+    const trap: LoadRow = {
+      ...SAMPLE_ROW,
+      external_id: "SAM-TEST-Q03",
+      content: {
+        stem: "Ben wrote ('SAM-FAKE-Q99', on the board. How many characters is that?",
+        correct_answer: "16",
+      },
+    };
+    const sql = buildMigrationFile([trap], "2026-06-10T00:00:00.000Z");
+    expect(parseGeneratedMigrationExternalIds(sql)).toEqual(["SAM-TEST-Q03"]);
+  });
+
+  it("returns [] when the SQL has no values block", () => {
+    expect(parseGeneratedMigrationExternalIds("select 1;")).toEqual([]);
+  });
+});
+
+describe("computeDeltaRows", () => {
+  it("keeps only rows whose external_id is not already in history", () => {
+    expect(
+      computeDeltaRows([SAMPLE_ROW, SECOND_ROW], new Set(["SAM-TEST-Q01"])),
+    ).toEqual([SECOND_ROW]);
+  });
+});
+
+describe("planMigrationWrite", () => {
+  const MINTED = "20260612000000_load_sam_questions.sql";
+  const PRIOR = {
+    fileName: "20260610151306_load_sam_questions.sql",
+    sql: buildMigrationFile([SAMPLE_ROW], "2026-06-10T15:13:06.000Z"),
+  };
+
+  it("first run (no prior generated migration): all rows go to the minted file", () => {
+    const plan = planMigrationWrite([], [SAMPLE_ROW, SECOND_ROW], MINTED);
+    expect(plan).toEqual({
+      immutableFileNames: [],
+      rowsToWrite: [SAMPLE_ROW, SECOND_ROW],
+      newFileName: MINTED,
+    });
+  });
+
+  it("prior migration exists: only the DELTA rows go to a NEW file; history untouched", () => {
+    const plan = planMigrationWrite([PRIOR], [SAMPLE_ROW, SECOND_ROW], MINTED);
+    expect(plan.immutableFileNames).toEqual([PRIOR.fileName]);
+    expect(plan.rowsToWrite).toEqual([SECOND_ROW]);
+    expect(plan.newFileName).toBe(MINTED);
+    expect(plan.newFileName).not.toBe(PRIOR.fileName);
+  });
+
+  it("zero-delta run: no new migration file at all", () => {
+    const plan = planMigrationWrite([PRIOR], [SAMPLE_ROW], MINTED);
+    expect(plan.rowsToWrite).toEqual([]);
+    expect(plan.newFileName).toBeNull();
+    expect(plan.immutableFileNames).toEqual([PRIOR.fileName]);
+  });
+
+  it("refuses a minted filename that collides with existing history (immutability)", () => {
+    expect(() =>
+      planMigrationWrite([PRIOR], [SECOND_ROW], PRIOR.fileName),
+    ).toThrow(/immutable/);
+  });
+});
+
+describe("mintMigrationFileName", () => {
+  it("formats the UTC timestamp into the load-migration name", () => {
+    expect(mintMigrationFileName(new Date("2026-06-11T01:02:03Z"), new Set())).toBe(
+      "20260611010203_load_sam_questions.sql",
+    );
+  });
+
+  it("bumps one second at a time past taken names", () => {
+    const taken = new Set([
+      "20260611010203_load_sam_questions.sql",
+      "20260611010204_load_sam_questions.sql",
+    ]);
+    expect(mintMigrationFileName(new Date("2026-06-11T01:02:03Z"), taken)).toBe(
+      "20260611010205_load_sam_questions.sql",
+    );
+  });
+});
+
+describe("delta-aware file headers", () => {
+  it("buildMigrationFile marks a delta file and names the prior migrations", () => {
+    const sql = buildMigrationFile([SECOND_ROW], "2026-06-12T00:00:00.000Z", [
+      "20260610151306_load_sam_questions.sql",
+    ]);
+    expect(sql).toContain(MIGRATION_MARKER);
+    expect(sql).toContain("DELTA LOAD");
+    expect(sql).toContain("--   * 20260610151306_load_sam_questions.sql");
+  });
+
+  it("buildMigrationFile without priors carries no delta header", () => {
+    const sql = buildMigrationFile([SAMPLE_ROW], "2026-06-12T00:00:00.000Z");
+    expect(sql).not.toContain("DELTA LOAD");
+  });
+
+  it("buildSeedBlock lists every generated migration when there are several", () => {
+    const block = buildSeedBlock(
+      [SAMPLE_ROW, SECOND_ROW],
+      ["20260610151306_load_sam_questions.sql", "20260612000000_load_sam_questions.sql"],
+      "2026-06-12T00:00:00.000Z",
+    );
+    expect(block).toContain("cumulative across the generated load migrations");
+    expect(block).toContain("--   supabase/migrations/20260610151306_load_sam_questions.sql");
+    expect(block).toContain("--   supabase/migrations/20260612000000_load_sam_questions.sql");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Level-band pins for the full-library levels (pre-run lane).
+//
+// deriveHalfGradeLevel was anchor-tested on L2 only. These pins derive
+// the expected values MECHANICALLY from the current formula
+// (L2_BAND_CUTS = [-1.65, -1.4, -0.95] shifted by (n-2) * 12/17 per tax
+// level; band index 2(n-1)+band clamped to [KA, 8B]) so the full-library
+// run can't silently drift. They PIN current behavior — any deliberate
+// recalibration must update them consciously.
+// ---------------------------------------------------------------------------
+
+describe("deriveHalfGradeLevel — full-library level pins", () => {
+  it("pins l0a (n=0; cuts ≈ -3.062 / -2.812 / -2.362; idx = band - 2, clamped at KA)", () => {
+    expect(deriveHalfGradeLevel("l0a", -3.2)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0a", -2.9)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0a", -2.5)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0a", -2.0)).toBe("KB");
+  });
+
+  it("pins l0b/l0c: the letter suffix is IGNORED — all kindergarten codes share one mapping", () => {
+    // taxLevelNumber() drops the a/b/c suffix, so l0a (Nursery), l0b (K1)
+    // and l0c (K2) derive identical half-grades for the same seed. Pinned
+    // as current behavior; flagged in the PR body as a possible follow-up
+    // (the three kindergarten sub-levels cannot differentiate KA vs KB by
+    // level code alone — only difficulty_seed separates them).
+    expect(deriveHalfGradeLevel("l0b", -2.5)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0b", -2.0)).toBe("KB");
+    expect(deriveHalfGradeLevel("l0c", -2.5)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0c", -2.0)).toBe("KB");
+    expect(deriveHalfGradeLevel("l0c", -3.2)).toBe("KA");
+  });
+
+  it("pins l5 (n=5; bands 4A/4B/5A/5B; cuts ≈ 0.468 / 0.718 / 1.168)", () => {
+    expect(deriveHalfGradeLevel("l5", 0.3)).toBe("4A");
+    expect(deriveHalfGradeLevel("l5", 0.6)).toBe("4B");
+    expect(deriveHalfGradeLevel("l5", 1.0)).toBe("5A");
+    expect(deriveHalfGradeLevel("l5", 1.5)).toBe("5B");
+  });
+
+  it("pins l6 (n=6; bands 5A/5B/6A/6B; cuts ≈ 1.174 / 1.424 / 1.874)", () => {
+    expect(deriveHalfGradeLevel("l6", 1.0)).toBe("5A");
+    expect(deriveHalfGradeLevel("l6", 1.3)).toBe("5B");
+    expect(deriveHalfGradeLevel("l6", 1.6)).toBe("6A");
+    expect(deriveHalfGradeLevel("l6", 2.2)).toBe("6B");
   });
 });

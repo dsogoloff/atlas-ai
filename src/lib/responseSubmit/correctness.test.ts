@@ -6,16 +6,28 @@ import {
   isSingleNumberKey,
   judgeAnswer,
   normalizeAnswer,
+  normalizeTextAnswer,
 } from "./correctness";
 
 // Fixture helpers mirror real seed shapes (supabase/seed.sql:162-198):
 //   * MULTIPLE_CHOICE: { stem, options[], correct_index }
-//   * NUMERIC_ENTRY:   { stem, correct_answer }
+//   * NUMERIC_ENTRY:   { stem, correct_answer, accepted_answers? }
+//   * TEXT_ENTRY:      { stem, correct_answer }
 //   * DRAG_DROP:       { stem, items[], correct_order[] }
 const mcContent = (options: string[], correctIndex: number): Json =>
   ({ stem: "stem", options, correct_index: correctIndex }) as Json;
 
 const neContent = (correctAnswer: string): Json =>
+  ({ stem: "stem", correct_answer: correctAnswer }) as Json;
+
+const neAnyOfContent = (correctAnswer: string, accepted: string[]): Json =>
+  ({
+    stem: "stem",
+    correct_answer: correctAnswer,
+    accepted_answers: accepted,
+  }) as Json;
+
+const teContent = (correctAnswer: string): Json =>
   ({ stem: "stem", correct_answer: correctAnswer }) as Json;
 
 const ddContent = (items: string[], correctOrder: string[]): Json =>
@@ -248,6 +260,176 @@ describe("single-number vs list mode — mutual exclusivity", () => {
     expect(
       judgeAnswer("NUMERIC_ENTRY", neContent("10 170 200"), "10170200"),
     ).toBe(true);
+  });
+});
+
+describe("normalizeTextAnswer", () => {
+  it("inherits normalizeAnswer behavior (case, separators, unit spacing)", () => {
+    expect(normalizeTextAnswer("  Smaller   THAN  ")).toBe("smaller than");
+    expect(normalizeTextAnswer("9:25AM")).toBe("9:25 am");
+  });
+  it("canonicalizes unicode dashes to the keyboard hyphen", () => {
+    expect(normalizeTextAnswer("8 – 2 = 6")).toBe(
+      normalizeTextAnswer("8 - 2 = 6"),
+    );
+  });
+  it("turns a letter-joining hyphen into a space", () => {
+    expect(normalizeTextAnswer("Ninety-six")).toBe("ninety six");
+  });
+  it("does NOT touch digit-adjacent hyphens", () => {
+    expect(normalizeTextAnswer("8-2")).toBe("8 - 2");
+    expect(normalizeTextAnswer("8-2")).not.toBe("8 2");
+  });
+  it("pads math operators so '6+2=8' matches the spaced form", () => {
+    expect(normalizeTextAnswer("6+2=8")).toBe("6 + 2 = 8");
+  });
+});
+
+describe("judgeAnswer / TEXT_ENTRY", () => {
+  // The 8 reclassified bank answers, as the child would plausibly type
+  // them on a full keyboard.
+  it("grades 'Cylinder' correct against 'cylinder' (case)", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("cylinder"), "Cylinder")).toBe(
+      true,
+    );
+  });
+  it("grades '9:25am' correct against '9:25 am' (unit spacing)", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("9:25 am"), "9:25am")).toBe(
+      true,
+    );
+  });
+  it("grades 'ethan' correct against 'Ethan'", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("Ethan"), "ethan")).toBe(true);
+  });
+  it("grades 'ninety six' and 'Ninety-Six' correct against 'Ninety-six'", () => {
+    expect(
+      judgeAnswer("TEXT_ENTRY", teContent("Ninety-six"), "ninety six"),
+    ).toBe(true);
+    expect(
+      judgeAnswer("TEXT_ENTRY", teContent("Ninety-six"), "Ninety-Six"),
+    ).toBe(true);
+  });
+  it("grades '1km 750m' correct against '1 km 750 m'", () => {
+    expect(
+      judgeAnswer("TEXT_ENTRY", teContent("1 km 750 m"), "1km 750m"),
+    ).toBe(true);
+  });
+  it("grades 'smaller   than' correct against 'smaller than'", () => {
+    expect(
+      judgeAnswer("TEXT_ENTRY", teContent("smaller than"), "smaller   than"),
+    ).toBe(true);
+  });
+  it("grades a hyphen-typed fact family correct against the en-dash key", () => {
+    // SAM-L1-Q25 stores the S.A.M. en-dash ("8 – 2 = 6"); the child's
+    // keyboard types a hyphen. Comma/space separators are interchangeable.
+    expect(
+      judgeAnswer(
+        "TEXT_ENTRY",
+        teContent("6 + 2 = 8, 2 + 6 = 8, 8 – 2 = 6, 8 – 6 = 2"),
+        "6+2=8, 2+6=8, 8-2=6, 8-6=2",
+      ),
+    ).toBe(true);
+  });
+  it("rejects the wrong word ('greater than' vs 'smaller than')", () => {
+    expect(
+      judgeAnswer("TEXT_ENTRY", teContent("smaller than"), "greater than"),
+    ).toBe(false);
+  });
+  it("rejects the wrong shape ('cone' vs 'cylinder')", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("cylinder"), "cone")).toBe(
+      false,
+    );
+  });
+  it("rejects a reordered fact-family equation set (order significant)", () => {
+    expect(
+      judgeAnswer(
+        "TEXT_ENTRY",
+        teContent("6 + 2 = 8, 2 + 6 = 8"),
+        "2 + 6 = 8, 6 + 2 = 8",
+      ),
+    ).toBe(false);
+  });
+  it("rejects '9:25 pm' vs '9:25 am'", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("9:25 am"), "9:25 pm")).toBe(
+      false,
+    );
+  });
+
+  // SAM-L3-Q15 ("What is 1/6 + 3/6?", key "4/6") — reactivated as
+  // TEXT_ENTRY by 20260611014520_prerun_q4_q15.sql. These pins prove the
+  // fraction answer actually grades on the runtime path.
+  it("grades the SAM-L3-Q15 fraction key '4/6' correct (incl. whitespace/case tolerance)", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4/6")).toBe(true);
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "  4/6  ")).toBe(true);
+  });
+  it("pins actual behavior: '4 / 6' does NOT match '4/6' (slash is not in the operator-padding set)", () => {
+    // normalizeTextAnswer() pads + = - but not "/" — so a child typing
+    // spaces around the slash grades WRONG today. Pinned (not fixed)
+    // per the pre-run lane scope; flagged in the PR body as a possible
+    // normalizer follow-up before more fraction TEXT_ENTRY rows land.
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4 / 6")).toBe(false);
+    expect(normalizeTextAnswer("4 / 6")).toBe("4 / 6");
+    expect(normalizeTextAnswer("4/6")).toBe("4/6");
+  });
+  it("rejects the wrong fraction '3/6' vs '4/6'", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "3/6")).toBe(false);
+  });
+});
+
+describe("judgeAnswer / TEXT_ENTRY content errors", () => {
+  it("throws when correct_answer is missing", () => {
+    expect(() =>
+      judgeAnswer("TEXT_ENTRY", { stem: "x" } as Json, "cylinder"),
+    ).toThrow(/correct_answer/);
+  });
+  it("throws when correct_answer is not a string", () => {
+    expect(() =>
+      judgeAnswer("TEXT_ENTRY", { correct_answer: 7 } as Json, "7"),
+    ).toThrow(/correct_answer/);
+  });
+});
+
+describe("judgeAnswer / NUMERIC_ENTRY accepted_answers (any-of keys)", () => {
+  // SAM-L4-Q27: "Name one number that can divide both 54 and 72."
+  const q27 = neAnyOfContent("1, 2, 3, 6, 9 or 18", [
+    "1",
+    "2",
+    "3",
+    "6",
+    "9",
+    "18",
+  ]);
+
+  it("grades every accepted value correct", () => {
+    for (const v of ["1", "2", "3", "6", "9", "18"]) {
+      expect(judgeAnswer("NUMERIC_ENTRY", q27, v)).toBe(true);
+    }
+  });
+  it("applies per-key numeric coercion ('06' matches accepted '6')", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", q27, "06")).toBe(true);
+  });
+  it("rejects non-divisors", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", q27, "4")).toBe(false);
+    expect(judgeAnswer("NUMERIC_ENTRY", q27, "54")).toBe(false);
+  });
+  it("never compares against the human-readable correct_answer", () => {
+    expect(judgeAnswer("NUMERIC_ENTRY", q27, "1, 2, 3, 6, 9 or 18")).toBe(
+      false,
+    );
+  });
+  it("throws when accepted_answers is empty", () => {
+    expect(() =>
+      judgeAnswer("NUMERIC_ENTRY", neAnyOfContent("1", []), "1"),
+    ).toThrow(/accepted_answers/);
+  });
+  it("throws when accepted_answers contains non-strings", () => {
+    expect(() =>
+      judgeAnswer(
+        "NUMERIC_ENTRY",
+        { stem: "s", correct_answer: "1", accepted_answers: [1] } as Json,
+        "1",
+      ),
+    ).toThrow(/non-string/);
   });
 });
 

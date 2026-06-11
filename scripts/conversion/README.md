@@ -126,11 +126,15 @@ code) and emits:
 
 - `supabase/migrations/<timestamp>_load_sam_questions.sql` — the questions
   INSERT in the established tenant-CTE pattern, `content_id` resolved at
-  insert time via `tax_content.code = <content_key>`. **Prod path.**
-- `supabase/seed.sql` — the identical INSERT mirrored between
-  `-- BEGIN/END stage4-generated-questions` markers (AGENTS.md §11: the
-  migration is a no-op on dev reset because migrations run before seed.sql
-  creates the tenant; the seed mirror is the dev/CI path).
+  insert time via `tax_content.code = <content_key>`. **Prod path.** On
+  the first run this is a single full file; once generated load
+  migrations exist they are immutable history (see Idempotency below) and
+  a re-run writes a NEW timestamped file with only the delta rows.
+- `supabase/seed.sql` — the CUMULATIVE INSERT (all stage3 outputs)
+  mirrored between `-- BEGIN/END stage4-generated-questions` markers
+  (AGENTS.md §11: the migrations are no-ops on dev reset because
+  migrations run before seed.sql creates the tenant; the seed mirror is
+  the dev/CI path).
 - `output/<worksheet>/stage4-skipped.json` — records that failed
   validation, with reasons. Skips never abort the run.
 - `output/<worksheet>/stage4-upload-manifest.json` — image staging record
@@ -178,11 +182,16 @@ to the manifest, and never blocks the batch — the question row still loads
 manual curation step (curated crop → bucket → `image_path` → flip
 `is_active`).
 
-**Idempotency.** Re-running replaces the seed.sql marker block (never
-duplicates, never touches hand-written blocks), rewrites the existing
-generated migration in place (found by its `-- stage4-load:generated-migration`
-marker rather than creating a second file), and uploads with `upsert`. The
-DB layer is additionally protected by
+**Idempotency.** Re-running replaces the seed.sql marker block with the
+cumulative insert (never duplicates, never touches hand-written blocks)
+and uploads with `upsert`. Generated migrations (found by their
+`-- stage4-load:generated-migration` marker) are **immutable history**:
+applied migrations never change on the prod path, so the loader never
+rewrites one. When prior generated migrations exist, a re-run parses
+their `external_id`s out of the VALUES blocks and writes a NEW
+timestamped migration containing only the delta rows (header names the
+prior files); a run with nothing new writes no migration and says so.
+The DB layer is additionally protected by
 `on conflict (tenant_id, external_id) do nothing`.
 
 Unit tests for the pure mapping/SQL functions live at

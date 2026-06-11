@@ -1570,6 +1570,59 @@ from t,
 on conflict (tenant_id, external_id) do nothing;
 -- END stage4-generated-questions
 
+-- ---------------------------------------------------------------------------
+-- QA Bucket 2 — format reclassification (dev/CI mirror of
+-- supabase/migrations/20260610170100_reclassify_format_misclassified_questions.sql;
+-- see that file's header for the full before/after table).
+--
+-- Hand-written; lives AFTER the generated stage4 block on purpose: the
+-- generated INSERT above still loads the pre-fix rows (the conversion
+-- pipeline regenerates that block byte-identically), and these UPDATEs
+-- re-apply the reclassification on every `supabase db reset`. Idempotent:
+-- each UPDATE is guarded on the pre-change format/content. The TEXT_ENTRY
+-- enum value itself is added by migration 20260610170000 (schema DDL runs
+-- in both paths; no mirror needed).
+-- ---------------------------------------------------------------------------
+
+-- 1) Word/phrase answers -> TEXT_ENTRY (content unchanged).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'TEXT_ENTRY'
+from t
+where q.tenant_id = t.id
+  and q.format = 'NUMERIC_ENTRY'
+  and q.external_id in (
+    'SAM-L1-Q20', 'SAM-L1-Q25', 'SAM-L2-Q04', 'SAM-L2-Q08',
+    'SAM-L3-Q02', 'SAM-L3-Q18', 'SAM-L4-Q15', 'SAM-L4-Q22'
+  );
+
+-- 2) SAM-L1-Q28 "Write the numbers in order" -> DRAG_DROP.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'DRAG_DROP',
+    content = jsonb_build_object(
+      'stem', q.content->>'stem',
+      'items', jsonb_build_array('17', '20', '10'),
+      'correct_order', jsonb_build_array('10', '17', '20')
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q28'
+  and q.format = 'NUMERIC_ENTRY';
+
+-- 3) SAM-L4-Q27 stays NUMERIC_ENTRY; the "Accept ..." instruction key
+--    becomes a human-readable correct_answer + an any-of judging key.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = q.content || jsonb_build_object(
+      'correct_answer', '1, 2, 3, 6, 9 or 18',
+      'accepted_answers', jsonb_build_array('1', '2', '3', '6', '9', '18')
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L4-Q27'
+  and q.content->>'correct_answer' = 'Accept 1, 2, 3, 6, 9 or 18';
+
 -- BEGIN founder-confirmed-content-fixes (mirror of supabase/migrations/20260610180000_fix_sam_question_content.sql)
 -- =============================================================================
 -- Founder-confirmed S.A.M. question content fixes (remediation FIX 1)
@@ -1627,3 +1680,92 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["8","80","800","8000"]'::jsonb;
 -- END founder-confirmed-content-fixes
+
+-- BEGIN founder-verified-mojibake-fixes (mirror of supabase/migrations/20260610190000_fix_mojibake_rows.sql)
+-- =============================================================================
+-- Founder-verified S.A.M. question content fixes, round 2 (mojibake rows)
+-- =============================================================================
+-- AGENTS.md §11: the migration above is the prod path and a no-op on dev
+-- reset (it runs before this file creates the tenant); this block is the
+-- dev/CI path, applied AFTER the stage4 generated insert block above so
+-- the rows exist. Statements are identical to the migration; every
+-- UPDATE carries an idempotent guard. Full before/after table in the
+-- migration header.
+
+-- 1) SAM-L3-Q15 — source task is not multiple-choice: convert to
+--    NUMERIC_ENTRY with the founder-verified answer "4/6". Stem is kept
+--    verbatim (clean, expression already matches the source); the
+--    invented options/correct_index/distractor_misconceptions are
+--    dropped. Deactivated: fraction answer needs TEXT_ENTRY (PR #29) or
+--    keypad slash — reactivate after merge. Guarded on the old format +
+--    invented options array.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'NUMERIC_ENTRY'::question_format,
+    content = jsonb_build_object(
+      'stem', q.content ->> 'stem',
+      'correct_answer', '4/6'),
+    is_active = false
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q15'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["4/12","6/12","4/6","5/6"]'::jsonb;
+
+-- 2) SAM-L4-Q18 — pin the founder-verified options + correct_index. The
+--    stored row already matches, so the divergence guard makes this a
+--    no-op on the current bank (zero rows); it only fires where the
+--    stored content drifted from the verified source. Stem and
+--    distractor_misconceptions are untouched.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      jsonb_set(q.content, '{options}', '["1/2","3/4","5/3","1/12"]'::jsonb),
+      '{correct_index}',
+      '2'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L4-Q18'
+  and q.format = 'MULTIPLE_CHOICE'
+  and (q.content -> 'options' is distinct from '["1/2","3/4","5/3","1/12"]'::jsonb
+       or q.content -> 'correct_index' is distinct from '2'::jsonb);
+-- END founder-verified-mojibake-fixes
+
+-- BEGIN prerun-q4-q15-fixes (mirror of supabase/migrations/20260611014520_prerun_q4_q15.sql)
+-- =============================================================================
+-- Pre-run founder-directed fixes: SAM-L2-Q04 deactivation + SAM-L3-Q15
+-- TEXT_ENTRY reactivation
+-- =============================================================================
+-- AGENTS.md §11: the migration above is the prod path and a no-op on dev
+-- reset (it runs before this file creates the tenant); this block is the
+-- dev/CI path, applied AFTER the mojibake-fixes block above so the
+-- SAM-L3-Q15 row is already in its NUMERIC_ENTRY {stem, correct_answer}
+-- shape. Statements are identical to the migration; every UPDATE carries
+-- an idempotent guard. Full before/after table in the migration header.
+
+-- 1) SAM-L2-Q04 — deactivate until a curated question image exists
+--    (image_required came back true on the L2 prompt re-validation; same
+--    missing-image policy as the Stage 4 loader). Format/content
+--    untouched. Guarded on the active state.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set is_active = false
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L2-Q04'
+  and q.is_active = true;
+
+-- 2) SAM-L3-Q15 — NUMERIC_ENTRY -> TEXT_ENTRY (content shape identical)
+--    and reactivate, per the 20260610190000 "reactivate after merge"
+--    note. Guarded on the pre-change format + the founder-verified
+--    answer.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'TEXT_ENTRY'::question_format,
+    is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q15'
+  and q.format = 'NUMERIC_ENTRY'
+  and q.content ->> 'correct_answer' = '4/6';
+-- END prerun-q4-q15-fixes

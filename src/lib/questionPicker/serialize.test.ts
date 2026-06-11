@@ -72,6 +72,35 @@ describe("toClientQuestion / NUMERIC_ENTRY", () => {
   });
 });
 
+describe("toClientQuestion / TEXT_ENTRY", () => {
+  it("returns stem only, dropping correct_answer", () => {
+    const out = toClientQuestion(
+      row("TEXT_ENTRY", {
+        stem: "Name a 3-dimensional shape that has 2 flat faces and a curved surface.",
+        correct_answer: "cylinder",
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Name a 3-dimensional shape that has 2 flat faces and a curved surface.",
+    });
+    expect(Object.keys(out.content)).toEqual(["stem"]);
+    expect(out.format).toBe("TEXT_ENTRY");
+  });
+});
+
+describe("toClientQuestion / NUMERIC_ENTRY any-of keys", () => {
+  it("never leaks accepted_answers", () => {
+    const out = toClientQuestion(
+      row("NUMERIC_ENTRY", {
+        stem: "Name one number that can divide both 54 and 72.",
+        correct_answer: "1, 2, 3, 6, 9 or 18",
+        accepted_answers: ["1", "2", "3", "6", "9", "18"],
+      }),
+    );
+    expect(Object.keys(out.content)).toEqual(["stem"]);
+  });
+});
+
 describe("toClientQuestion / DRAG_DROP", () => {
   it("returns stem + items only, dropping correct_order", () => {
     const out = toClientQuestion(

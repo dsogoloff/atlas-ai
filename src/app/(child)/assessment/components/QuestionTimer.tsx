@@ -28,6 +28,7 @@ import type { Tier } from "@/lib/tier/derive";
 
 import { MultipleChoiceInput } from "./MultipleChoiceInput";
 import { NumericInput } from "./NumericInput";
+import { TextEntryInput } from "./TextEntryInput";
 import { DragDropInput } from "./DragDropInput";
 
 interface Props {
@@ -65,6 +66,8 @@ export function QuestionTimer({ question, onSubmit, disabled, tier }: Props) {
       );
     case "NUMERIC_ENTRY":
       return <NumericInput onSubmit={handleAnswer} disabled={disabled} />;
+    case "TEXT_ENTRY":
+      return <TextEntryInput onSubmit={handleAnswer} disabled={disabled} />;
     case "DRAG_DROP":
       return (
         <DragDropInput
