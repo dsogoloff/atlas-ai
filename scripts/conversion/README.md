@@ -41,7 +41,8 @@ pnpm convert:segment
 
 Stage 2 classifies every `output/*/extraction.json` as `WORKSHEET` or
 `ANSWER_KEY`, automatically pairs them by the level label found on page 1
-("Level 2", "Level 3", …) — or 1:1 if exactly one of each exists — then
+("Level 2", "Level 3", …, including the Kindergarten labels "Level 0A/0B/0C")
+— or 1:1 if exactly one of each exists — then
 segments the worksheet into per-question records and attaches the answer
 key. Output lands in each worksheet's folder as `stage2-questions.json`.
 Per-task fields:
@@ -232,6 +233,33 @@ segment/tag/load run trustworthy; they change no loaded data themselves.
 
 Both Stage 4 gates report loudly (`[ERROR]` per record + skip categories in
 the `conversion.log` stage4 line) and land in `stage4-skipped.json`.
+
+Stage-2 fix lane before the full-library run (0A/0B/0C/5/6 inventory):
+
+- **Level labels 0A/0B/0C**: the label parser (Stage 2 pairing + boilerplate
+  strip, Stage 3 `shortLevelSlug` + taxonomy window) now matches the
+  Kindergarten labels, so the three 0-level worksheets pair with their keys,
+  external_ids come out `SAM-L0A-Qnn`, and Stage 3's content window resolves
+  l0a/l0b/l0c by ordinal position in the taxonomy's `levels` array (l0c
+  chains into l1; previously the window was digit arithmetic).
+- **Spaced-period task marker**: the L5 worksheet prints task 2 as
+  `2 . Which is greater…`; `QUESTION_MARKER` tolerates one space/tab between
+  the number and the period (decimals still excluded — the period must be
+  followed by whitespace). Recovered L5 task 2 (29 → 30 questions).
+- **Two-column key rescue shapes (column delta)**: the L5/L6/0A/0C key text
+  layers drop a column's answer or merge two tasks' cells onto one line.
+  The tab-table parser derives the document's constant left/right
+  task-number delta from its unambiguous full rows (L5: +15, L6: +6,
+  0A/0C: +1; inconsistent → all rescue shapes stay off) and then splits:
+  `N1 \tanswer \tN2` (right answer wraps below), `N1 \tN2 \tanswer` (left
+  answer lost), `N1 \tN2` (both lost), a continuation line carrying the next
+  right-column row inline, and a `N answer` row whose number/answer tab
+  degraded to a space (accepted only when N is exactly the smallest task not
+  yet seen). Recovered L5 tasks 10/23 and L6 tasks 18/19/21/22/32; the
+  remaining L6 gaps (9/10/11/12/13/15/16/17) are genuinely absent from the
+  key's text layer.
+- **Space-grouped thousands**: `cleanValue` collapses the S.A.M. number
+  style ("162 000" → "162000") into `answer_value`.
 
 ## Why `input/` and `output/` are gitignored
 

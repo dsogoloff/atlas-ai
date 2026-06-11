@@ -84,3 +84,88 @@
 2026-06-10T18:00:00.000Z | content-fixes | fixed=3 flagged=2
 2026-06-11T01:16:56.236Z | stage3 | Level 2 Placement Worksheet.pdf | 22 tagged | 0 failed
 2026-06-11T01:18:32.000Z | content-fixes | fixed=2 flagged=0 (founder-verified mojibake rows)
+2026-06-11T02:04:18.610Z | stage1 | Level 0A Placement Worksheet Answer Key.pdf | 1 pages | output/Level 0A Placement Worksheet Answer Key/
+2026-06-11T02:04:23.845Z | stage1 | Level 0A Placement Worksheet.pdf | 20 pages | output/Level 0A Placement Worksheet/
+2026-06-11T02:04:23.992Z | stage1 | Level 0B Placement Worksheet Answer Key.pdf | 1 pages | output/Level 0B Placement Worksheet Answer Key/
+2026-06-11T02:04:28.140Z | stage1 | Level 0B Placement Worksheet.pdf | 16 pages | output/Level 0B Placement Worksheet/
+2026-06-11T02:04:28.293Z | stage1 | Level 0C Placement Worksheet Answer Key.pdf | 1 pages | output/Level 0C Placement Worksheet Answer Key/
+2026-06-11T02:04:32.667Z | stage1 | Level 0C Placement Worksheet.pdf | 20 pages | output/Level 0C Placement Worksheet/
+2026-06-11T02:04:32.812Z | stage1 | Level 5 Placement Worksheet Answer Key.pdf | 1 pages | output/Level 5 Placement Worksheet Answer Key/
+2026-06-11T02:04:35.898Z | stage1 | Level 5 Placement Worksheet.pdf | 15 pages | output/Level 5 Placement Worksheet/
+2026-06-11T02:04:36.413Z | stage1 | Level 6 Placement Worksheet Answer Key.pdf | 4 pages | output/Level 6 Placement Worksheet Answer Key/
+2026-06-11T02:04:41.940Z | stage1 | Level 6 Placement Worksheet.pdf | 26 pages | output/Level 6 Placement Worksheet/
+2026-06-11T02:04:58.136Z | stage2 | Level 0A Placement Worksheet.pdf | 18 questions | key: none
+2026-06-11T02:04:58.137Z | stage2 | Level 0B Placement Worksheet.pdf | 15 questions | key: none
+2026-06-11T02:04:58.139Z | stage2 | Level 0C Placement Worksheet.pdf | 16 questions | key: none
+2026-06-11T02:04:58.144Z | stage2 | Level 5 Placement Worksheet.pdf | 29 questions | key: Level 5 Placement Worksheet Answer Key.pdf
+2026-06-11T02:04:58.146Z | stage2 | Level 6 Placement Worksheet.pdf | 38 questions | key: Level 6 Placement Worksheet Answer Key.pdf
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 2 at index 1, got 3
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 3 at index 2, got 4
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 4 at index 3, got 5
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 5 at index 4, got 6
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 6 at index 5, got 7
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 7 at index 6, got 8
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 8 at index 7, got 9
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 9 at index 8, got 10
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 10 at index 9, got 11
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 11 at index 10, got 12
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 12 at index 11, got 13
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 13 at index 12, got 14
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 14 at index 13, got 15
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 15 at index 14, got 16
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 16 at index 15, got 17
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 17 at index 16, got 18
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 18 at index 17, got 19
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 19 at index 18, got 20
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 20 at index 19, got 21
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 21 at index 20, got 22
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 22 at index 21, got 23
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 23 at index 22, got 24
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 24 at index 23, got 25
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 25 at index 24, got 26
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 26 at index 25, got 27
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 27 at index 26, got 28
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 28 at index 27, got 29
+2026-06-11T02:04:58.147Z | stage2-warn | task sequence: expected 29 at index 28, got 30
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 10
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 23
+2026-06-11T02:04:58.147Z | stage2-warn | task 8: re-attributed 2 orphan option line(s) to task 7 (PDF reading-order interleave)
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 9
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 10
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 17
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 18
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 19
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 21
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 22
+2026-06-11T02:04:58.147Z | stage2-warn | answer key missing entry for task 32
+2026-06-11T02:34:22.567Z | stage2 | Level 0A Placement Worksheet.pdf | 18 questions | key: Level 0A Placement Worksheet Answer Key.pdf
+2026-06-11T02:34:22.569Z | stage2 | Level 0B Placement Worksheet.pdf | 15 questions | key: Level 0B Placement Worksheet Answer Key.pdf
+2026-06-11T02:34:22.571Z | stage2 | Level 0C Placement Worksheet.pdf | 16 questions | key: Level 0C Placement Worksheet Answer Key.pdf
+2026-06-11T02:34:22.573Z | stage2 | Level 5 Placement Worksheet.pdf | 30 questions | key: Level 5 Placement Worksheet Answer Key.pdf
+2026-06-11T02:34:22.575Z | stage2 | Level 6 Placement Worksheet.pdf | 38 questions | key: Level 6 Placement Worksheet Answer Key.pdf
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 1
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 2
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 3
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 5
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 6
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 7
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 10
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 12
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 13
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 14
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 15
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 1
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 3
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 12
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 1
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 5
+2026-06-11T02:34:22.576Z | stage2-warn | task 8: re-attributed 2 orphan option line(s) to task 7 (PDF reading-order interleave)
+2026-06-11T02:34:22.576Z | stage2-warn | task 22: format_guess=MULTIPLE_CHOICE but answer_kind=VALUE
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 9
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 10
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 11
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 12
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 13
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 15
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 16
+2026-06-11T02:34:22.576Z | stage2-warn | answer key missing entry for task 17
