@@ -6,8 +6,8 @@
 //
 // HTTP status mappings (verified against handler.ts in both routes):
 //   /start
-//     200 → fresh session                          → { ok, status: 200, body }
-//     409 → session_in_progress (resume)           → { ok, status: 409, body } (NOT an error)
+//     200 → fresh session OR resume               → { ok, resumed, body }
+//           (body.resumed === true marks a resumed in-progress session)
 //     401 → unauthorized                           → kind: "unauthorized"
 //     404 → child_not_found                        → kind: "not_found"
 //     422 → bank_unservable                        → kind: "unavailable"
@@ -19,6 +19,16 @@
 //     404 → session_not_found | question_not_found → kind: "not_found"
 //     409 → session_completed                      → kind: "session_completed"
 //     5xx → internal | flagger_error               → kind: "server"
+//
+// P3 (session-resume loop) hardening on /start: ANY response carrying a
+// complete session payload — session_id + question + next_request +
+// response_count — resolves to success and routes into the in-progress
+// flow, regardless of the status line. The server only emits that
+// payload when a live session exists, and "Try again" against a live
+// session must never loop sterilely. This also keeps the legacy resume
+// shape working (pre-P3 servers returned the payload under HTTP 409 +
+// body.error "session_in_progress", which is what caused the loop when
+// treated as an error).
 //
 // Network failure (fetch throws): kind: "network".
 // JSON parse failure on a 2xx/409: kind: "server" (the route emitted malformed JSON).
@@ -41,7 +51,7 @@ export interface ApiError {
 }
 
 export type StartResult =
-  | { ok: true; status: 200 | 409; body: StartResponseBody }
+  | { ok: true; resumed: boolean; body: StartResponseBody }
   | { ok: false; error: ApiError };
 
 export type SubmitResult =
@@ -67,13 +77,41 @@ export async function startSession(childId: string): Promise<StartResult> {
     return { ok: false, error: { kind: "network" } };
   }
 
+  // P3 hardening: a complete session payload is a success no matter what
+  // the status line says (covers the legacy 409 resume shape — see the
+  // file header). Field-level checks keep an error envelope like
+  // `{ error: {...} }` from ever being mistaken for a session.
+  const body = await readJson<StartResponseBody>(res);
+  if (body !== null && isStartSessionBody(body)) {
+    return {
+      ok: true,
+      resumed: body.resumed === true || res.status === 409,
+      body,
+    };
+  }
+
   if (res.status === 200 || res.status === 409) {
-    const body = await readJson<StartResponseBody>(res);
-    if (!body) return { ok: false, error: { kind: "server", status: res.status } };
-    return { ok: true, status: res.status as 200 | 409, body };
+    // Status says success but the payload is missing or malformed — the
+    // route emitted broken JSON.
+    return { ok: false, error: { kind: "server", status: res.status } };
   }
 
   return { ok: false, error: mapStartError(res.status) };
+}
+
+/** Narrows an arbitrary /start payload to "complete session payload" —
+ *  everything the reducer needs to enter the running state. */
+function isStartSessionBody(body: Partial<StartResponseBody>): boolean {
+  return (
+    typeof body.session_id === "string" &&
+    body.session_id.length > 0 &&
+    typeof body.response_count === "number" &&
+    body.question !== undefined &&
+    body.question !== null &&
+    typeof body.question.id === "string" &&
+    body.next_request !== undefined &&
+    body.next_request !== null
+  );
 }
 
 export async function submitResponse(args: SubmitArgs): Promise<SubmitResult> {
