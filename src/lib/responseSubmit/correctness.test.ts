@@ -362,14 +362,14 @@ describe("judgeAnswer / TEXT_ENTRY", () => {
     expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4/6")).toBe(true);
     expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "  4/6  ")).toBe(true);
   });
-  it("pins actual behavior: '4 / 6' does NOT match '4/6' (slash is not in the operator-padding set)", () => {
-    // normalizeTextAnswer() pads + = - but not "/" — so a child typing
-    // spaces around the slash grades WRONG today. Pinned (not fixed)
-    // per the pre-run lane scope; flagged in the PR body as a possible
-    // normalizer follow-up before more fraction TEXT_ENTRY rows land.
-    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4 / 6")).toBe(false);
-    expect(normalizeTextAnswer("4 / 6")).toBe("4 / 6");
-    expect(normalizeTextAnswer("4/6")).toBe("4/6");
+  it("matches '4 / 6' to '4/6' (slash is in the operator-padding set)", () => {
+    // Founder-directed follow-up to the pre-run lane: "/" joined + = -
+    // in the padding set, so spaced and unspaced fractions converge.
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4 / 6")).toBe(true);
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4 / 6"), "4/6")).toBe(true);
+    expect(normalizeTextAnswer("4 / 6")).toBe(normalizeTextAnswer("4/6"));
+    // Padding never merges digits: a different fraction stays wrong.
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4 6")).toBe(false);
   });
   it("rejects the wrong fraction '3/6' vs '4/6'", () => {
     expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "3/6")).toBe(false);

@@ -106,15 +106,16 @@ export function normalizeAnswer(raw: string): string {
  *   2. a hyphen JOINING two letters becomes a space, so "ninety-six",
  *      "ninety six" and "Ninety-Six" all converge ("8-2" is digit-
  *      adjacent and is NOT touched by this rule);
- *   3. the math operators + = - get canonical single-space padding, so
- *      "6+2=8" matches "6 + 2 = 8" (fact-family answers);
+ *   3. the math operators + = - / get canonical single-space padding, so
+ *      "6+2=8" matches "6 + 2 = 8" (fact-family answers) and "4/6"
+ *      matches "4 / 6" (fraction answers);
  *   4. re-collapse any space runs the padding introduced.
  */
 export function normalizeTextAnswer(raw: string): string {
   return normalizeAnswer(raw)
     .replace(/[‐-―−]/g, "-")
     .replace(/([a-z])-(?=[a-z])/g, "$1 ")
-    .replace(/[+=-]/g, " $& ")
+    .replace(/[+=/-]/g, " $& ")
     .replace(/ {2,}/g, " ")
     .trim();
 }
