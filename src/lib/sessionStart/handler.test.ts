@@ -1,18 +1,34 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-// The handler emits short_test_started via next/server `after()`. Stub it as
-// a no-op so the (analytics) side-effect doesn't run during these tests —
-// emit() has its own coverage in src/lib/analytics/emit.test.ts.
+// The handler emits the started event via next/server `after()`. Invoke the
+// callback synchronously so the (mocked) emit() observably fires within each
+// test. emit() itself is stubbed below so its insert doesn't touch the
+// captured serviceClient log; emit()'s own behaviour is covered in
+// src/lib/analytics/emit.test.ts.
 vi.mock("next/server", () => ({
-  after: () => {},
+  after: (cb: () => unknown) => {
+    Promise.resolve(cb()).catch(() => undefined);
+  },
 }));
 
+vi.mock("@/lib/analytics/emit", () => ({
+  emit: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { emit } from "@/lib/analytics/emit";
 import { STRANDS } from "@/lib/engine/levels";
 import type { Database } from "@/lib/supabase/database.types";
 
 import { sessionStartHandler } from "./handler";
 import type { StartRequest } from "./types";
+
+const mockEmit = vi.mocked(emit);
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  mockEmit.mockClear();
+});
 
 // ===========================================================================
 // Mock infrastructure
@@ -1037,5 +1053,99 @@ describe("sessionStartHandler / Item #10 Phase 3 grade-aware seeding", () => {
     if (!result.ok) return;
     expect(result.status).toBe(200);
     expect(result.body.session_id).toBe(SESSION_ID);
+  });
+});
+
+// ===========================================================================
+// test_type discriminator + comprehensive/short started event
+// ===========================================================================
+
+describe("sessionStartHandler / test_type + funnel branching", () => {
+  function freshSessionMocks() {
+    return makeServiceClient({
+      assessment_sessions: [
+        { data: null, error: null }, // existing-session check (none)
+        { data: { id: SESSION_ID }, error: null }, // INSERT...returning id
+      ],
+      questions: [{ data: [questionRow()], error: null }],
+      question_access_log: [{ data: null, error: null }],
+    });
+  }
+
+  it("default (no comprehensive flag in request) → test_type='short' + short_test_started", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = freshSessionMocks();
+
+    const result = await callHandler({ rlsClient: rls, serviceClient: svc.client });
+
+    expect(result.ok).toBe(true);
+    const sessInsert = svc.inserts.find(
+      (i) => i.table === "assessment_sessions",
+    );
+    expect(sessInsert?.row).toMatchObject({ test_type: "short" });
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.anything(),
+      "short_test_started",
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
+  });
+
+  it("comprehensive request + pilot flag ON → test_type='comprehensive' + comprehensive_test_started", async () => {
+    vi.stubEnv("ENABLE_COMPREHENSIVE_PILOT", "true");
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = freshSessionMocks();
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      request: { child_id: CHILD_ID, comprehensive: true },
+    });
+
+    expect(result.ok).toBe(true);
+    const sessInsert = svc.inserts.find(
+      (i) => i.table === "assessment_sessions",
+    );
+    expect(sessInsert?.row).toMatchObject({ test_type: "comprehensive" });
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.anything(),
+      "comprehensive_test_started",
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
+  });
+
+  it("comprehensive requested + pilot flag OFF → forced to short (fail-safe)", async () => {
+    // Flag unset (default off). The request asks for comprehensive but the
+    // gate is closed, so the session must run as a short test.
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = freshSessionMocks();
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      request: { child_id: CHILD_ID, comprehensive: true },
+    });
+
+    expect(result.ok).toBe(true);
+    const sessInsert = svc.inserts.find(
+      (i) => i.table === "assessment_sessions",
+    );
+    expect(sessInsert?.row).toMatchObject({ test_type: "short" });
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.anything(),
+      "short_test_started",
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
   });
 });

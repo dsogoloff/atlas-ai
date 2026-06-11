@@ -75,6 +75,7 @@ export type Database = {
           started_at: string
           status: Database["public"]["Enums"]["assessment_status"]
           tenant_id: string
+          test_type: Database["public"]["Enums"]["assessment_test_type"]
           time_flag_summary: Json | null
         }
         Insert: {
@@ -90,6 +91,7 @@ export type Database = {
           started_at?: string
           status?: Database["public"]["Enums"]["assessment_status"]
           tenant_id: string
+          test_type?: Database["public"]["Enums"]["assessment_test_type"]
           time_flag_summary?: Json | null
         }
         Update: {
@@ -105,6 +107,7 @@ export type Database = {
           started_at?: string
           status?: Database["public"]["Enums"]["assessment_status"]
           tenant_id?: string
+          test_type?: Database["public"]["Enums"]["assessment_test_type"]
           time_flag_summary?: Json | null
         }
         Relationships: [
@@ -382,6 +385,71 @@ export type Database = {
           },
           {
             foreignKeyName: "instructors_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructor_usefulness: {
+        Row: {
+          child_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          instructor_id: string
+          rating: number
+          session_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          instructor_id: string
+          rating: number
+          session_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          instructor_id?: string
+          rating?: number
+          session_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_usefulness_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_usefulness_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_usefulness_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_usefulness_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1164,11 +1232,18 @@ export type Database = {
         | "short_test_item_answered"
         | "short_test_completed"
         | "short_result_viewed"
+        | "comprehensive_test_started"
+        | "comprehensive_item_answered"
+        | "comprehensive_test_completed"
         | "parent_report_generated"
         | "parent_report_viewed"
         | "center_followup_opted_in"
         | "parent_satisfaction_submitted"
+        | "instructor_report_viewed"
+        | "placement_recommendation_created"
+        | "instructor_usefulness_submitted"
       assessment_status: "IN_PROGRESS" | "COMPLETED"
+      assessment_test_type: "short" | "comprehensive"
       center_status: "ACTIVE" | "INACTIVE"
       half_grade_level:
         | "KA"

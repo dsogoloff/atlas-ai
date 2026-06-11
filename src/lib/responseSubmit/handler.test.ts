@@ -35,6 +35,7 @@ vi.mock("next/server", () => ({
   },
 }));
 
+import { emit } from "@/lib/analytics/emit";
 import { STRANDS } from "@/lib/engine/levels";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import type { ClassifierOutput } from "@/lib/misconceptionClassifier/types";
@@ -51,6 +52,7 @@ import type { SubmitRequest } from "./types";
 
 const mockClassify = vi.mocked(classify);
 const mockAttemptNarration = vi.mocked(attemptNarration);
+const mockEmit = vi.mocked(emit);
 
 const DEFAULT_CLASSIFICATION: ClassifierOutput = {
   codes: [],
@@ -66,6 +68,7 @@ beforeEach(() => {
   mockClassify.mockResolvedValue(DEFAULT_CLASSIFICATION);
   mockAttemptNarration.mockReset();
   mockAttemptNarration.mockResolvedValue(undefined);
+  mockEmit.mockClear();
 });
 
 // ===========================================================================
@@ -233,11 +236,19 @@ const SESSION_IN_PROGRESS = {
   id: SESSION_ID,
   status: "IN_PROGRESS" as const,
   child_id: CHILD_ID,
+  test_type: "short" as const,
+};
+const SESSION_IN_PROGRESS_COMPREHENSIVE = {
+  id: SESSION_ID,
+  status: "IN_PROGRESS" as const,
+  child_id: CHILD_ID,
+  test_type: "comprehensive" as const,
 };
 const SESSION_COMPLETED = {
   id: SESSION_ID,
   status: "COMPLETED" as const,
   child_id: CHILD_ID,
+  test_type: "short" as const,
 };
 
 // A simple KA-level question: ADDITION, SYMBOLIC, no words, MC with answer "A".
@@ -1148,5 +1159,181 @@ describe("submitResponseHandler — classifier integration", () => {
       svc.client,
       PARENT.tenant_id,
     );
+  });
+});
+
+// ===========================================================================
+// Funnel branching: comprehensive vs short + placement_recommendation_created
+// ===========================================================================
+
+describe("submitResponseHandler — analytics funnel by test_type", () => {
+  function rlsComprehensive(): RlsMockOpts {
+    return {
+      user: { id: "u1" },
+      parent: { data: PARENT, error: null },
+      children: { data: [{ id: CHILD_ID }], error: null },
+      session: { data: SESSION_IN_PROGRESS_COMPREHENSIVE, error: null },
+    };
+  }
+
+  function eventNames(): string[] {
+    return mockEmit.mock.calls.map((c) => c[1] as string);
+  }
+
+  it("short session: mid-session emits short_test_item_answered", async () => {
+    const nextPick = {
+      id: "next-q-1",
+      strand: "operations_algorithms",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "next?", options: ["x", "y"] },
+    };
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null },
+        { data: [], error: null },
+        { data: null, error: null },
+      ],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: [nextPick], error: null },
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null },
+      ],
+      question_access_log: [{ data: null, error: null }],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(eventNames()).toContain("short_test_item_answered");
+    expect(eventNames()).not.toContain("comprehensive_item_answered");
+  });
+
+  it("comprehensive session: mid-session emits comprehensive_item_answered", async () => {
+    const nextPick = {
+      id: "next-q-1",
+      strand: "operations_algorithms",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "next?", options: ["x", "y"] },
+    };
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null },
+        { data: [], error: null },
+        { data: null, error: null },
+      ],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: [nextPick], error: null },
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null },
+      ],
+      question_access_log: [{ data: null, error: null }],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsComprehensive()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(eventNames()).toContain("comprehensive_item_answered");
+    expect(eventNames()).not.toContain("short_test_item_answered");
+  });
+
+  it("short session terminating: emits short_test_completed + placement_recommendation_created", async () => {
+    const p = priors(24);
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null },
+        { data: p.responses, error: null },
+        { data: null, error: null },
+        { data: aggRows(25, 0), error: null },
+      ],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: p.questions, error: null },
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+      ],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(true);
+    expect(eventNames()).toContain("short_test_completed");
+    expect(eventNames()).not.toContain("comprehensive_test_completed");
+    expect(eventNames()).toContain("placement_recommendation_created");
+
+    // placement event props are PII-free (a level + the reason).
+    const placementCall = mockEmit.mock.calls.find(
+      (c) => c[1] === "placement_recommendation_created",
+    );
+    expect(placementCall?.[2]?.props).toMatchObject({
+      termination_reason: "max-questions-reached",
+    });
+    expect(placementCall?.[2]?.props).toHaveProperty("sam_level");
+  });
+
+  it("comprehensive session terminating: emits comprehensive_test_completed + placement_recommendation_created", async () => {
+    const p = priors(24);
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null },
+        { data: p.responses, error: null },
+        { data: null, error: null },
+        { data: aggRows(25, 0), error: null },
+      ],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: p.questions, error: null },
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+      ],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsComprehensive()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(true);
+    expect(eventNames()).toContain("comprehensive_test_completed");
+    expect(eventNames()).not.toContain("short_test_completed");
+    expect(eventNames()).toContain("placement_recommendation_created");
   });
 });

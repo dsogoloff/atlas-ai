@@ -9,7 +9,14 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { emit } from "@/lib/analytics/emit";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import {
+  submitInstructorUsefulnessCore,
+  type InstructorUsefulnessInput,
+  type InstructorUsefulnessResult,
+} from "@/lib/analytics/instructorUsefulness";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 import { resolveInstructor } from "./instructor";
 import { buildNoteInsert } from "./notes";
@@ -79,4 +86,64 @@ export async function updateNote(
 
   revalidatePath(`/instructor/student/${childId}`);
   return { ok: true };
+}
+
+/**
+ * Fire instructor_report_viewed when an instructor opens a student's report.
+ * Best-effort and fail-soft (mirrors recordReportViewed on the parent side):
+ * resolves the ACTIVE instructor, verifies the session is accessible to them
+ * (RLS scopes the read to the instructor's center), and silently no-ops
+ * otherwise. Never throws. PII-free.
+ */
+export async function recordInstructorReportViewed(
+  sessionId: string,
+): Promise<void> {
+  try {
+    if (!UUID_RE.test(sessionId)) return;
+
+    const rls = await createClient();
+    const instructor = await resolveInstructor(rls);
+    if (!instructor) return;
+
+    // RLS scopes this read to sessions for children at the instructor's
+    // center; a session outside that scope returns no row.
+    const { data: session } = await rls
+      .from("assessment_sessions")
+      .select("id, child_id")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (!session) return;
+
+    await emit(createServiceClient(), ANALYTICS_EVENTS.INSTRUCTOR_REPORT_VIEWED, {
+      tenantId: instructor.tenant_id,
+      childId: session.child_id,
+      sessionId: session.id,
+    });
+  } catch (e) {
+    console.error("[analytics] recordInstructorReportViewed threw", {
+      err: e instanceof Error ? e.message : "unknown",
+    });
+  }
+}
+
+/**
+ * Persist an instructor's "was this report useful for placement?" rating and
+ * emit instructor_usefulness_submitted. Thin shell over
+ * submitInstructorUsefulnessCore (testable core in
+ * src/lib/analytics/instructorUsefulness.ts): resolve the ACTIVE instructor,
+ * then delegate validation + access check + upsert + emit.
+ */
+export async function submitInstructorUsefulness(
+  input: InstructorUsefulnessInput,
+): Promise<InstructorUsefulnessResult> {
+  const rlsClient = await createClient();
+  const instructor = await resolveInstructor(rlsClient);
+  if (!instructor) return { ok: false, error: "Not authorised." };
+
+  return submitInstructorUsefulnessCore({
+    rlsClient,
+    serviceClient: createServiceClient(),
+    instructor: { id: instructor.id, tenant_id: instructor.tenant_id },
+    input,
+  });
 }

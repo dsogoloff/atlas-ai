@@ -126,6 +126,7 @@ import type {
   EngineQuestion,
   EngineResponse,
   NextQuestionRequest,
+  PlacementEstimate,
   Strand,
   TerminationDecision,
 } from "@/lib/engine/types";
@@ -233,7 +234,7 @@ export async function submitResponseHandler({
   // ---------------------------------------------------------------------------
   const { data: session, error: sessionErr } = await rlsClient
     .from("assessment_sessions")
-    .select("id, status, child_id")
+    .select("id, status, child_id, test_type")
     .eq("id", request.session_id)
     .maybeSingle();
 
@@ -516,14 +517,24 @@ export async function submitResponseHandler({
   }
 
   // Funnel: a fresh item was answered (this path only runs on a first-time
-  // submit — idempotent retries return above without re-inserting). Fail-soft.
+  // submit — idempotent retries return above without re-inserting).
+  // Comprehensive vs short keyed off the session's test_type. Fail-soft.
   after(() =>
-    emit(serviceClient, ANALYTICS_EVENTS.SHORT_TEST_ITEM_ANSWERED, {
-      tenantId: parent.tenant_id,
-      childId: session.child_id,
-      sessionId: request.session_id,
-      props: { is_correct: isCorrect, question_number: postState.responseCount },
-    }),
+    emit(
+      serviceClient,
+      session.test_type === "comprehensive"
+        ? ANALYTICS_EVENTS.COMPREHENSIVE_ITEM_ANSWERED
+        : ANALYTICS_EVENTS.SHORT_TEST_ITEM_ANSWERED,
+      {
+        tenantId: parent.tenant_id,
+        childId: session.child_id,
+        sessionId: request.session_id,
+        props: {
+          is_correct: isCorrect,
+          question_number: postState.responseCount,
+        },
+      },
+    ),
   );
 
   // (b) UPDATE current_estimate.
@@ -547,10 +558,19 @@ export async function submitResponseHandler({
 
     emitTestCompleted(
       serviceClient,
+      session.test_type,
       parent.tenant_id,
       session.child_id,
       request.session_id,
       postState.responseCount,
+      toWireReason(term.reason),
+    );
+    emitPlacementCreated(
+      serviceClient,
+      parent.tenant_id,
+      session.child_id,
+      request.session_id,
+      placement,
       toWireReason(term.reason),
     );
 
@@ -586,10 +606,19 @@ export async function submitResponseHandler({
   if (pickResult.kind === "exhausted") {
     emitTestCompleted(
       serviceClient,
+      session.test_type,
       parent.tenant_id,
       session.child_id,
       request.session_id,
       postState.responseCount,
+      "bank-exhausted",
+    );
+    emitPlacementCreated(
+      serviceClient,
+      parent.tenant_id,
+      session.child_id,
+      request.session_id,
+      placement,
       "bank-exhausted",
     );
 
@@ -660,13 +689,15 @@ async function persistSessionSummary(
 }
 
 /**
- * Funnel: emit short_test_completed off the response path. Called only from
- * the two FRESH-submit terminal paths (engine-terminated and bank-exhausted),
- * never the idempotent-retry branches — so one completed event per session.
+ * Funnel: emit the test-completed event off the response path. Comprehensive
+ * vs short is keyed off the session's test_type. Called only from the two
+ * FRESH-submit terminal paths (engine-terminated and bank-exhausted), never
+ * the idempotent-retry branches — so one completed event per session.
  * Fail-soft via emit().
  */
 function emitTestCompleted(
   serviceClient: SupabaseClient<Database>,
+  testType: Database["public"]["Enums"]["assessment_test_type"],
   tenantId: string,
   childId: string,
   sessionId: string,
@@ -674,11 +705,43 @@ function emitTestCompleted(
   reason: TerminationReasonWire,
 ): void {
   after(() =>
-    emit(serviceClient, ANALYTICS_EVENTS.SHORT_TEST_COMPLETED, {
+    emit(
+      serviceClient,
+      testType === "comprehensive"
+        ? ANALYTICS_EVENTS.COMPREHENSIVE_TEST_COMPLETED
+        : ANALYTICS_EVENTS.SHORT_TEST_COMPLETED,
+      {
+        tenantId,
+        childId,
+        sessionId,
+        props: { question_count: questionCount, termination_reason: reason },
+      },
+    ),
+  );
+}
+
+/**
+ * Funnel: emit placement_recommendation_created on session completion,
+ * UNCONDITIONAL of test_type — a placement is created on completion either
+ * way. Fired once per session from the same two terminal paths as
+ * emitTestCompleted. Props are PII-free scalars derived from the placement
+ * estimate (the half-grade level the engine settled on + the termination
+ * reason); no child free text. Fail-soft via emit().
+ */
+function emitPlacementCreated(
+  serviceClient: SupabaseClient<Database>,
+  tenantId: string,
+  childId: string,
+  sessionId: string,
+  placement: PlacementEstimate,
+  reason: TerminationReasonWire,
+): void {
+  after(() =>
+    emit(serviceClient, ANALYTICS_EVENTS.PLACEMENT_RECOMMENDATION_CREATED, {
       tenantId,
       childId,
       sessionId,
-      props: { question_count: questionCount, termination_reason: reason },
+      props: { sam_level: placement.overallLevel, termination_reason: reason },
     }),
   );
 }
