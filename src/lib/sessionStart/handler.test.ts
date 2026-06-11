@@ -437,6 +437,36 @@ describe("sessionStartHandler / consent gate (per-child / Model B)", () => {
     expect(result.body.session_id).toBe(SESSION_ID);
   });
 
+  it("comprehensive request + pilot flag ON still fails closed with 403 and creates no session when consent is missing", async () => {
+    // Enabling the comprehensive path must not open a consent bypass: the
+    // gate runs unconditionally, BEFORE test_type resolution and the session
+    // insert. With the pilot flag on and comprehensive requested but no valid
+    // consent, the handler refuses exactly as it does for a short request.
+    vi.stubEnv("ENABLE_COMPREHENSIVE_PILOT", "true");
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: [], error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      request: { child_id: CHILD_ID, comprehensive: true },
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "consent_required", status: 403 },
+    });
+    expect(svc.inserts.some((i) => i.table === "assessment_sessions")).toBe(
+      false,
+    );
+  });
+
   it("returns 500 when the consent lookup itself errors (does not fail open)", async () => {
     const rls = makeRlsClient({
       user: { id: USER_ID },
