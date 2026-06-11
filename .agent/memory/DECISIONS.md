@@ -5,6 +5,37 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-11
 
+* **Comprehensive adaptive engine built (PR #46, lane/comprehensive-engine, STACKED on PR #42;
+  stack is #41 -> #42 -> #46; merge order: #41, #42, #46).** SUPERSEDES the same-day
+  "engine reparameterization DEFERRED" entry below — founder explicitly reassigned the
+  engine work to this session after the instrument-only PR #41 landed.
+  New `src/lib/engine/comprehensive.ts` (pure, no side-effects): COMPREHENSIVE_CONFIG
+  (tunable) with per-tier budgets G5_8 {target30, softFloor24, hardCap36, perStrandFloorN3}
+  and K_4 {20, 16, 26, 2}; placementSeThreshold 1.0 (half-grade-index).
+  comprehensiveShouldTerminate stops when BOTH placement-SE <= threshold AND every in-scope
+  strand has met perStrandFloorN AND responseCount >= softFloor, OR hardCap — reuses locked
+  wire reasons. comprehensiveNextQuestionRequest: phase 1 coverage floor (fewest-served
+  first, tie = max variance); phase 2 adapt (max varianceLevelIndex). placementSe = sqrt
+  variance of in-scope-average posterior. Hookup: sessionStart comprehensive first-pick via
+  comprehensive router (in-scope = STRANDS minus discoverEmptyBankStrands; tier via
+  deriveTier). responseSubmit comprehensive branch uses comprehensive terminate + router;
+  replayStrandCounts sibling added (replayEngineState untouched). NextQuestionRequest.reason
+  extended with comprehensive-floor|comprehensive-adapt. TODO(comprehensive-engine) marker
+  resolved. Short-test path byte-identical (MAX_QUESTIONS/CONFIDENCE_THRESHOLD/
+  shouldTerminate/nextQuestionRequest untouched). No new scoring model.
+  Instructor student view: comprehensive-only "Strand coverage" section (deep adaptive /
+  floor only / partial) via service-role responses->questions.strand aggregation (counts +
+  strand labels only, never question content; compliance §8). Renders nothing for short
+  sessions. comprehensive_* + placement_recommendation_created events confirmed firing at
+  real lifecycle points. Dev-seed: supabase/dev-seed-instructor-pilot.sql (DEV-ONLY,
+  idempotent, root-level, NOT a migration; does not modify question bank/taxonomy —
+  founder may keep or drop). Verify GREEN: 900 tests / 55 files; tsc clean; lint 0 errors
+  (2 pre-existing warnings). Codex SKIPPED (relay credential-blocked). Awaiting attended
+  merge. Known risks: in-scope approximated by tenant-wide active-content availability (not
+  a child-level-band predicate — future refinement); a strand whose small bank exhausts
+  before the floor keeps floor unmet and runs to hardCap (intended backstop); COMPREHENSIVE_CONFIG
+  constants are MVP defaults to revisit after real pilot run-length data.
+
 * ⚑ **Comprehensive-test instrumentation is "instrument-only" for this session — adaptive
   engine reparameterization DEFERRED.** Decision by Dimitri 2026-06-11 (Option 1 of a
   clarifying question). Rationale: adds the test_type discriminator + fires
@@ -14,6 +45,9 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   owns the question-bank/session-split boundary. Instruments M2 comprehensive-pilot funnel
   KPIs without colliding with that work. TODO(comprehensive-engine) marker left in codebase
   at the hook point.
+  **NOTE (same day): SUPERSEDED — founder reassigned engine work to this session; built in
+  PR #46 (see entry above). The deferred intent was never a merged decision; the engine is
+  now built.**
 
 * **Comprehensive instructor analytics lane built (PR #41, lane/comprehensive-instructor-analytics).**
   Migration 20260611090000_comprehensive_instructor_analytics.sql: 6 new

@@ -135,10 +135,11 @@
       **MERGE #41 FIRST.** GitHub auto-retargets this PR's base to ATLAS-ASSESSMENT once
       #41 merges.
 
-- [ ] **Comprehensive-engine reparameterization** — item cap / confidence stop / routing
-      depth for the comprehensive test type. DEFERRED to the SEPARATE
-      comprehensive-assembly session (decision 2026-06-11). TODO(comprehensive-engine)
-      marker in codebase identifies the hook point.
+- [x] **Comprehensive-engine reparameterization** — BUILT in PR #46 (lane/comprehensive-engine,
+      STACKED on PR #42). Founder reassigned to this session (supersedes same-day deferral).
+      TODO(comprehensive-engine) marker resolved. COMPREHENSIVE_CONFIG constants are MVP
+      defaults; revisit after real pilot run-length data is available. See DECISIONS.md
+      2026-06-11 entry for full detail.
 
 - [x] **OPEN PR #43 — lane/ops-runbook-gaps (docs only).** docs/ops-runbook.md §3
       rewritten (stuck/abandoned sessions + Option A reset-by-delete / Option B
@@ -235,11 +236,15 @@
 - **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability confirmed as a
   credential blocker (not transport). Automated relay + `.mcp.json` unblocked once Dimitri
   runs `codex login` or supplies `OPENAI_API_KEY` on this box (see item 2 above).
-- **Attend-merge PRs #41 / #43 / #42 (in order) — PARKED awaiting Dimitri (new, 2026-06-11).**
-  PR #41 (comprehensive instrumentation + migration) → PR #43 (ops-runbook docs, any order
-  relative to #41) → PR #42 (consent regression, stacked: merge AFTER #41). After #41 merges:
+- **Attend-merge PRs #41 / #43 / #42 / #46 (in order) — PARKED awaiting Dimitri (updated 2026-06-11).**
+  MERGE ORDER: PR #41 (comprehensive instrumentation + migration) first; PR #43 (ops-runbook
+  docs, any order relative to #41/#42/#46); PR #42 (consent regression, stacked: merge AFTER
+  #41); PR #46 (comprehensive engine, stacked on #42: merge AFTER #42). After #41 merges:
   run `supabase db reset` to apply migration 20260611090000 and confirm instructor usefulness
-  card + analytics. PR #42 base auto-retargets to ATLAS-ASSESSMENT once #41 is merged.
+  card + analytics. PR #42 and PR #46 bases auto-retarget to ATLAS-ASSESSMENT as the stacked
+  bases merge. OPTIONAL before merging #46: review supabase/dev-seed-instructor-pilot.sql
+  (DEV-ONLY, root-level seed; founder may keep or delete). After pilot run-length data is
+  available: revisit COMPREHENSIVE_CONFIG constants (MVP defaults; not urgent).
 - **Founder actions for conversion run — PARKED (updated, 2026-06-10).** Image curation for
   30 inactive image-essential questions (upload manifests in each worksheet output folder).
   Radar acceptance check: complete one fresh dev assessment, confirm radar populates.
