@@ -81,3 +81,6 @@
 2026-06-10T16:34:53.425Z | stage4 | Level 3 Placement Worksheet.pdf | loaded=20 content_id=20 review_flags=52 inactive_image=10 images_uploaded=0 images_deferred=10 skipped=3 (invalid-fields=3)
 2026-06-10T16:34:53.437Z | stage4 | Level 4 Placement Worksheet.pdf | loaded=25 content_id=25 review_flags=51 inactive_image=6 images_uploaded=0 images_deferred=6 skipped=2 (invalid-fields=2)
 2026-06-10T17:30:00.000Z | qa-shortlist | rows=3 | output=QA-shortlist/QA-content-shortlist.md
+2026-06-10T18:00:00.000Z | content-fixes | fixed=3 flagged=2
+2026-06-11T01:16:56.236Z | stage3 | Level 2 Placement Worksheet.pdf | 22 tagged | 0 failed
+2026-06-11T01:18:32.000Z | content-fixes | fixed=2 flagged=0 (founder-verified mojibake rows)

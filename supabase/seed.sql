@@ -1680,3 +1680,53 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["8","80","800","8000"]'::jsonb;
 -- END founder-confirmed-content-fixes
+
+-- BEGIN founder-verified-mojibake-fixes (mirror of supabase/migrations/20260610190000_fix_mojibake_rows.sql)
+-- =============================================================================
+-- Founder-verified S.A.M. question content fixes, round 2 (mojibake rows)
+-- =============================================================================
+-- AGENTS.md §11: the migration above is the prod path and a no-op on dev
+-- reset (it runs before this file creates the tenant); this block is the
+-- dev/CI path, applied AFTER the stage4 generated insert block above so
+-- the rows exist. Statements are identical to the migration; every
+-- UPDATE carries an idempotent guard. Full before/after table in the
+-- migration header.
+
+-- 1) SAM-L3-Q15 — source task is not multiple-choice: convert to
+--    NUMERIC_ENTRY with the founder-verified answer "4/6". Stem is kept
+--    verbatim (clean, expression already matches the source); the
+--    invented options/correct_index/distractor_misconceptions are
+--    dropped. Deactivated: fraction answer needs TEXT_ENTRY (PR #29) or
+--    keypad slash — reactivate after merge. Guarded on the old format +
+--    invented options array.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'NUMERIC_ENTRY'::question_format,
+    content = jsonb_build_object(
+      'stem', q.content ->> 'stem',
+      'correct_answer', '4/6'),
+    is_active = false
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q15'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["4/12","6/12","4/6","5/6"]'::jsonb;
+
+-- 2) SAM-L4-Q18 — pin the founder-verified options + correct_index. The
+--    stored row already matches, so the divergence guard makes this a
+--    no-op on the current bank (zero rows); it only fires where the
+--    stored content drifted from the verified source. Stem and
+--    distractor_misconceptions are untouched.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      jsonb_set(q.content, '{options}', '["1/2","3/4","5/3","1/12"]'::jsonb),
+      '{correct_index}',
+      '2'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L4-Q18'
+  and q.format = 'MULTIPLE_CHOICE'
+  and (q.content -> 'options' is distinct from '["1/2","3/4","5/3","1/12"]'::jsonb
+       or q.content -> 'correct_index' is distinct from '2'::jsonb);
+-- END founder-verified-mojibake-fixes
