@@ -354,6 +354,26 @@ describe("judgeAnswer / TEXT_ENTRY", () => {
       false,
     );
   });
+
+  // SAM-L3-Q15 ("What is 1/6 + 3/6?", key "4/6") — reactivated as
+  // TEXT_ENTRY by 20260611014520_prerun_q4_q15.sql. These pins prove the
+  // fraction answer actually grades on the runtime path.
+  it("grades the SAM-L3-Q15 fraction key '4/6' correct (incl. whitespace/case tolerance)", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4/6")).toBe(true);
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "  4/6  ")).toBe(true);
+  });
+  it("pins actual behavior: '4 / 6' does NOT match '4/6' (slash is not in the operator-padding set)", () => {
+    // normalizeTextAnswer() pads + = - but not "/" — so a child typing
+    // spaces around the slash grades WRONG today. Pinned (not fixed)
+    // per the pre-run lane scope; flagged in the PR body as a possible
+    // normalizer follow-up before more fraction TEXT_ENTRY rows land.
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "4 / 6")).toBe(false);
+    expect(normalizeTextAnswer("4 / 6")).toBe("4 / 6");
+    expect(normalizeTextAnswer("4/6")).toBe("4/6");
+  });
+  it("rejects the wrong fraction '3/6' vs '4/6'", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("4/6"), "3/6")).toBe(false);
+  });
 });
 
 describe("judgeAnswer / TEXT_ENTRY content errors", () => {

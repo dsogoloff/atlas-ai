@@ -1730,3 +1730,42 @@ where q.tenant_id = t.id
   and (q.content -> 'options' is distinct from '["1/2","3/4","5/3","1/12"]'::jsonb
        or q.content -> 'correct_index' is distinct from '2'::jsonb);
 -- END founder-verified-mojibake-fixes
+
+-- BEGIN prerun-q4-q15-fixes (mirror of supabase/migrations/20260611014520_prerun_q4_q15.sql)
+-- =============================================================================
+-- Pre-run founder-directed fixes: SAM-L2-Q04 deactivation + SAM-L3-Q15
+-- TEXT_ENTRY reactivation
+-- =============================================================================
+-- AGENTS.md §11: the migration above is the prod path and a no-op on dev
+-- reset (it runs before this file creates the tenant); this block is the
+-- dev/CI path, applied AFTER the mojibake-fixes block above so the
+-- SAM-L3-Q15 row is already in its NUMERIC_ENTRY {stem, correct_answer}
+-- shape. Statements are identical to the migration; every UPDATE carries
+-- an idempotent guard. Full before/after table in the migration header.
+
+-- 1) SAM-L2-Q04 — deactivate until a curated question image exists
+--    (image_required came back true on the L2 prompt re-validation; same
+--    missing-image policy as the Stage 4 loader). Format/content
+--    untouched. Guarded on the active state.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set is_active = false
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L2-Q04'
+  and q.is_active = true;
+
+-- 2) SAM-L3-Q15 — NUMERIC_ENTRY -> TEXT_ENTRY (content shape identical)
+--    and reactivate, per the 20260610190000 "reactivate after merge"
+--    note. Guarded on the pre-change format + the founder-verified
+--    answer.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'TEXT_ENTRY'::question_format,
+    is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q15'
+  and q.format = 'NUMERIC_ENTRY'
+  and q.content ->> 'correct_answer' = '4/6';
+-- END prerun-q4-q15-fixes
