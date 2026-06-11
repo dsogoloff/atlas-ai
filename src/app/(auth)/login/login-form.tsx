@@ -70,7 +70,7 @@ export function LoginForm({ next }: Props) {
           className="font-caption text-caption text-sam-navy ml-1"
           htmlFor="email"
         >
-          Parent Email Address
+          Email
         </label>
         <input
           className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all placeholder:text-sam-gray-mid/50 bg-white aria-[invalid=true]:border-sam-red"
