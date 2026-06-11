@@ -162,8 +162,12 @@
       reduced-motion still (policy tested in `lib/mascot.test.ts`). No branding added in
       code/copy. Verify GREEN 644 tests / 47 files. G3 cleared 2026-06-10 (counsel
       approved consent flow).
-- [ ] **Dimitri: merge PR #34** (attended, after Vercel preview — check K-4 phone-width
-      question screen: footer mascot must not crowd answers).
+- [x] **MERGED PR #34** (`58e4659`, attended 2026-06-10). On-screen K-4 phone-width
+      check (footer mascot vs. answers) still worth a glance during normal dev use.
+- [ ] **Dimitri: merge the docs-only micro-PR** from lane/agents-ci-typecheck-learning
+      (AGENTS.md learning that missed the #34 merge window), then delete the stale
+      `lane/assessment-mascot` remote branch (2 post-merge straggler commits, both
+      superseded).
 - [ ] Later (founder): swap `stitch/mascot/mascot1-3.png` for the updated untagged art
       (same filenames), then rebuild/redeploy.
 - NOTE: "celebrate on correct streaks" is NOT possible client-side — per-question
