@@ -54,7 +54,11 @@ tmp/
 # Relay review payloads (local-only diffs/findings — never committed)
 tools/relay/.reviews/
 
-# Claude Code per-developer config
-.claude/
+# Claude Code config: shared governance (agents, hooks, settings.json) is
+# committed; everything else under .claude/ stays per-developer.
+.claude/*
+!.claude/agents/
+!.claude/hooks/
+!.claude/settings.json
 
 

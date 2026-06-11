@@ -1,0 +1,35 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/session-drift-alarm.mjs",
+            "timeout": 15,
+            "statusMessage": "Checking governance files for drift..."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Read", "Edit", "Write",
+      "Bash(cd *)", "Bash(ls *)", "Bash(cat *)", "Bash(python *)", "Bash(python3 *)",
+      "Bash(pnpm test *)", "Bash(pnpm test)", "Bash(pnpm typecheck)", "Bash(pnpm lint)",
+      "Bash(pnpm install)", "Bash(pnpm install *)",
+      "Bash(git add *)", "Bash(git commit *)", "Bash(git status)", "Bash(git diff *)",
+      "Bash(git log *)", "Bash(git checkout *)", "Bash(git merge *)", "Bash(git worktree *)",
+      "Bash(git push *)", "Bash (git pull *)", "Bash(git fetch *)", "Bash(mkdir -p *)",
+      "Bash(python -m py_compile *)", "Bash(python3 -m py_compile *)", "Bash(grep *)",
+      "Bash(find *)", "Bash(head *)", "Bash(tail *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)", "Bash(git reset --hard *)",
+      "Bash(git push --force *)", "Bash(git push -f *)", "Bash(git branch -D *)",
+      "Bash(supabase db reset *)", "Bash(supabase db reset)"
+    ]
+  }
+}
