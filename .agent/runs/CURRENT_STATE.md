@@ -20,8 +20,9 @@ added (default-off); ops runbook shipped; parent Sign-Out wired; dev-seed comple
 added; three-section report layout shipped. G1 LIFTED 2026-06-10 (S.A.M. founder granted
 permission to digitize entire test library). CONVERSION Stage 4 built (PR #23, worktree
 atlas-stage4). Content-id backfill built (PR #22, worktree atlas-backfill).
-**Verify baseline:** 604 tests / 44 files (Stage 4 worktree green); 0 type errors; 2 known
-lint warnings (no-img-element in profile-menu.tsx, no-page-custom-font in layout.tsx).
+**Verify baseline:** 644 tests / 47 files (lane/assessment-mascot, post-#22/#23 merges);
+0 type errors; 2 known lint warnings (no-img-element in profile-menu.tsx,
+no-page-custom-font in layout.tsx).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
@@ -44,7 +45,7 @@ lint warnings (no-img-element in profile-menu.tsx, no-page-custom-font in layout
 | Content-id backfill | MERGED PR #22 (`016357e`) | lane/questions-content-id-backfill. Worktree `atlas-backfill` (commits `5b249f5`+`c6e1485`). Migration `20260610000000_backfill_question_content_ids.sql` + seed.sql mirror maps all 11 SAM-L2 questions to `content_id`. New drift test. |
 | CONVERSION Stage 4 — DB load + L1–4 run | MERGED PR #23 (`1ebb01e`) | lane/conversion-stage4-load. Worktree `atlas-stage4`. Loader built (`40d32b3`+guards `903650a`) AND the full L1–4 run executed: 79 rows loaded (L1 12 / L2 22 / L3 20 / L4 25; 49 active, 30 inactive image-essential), all with content_id, in migration `20260610151306` + seed.sql marker block. Follow-on conversion work continues in a SEPARATE session. |
 | Memory session 2026-06-10 | MERGED PR #24 (`cb57a84`) | lane/memory-session-2026-06-10. Run-state snapshot. |
-| Assessment mascot | IN PROGRESS | lane/assessment-mascot (this lane). Dachshund mascot (3 poses, `stitch/mascot/mascot1-3.png`) into child assessment flow; K_4 animated, G5_8 subtle/static. Assets to be swapped later by file replacement (stable paths). |
+| Assessment mascot | OPEN PR #34 — DONE-pending-merge | lane/assessment-mascot. Dachshund mascot (3 poses, `stitch/mascot/mascot1-3.png`, stable swap paths) wired into loading (waving) / K-4 question footer (thinking, in-flow) / completion (celebrating, both tiers). Motion policy in `lib/mascot.ts` (tested): K_4 lively, G5_8 still, reduced-motion still. No streak celebrations possible (correctness never reaches the child client by design). Verify GREEN 644/47. Awaiting attended merge after Vercel preview. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
 - **CONVERSION** — 5-stage CLI in `scripts/conversion/`. **L1–4 MVP run COMPLETE

@@ -152,13 +152,23 @@
 - [ ] Full-library digitization (0A–0C, 5–7; PDFs already in input/) — separate planned
   follow-up; no timeline set.
 
-## 4b. Assessment mascot (IN PROGRESS 2026-06-10 — lane/assessment-mascot)
-- [ ] Integrate dachshund mascot (3 poses at `stitch/mascot/mascot1.png` waving /
-      `mascot2.png` thinking / `mascot3.png` celebrating) into the child assessment flow.
-      K_4 = lightweight transform animation; G5_8 = static/subtle. Pose art will be
-      swapped later by file replacement at the same paths (current waving/thinking art
-      carries a tag the founder is removing in the swap — no branding added in code).
-      G3 cleared 2026-06-10 (counsel approved consent flow).
+## 4b. Assessment mascot (DONE-pending-merge 2026-06-10 — PR #34, lane/assessment-mascot)
+- [x] Dachshund mascot integrated into the child flow (3 poses at stable paths:
+      `stitch/mascot/mascot1.png` waving / `mascot2.png` thinking / `mascot3.png`
+      celebrating; future art swap = file replacement, no code change). Loading screen
+      waves; K-4 question footer hosts a small in-flow thinking mascot (cannot overlap
+      answer UI); completion celebrates on both tiers (replaces the placeholder icon —
+      gate decision #8 asset landed). Motion: K_4 transform-only pop+bounce, G5_8 still,
+      reduced-motion still (policy tested in `lib/mascot.test.ts`). No branding added in
+      code/copy. Verify GREEN 644 tests / 47 files. G3 cleared 2026-06-10 (counsel
+      approved consent flow).
+- [ ] **Dimitri: merge PR #34** (attended, after Vercel preview — check K-4 phone-width
+      question screen: footer mascot must not crowd answers).
+- [ ] Later (founder): swap `stitch/mascot/mascot1-3.png` for the updated untagged art
+      (same filenames), then rebuild/redeploy.
+- NOTE: "celebrate on correct streaks" is NOT possible client-side — per-question
+      correctness deliberately never reaches the child client. Would need an API change;
+      product call, not picked up autonomously.
 
 ## 5. Deferred (do not build now)
 - [ ] 4-beat findings depth + narration voice re-tune (re-opens voice-locked Step 4
