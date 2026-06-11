@@ -42,16 +42,26 @@
 //      next question normally. If termination is reached or the picker
 //      exhausts, close the session and surface bank_unservable.
 //
-// Status code depends on whether the resumed session has any actual
+// The body shape depends on whether the resumed session has any actual
 // progress (≥1 row in `responses` for the session):
 //
-//   * has-progress  → 409 + body.error.code "session_in_progress"
+//   * has-progress  → 200 + body.resumed === true
 //     (the client shows a "resumed your previous session" banner).
-//   * no-progress   → 200, no body.error field
+//   * no-progress   → 200, no body.resumed field
 //     (the session row exists from a prior /start whose first question
 //     was served but never answered — often React Strict Mode's dev-only
 //     double-invocation of the start effect. Showing a resume banner
 //     here is visually wrong because nothing was actually attempted.)
+//
+// HISTORY (P3 session-resume loop): the has-progress case used to be
+// HTTP 409 + body.error.code "session_in_progress". Encoding the resume
+// as an error status meant any layer keying off the status line treated
+// a successful resume as a FAILURE — a child returning mid-assessment
+// saw "Something went wrong", and Try again re-fired /start into the
+// same live session and the same 409, forever (the partial unique index
+// guarantees no fresh session can replace an IN_PROGRESS one, so the
+// loop was sterile by construction). Resume is a success: both cases
+// now return 200, and "you resumed" travels as data (body.resumed).
 //
 // The boundary is `responses` count, not session age: a same-millisecond
 // resume of a zero-response session reads as "fresh" to the parent, and
@@ -401,8 +411,8 @@ interface ResumeArgs {
 
 async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
   // Count of answered responses on this session. Drives two decisions:
-  //   * `hasProgress = responseCount > 0` selects the 200 (no-banner)
-  //     vs 409 (resume-banner) shape.
+  //   * `hasProgress = responseCount > 0` selects the no-banner vs
+  //     resume-banner (body.resumed) shape — both HTTP 200.
   //   * `responseCount` itself is plumbed to logAndRespond and emitted
   //     on the wire (Item #12 Phase 7.7 progress chrome).
   let responseCount: number;
@@ -532,7 +542,8 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
 interface LogAndRespondArgs extends ResumeArgs {
   question: PickedQuestionRow;
   /** True when the resumed session has ≥1 row in `responses`. Drives
-   *  the 200-vs-409 boundary documented in the file header. */
+   *  the no-banner vs body.resumed boundary documented in the file
+   *  header (both shapes are HTTP 200). */
   hasProgress: boolean;
   /** Count of answered responses on this session. Emitted on the wire
    *  as `response_count` for the Item #12 Phase 7.7 progress chrome.
@@ -598,18 +609,20 @@ async function logAndRespond(
     };
   }
 
+  // Has-progress resume — a SUCCESS, returned as one (P3 fix; see the
+  // file header). `resumed: true` is the client's cue for the "resumed
+  // your previous session" banner. Previously this was a 409 +
+  // body.error envelope, which read as a failure to anything keying
+  // off the status line and looped the child on "Try again".
   return {
     ok: true,
-    status: 409,
+    status: 200,
     body: {
       session_id: args.sessionId,
       question: await serveQuestion(args.serviceClient, args.question),
       next_request: toNextRequestJson(req),
       response_count: args.responseCount,
-      error: {
-        code: "session_in_progress",
-        message: "child already has an active assessment; resumed",
-      },
+      resumed: true,
     },
   };
 }
@@ -672,10 +685,11 @@ async function closeSessionWithReason(
 }
 
 /**
- * Returns true when the session has ≥1 row in `responses`. Used to
- * route between 200 (no-progress resume — looks fresh to the parent)
- * and 409 (genuine resume of an in-flight session). The check is a
- * cheap HEAD-style count; we don't need the row contents.
+ * Returns the count of rows in `responses` for the session. Used to
+ * route between the no-progress resume shape (looks fresh to the
+ * parent) and the genuine resume of an in-flight session (body.resumed
+ * — both HTTP 200). The check is a cheap HEAD-style count; we don't
+ * need the row contents.
  */
 async function sessionResponseCount(
   serviceClient: SupabaseClient<Database>,

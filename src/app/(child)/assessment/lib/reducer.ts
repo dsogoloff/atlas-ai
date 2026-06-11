@@ -54,7 +54,8 @@ export type ViewState =
        *  → 0; resume with 3 past answers → 3. The displayed question
        *  number is `responseCount + 1`. */
       responseCount: number;
-      /** True iff this state was entered via START_RESUME (HTTP 409 on /start). */
+      /** True iff this state was entered via START_RESUME (resumed
+       *  in-progress session on /start — body.resumed on the wire). */
       resumed: boolean;
       submitting: boolean;
       /** Present iff submitting === true. Captured at SUBMIT so RETRY can replay. */

@@ -485,7 +485,7 @@ describe("sessionStartHandler / fresh session", () => {
       stem: "Q1?",
       options: ["a", "b"],
     });
-    expect(result.body.error).toBeUndefined();
+    expect(result.body.resumed).toBeUndefined();
 
     // assessment_sessions insert payload
     const sessInsert = svc.inserts.find(
@@ -621,7 +621,13 @@ describe("sessionStartHandler / first-pick exhaustion", () => {
 // ===========================================================================
 
 describe("sessionStartHandler / resume with outstanding", () => {
-  it("returns 409 with the outstanding question + writes a NEW audit-log row", async () => {
+  // P3 regression pin: an in-progress session with ≥1 response RESUMES —
+  // 200 + body.resumed, NOT a 409 conflict. The old 409 + body.error
+  // shape read as a failure to anything keying off the status line and
+  // trapped returning children in a "Something went wrong" → Try again
+  // loop (the unique index guarantees /start keeps hitting the same
+  // session, so the loop was sterile).
+  it("resumes (200 + resumed flag, not 409) with the outstanding question + writes a NEW audit-log row", async () => {
     const rls = makeRlsClient({
       user: { id: USER_ID },
       parent: PARENT_OK,
@@ -645,11 +651,11 @@ describe("sessionStartHandler / resume with outstanding", () => {
         { data: null, error: null },
       ],
       responses: [
-        // sessionHasResponses: count>0 → hasProgress=true → 409 branch.
+        // sessionHasResponses: count>0 → hasProgress=true → resumed branch.
         // The downstream findOutstanding queue still says data: [] for
         // narrative simplicity (one served, none answered). In a real DB
         // this would be inconsistent, but each mock query is independent
-        // and the test cares about exercising the has-progress 409 branch.
+        // and the test cares about exercising the has-progress resume branch.
         { data: null, count: 1, error: null },
         // findOutstanding step (2): no responses
         { data: [], error: null },
@@ -671,13 +677,11 @@ describe("sessionStartHandler / resume with outstanding", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.status).toBe(409);
+    expect(result.status).toBe(200);
     expect(result.body.session_id).toBe(SESSION_ID);
     expect(result.body.question.id).toBe(q1.id);
-    expect(result.body.error).toEqual({
-      code: "session_in_progress",
-      message: expect.stringContaining("resumed"),
-    });
+    // The resume signal travels as DATA, not as an error status/envelope.
+    expect(result.body.resumed).toBe(true);
 
     // New audit-log row was written for the resumed serve.
     expect(
@@ -787,7 +791,9 @@ describe("sessionStartHandler / resume half-state", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.status).toBe(409);
+    // P3: has-progress resume is a 200 success with the resumed flag.
+    expect(result.status).toBe(200);
+    expect(result.body.resumed).toBe(true);
     expect(result.body.question.id).toBe(qNext.id);
   });
 
@@ -897,8 +903,8 @@ describe("sessionStartHandler / concurrent insert", () => {
     if (!result.ok) return;
     expect(result.status).toBe(200);
     expect(result.body.session_id).toBe(SESSION_ID);
-    // No resume banner — the body must NOT carry an error field.
-    expect(result.body.error).toBeUndefined();
+    // No resume banner — the body must NOT carry the resumed flag.
+    expect(result.body.resumed).toBeUndefined();
   });
 
   it("returns 200 (no resume banner) when the existing session has zero responses", async () => {
@@ -946,8 +952,8 @@ describe("sessionStartHandler / concurrent insert", () => {
     expect(result.status).toBe(200);
     expect(result.body.session_id).toBe(SESSION_ID);
     expect(result.body.question.id).toBe(q1.id);
-    // Crucial: no error field, so the client does not show a resume banner.
-    expect(result.body.error).toBeUndefined();
+    // Crucial: no resumed flag, so the client does not show a resume banner.
+    expect(result.body.resumed).toBeUndefined();
   });
 });
 
