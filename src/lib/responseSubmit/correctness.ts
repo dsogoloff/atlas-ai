@@ -10,13 +10,21 @@
 //     compare options[correct_index].trim() to answerGiven.trim(). The
 //     index-keyed schema lets distractor_misconceptions co-index with
 //     options without a parallel migration to text-keyed maps.
-//   * NUMERIC_ENTRY   — content.correct_answer (string). Numeric coercion
-//     when both sides parse as numbers (handles "007" === "7", "7.0" === "7");
-//     otherwise trimmed exact string match.
+//   * NUMERIC_ENTRY   — content.correct_answer (string). Both sides pass
+//     through normalizeAnswer() first (case/whitespace/separator/unit-spacing
+//     tolerance — see its comment). A key shaped like ONE number (incl.
+//     S.A.M. thousands grouping, "42 800") compares with all grouping
+//     stripped from both sides; list-shaped keys keep separator semantics.
+//     Then numeric coercion when both sides parse as numbers (handles
+//     "007" === "7", "7.0" === "7"); otherwise normalized exact match.
 //   * DRAG_DROP       — content.correct_order (array). JSON.stringify
-//     equality. Works for arrays of primitives because JSON.stringify is
-//     order-stable on arrays. Object answers would require canonical key
-//     ordering — out of scope until a real DD seed lands with that shape.
+//     equality after normalizeAnswer() on each string token of both sides.
+//     Works for arrays of primitives because JSON.stringify is order-stable
+//     on arrays. Object answers would require canonical key ordering — out
+//     of scope until a real DD seed lands with that shape. A non-JSON
+//     answerGiven falls back to the raw exact compare (always false for a
+//     well-formed correct_order — kept so malformed clients grade wrong
+//     instead of throwing).
 //
 // `judgeAnswer` throws on malformed content (missing per-format key, wrong
 // type, out-of-range index) — those are content-authoring bugs and the
@@ -27,6 +35,54 @@ import type { Enums, Json } from "@/lib/supabase/database.types";
 export type QuestionFormat = Enums<"question_format">;
 
 const NUMERIC_RE = /^-?\d+(?:\.\d+)?$/;
+
+// A stored key shaped like ONE number: plain digits ("1000") or S.A.M.
+// thousands grouping — groups of exactly 3 after the first ("42 800",
+// "1 234 567"). Applied to the normalized key, where commas have already
+// become spaces. The KEY's shape selects the comparison mode, never the
+// child's input: list keys like "10 17 20" (groups that are not exactly
+// 3 digits) keep list semantics. Inherently ambiguous keys such as
+// "10 170 200" read as one grouped number — S.A.M. notation makes that
+// the right default.
+const SINGLE_NUMBER_KEY_RE = /^-?(?:\d+|\d{1,3}(?: \d{3})+)(?:\.\d+)?$/;
+
+/**
+ * Mode selector for NUMERIC_ENTRY grading, exported so tests can pin the
+ * partition directly. Takes the NORMALIZED stored key; returns true for
+ * single-number mode (strip grouping from both sides), false for list
+ * mode (separators significant, digits never join). Because judgeAnswer
+ * branches if/else on this one boolean of the key alone, exactly one
+ * mode ever runs for a given question — the paths cannot cross.
+ */
+export function isSingleNumberKey(normalizedKey: string): boolean {
+  return SINGLE_NUMBER_KEY_RE.test(normalizedKey);
+}
+
+// Unit tokens that appear (or plausibly appear) after a number in bank
+// answers — seed.sql today uses km / m / am ("1 km 750 m", "9:25 am");
+// the rest are the S.A.M. measurement set so future questions normalize
+// the same way. Longest tokens first so "km" wins over "m", "min" over "m".
+const UNIT_TOKENS = "km|cm|mm|kg|ml|min|am|pm|m|g|l|h|s";
+const UNIT_SPACING_RE = new RegExp(`(\\d) ?(${UNIT_TOKENS})\\b`, "g");
+
+/**
+ * Canonicalize a free-text answer before equality so trivially-equivalent
+ * child input grades correct:
+ *
+ *   1. lowercase;
+ *   2. collapse every run of separators (whitespace and/or commas) to a
+ *      single space — comma and space are equivalent LIST separators, but
+ *      order stays significant and separators are only ever replaced,
+ *      never deleted, so digit groups can never merge ("10 17 20" stays
+ *      distinct from "1017 20");
+ *   3. canonical unit spacing — a digit followed (with or without a space)
+ *      by a known unit token becomes "digit unit": "1km" → "1 km",
+ *      "9:25am" → "9:25 am".
+ */
+export function normalizeAnswer(raw: string): string {
+  const collapsed = raw.toLowerCase().replace(/[\s,]+/g, " ").trim();
+  return collapsed.replace(UNIT_SPACING_RE, "$1 $2");
+}
 
 export function judgeAnswer(
   format: QuestionFormat,
@@ -49,8 +105,17 @@ export function judgeAnswer(
 
     case "NUMERIC_ENTRY": {
       const correct = readString(obj, "correct_answer", format);
-      const a = answerGiven.trim();
-      const c = correct.trim();
+      const a = normalizeAnswer(answerGiven);
+      const c = normalizeAnswer(correct);
+      // Single-number keys: strip all grouping from both sides so
+      // "42 800", "42,800" and "42800" all match a key of "42 800".
+      if (isSingleNumberKey(c)) {
+        const aStripped = a.replace(/ /g, "");
+        if (NUMERIC_RE.test(aStripped)) {
+          return Number(aStripped) === Number(c.replace(/ /g, ""));
+        }
+        return a === c;
+      }
       if (NUMERIC_RE.test(a) && NUMERIC_RE.test(c)) {
         return Number(a) === Number(c);
       }
@@ -59,8 +124,32 @@ export function judgeAnswer(
 
     case "DRAG_DROP": {
       const correctOrder = readArray(obj, "correct_order", format);
-      return JSON.stringify(correctOrder) === answerGiven;
+      const given = parseJsonArray(answerGiven);
+      if (given === null) {
+        return JSON.stringify(correctOrder) === answerGiven;
+      }
+      return (
+        JSON.stringify(correctOrder.map(normalizeJsonToken)) ===
+        JSON.stringify(given.map(normalizeJsonToken))
+      );
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// DRAG_DROP helpers
+// ---------------------------------------------------------------------------
+
+function normalizeJsonToken(v: Json): Json {
+  return typeof v === "string" ? normalizeAnswer(v) : v;
+}
+
+function parseJsonArray(raw: string): Json[] | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Json[]) : null;
+  } catch {
+    return null;
   }
 }
 

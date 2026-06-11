@@ -40,7 +40,7 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
       if (cancelled) return;
       if (result.ok) {
         dispatch(
-          result.status === 409
+          result.resumed
             ? { type: "START_RESUME", body: result.body }
             : { type: "START_OK", body: result.body },
         );
