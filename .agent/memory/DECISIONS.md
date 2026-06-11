@@ -3,6 +3,57 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-11
+
+* ⚑ **Comprehensive-test instrumentation is "instrument-only" for this session — adaptive
+  engine reparameterization DEFERRED.** Decision by Dimitri 2026-06-11 (Option 1 of a
+  clarifying question). Rationale: adds the test_type discriminator + fires
+  comprehensive_* / short_* / instructor_* analytics events + ships a consent regression
+  test without touching the adaptive engine (item cap, confidence stop, routing depth).
+  Engine reparameterization is deferred to the SEPARATE comprehensive-assembly session that
+  owns the question-bank/session-split boundary. Instruments M2 comprehensive-pilot funnel
+  KPIs without colliding with that work. TODO(comprehensive-engine) marker left in codebase
+  at the hook point.
+
+* **Comprehensive instructor analytics lane built (PR #41, lane/comprehensive-instructor-analytics).**
+  Migration 20260611090000_comprehensive_instructor_analytics.sql: 6 new
+  analytics_event_name enum values; new assessment_test_type enum +
+  assessment_sessions.test_type column (default 'short'); instructor_usefulness table +
+  RLS mirroring pedagogical_notes. Events wired: comprehensive_test_started/_item_answered/
+  _completed (test_type='comprehensive'), short_test_started/_item_answered/_completed
+  (test_type='short'), instructor_report_viewed (tracker island + server action),
+  placement_recommendation_created (fires once at session completion, both terminal paths,
+  props {sam_level, termination_reason}, PII-free), instructor_usefulness_submitted (1-5 +
+  optional note; RLS table + server action + client island; event carries {rating,
+  has_comment} only), short_result_viewed (parent report view, test_type='short').
+  sessionStart honors a comprehensive? flag only when ENABLE_COMPREHENSIVE_PILOT is on
+  (fail-safe to short). Hand-edited database.types.ts to match DDL (supabase gen types not
+  runnable by assistant). Migration NOT exercised by CI — validated on founder's
+  supabase db reset. Verify GREEN: 882 tests / 54 files; tsc clean; lint 0 errors (2
+  pre-existing warnings). Codex SKIPPED (relay credential-blocked). Awaiting attended merge.
+
+* **Consent-gate regression test — comprehensive session (PR #42, lane/consent-gate-comprehensive,
+  STACKED on PR #41).** Regression test only: asserts dual server-side consent gate
+  (sessionStart + responseSubmit) fails closed for a comprehensive session exactly as for
+  short — 403 consent_required, no session created / no response accepted. No handler fix
+  needed (gate runs unconditionally before test_type resolution). Verify GREEN: 884 tests /
+  54 files. Base PR auto-retargets to ATLAS-ASSESSMENT once PR #41 merges — MERGE #41 FIRST.
+
+* **Ops runbook gaps closed (PR #43, lane/ops-runbook-gaps, docs only).** docs/ops-runbook.md
+  §3 rewritten as "Stuck / abandoned sessions, and report regeneration": Option A
+  reset-by-delete (cascades responses/question_access_log, nulls analytics_events.session_id)
+  and Option B force-close to COMPLETED (sets completed_at per check constraint, no-narration
+  caveat). §4 consent revoke: companion vpc_audit_log insert + revoke-all-children-of-a-parent
+  variant. §7: new "child can't start a new assessment" scenario. Narration-regen KNOWN GAP
+  (§3) remains open — needs a service-role script, not SQL; documented as an optional
+  code follow-on. Verify GREEN: baseline (docs-only change). Codex SKIPPED. Awaiting
+  attended merge.
+
+* **Verify baseline confirmed at 864 tests / 52 files on ATLAS-ASSESSMENT head (2026-06-11).**
+  Earlier per-lane snapshots (644/47, 554) were pre-merge counts from specific worktrees.
+  CLAUDE.md's pinned "554" is stale — treat the live pnpm test count as authoritative
+  (CLAUDE.md updated to say this in commit 86f8cad on lane/verify-baseline-count).
+
 ## 2026-06-10
 
 * ⚑ **G1 LIFTED — S.A.M. founder granted permission to digitize the entire test library
