@@ -104,24 +104,74 @@ the child's latest completed session).
 
 ---
 
-## 3. Regenerate a report — **not currently possible as an operator action**
+## 3. Stuck / abandoned sessions, and report regeneration
 
-There is **no** operator mechanism (no CLI, no API endpoint, no admin route) to
-re-run narration for an existing session. `attemptNarration` is invoked **only**
-from `closeSession` during the response-submit flow on session completion
-(`src/lib/responseSubmit/handler.ts`; `src/lib/report/narration/trigger.ts`).
+### Find a stuck session
 
-- The upsert is idempotent on `session_id`, so completing a session again
-  overwrites its narration row cleanly — but the only way to re-trigger it today
-  is for the child to **re-take and complete** the assessment.
-- If narration is stub/empty because the live flag was off at completion time,
-  flipping `REPORT_NARRATION_LIVE` (see §6) only affects **future** completions,
-  not past sessions.
+`sessionStartHandler` auto-resumes the newest `IN_PROGRESS` session for a child
+on the next start, so an abandoned run keeps re-opening until it is closed or
+removed. A "child can't start a fresh assessment" report is almost always this.
+Find stale runs:
 
-**Known gap.** A standalone "regenerate narration for session X" operator script
-is not built. If the pilot needs it, that is a small follow-on lane (a
-service-role script calling `attemptNarration(sessionId)`); raise it and it can
-be added. Until then, re-take is the only path.
+```sql
+-- IN_PROGRESS sessions idle for > 1 day (tune the interval)
+select s.id as session_id, s.child_id, c.name as child_name,
+       s.started_at,
+       (select max(r.created_at) from responses r where r.session_id = s.id)
+         as last_response_at,
+       (select count(*)         from responses r where r.session_id = s.id)
+         as response_count
+from assessment_sessions s
+join children c on c.id = s.child_id
+where s.status = 'IN_PROGRESS'
+  and s.started_at < now() - interval '1 day'
+order by s.started_at;
+```
+
+### Option A — reset (let the child start fresh) — recommended for an abandoned run
+
+Delete the stuck `IN_PROGRESS` session. Its `responses` and `question_access_log`
+rows cascade-delete; `analytics_events.session_id` is set null (funnel rows are
+kept, just unlinked). On the child's next visit a brand-new session starts.
+**Only ever delete an `IN_PROGRESS` session** — a `COMPLETED` session is the
+parent's report and must never be deleted.
+
+```sql
+-- Reset ONE abandoned in-progress session (verify the id from the query above).
+-- The `and status = 'IN_PROGRESS'` guard makes this a no-op on a completed row.
+delete from assessment_sessions
+where id = '<session-uuid>' and status = 'IN_PROGRESS';
+```
+
+### Option B — force-close (end the run, keep what was answered)
+
+Mark it `COMPLETED` so it stops resuming and its current placement estimate
+freezes. The `assessment_sessions_completed_chk` constraint requires
+`completed_at` to be set in the same statement.
+
+```sql
+update assessment_sessions
+set status = 'COMPLETED', completed_at = now()
+where id = '<session-uuid>' and status = 'IN_PROGRESS';
+```
+
+> **Caveat.** A SQL force-close does **not** run the app's `closeSession` path, so
+> it does **not** generate a narration row and does not recompute placement. The
+> report renders data-only from the frozen `current_estimate`; with too few clean
+> responses it lands on the `unreliable` banner (§2). Prefer Option A for a
+> genuinely abandoned run; use Option B only when the answered items should be
+> retained as a finished session.
+
+### Report / narration regeneration — still a code follow-on
+
+Re-running narration for an already-completed session has **no operator SQL**:
+the narration upsert fires only from `closeSession` on completion
+(`src/lib/responseSubmit/handler.ts`; `src/lib/report/narration/trigger.ts`), and
+the upsert is idempotent on `session_id`. Flipping `REPORT_NARRATION_LIVE` (§6)
+affects **future** completions only, not past sessions. A standalone "regenerate
+narration for session X" service-role script (calling `attemptNarration(sessionId)`)
+is a small optional follow-on — raise it if the pilot needs it; until then,
+re-take is the only way to refresh prose.
 
 ---
 
@@ -155,6 +205,24 @@ update consent_records
 set revoked = true, revoked_at = now()
 where child_id = '<child-uuid>' and revoked = false;
 ```
+
+There is no app revoke flow, so log the operator action yourself for the audit
+trail — `consent_revoked` is an existing `vpc_audit_log` event type. Run this
+alongside the update above (`vpc_audit_log` has no `child_id` column, so the
+child ref goes in `metadata`):
+
+```sql
+insert into vpc_audit_log (tenant_id, parent_id, event_type, metadata)
+select c.tenant_id, c.parent_id, 'consent_revoked',
+       jsonb_build_object('child_id', c.id, 'actor', 'ops-manual')
+from children c
+where c.id = '<child-uuid>';
+```
+
+To revoke for **every** child of one parent, swap the `where` on the update for
+`where child_id in (select id from children where parent_id = '<parent-uuid>')
+and revoked = false`, and the audit `select` for `where c.parent_id =
+'<parent-uuid>'`.
 
 > Any change to consent semantics (beyond this operational flip) requires
 > Dimitri + counsel review (G3). Do not alter `consent_text` / version columns.
@@ -238,6 +306,7 @@ content-dependent flags need the S.A.M licence (G1) first.
 | "Parent can't see a report." | §2 — is there a `COMPLETED` session? Is `session_time_flag` `unreliable`/`mixed` (banner-only by design)? |
 | "Report has no chart / placement." | §2 — almost always an `unreliable`/`mixed` speed-run; confirm with a real completed assessment. |
 | "Report prose looks thin / data-only." | §2 — `report_narrations.status = 'failed'`, or `REPORT_NARRATION_LIVE` was off at completion (§3: re-take to refresh). |
+| "Child is stuck / can't start a new assessment." | §3 — an abandoned `IN_PROGRESS` session keeps auto-resuming; reset (Option A, recommended) or force-close (Option B). |
 | "Family wants their data removed / consent withdrawn." | §4 — revoke (privacy action; confirm intent). Broader deletion = Dimitri + counsel (G3). |
 | "Is the classifier actually running live?" | §5 health query + §6 `MISCONCEPTION_CLASSIFIER_LIVE`. |
 | "Funnel numbers look wrong." | §5 `analytics_events`; remember emits are fail-soft (a logging hiccup drops an event, never blocks the user). |
