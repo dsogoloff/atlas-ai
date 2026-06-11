@@ -14,6 +14,8 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeMathDigits,
   parseAnswerKey,
+  parseLevelLabel,
+  QUESTION_MARKER,
   reattributeOrphanOptionBlocks,
   type SegmentedQuestion,
   type Stage1Extraction,
@@ -42,6 +44,56 @@ describe("normalizeMathDigits", () => {
   it("leaves ASCII text untouched", () => {
     expect(normalizeMathDigits("716, 708, 652")).toBe("716, 708, 652");
     expect(normalizeMathDigits("cylinder")).toBe("cylinder");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseLevelLabel — digit levels plus the Kindergarten 0A/0B/0C labels
+// ---------------------------------------------------------------------------
+
+describe("parseLevelLabel", () => {
+  it("parses plain digit levels", () => {
+    expect(parseLevelLabel("…\nLevel 5\nPlacement Worksheet")).toBe("Level 5");
+    expect(parseLevelLabel("Level 12")).toBe("Level 12");
+  });
+
+  it("parses the Kindergarten 0A/0B/0C labels", () => {
+    expect(parseLevelLabel("Level 0A\nPlacement Worksheet")).toBe("Level 0A");
+    expect(parseLevelLabel("…header…\nLevel 0B")).toBe("Level 0B");
+    expect(parseLevelLabel("Level 0C")).toBe("Level 0C");
+  });
+
+  it("captures 0A as a unit, never the bare 0", () => {
+    expect(parseLevelLabel("Level 0A")).not.toBe("Level 0");
+  });
+
+  it("is case-insensitive and normalizes to upper-case", () => {
+    expect(parseLevelLabel("level 0a")).toBe("Level 0A");
+  });
+
+  it("returns null when no label is present", () => {
+    expect(parseLevelLabel("Placement Worksheet Answer Key")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// QUESTION_MARKER — spaced-period task openers (L5 task 2: "2 . Which …")
+// ---------------------------------------------------------------------------
+
+describe("QUESTION_MARKER", () => {
+  it("matches the standard 'N. ' opener", () => {
+    expect(QUESTION_MARKER.exec("1. What is the missing number ?")?.[1]).toBe("1");
+    expect(QUESTION_MARKER.exec("12. \tArrange the numbers.")?.[1]).toBe("12");
+  });
+
+  it("matches the spaced-period variant 'N . '", () => {
+    expect(QUESTION_MARKER.exec("2 . Which is greater, 12 357 or 13 275?")?.[1]).toBe("2");
+  });
+
+  it("does not match decimals or mid-sentence numbers", () => {
+    expect(QUESTION_MARKER.exec("3.716, 3.671, 3.617")).toBeNull();
+    expect(QUESTION_MARKER.exec("25 608 = 20 000 + 5000")).toBeNull();
+    expect(QUESTION_MARKER.exec("1.45 a.m.")).toBeNull();
   });
 });
 
@@ -338,6 +390,170 @@ describe("reattributeOrphanOptionBlocks", () => {
       ]),
     ];
     expect(reattributeOrphanOptionBlocks(segments)).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Format A: tab table — column-delta rescue shapes (L5/L6/0A/0C layouts).
+// The text layer of those keys drops a column's answer or merges two tasks'
+// cells onto one line. ALL fixtures synthetic; bare answer values only.
+// ---------------------------------------------------------------------------
+
+// L5-style: 30 tasks, right column = left + 15. Exercises:
+//   * trailing right task number with its answer on the NEXT line ("8\t400\t23")
+//   * a row whose task-number tab degraded to a space ("10 3, x")
+const L5_SHAPE_KEY = [
+  "Task \tAnswer \tTask \tAnswer",
+  "1 \t(3) \t16 \t(2)",
+  "2 \t13 275 \t17 \t(4)",
+  "3 \t290 \t18 \t(3)",
+  "4 \t30 \t19 \t(3)",
+  "5 \t(3) \t20 \t(1)",
+  "6 \t72 390 \t21 \t(2)",
+  "7 \t(2) \t22 \t120",
+  "8 \t400 \t23",
+  "1.45 a.m.",
+  "9 \t5 !",
+  "24 \t92",
+  "10 3, !\"",
+  "# , !$",
+  "25 \t108",
+  "Seriously Addictive Maths",
+].join("\n");
+
+describe("parseAnswerKey — two-column rescue: trailing task number + space row", () => {
+  const { byTask } = parseAnswerKey(extraction(L5_SHAPE_KEY));
+
+  it("splits a row whose right column carries only the task number", () => {
+    expect(byTask.get(8)?.answer_value).toBe("400");
+    expect(byTask.get(8)?.raw_answer).toBe("400");
+    expect(byTask.get(23)?.raw_answer).toBe("1.45 a.m.");
+  });
+
+  it("recovers a task whose number/answer tab degraded to a space", () => {
+    expect(byTask.get(10)?.raw_answer).toBe('3, !"\n# , !$');
+  });
+
+  it("does not turn continuation prose starting with a digit into a task", () => {
+    // "1.45 a.m." (decimal) stayed task 23's answer; no task 1 overwrite.
+    expect(byTask.get(1)).toMatchObject({ answer_kind: "OPTION", answer_value: 3 });
+  });
+
+  it("collapses space-grouped thousands in a full row's left column", () => {
+    expect(byTask.get(2)?.answer_value).toBe("13275");
+  });
+
+  it("creates no spurious entries", () => {
+    expect([...byTask.keys()].sort((a, b) => a - b)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    ]);
+  });
+});
+
+// L6-style: right column = left + 6. Exercises:
+//   * "N1 \tN2" rows — both answers lost from the text layer
+//   * "N1 \tN2 \tanswer" rows — left answer lost, tail is the right answer
+//   * a continuation line carrying the next right-column row inline
+const L6_SHAPE_KEY = [
+  "Task \tAnswer \tTask \tAnswer",
+  "1 \t85 000 \t7 \t(1)",
+  "2 \t(1) \t8 \t10.125",
+  "11 \t17",
+  "12 \t18 \t(4)",
+  "13 \t19 \t140 x 75 x 70 = 735 000",
+  "735 - 320 = 415",
+  "14 \t(1) \t20 \t(3)",
+  "26 \t'",
+  '"# x 100% = 60% \t32 \t59',
+  "27 \t(4) \t33 \t110",
+  "Seriously Addictive Maths",
+].join("\n");
+
+describe("parseAnswerKey — two-column rescue: lost-answer rows + embedded row", () => {
+  const { byTask } = parseAnswerKey(extraction(L6_SHAPE_KEY));
+
+  it("collapses space-grouped thousands into a clean value", () => {
+    expect(byTask.get(1)?.answer_value).toBe("85000");
+  });
+
+  it("treats a bare 'N1 \\tN2' row as two tasks with lost answers", () => {
+    expect(byTask.has(11)).toBe(false);
+    expect(byTask.has(17)).toBe(false);
+  });
+
+  it("gives the tail of 'N1 \\tN2 \\tanswer' to the right task", () => {
+    expect(byTask.has(12)).toBe(false);
+    expect(byTask.get(18)).toMatchObject({ answer_kind: "OPTION", answer_value: 4 });
+    expect(byTask.get(19)?.answer_value).toBe("415");
+    expect(byTask.get(19)?.raw_answer).toContain("735 - 320 = 415");
+  });
+
+  it("splits a continuation line that carries the next right-column row", () => {
+    expect(byTask.get(26)?.raw_answer).toBe('\'\n"# x 100% = 60%');
+    expect(byTask.get(32)?.raw_answer).toBe("59");
+  });
+
+  it("leaves genuine full rows untouched", () => {
+    expect(byTask.get(14)).toMatchObject({ answer_kind: "OPTION", answer_value: 1 });
+    expect(byTask.get(20)).toMatchObject({ answer_kind: "OPTION", answer_value: 3 });
+    expect(byTask.get(27)).toMatchObject({ answer_kind: "OPTION", answer_value: 4 });
+    expect(byTask.get(33)?.answer_value).toBe("110");
+  });
+});
+
+// 0A-style: row-major pairs (right column = left + 1) and NO clean fullRow
+// anywhere — the delta must be derived from the rescue shapes themselves.
+const PAIRED_SHAPE_KEY = [
+  "Task \tAnswer \tTask \tAnswer",
+  "1 \t2",
+  "3 \t4 \tred; \tblue; \tgreen",
+  "7 \t8 \tCar circled",
+  "9",
+  "Arrow drawn",
+  "13 \t14",
+  "Seriously Addictive Maths",
+].join("\n");
+
+describe("parseAnswerKey — paired layout without any full row", () => {
+  const { byTask } = parseAnswerKey(extraction(PAIRED_SHAPE_KEY));
+
+  it("derives the column delta from the rescue shapes (delta 1)", () => {
+    expect(byTask.has(1)).toBe(false); // both answers lost
+    expect(byTask.has(2)).toBe(false);
+    expect(byTask.get(4)?.raw_answer).toBe("red; \tblue; \tgreen");
+    expect(byTask.get(8)?.raw_answer).toBe("Car circled");
+    expect(byTask.has(13)).toBe(false);
+    expect(byTask.has(14)).toBe(false);
+  });
+
+  it("keeps bare-number rows with continuation answers working", () => {
+    expect(byTask.get(9)?.raw_answer).toBe("Arrow drawn");
+  });
+});
+
+// Single-column key (0B layout, header "Task \tAnswer"): the rescue shapes
+// must stay OFF — "10 \t8" is task 10 with the genuine numeric answer 8.
+const SINGLE_COLUMN_KEY = [
+  "Task \tAnswer",
+  "2 \tMagnet",
+  "5 \t9, 7, 6, 4, 3, 2, 1",
+  "10 \t8",
+  "11 \t12",
+  "Seriously Addictive Maths",
+].join("\n");
+
+describe("parseAnswerKey — single-column key disables rescue shapes", () => {
+  const { byTask } = parseAnswerKey(extraction(SINGLE_COLUMN_KEY));
+
+  it("keeps numeric answers that look like task numbers", () => {
+    expect(byTask.get(10)?.answer_value).toBe("8");
+    expect(byTask.get(11)?.answer_value).toBe("12");
+    expect(byTask.has(12)).toBe(false);
+  });
+
+  it("parses ordinary single-column entries", () => {
+    expect(byTask.get(2)?.answer_value).toBe("Magnet");
+    expect(byTask.get(5)?.answer_value).toBe("9, 7, 6, 4, 3, 2, 1");
   });
 });
 

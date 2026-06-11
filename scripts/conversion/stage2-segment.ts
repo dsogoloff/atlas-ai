@@ -145,12 +145,22 @@ function classifyKind(extraction: Stage1Extraction): DocKind {
   return "WORKSHEET";
 }
 
+// "Level <n>" or the Kindergarten labels "Level 0A/0B/0C" (observed verbatim
+// on the 0A/0B/0C worksheet covers and answer-key headers). The 0A|0B|0C
+// alternatives come first so "Level 0A" captures "0A", not "0".
+const LEVEL_LABEL = /\bLevel\s+(0A|0B|0C|\d+)\b/i;
+
+export function parseLevelLabel(text: string): string | null {
+  const m = LEVEL_LABEL.exec(text);
+  return m ? `Level ${m[1].toUpperCase()}` : null;
+}
+
 function extractLevelLabel(extraction: Stage1Extraction): string | null {
-  // Probe page 1 for "Level <n>" — matches both worksheet covers and the
+  // Probe pages for the level label — matches both worksheet covers and the
   // answer-key header.
   for (const p of extraction.pages) {
-    const m = /\bLevel\s+(\d+)\b/.exec(p.text);
-    if (m) return `Level ${m[1]}`;
+    const label = parseLevelLabel(p.text);
+    if (label) return label;
   }
   return null;
 }
@@ -293,25 +303,90 @@ function buildNumberedListEntry(parts: string[]): AnswerEntry {
 }
 
 // --- Format A: two-column tab table ("Task\tAnswer\tTask\tAnswer"), as on
-// the Level 1/2 keys. Behavior unchanged from the original parser.
+// the Level 1/2 keys. Extended (L5/L6/0A/0C keys) with column-DELTA-gated
+// rescue shapes: those keys' text layers drop a column's answer entirely or
+// merge two tasks' cells onto one line, which the plain fullRow/halfRow
+// reading mis-attributes (e.g. L6 "11 \t17" became task 11 = "17").
+
+// Header with one Task/Answer pair (single-column keys, e.g. Level 0B).
+const ANY_TABLE_HEADER = /Task\s*\t\s*Answer/i;
+
+const FULL_ROW = /^\s*(\d+)\s*\t\s*(.+?)\s*\t\s*(\d+)\s*\t\s*(.+?)\s*$/;
+const HALF_ROW = /^\s*(\d+)\s*\t\s*(.+?)\s*$/;
+const BARE_NUM = /^\s*(\d+)\s*$/;
+// Rescue shapes — applied ONLY when the document's column delta is known
+// (deriveColumnDelta) and the two numbers differ by exactly that delta:
+//   "12 \t18 \t(4)"   left answer lost; rest is the right task's answer.
+const NUM_NUM_ANSWER_ROW = /^\s*(\d+)\s*\t\s*(\d+)\s*\t\s*(.+?)\s*$/;
+//   "3 \t162 000 \t9" right answer wraps to following lines (or is lost).
+const TRAILING_TASK_ROW = /^\s*(\d+)\s*\t\s*(.+?)\s*\t\s*(\d+)\s*$/;
+//   "11 \t17"         both answers lost from the text layer.
+const NUM_NUM_ROW = /^\s*(\d+)\s*\t\s*(\d+)\s*$/;
+// "10 3, …" (L5 task 10): the tab between task number and answer came out
+// as a space. Only accepted when the number is exactly the smallest task
+// not yet seen — continuation prose like "28 apples." must never match.
+const SPACE_ROW = /^\s*(\d+) +(\S.*)$/;
+// Continuation line carrying the next right-column task inline (L6 task
+// 26's fraction continuation merged with task 32's whole row:
+// '"# … = 60% \t32 \t59°').
+const EMBEDDED_TASK_SPLIT = /^(.*?)\s*\t\s*(\d+)\s*\t\s*(.+?)\s*$/;
+
+// The two-column keys lay tasks out left/right with a constant task-number
+// offset per document (L5: right = left + 15; L6: +6; 0A/0C: +1). Derive it
+// from the unambiguous fullRow lines; fall back to the rescue shapes when a
+// key has no clean fullRow at all (0A). Anything inconsistent -> null, which
+// disables every rescue shape (the L1/L2-era behavior).
+function deriveColumnDelta(body: string[], twoColumn: boolean): number | null {
+  if (!twoColumn) return null;
+  const deltas = new Set<number>();
+  for (const line of body) {
+    const m = FULL_ROW.exec(line);
+    if (m) deltas.add(Number(m[3]) - Number(m[1]));
+  }
+  if (deltas.size === 0) {
+    for (const line of body) {
+      const nn = NUM_NUM_ANSWER_ROW.exec(line) ?? NUM_NUM_ROW.exec(line);
+      if (nn) {
+        deltas.add(Number(nn[2]) - Number(nn[1]));
+        continue;
+      }
+      const trail = TRAILING_TASK_ROW.exec(line);
+      if (trail) deltas.add(Number(trail[3]) - Number(trail[1]));
+    }
+  }
+  if (deltas.size !== 1) return null;
+  const d = [...deltas][0];
+  return d > 0 ? d : null;
+}
 
 function parseTabTableKey(lines: string[]): Map<number, AnswerEntry> {
-  // Find the header "Task ... Answer ... Task ... Answer" then iterate.
-  const headerIdx = lines.findIndex((l) => TAB_TABLE_HEADER.test(l));
+  // Find the header "Task ... Answer ..." then iterate the body.
+  const headerIdx = lines.findIndex((l) => ANY_TABLE_HEADER.test(l));
+  const twoColumn = headerIdx >= 0 && TAB_TABLE_HEADER.test(lines[headerIdx]);
   const body = headerIdx >= 0 ? lines.slice(headerIdx + 1) : lines;
+  const delta = deriveColumnDelta(body, twoColumn);
 
   const byTask = new Map<number, AnswerEntry>();
+  // Every task number whose row we have seen — including tasks whose answer
+  // is absent from the text layer. Drives the SPACE_ROW guard and lets
+  // empty commits still mark the task as encountered.
+  const started = new Set<number>();
 
   // Pending multi-line answer accumulator for tasks whose answer wraps
   // onto subsequent lines (Q4 "Ethan is first in the / queue."; Q11
   // "35 – 7 = 28 / Her brother gave her / 28 apples.").
   let pending: { task: number; parts: string[] } | null = null;
 
-  const fullRow = /^\s*(\d+)\s*\t\s*(.+?)\s*\t\s*(\d+)\s*\t\s*(.+?)\s*$/;
-  const halfRow = /^\s*(\d+)\s*\t\s*(.+?)\s*$/;
-  const bareNum = /^\s*(\d+)\s*$/;
-  const isTaskStart = (line: string): boolean =>
-    fullRow.test(line) || halfRow.test(line) || bareNum.test(line);
+  function smallestUnseen(): number {
+    let k = 1;
+    while (started.has(k)) k += 1;
+    return k;
+  }
+
+  function openPending(task: number, parts: string[]): { task: number; parts: string[] } {
+    started.add(task);
+    return { task, parts };
+  }
 
   function commitPending(): void {
     if (!pending) return;
@@ -326,48 +401,90 @@ function parseTabTableKey(lines: string[]): Map<number, AnswerEntry> {
     const line = rawLine.replace(/\r$/, "");
     if (line.trim().length === 0) continue;
 
-    if (isTaskStart(line)) {
+    const full = FULL_ROW.exec(line);
+    if (full) {
       // First close out any in-progress multi-line answer.
       commitPending();
-
-      const full = fullRow.exec(line);
-      if (full) {
-        const [, n1, a1, n2, a2] = full;
-        byTask.set(Number(n1), buildAnswerEntry(a1.trim()));
-        // The RIGHT column's answer may continue on the following lines
-        // (multi-line worked solutions, e.g. an L4 entry whose conversion
-        // steps wrap under the row). Open the continuation accumulator
-        // exactly like the halfRow path instead of committing immediately
-        // — committing here truncated those entries to their first line.
-        pending = { task: Number(n2), parts: [a2.trim()] };
-        continue;
-      }
-      const half = halfRow.exec(line);
-      if (half) {
-        const [, n1, a1] = half;
-        pending = { task: Number(n1), parts: [a1.trim()] };
-        continue;
-      }
-      const bare = bareNum.exec(line);
-      if (bare) {
-        pending = { task: Number(bare[1]), parts: [] };
-        continue;
-      }
-    } else if (pending) {
-      // Footer/header noise (e.g. the trailing "Seriously Addictive
-      // Maths" line) must not be absorbed into an open accumulator — now
-      // that fullRow right-column answers also accumulate, the last table
-      // row's accumulator stays open until EOF. Mirror the numbered-list
-      // parser: commit and drop the noise line.
-      if (KEY_NOISE.test(line.trim())) {
-        commitPending();
-        continue;
-      }
-      pending.parts.push(line.trim());
+      const [, n1, a1, n2, a2] = full;
+      byTask.set(Number(n1), buildAnswerEntry(a1.trim()));
+      started.add(Number(n1));
+      // The RIGHT column's answer may continue on the following lines
+      // (multi-line worked solutions) — open the continuation accumulator
+      // instead of committing immediately.
+      pending = openPending(Number(n2), [a2.trim()]);
+      continue;
     }
-    // Otherwise: orphan line outside any task (e.g. stray diagram block
-    // "Beth \tDave \tAbel / Cary / Ethan" after Q22). Ignore for the
-    // task-number map; it stays in answer_key_raw for human review.
+
+    if (delta !== null) {
+      const nna = NUM_NUM_ANSWER_ROW.exec(line);
+      if (nna && Number(nna[2]) - Number(nna[1]) === delta) {
+        // Left task's answer is lost from the text layer (no entry — it
+        // surfaces as the normal missing-entry warning); the line's tail
+        // belongs to the right task.
+        commitPending();
+        started.add(Number(nna[1]));
+        pending = openPending(Number(nna[2]), [nna[3].trim()]);
+        continue;
+      }
+      const trail = TRAILING_TASK_ROW.exec(line);
+      if (trail && Number(trail[3]) - Number(trail[1]) === delta) {
+        commitPending();
+        byTask.set(Number(trail[1]), buildAnswerEntry(trail[2].trim()));
+        started.add(Number(trail[1]));
+        pending = openPending(Number(trail[3]), []);
+        continue;
+      }
+      const nn = NUM_NUM_ROW.exec(line);
+      if (nn && Number(nn[2]) - Number(nn[1]) === delta) {
+        commitPending();
+        started.add(Number(nn[1]));
+        pending = openPending(Number(nn[2]), []);
+        continue;
+      }
+    }
+
+    const half = HALF_ROW.exec(line);
+    if (half) {
+      commitPending();
+      pending = openPending(Number(half[1]), [half[2].trim()]);
+      continue;
+    }
+    const bare = BARE_NUM.exec(line);
+    if (bare) {
+      commitPending();
+      pending = openPending(Number(bare[1]), []);
+      continue;
+    }
+    const space = SPACE_ROW.exec(line);
+    if (space && Number(space[1]) === smallestUnseen()) {
+      commitPending();
+      pending = openPending(Number(space[1]), [space[2].trim()]);
+      continue;
+    }
+
+    if (!pending) continue;
+    // Orphan line outside any task would have been skipped above (e.g.
+    // stray diagram block "Beth \tDave" after Q22 stays in answer_key_raw
+    // for human review). From here on the line belongs to the open entry.
+
+    const trimmed = line.trim();
+    // Footer/header noise (e.g. the trailing "Seriously Addictive
+    // Maths" line) must not be absorbed into an open accumulator —
+    // commit and drop the noise line.
+    if (KEY_NOISE.test(trimmed)) {
+      commitPending();
+      continue;
+    }
+    if (delta !== null) {
+      const emb = EMBEDDED_TASK_SPLIT.exec(line);
+      if (emb && Number(emb[2]) === pending.task + delta) {
+        if (emb[1].trim().length > 0) pending.parts.push(emb[1].trim());
+        commitPending();
+        pending = openPending(Number(emb[2]), [emb[3].trim()]);
+        continue;
+      }
+    }
+    pending.parts.push(trimmed);
   }
   commitPending();
 
@@ -405,6 +522,11 @@ function cleanValue(rawAnswer: string): string | null {
     const trimmed = line.trim();
     if (/^\$?-?\d+(?:\.\d+)?$/.test(trimmed)) {
       return trimmed.replace(/^\$/, "");
+    }
+    // Space-grouped thousands ("162 000", "2 000 000" — the S.A.M. number
+    // style on the L5/L6 keys): collapse the group separators.
+    if (/^\$?-?\d{1,3}(?: \d{3})+$/.test(trimmed)) {
+      return trimmed.replace(/^\$/, "").replace(/ /g, "");
     }
   }
   const collapsed = rawAnswer.replace(/\s+/g, " ").trim();
@@ -471,11 +593,12 @@ function stripBoilerplate(rawText: string): string {
     }
   }
 
-  // Running header: "Level <n>" then "Placement Worksheet" then bare page
-  // number, in that order, immediately after the copyright block. Strip
-  // each only if it matches.
-  if (i < lines.length && /^Level\s+\d+$/.test(lines[i].trim())) i += 1;
-  if (i < lines.length && /^Placement\s+Worksheet$/.test(lines[i].trim())) i += 1;
+  // Running header: "Level <n>" (or 0A/0B/0C) then "Placement Worksheet"
+  // (L5 prints "Placement Worksheet WS") then bare page number, in that
+  // order, immediately after the copyright block. Strip each only if it
+  // matches.
+  if (i < lines.length && /^Level\s+(?:0A|0B|0C|\d+)$/i.test(lines[i].trim())) i += 1;
+  if (i < lines.length && /^Placement\s+Worksheet(?:\s+WS)?$/.test(lines[i].trim())) i += 1;
   if (i < lines.length && /^\d+$/.test(lines[i].trim())) i += 1;
 
   for (; i < lines.length; i += 1) out.push(lines[i]);
@@ -524,7 +647,12 @@ function buildContentStream(pages: CleanedPage[]): PageLine[] {
   return out;
 }
 
-const QUESTION_MARKER = /^\s*(\d+)\.\s/;
+// Task-stem opener "N. " — tolerates a single space/tab between the number
+// and the period: the L5 worksheet prints task 2 as "2 . Which is greater…"
+// (PDF text layer inserts a space), which the strict form missed, dropping
+// the whole task. Decimal-looking lines ("3.716, …") still do NOT match —
+// the period must be followed by whitespace.
+export const QUESTION_MARKER = /^\s*(\d+)[ \t]?\.\s/;
 
 export interface SegmentedQuestion {
   task_number: number;
@@ -690,8 +818,9 @@ function guessFields(rawText: string): GuessFields {
   else if (hasNumAnswer) format_guess = "NUMERIC_ENTRY";
 
   const stripped = rawText
-    // task number prefix "1.\t"
-    .replace(/^\s*\d+\.\s*/, "")
+    // task number prefix "1.\t" (or "2 ." — spaced-period variant, see
+    // QUESTION_MARKER)
+    .replace(/^\s*\d+[ \t]?\.\s*/, "")
     // answer-key circle marker "( \t)" or "( )" — cut it AND everything
     // after it. Trailing diagram labels (e.g. Q2's "1 / 10 / ?") would
     // otherwise be captured as the tail of the last MC option.
