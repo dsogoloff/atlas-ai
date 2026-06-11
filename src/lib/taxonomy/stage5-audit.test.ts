@@ -11,17 +11,21 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  answersEquivalent,
   auditDragDrop,
   auditMultipleChoice,
   auditNumericEntry,
   evalArithmetic,
   extractExpectedAnswer,
+  extractWorkedKeyFinalAnswer,
   formatAuditLogLine,
   interpretMcKey,
   normalizeAnswerText,
   parseExternalId,
+  parseOptionMarker,
   parseSqlValuesTuples,
   parseQuestionInserts,
+  resolveKeyOptionMarker,
   stripDigitGroupSpaces,
   tokenizeKeyList,
   verdictOf,
@@ -126,6 +130,105 @@ describe("normalizeAnswerText / stripDigitGroupSpaces / tokenizeKeyList", () => 
     expect(tokenizeKeyList("716, 708, 652, 629")).toEqual(["716", "708", "652", "629"]);
     expect(tokenizeKeyList("2\n11 , 6\n11")).toEqual(["2/11", "6/11"]);
     expect(tokenizeKeyList("a; b\nc")).toEqual(["a", "b", "c"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Answer equivalence (incl. the P1 judge normalizer)
+// ---------------------------------------------------------------------------
+
+describe("answersEquivalent", () => {
+  it("ignores case / whitespace / comma / unit-spacing noise (P1 classes)", () => {
+    expect(answersEquivalent("1 km 750 m", "1KM 750  m")).toBe(true);
+    expect(answersEquivalent("9:25 am", "9:25AM")).toBe(true);
+    expect(answersEquivalent("10, 17, 20", "10 17 20")).toBe(true);
+    expect(answersEquivalent("42 800", "42,800")).toBe(true);
+  });
+
+  it("never equates a separated list with a joined number", () => {
+    expect(answersEquivalent("1, 2", "12")).toBe(false);
+  });
+
+  it("still distinguishes genuinely different values", () => {
+    expect(answersEquivalent("98", "96")).toBe(false);
+    expect(answersEquivalent("smaller than", "greater than")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Option-marker resolution (conventions per PR #28's mc-index-audit.ts)
+// ---------------------------------------------------------------------------
+
+describe("parseOptionMarker / resolveKeyOptionMarker", () => {
+  const options = ["9 996", "9 997", "9 998", "9 999"];
+
+  it('parses "(N)" as an explicit marker and a bare integer as a reading', () => {
+    expect(parseOptionMarker("(3)")).toEqual({ ordinal: 3, explicit: true });
+    expect(parseOptionMarker("3")).toEqual({ ordinal: 3, explicit: false });
+    expect(parseOptionMarker("see solution")).toBeNull();
+    expect(parseOptionMarker("4/9")).toBeNull();
+  });
+
+  it("resolves a marker to the 1-based option value when options exist", () => {
+    const r = resolveKeyOptionMarker("3", options);
+    expect(r.kind).toBe("resolved");
+    expect(r.kind === "resolved" && r.value).toBe("9 998");
+  });
+
+  it("is unresolvable for a small bare integer without recorded options", () => {
+    expect(resolveKeyOptionMarker("3", null).kind).toBe("unresolvable");
+    expect(resolveKeyOptionMarker("(2)", null).kind).toBe("unresolvable");
+    expect(resolveKeyOptionMarker("(7)", options).kind).toBe("unresolvable");
+  });
+
+  it("treats large bare integers as literal values, not markers", () => {
+    expect(resolveKeyOptionMarker("98", null).kind).toBe("not-marker");
+    expect(resolveKeyOptionMarker("9", options).kind).toBe("not-marker");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Worked-solution final-answer extraction
+// ---------------------------------------------------------------------------
+
+describe("extractWorkedKeyFinalAnswer", () => {
+  // Synthetic reproduction of the SAM-L4-Q15 class: the parsed key only
+  // captured a conversion of a quantity GIVEN in the stem.
+  const stem =
+    "When Casey had walked 2 km 400 m, she had walked 3 times as far as Dana. " +
+    "How far had Dana walked? Express your answer in kilometres and metres.";
+
+  it("flags an equation restating a stem quantity as an intermediate line", () => {
+    const r = extractWorkedKeyFinalAnswer("2 km 400 m = 2400 m", stem);
+    expect(r.kind).toBe("extracted");
+    expect(r.kind === "extracted" && r.value).toBe("2400 m");
+    expect(r.kind === "extracted" && r.intermediate).toBe(true);
+  });
+
+  it("takes the right-most value of the last equation chain", () => {
+    const r = extractWorkedKeyFinalAnswer("2400 ÷ 3 = 800 m\n800 m = 0 km 800 m", stem);
+    expect(r.kind === "extracted" && r.value).toBe("0 km 800 m");
+    expect(r.kind === "extracted" && r.intermediate).toBe(false);
+  });
+
+  it("takes the trailing quantity of a sentence key", () => {
+    const r = extractWorkedKeyFinalAnswer("Dana had walked 0 km 800 m.", stem);
+    expect(r.kind).toBe("extracted");
+    expect(r.kind === "extracted" && r.value).toBe("0 km 800 m");
+  });
+
+  it("is uncertain when no final value is mechanically extractable", () => {
+    expect(
+      extractWorkedKeyFinalAnswer("The 3 baskets hold the same amount.", stem).kind,
+    ).toBe("uncertain");
+    // ":"-times must not yield a bogus "25 am" tail.
+    expect(extractWorkedKeyFinalAnswer("Finish time 9:25 am", stem).kind).toBe("uncertain");
+  });
+
+  it("leaves plain literal keys to the ordinary comparison", () => {
+    expect(extractWorkedKeyFinalAnswer("532", stem).kind).toBe("not-worked");
+    expect(extractWorkedKeyFinalAnswer("smaller than", stem).kind).toBe("not-worked");
+    expect(extractWorkedKeyFinalAnswer("1 km 750 m", stem).kind).toBe("not-worked");
   });
 });
 
@@ -280,10 +383,88 @@ describe("auditNumericEntry", () => {
   it("fails key-agreement on a real mismatch", () => {
     const checks = auditNumericEntry(
       { stem: "What is the greatest 2-digit even number?", correct_answer: "98" },
-      { raw_answer: "3", answer_kind: "VALUE" },
+      { raw_answer: "96", answer_kind: "VALUE" },
     );
     expect(checks.find((c) => c.name === "key-agreement")?.status).toBe("fail");
     expect(verdictOf(checks)).toBe("SUSPECT");
+  });
+
+  // Synthetic reproduction of the SAM-L3-Q22 class: the key prints a bare
+  // 1-based OPTION NUMBER, not a value.
+  it("resolves a bare option-number key against the source task's options", () => {
+    const checks = auditNumericEntry(
+      { stem: "What is the greatest 2-digit even number?", correct_answer: "98" },
+      { raw_answer: "3", answer_kind: "VALUE" },
+      ["92", "96", "98", "99"], // option 3 (1-based) IS the stored answer
+    );
+    const key = checks.find((c) => c.name === "key-agreement");
+    expect(key?.status).toBe("pass");
+    expect(key?.detail).toContain('"3"'); // raw marker kept for transparency
+    expect(verdictOf(checks)).toBe("CLEAN");
+  });
+
+  it("fails when the key-designated option contradicts the stored answer", () => {
+    const checks = auditNumericEntry(
+      { stem: "What is the greatest 2-digit even number?", correct_answer: "98" },
+      { raw_answer: "3", answer_kind: "VALUE" },
+      ["92", "96", "94", "99"],
+    );
+    expect(checks.find((c) => c.name === "key-agreement")?.status).toBe("fail");
+  });
+
+  it("is UNVERIFIABLE for an option-marker key when no options were captured", () => {
+    const checks = auditNumericEntry(
+      { stem: "What is the greatest 2-digit even number?", correct_answer: "98" },
+      { raw_answer: "3", answer_kind: "VALUE" },
+      null,
+    );
+    const key = checks.find((c) => c.name === "key-agreement");
+    expect(key?.status).toBe("skip");
+    expect(key?.detail).toContain('"3"');
+    expect(verdictOf(checks)).toBe("UNVERIFIABLE");
+  });
+
+  // Synthetic reproduction of the SAM-L4-Q15 class: the parsed key only
+  // captured a worked-solution line converting a quantity GIVEN in the stem.
+  it("is UNVERIFIABLE when the key is an intermediate working line", () => {
+    const checks = auditNumericEntry(
+      {
+        stem: "When Casey had walked 2 km 400 m, she had walked 3 times as far as Dana. How far had Dana walked?",
+        correct_answer: "0 km 800 m",
+      },
+      { raw_answer: "2 km 400 m = 2400 m", answer_kind: "VALUE" },
+    );
+    const key = checks.find((c) => c.name === "key-agreement");
+    expect(key?.status).toBe("skip");
+    expect(key?.detail).toContain("2 km 400 m = 2400 m"); // raw key kept
+    expect(verdictOf(checks)).toBe("SUSPECT"); // answer-format still fails
+  });
+
+  it("matches the final value of a worked-solution equation chain", () => {
+    const checks = auditNumericEntry(
+      {
+        stem: "When Casey had walked 2 km 400 m, she had walked 3 times as far as Dana. How far had Dana walked?",
+        correct_answer: "0 km 800 m",
+      },
+      { raw_answer: "2400 ÷ 3 = 800 m\n800 m = 0 km 800 m", answer_kind: "VALUE" },
+    );
+    expect(checks.find((c) => c.name === "key-agreement")?.status).toBe("pass");
+  });
+
+  it("fails against a confidently extracted worked-solution final value", () => {
+    const checks = auditNumericEntry(
+      { stem: "Share 63 sweets equally among 9 children. How many each?", correct_answer: "8" },
+      { raw_answer: "63 ÷ 9 = 7", answer_kind: "VALUE" },
+    );
+    expect(checks.find((c) => c.name === "key-agreement")?.status).toBe("fail");
+  });
+
+  it("matches stored vs key across P1 formatting noise (case/spacing/units)", () => {
+    const checks = auditNumericEntry(
+      { stem: "How far is it?", correct_answer: "1 km 750 m" },
+      { raw_answer: "1KM 750  m", answer_kind: "VALUE" },
+    );
+    expect(checks.find((c) => c.name === "key-agreement")?.status).toBe("pass");
   });
 
   it("fails stem-arithmetic when the stored answer misses the computed target", () => {
