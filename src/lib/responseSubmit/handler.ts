@@ -117,19 +117,28 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { emit } from "@/lib/analytics/emit";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import {
+  comprehensiveBudget,
+  comprehensiveNextQuestionRequest,
+  comprehensiveShouldTerminate,
+  type ComprehensiveBudget,
+} from "@/lib/engine/comprehensive";
+import {
   applyResponse,
   nextQuestionRequest,
   placementEstimate,
   shouldTerminate,
 } from "@/lib/engine/engine";
+import { STRANDS } from "@/lib/engine/levels";
 import type {
   EngineQuestion,
   EngineResponse,
+  EngineState,
   NextQuestionRequest,
   PlacementEstimate,
   Strand,
   TerminationDecision,
 } from "@/lib/engine/types";
+import { deriveTier } from "@/lib/tier/derive";
 import { hasValidConsent } from "@/lib/consent/verify";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { attemptNarration } from "@/lib/report/narration/trigger";
@@ -151,7 +160,7 @@ import {
 } from "@/lib/timeFlagging";
 
 import { judgeAnswer } from "./correctness";
-import { replayEngineState } from "./replay";
+import { replayEngineState, replayStrandCounts } from "./replay";
 import {
   toNextRequestJson,
   toPlacementEstimateJson,
@@ -161,6 +170,16 @@ import {
   type SubmitResponseBody,
   type TerminationReasonWire,
 } from "./types";
+
+/**
+ * Resolved comprehensive parameterization for a `test_type === "comprehensive"`
+ * session (comprehensive-engine lane). Null for short sessions, which keep the
+ * unchanged engine.shouldTerminate / engine.nextQuestionRequest behaviour.
+ */
+interface ComprehensiveContext {
+  inScopeStrands: Set<Strand>;
+  budget: ComprehensiveBudget;
+}
 
 interface HandlerInput {
   request: SubmitRequest;
@@ -249,6 +268,42 @@ export async function submitResponseHandler({
   }
 
   // ---------------------------------------------------------------------------
+  // 3.4 Comprehensive context (comprehensive-engine lane).
+  //
+  // Only for test_type === "comprehensive": resolve the in-scope strand set
+  // (STRANDS minus empty-bank — the in-scope-band approximation documented in
+  // comprehensive.ts) and the per-tier item budget. tier needs the child's
+  // grade_level/birth_year, which the earlier owned-children read doesn't
+  // fetch, so we read them here (service-role; the ownership check above
+  // already authorised this session for the caller). null for short sessions —
+  // the short path keeps using shouldTerminate / nextQuestionRequest unchanged.
+  // ---------------------------------------------------------------------------
+  let comprehensive: ComprehensiveContext | null = null;
+  if (session.test_type === "comprehensive") {
+    const { data: childRow, error: childErr } = await serviceClient
+      .from("children")
+      .select("grade_level, birth_year")
+      .eq("id", session.child_id)
+      .maybeSingle();
+    if (childErr) {
+      return fail("internal", 500, `child read failed: ${childErr.message}`);
+    }
+    if (!childRow) {
+      return fail("internal", 500, "child not found for comprehensive session");
+    }
+    const inScopeStrands = new Set<Strand>(
+      STRANDS.filter((s) => !emptyBankStrands.has(s)),
+    );
+    const budget = comprehensiveBudget(
+      deriveTier({
+        grade_level: childRow.grade_level,
+        birth_year: childRow.birth_year,
+      }),
+    );
+    comprehensive = { inScopeStrands, budget };
+  }
+
+  // ---------------------------------------------------------------------------
   // 3.5 Consent gate (M2 readiness / COPPA Gate-B).
   //
   // Independent of the session-start gate: a session may have started while
@@ -300,7 +355,13 @@ export async function submitResponseHandler({
     // post-submit state. Recompute done + next/placement so a retry
     // returns the same shape as the first call.
     const state = await replayEngineState(serviceClient, request.session_id);
-    const term = shouldTerminate(state, emptyBankStrands);
+    const term = await decideTermination(
+      serviceClient,
+      request.session_id,
+      state,
+      emptyBankStrands,
+      comprehensive,
+    );
 
     if (term.done) {
       return success({
@@ -320,13 +381,18 @@ export async function submitResponseHandler({
       serviceClient,
       request.session_id,
     );
+    const router = await buildRouter(
+      serviceClient,
+      request.session_id,
+      comprehensive,
+    );
     if (outstanding) {
       // next_request for the outstanding-question case is the engine's
       // current ask, excluding empty-bank strands. Reaching null here
       // would mean every strand is empty AND term.done was false — a
       // contradiction (shouldTerminate would have fired bank-exhausted).
       // Defensive 500 if it ever does.
-      const outstandingReq = nextQuestionRequest(state, emptyBankStrands);
+      const outstandingReq = router(state, emptyBankStrands);
       if (outstandingReq === null) {
         return fail("internal", 500, "next_request not computable on outstanding");
       }
@@ -353,6 +419,7 @@ export async function submitResponseHandler({
       },
       state,
       emptyBankStrands,
+      router,
     );
     if (retryPick.kind === "error") {
       return fail("internal", 500, retryPick.message);
@@ -550,8 +617,17 @@ export async function submitResponseHandler({
     return fail("internal", 500, `estimate update failed: ${estErr.message}`);
   }
 
-  // (c) Engine-driven termination side-effects.
-  const term = shouldTerminate(postState, emptyBankStrands);
+  // (c) Engine-driven termination side-effects. Comprehensive sessions use the
+  //     budget/floor/SE rule (reads post-state strand counts from the DB — the
+  //     response row from (a) is already persisted, so counts include this
+  //     item); short sessions use shouldTerminate unchanged.
+  const term = await decideTermination(
+    serviceClient,
+    request.session_id,
+    postState,
+    emptyBankStrands,
+    comprehensive,
+  );
   if (term.done) {
     const closeMsg = await closeSession(serviceClient, request.session_id);
     if (closeMsg) return fail("internal", 500, closeMsg);
@@ -589,6 +665,11 @@ export async function submitResponseHandler({
   //     strand, treat as a 'bank-exhausted' termination: close the
   //     session, return placement, and DO NOT write an audit-log row.
   // ---------------------------------------------------------------------------
+  const router = await buildRouter(
+    serviceClient,
+    request.session_id,
+    comprehensive,
+  );
   const pickResult = await pickAndMaybeClose(
     serviceClient,
     {
@@ -599,6 +680,7 @@ export async function submitResponseHandler({
     },
     postState,
     emptyBankStrands,
+    router,
   );
   if (pickResult.kind === "error") {
     return fail("internal", 500, pickResult.message);
@@ -746,6 +828,60 @@ function emitPlacementCreated(
   );
 }
 
+/**
+ * Termination decision for a session — comprehensive-aware (comprehensive-engine
+ * lane). Short sessions (comprehensive === null) use engine.shouldTerminate
+ * unchanged. Comprehensive sessions use the budget/floor/SE rule, reading
+ * post-state per-strand counts via replayStrandCounts. `state` is the post-state
+ * (the just-inserted response already applied / replayed).
+ */
+async function decideTermination(
+  serviceClient: SupabaseClient<Database>,
+  sessionId: string,
+  state: EngineState,
+  emptyBankStrands: ReadonlySet<Strand>,
+  comprehensive: ComprehensiveContext | null,
+): Promise<TerminationDecision> {
+  if (!comprehensive) {
+    return shouldTerminate(state, emptyBankStrands);
+  }
+  const strandCounts = await replayStrandCounts(serviceClient, sessionId);
+  return comprehensiveShouldTerminate({
+    state,
+    strandCounts,
+    inScopeStrands: comprehensive.inScopeStrands,
+    budget: comprehensive.budget,
+  });
+}
+
+/**
+ * Build the next-question router for the pick loop. Short sessions route via
+ * engine.nextQuestionRequest; comprehensive sessions route via the phase-1/
+ * phase-2 comprehensive router with the session's post-state strand counts.
+ * The strand counts are read once here (the loop only excludes strands, never
+ * adds served items, so counts are stable across loop iterations).
+ */
+async function buildRouter(
+  serviceClient: SupabaseClient<Database>,
+  sessionId: string,
+  comprehensive: ComprehensiveContext | null,
+): Promise<
+  (state: EngineState, excluded: ReadonlySet<Strand>) => NextQuestionRequest | null
+> {
+  if (!comprehensive) {
+    return (state, excluded) => nextQuestionRequest(state, excluded);
+  }
+  const strandCounts = await replayStrandCounts(serviceClient, sessionId);
+  return (state, excluded) =>
+    comprehensiveNextQuestionRequest({
+      state,
+      strandCounts,
+      inScopeStrands: comprehensive.inScopeStrands,
+      excludedStrands: excluded,
+      perStrandFloorN: comprehensive.budget.perStrandFloorN,
+    });
+}
+
 function success(body: SubmitResponseBody): SubmitHandlerResult {
   return { ok: true, body };
 }
@@ -808,13 +944,19 @@ async function pickAndMaybeClose(
   ctx: PickContext,
   postState: ReturnType<typeof applyResponse>,
   initiallyExcluded: ReadonlySet<Strand>,
+  router: (
+    state: EngineState,
+    excluded: ReadonlySet<Strand>,
+  ) => NextQuestionRequest | null,
 ): Promise<PickAndMaybeCloseResult> {
   const excludedStrands = new Set<Strand>(initiallyExcluded);
 
   // Bounded by STRANDS.length (6 in v1). The loop terminates when either
   // the engine returns null (every strand excluded) or the picker succeeds.
+  // `router` is engine.nextQuestionRequest for short sessions and the
+  // comprehensive router for comprehensive ones (comprehensive-engine lane).
   while (true) {
-    const req = nextQuestionRequest(postState, excludedStrands);
+    const req = router(postState, excludedStrands);
     if (req === null) {
       // Every strand exhausted — close the session and signal.
       const closeMsg = await closeSession(serviceClient, ctx.sessionId);

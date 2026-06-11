@@ -22,7 +22,9 @@
 import Link from "next/link";
 
 import { timeFlagBadge } from "@/lib/display/progress";
+import { comprehensiveBudget } from "@/lib/engine/comprehensive";
 import type { Strand as EngineStrand } from "@/lib/engine/types";
+import { deriveTier } from "@/lib/tier/derive";
 import { assembleReportContent } from "@/lib/report/assemble";
 import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
 import { resolveNarrationProse } from "@/lib/report/narration/resolve";
@@ -115,7 +117,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
   const { data: session } = await supabase
     .from("assessment_sessions")
     .select(
-      "id, tenant_id, started_at, completed_at, current_estimate, session_time_flag",
+      "id, tenant_id, started_at, completed_at, current_estimate, session_time_flag, test_type",
     )
     .eq("child_id", child.id)
     .eq("status", "COMPLETED")
@@ -167,6 +169,26 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
   const correctCount = items.filter((i) => i.isCorrect).length;
   const totalTimeSeconds = items.reduce((sum, i) => sum + i.timeTakenSeconds, 0);
 
+  // Strand coverage — comprehensive sessions only (comprehensive-engine lane).
+  // Confidence context for the placement: how many items each in-scope strand
+  // got, vs. the tier's per-strand floor. Response-derived COUNTS only — never
+  // question content (compliance §8). Service-role read to aggregate
+  // responses→questions.strand (questions are service-role-only per §8).
+  let strandCoverage: StrandCoverageRow[] = [];
+  if (session && session.test_type === "comprehensive") {
+    const perStrandFloorN = comprehensiveBudget(
+      deriveTier({
+        grade_level: child.grade_level,
+        birth_year: child.birth_year,
+      }),
+    ).perStrandFloorN;
+    strandCoverage = await fetchStrandCoverage(
+      createServiceClient(),
+      session.id,
+      perStrandFloorN,
+    );
+  }
+
   return (
     <>
       <InstructorTopBar instructorName={instructor.name} />
@@ -200,6 +222,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
             <StrengthsSection items={strengths} />
             <MisconceptionSection items={report.misconceptions} />
             <RecommendationSection items={report.recommendations} />
+            <StrandCoverageSection rows={strandCoverage} />
             <ItemReviewSection items={items} />
           </>
         ) : (
@@ -305,6 +328,66 @@ async function fetchItemReview(
         .filter((l): l is string => Boolean(l)),
     };
   });
+}
+
+// =============================================================================
+// Strand coverage (comprehensive-engine lane) — RESPONSE-DERIVED COUNTS ONLY.
+//
+// Per in-scope strand: how many items were served and a coverage label
+// relative to the tier's per-strand floor. Uses a service-role read because
+// the `questions` table (for the strand of each response) is service-role-only
+// per compliance §8 — but we only ever surface the COUNT and the strand label,
+// never any question content. "In-scope" here is "appeared in this session's
+// responses" (a strand with zero served items is simply absent from the list).
+// =============================================================================
+
+type CoverageLabel = "deep adaptive" | "floor only" | "partial";
+
+interface StrandCoverageRow {
+  strand: EngineStrand;
+  count: number;
+  label: CoverageLabel;
+}
+
+async function fetchStrandCoverage(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  sessionId: string,
+  perStrandFloorN: number,
+): Promise<StrandCoverageRow[]> {
+  const { data: responses } = await serviceClient
+    .from("responses")
+    .select("question_id")
+    .eq("session_id", sessionId);
+
+  if (!responses || responses.length === 0) return [];
+
+  const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
+  const { data: questionRows } = await serviceClient
+    .from("questions")
+    .select("id, strand")
+    .in("id", questionIds);
+
+  const strandById = new Map(
+    (questionRows ?? []).map((q) => [q.id, q.strand] as const),
+  );
+
+  const counts = new Map<EngineStrand, number>();
+  for (const r of responses) {
+    const strand = strandById.get(r.question_id);
+    if (!strand) continue;
+    counts.set(strand, (counts.get(strand) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries()).map(([strand, count]) => ({
+    strand,
+    count,
+    label:
+      count > perStrandFloorN
+        ? "deep adaptive"
+        : count === perStrandFloorN
+          ? "floor only"
+          : "partial",
+  }));
 }
 
 // =============================================================================
@@ -639,6 +722,47 @@ function RecommendationSection({ items }: { items: Recommendation[] }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+const COVERAGE_PILL: Record<CoverageLabel, string> = {
+  "deep adaptive": "bg-sam-teal/10 text-sam-teal",
+  "floor only": "bg-sam-orange/15 text-[#b45309]",
+  partial: "bg-sam-red/10 text-sam-red",
+};
+
+function StrandCoverageSection({ rows }: { rows: StrandCoverageRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <section>
+      <SectionHeading>Strand coverage</SectionHeading>
+      <p className="text-sm text-sam-gray-mid mb-4">
+        How many items each strand received in this comprehensive session, as
+        confidence context for the placement. Counts only — no question content.
+      </p>
+      <div className="bg-white rounded-2xl border border-sam-gray-light/40 divide-y divide-sam-gray-light/30">
+        {rows.map((row) => (
+          <div
+            key={row.strand}
+            className="flex items-center justify-between gap-4 px-5 py-3.5"
+          >
+            <span className="font-headline-adult text-sam-navy">
+              {ENGINE_STRAND_LABELS[row.strand]}
+            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-bold text-sam-navy tabular-nums min-w-[64px] text-right">
+                {row.count} {row.count === 1 ? "item" : "items"}
+              </span>
+              <span
+                className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold min-w-[110px] text-center ${COVERAGE_PILL[row.label]}`}
+              >
+                {row.label}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
