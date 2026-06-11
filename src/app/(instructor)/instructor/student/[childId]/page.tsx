@@ -2,20 +2,18 @@
 //
 // Reuses the parent report's data accessor (assembleReportContent) — the
 // same deterministic engine output the parent report renders — but presents
-// it in instructor-facing chrome, NOT the parent report's editorial shell.
-// The placement recommendation is shown prominently up top; strand mastery,
-// surfaced misconceptions, and curriculum recommendations follow.
+// it in instructor-facing chrome (Stitch module-d/09): a student summary
+// header, a bento metrics grid, strand bars, misconception cards, curriculum
+// recommendations, and an item-level review.
 //
 // Item-level review (compliance §8):
 //   Constraint 4 says parents and instructors see references to
 //   misconceptions and recommendations, but NOT the full text of questions.
-//   Item #12 Phase 7.6 reversed that for PARENTS only (founder-approved) via
-//   /report/answers, which explicitly warns instructor surfaces must own
-//   their own access boundary. So this view does NOT touch the licensed
-//   `questions` table at all: the item-level list is built purely from
-//   response-derived data the instructor already has RLS rights to
-//   (correct/incorrect, timing, detected misconceptions). Raw question
-//   stems, answer choices, and correct answers are GATED.
+//   This view never exposes licensed question CONTENT — stems, answer
+//   choices, and correct answers stay gated. It DOES read the question's
+//   strand CATEGORY (classification metadata, not content) via the service
+//   client to label each item, the same projection family
+//   assembleReportContent already reads (id, content_id) for strand mastery.
 //
 // Access is RLS-enforced: a child outside the instructor's center returns
 // null from the RLS-scoped read and renders a no-access notice. No parent
@@ -24,8 +22,8 @@
 import Link from "next/link";
 
 import { timeFlagBadge } from "@/lib/display/progress";
+import type { Strand as EngineStrand } from "@/lib/engine/types";
 import { assembleReportContent } from "@/lib/report/assemble";
-import { splitEntryPoint } from "@/lib/report/entry-point";
 import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
 import { resolveNarrationProse } from "@/lib/report/narration/resolve";
 import type { StrandMastery, MasteryBand } from "@/lib/report/strand-mastery";
@@ -162,7 +160,12 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
         ?.strengths ?? [];
   }
 
-  const items = session ? await fetchItemReview(supabase, session.id) : [];
+  const items =
+    report && session
+      ? await fetchItemReview(supabase, createServiceClient(), session.id)
+      : [];
+  const correctCount = items.filter((i) => i.isCorrect).length;
+  const totalTimeSeconds = items.reduce((sum, i) => sum + i.timeTakenSeconds, 0);
 
   return (
     <>
@@ -176,32 +179,43 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           <span>Back to roster</span>
         </Link>
 
-        <h1 className="font-display-child text-sam-navy text-3xl md:text-[40px] tracking-tight">
-          {child.name}
-        </h1>
-        <p className="font-headline-adult text-sam-navy/60 mt-1">
-          {report?.child.grade_label ?? gradeFallback(child.grade_level)}
-          {report && ` · Assessed ${report.metadata.assessed_date_display}`}
-        </p>
-
         {report ? (
           <>
-            <PlacementBanner report={report} />
+            <StudentSummaryHeader
+              name={child.name}
+              gradeLabel={report.child.grade_label}
+              reportId={report.metadata.report_id}
+              assessedDate={report.metadata.assessed_date_display}
+              report={report}
+            />
             {report.time_flag !== "normal" && (
               <ReliabilityNote flag={report.time_flag} />
             )}
-            <StrandSection rows={report.strand_mastery} />
+            <BentoMetrics
+              correct={correctCount}
+              total={items.length}
+              totalSeconds={totalTimeSeconds}
+            />
+            <StrandBars rows={report.strand_mastery} />
             <StrengthsSection items={strengths} />
             <MisconceptionSection items={report.misconceptions} />
             <RecommendationSection items={report.recommendations} />
             <ItemReviewSection items={items} />
           </>
-        ) : session ? (
-          <EmptyDiagnostic
-            body="This assessment finished but a placement couldn't be derived. Try the answer detail or contact support."
-          />
         ) : (
-          <EmptyDiagnostic body="This student hasn't completed an assessment yet." />
+          <>
+            <h1 className="font-display-child text-sam-navy text-3xl md:text-[40px] tracking-tight">
+              {child.name}
+            </h1>
+            <p className="font-headline-adult text-sam-navy/60 mt-1">
+              {gradeFallback(child.grade_level)}
+            </p>
+            {session ? (
+              <EmptyDiagnostic body="This assessment finished but a placement couldn't be derived. Try the answer detail or contact support." />
+            ) : (
+              <EmptyDiagnostic body="This student hasn't completed an assessment yet." />
+            )}
+          </>
         )}
 
         {report && session && (
@@ -222,30 +236,36 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
 }
 
 // =============================================================================
-// Item-level review data — RESPONSE-DERIVED ONLY. No `questions` table read,
-// so no licensed question content is exposed (compliance §8 Constraint 4).
+// Item-level review data — outcome / timing / detected-pattern, plus the
+// question's strand CATEGORY for labeling. Licensed question CONTENT (stems,
+// options, correct answers) is never read (compliance §8 Constraint 4).
 // =============================================================================
 
 interface ItemReviewRow {
   index: number;
   isCorrect: boolean;
+  strandLabel: string | null;
+  timeTakenSeconds: number;
   timeBadge: string | null;
-  timeFlag: Database["public"]["Enums"]["time_flag"];
   misconceptionLabels: string[];
 }
 
 async function fetchItemReview(
   supabase: Awaited<ReturnType<typeof createClient>>,
+  serviceClient: ReturnType<typeof createServiceClient>,
   sessionId: string,
 ): Promise<ItemReviewRow[]> {
   const { data: responses } = await supabase
     .from("responses")
-    .select("is_correct, time_flag, detected_misconceptions, created_at")
+    .select(
+      "question_id, is_correct, time_taken_seconds, time_flag, detected_misconceptions, created_at",
+    )
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
   if (!responses || responses.length === 0) return [];
 
+  // Misconception labels (anon client; misconceptions are tenant-readable).
   const codes = Array.from(
     new Set(responses.flatMap((r) => r.detected_misconceptions)),
   );
@@ -258,43 +278,185 @@ async function fetchItemReview(
     labelByCode = new Map((mcRows ?? []).map((m) => [m.code, m.label]));
   }
 
-  return responses.map((r, i) => ({
-    index: i + 1,
-    isCorrect: r.is_correct,
-    timeBadge: timeFlagBadge(r.time_flag),
-    timeFlag: r.time_flag,
-    misconceptionLabels: r.detected_misconceptions
-      .map((c) => labelByCode.get(c))
-      .filter((l): l is string => Boolean(l)),
-  }));
+  // Per-item strand CATEGORY via the service client (questions RLS gates
+  // content; the strand column is classification metadata, not content).
+  const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
+  const strandByQuestion = new Map<string, EngineStrand>();
+  if (questionIds.length > 0) {
+    const { data: qRows } = await serviceClient
+      .from("questions")
+      .select("id, strand")
+      .in("id", questionIds);
+    for (const q of qRows ?? []) {
+      strandByQuestion.set(q.id, q.strand);
+    }
+  }
+
+  return responses.map((r, i) => {
+    const strand = strandByQuestion.get(r.question_id);
+    return {
+      index: i + 1,
+      isCorrect: r.is_correct,
+      strandLabel: strand ? ENGINE_STRAND_LABELS[strand] : null,
+      timeTakenSeconds: r.time_taken_seconds,
+      timeBadge: timeFlagBadge(r.time_flag),
+      misconceptionLabels: r.detected_misconceptions
+        .map((c) => labelByCode.get(c))
+        .filter((l): l is string => Boolean(l)),
+    };
+  });
 }
 
 // =============================================================================
 // Presentation
 // =============================================================================
 
-function PlacementBanner({ report }: { report: ReportContent }) {
-  // Entry point reads the existing half-level (A/B) from sam_level — no new
-  // field. Provisional copy; easy to reword after the S.A.M. discussion.
-  const { half } = splitEntryPoint(report.placement.sam_level);
+const CARD = "shadow-[0px_4px_12px_rgba(27,58,107,0.08)]";
+
+/** First-letter initials from a display name (max 2). */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** mm ss / ss clock for pace + per-item time. */
+function formatClock(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return m > 0 ? `${m}m ${rem}s` : `${rem}s`;
+}
+
+function proficiencyTextColor(pct: number): string {
+  if (pct >= 75) return "text-sam-teal";
+  if (pct >= 50) return "text-[#b45309]";
+  return "text-sam-red";
+}
+
+function StudentSummaryHeader({
+  name,
+  gradeLabel,
+  reportId,
+  assessedDate,
+  report,
+}: {
+  name: string;
+  gradeLabel: string;
+  reportId: string;
+  assessedDate: string;
+  report: ReportContent;
+}) {
+  const pct = report.placement.overall_percentage;
   return (
-    <section className="mt-6 bg-sam-navy rounded-2xl p-6 md:p-8 text-white">
-      <p className="text-xs font-bold uppercase tracking-wider text-white/60">
-        Recommended placement
-      </p>
-      <p className="font-display-child text-3xl md:text-4xl mt-2">
-        {report.placement.sam_level}
-      </p>
-      {half && (
-        <p className="font-headline-adult text-white/80 mt-2">
-          Entry point: {half}
-        </p>
-      )}
-      <p className="font-headline-adult text-white/80 mt-3">
-        Overall {report.placement.overall_percentage}% across assessed items ·{" "}
-        {report.placement.tier === "K_4" ? "K–4 band" : "Grades 5–8 band"}
-      </p>
+    <section
+      className={`mt-2 bg-white rounded-[24px] p-6 md:p-8 mb-8 ${CARD} flex items-start gap-6`}
+    >
+      <div
+        className="hidden sm:flex h-20 w-20 shrink-0 items-center justify-center rounded-[20px] bg-sam-cream text-sam-navy font-display-child text-2xl border-4 border-white shadow-inner"
+        aria-hidden="true"
+      >
+        {initials(name)}
+      </div>
+      <div className="flex-grow">
+        <div className="flex justify-between items-start gap-4">
+          <div>
+            <h1 className="font-display-child text-sam-navy text-3xl md:text-4xl tracking-tight mb-2">
+              {name}
+            </h1>
+            <p className="text-sam-gray-mid flex flex-wrap items-center gap-2 text-sm">
+              <span className="bg-surface-container px-3 py-1 rounded-full text-on-surface font-medium">
+                {gradeLabel}
+              </span>
+              <span aria-hidden="true">•</span>
+              <span>ID: #{reportId.slice(0, 8).toUpperCase()}</span>
+              <span aria-hidden="true">•</span>
+              <span>Assessed {assessedDate}</span>
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[11px] font-bold text-sam-gray-mid uppercase tracking-wider mb-1">
+              Overall proficiency
+            </p>
+            <span
+              className={`font-display-child text-3xl md:text-4xl ${proficiencyTextColor(pct)}`}
+            >
+              {pct}%
+            </span>
+          </div>
+        </div>
+        <div className="mt-4 inline-flex items-center gap-2 bg-sam-navy/5 rounded-xl px-4 py-2">
+          <span className="material-symbols-outlined text-sam-navy text-[20px]">
+            school
+          </span>
+          <span className="font-headline-adult text-sam-navy">
+            Recommended placement: {report.placement.sam_level}
+          </span>
+          <span className="text-sam-gray-mid text-sm">
+            · {report.placement.tier === "K_4" ? "K–4 band" : "Grades 5–8 band"}
+          </span>
+        </div>
+      </div>
     </section>
+  );
+}
+
+function BentoMetrics({
+  correct,
+  total,
+  totalSeconds,
+}: {
+  correct: number;
+  total: number;
+  totalSeconds: number;
+}) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+      <MetricCard
+        icon="check_circle"
+        iconCls="text-sam-orange"
+        label="Accuracy"
+        value={total > 0 ? `${correct}/${total}` : "—"}
+        sub={total > 0 ? "items correct" : "no items recorded"}
+      />
+      <MetricCard
+        icon="timer"
+        iconCls="text-sam-teal"
+        label="Pace"
+        value={total > 0 ? formatClock(totalSeconds) : "—"}
+        sub={total > 0 ? "total time" : "no items recorded"}
+      />
+    </div>
+  );
+}
+
+function MetricCard({
+  icon,
+  iconCls,
+  label,
+  value,
+  sub,
+}: {
+  icon: string;
+  iconCls: string;
+  label: string;
+  value: string;
+  sub: string;
+}) {
+  return (
+    <div className={`bg-white rounded-[24px] p-6 ${CARD}`}>
+      <div className="flex items-center gap-3 mb-4">
+        <span className={`material-symbols-outlined ${iconCls}`}>{icon}</span>
+        <h3 className="font-headline-adult text-[18px] text-sam-navy">{label}</h3>
+      </div>
+      <div className="flex items-end gap-2">
+        <span className="font-display-child text-3xl text-sam-navy tabular-nums">
+          {value}
+        </span>
+        <span className="text-sm text-sam-gray-mid mb-1">{sub}</span>
+      </div>
+    </div>
   );
 }
 
@@ -329,7 +491,7 @@ function ReliabilityNote({ flag }: { flag: Exclude<SessionTimeFlag, "normal"> })
       "The student spent unusually long on several items — consider whether the level felt challenging.",
   };
   return (
-    <div className="mt-4 flex items-start gap-3 bg-sam-orange/10 border border-sam-orange/30 rounded-2xl p-4">
+    <div className="mt-2 mb-8 flex items-start gap-3 bg-sam-orange/10 border border-sam-orange/30 rounded-2xl p-4">
       <span
         className="material-symbols-outlined text-[#b45309] mt-0.5"
         aria-hidden="true"
@@ -341,11 +503,18 @@ function ReliabilityNote({ flag }: { flag: Exclude<SessionTimeFlag, "normal"> })
   );
 }
 
-const BAND_PILL: Record<MasteryBand, { label: string; cls: string }> = {
-  mastery: { label: "Mastery", cls: "bg-sam-teal/10 text-sam-teal" },
-  progressing: { label: "Progressing", cls: "bg-sam-orange/15 text-[#b45309]" },
-  area_of_focus: { label: "Area of focus", cls: "bg-sam-red/10 text-sam-red" },
-  no_data: { label: "Not assessed", cls: "bg-sam-gray-light text-sam-gray-mid" },
+const BAND_BAR: Record<MasteryBand, string> = {
+  mastery: "bg-sam-teal",
+  progressing: "bg-sam-orange",
+  area_of_focus: "bg-sam-red",
+  no_data: "bg-sam-gray-light",
+};
+
+const BAND_TEXT: Record<MasteryBand, string> = {
+  mastery: "text-sam-teal",
+  progressing: "text-[#b45309]",
+  area_of_focus: "text-sam-red",
+  no_data: "text-sam-gray-mid",
 };
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -356,41 +525,38 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StrandSection({ rows }: { rows: StrandMastery[] }) {
+function StrandBars({ rows }: { rows: StrandMastery[] }) {
   return (
     <section>
-      <SectionHeading>Strand performance</SectionHeading>
+      <SectionHeading>Performance by strand</SectionHeading>
       {rows.length === 0 ? (
         <p className="text-sm text-sam-gray-mid">
           No strand-level data was captured for this session.
         </p>
       ) : (
-        <div className="bg-white rounded-2xl border border-sam-gray-light/40 divide-y divide-sam-gray-light/30">
-          {rows.map((row) => {
-            const pill = BAND_PILL[row.band];
-            return (
-              <div
-                key={row.strand}
-                className="flex items-center justify-between gap-4 px-5 py-3.5"
-              >
-                <span className="font-headline-adult text-sam-navy">
+        <div className={`bg-white rounded-[24px] p-6 md:p-8 space-y-6 ${CARD}`}>
+          {rows.map((row) => (
+            <div key={row.strand}>
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold text-sam-navy">
                   {STRAND_LABELS[row.strand]}
                 </span>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-bold text-sam-navy tabular-nums min-w-[64px] text-right">
-                    {row.band === "no_data"
-                      ? "—"
-                      : `${row.correct}/${row.total} · ${row.percentage}%`}
-                  </span>
-                  <span
-                    className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold min-w-[110px] text-center ${pill.cls}`}
-                  >
-                    {pill.label}
-                  </span>
-                </div>
+                <span className={`font-bold ${BAND_TEXT[row.band]}`}>
+                  {row.band === "no_data"
+                    ? "Not assessed"
+                    : `${row.correct}/${row.total} · ${row.percentage}%`}
+                </span>
               </div>
-            );
-          })}
+              <div className="w-full h-3 bg-sam-cream rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${BAND_BAR[row.band]}`}
+                  style={{
+                    width: `${row.band === "no_data" ? 0 : row.percentage}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </section>
@@ -406,47 +572,73 @@ function MisconceptionSection({ items }: { items: AggregatedMisconception[] }) {
           No recurring misconception patterns surfaced in this session.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {items.map((m) => (
-            <li
+            <div
               key={m.code}
-              className="bg-white rounded-2xl border border-sam-gray-light/40 p-5"
+              className={`bg-white rounded-[20px] p-6 border-2 border-transparent hover:border-sam-orange transition-all ${CARD}`}
             >
-              <div className="flex items-start justify-between gap-4">
-                <span className="font-headline-adult text-sam-navy font-bold">
-                  {m.label}
-                </span>
-                <span className="text-[10px] uppercase tracking-wider text-sam-gray-mid whitespace-nowrap">
-                  {ENGINE_STRAND_LABELS[m.strand]} · {m.occurrences}×
-                </span>
+              <div className="flex items-start gap-4 mb-3">
+                <div className="p-3 bg-sam-orange/10 rounded-xl shrink-0">
+                  <span className="material-symbols-outlined text-sam-orange">
+                    warning
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-sam-navy">{m.label}</h4>
+                  <p className="text-xs text-sam-gray-mid">
+                    {ENGINE_STRAND_LABELS[m.strand]} · {m.occurrences}×
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-sam-navy/70 mt-2">{m.description}</p>
-            </li>
+              <p className="text-sm text-sam-navy/70">{m.description}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );
 }
 
+/** An authored recommendation is one backed by the real S.A.M. library — not
+ *  a seed placeholder stub.
+ *  TODO(recommendation-library): wire the curriculum_recommendations table to
+ *  the real S.A.M-authored library. Until it lands the seed ships PLACEHOLDER
+ *  rows; we filter them so the view never shows stub copy and never
+ *  auto-generates teaching guidance. When the library is wired, this filter
+ *  becomes a no-op and authored rows render. */
+function isAuthoredRecommendation(r: Recommendation): boolean {
+  return !/placeholder/i.test(r.primary);
+}
+
 function RecommendationSection({ items }: { items: Recommendation[] }) {
-  if (items.length === 0) return null;
+  const authored = items.filter(isAuthoredRecommendation);
   return (
     <section>
       <SectionHeading>Curriculum recommendations</SectionHeading>
-      <ul className="space-y-3">
-        {items.map((r) => (
-          <li
-            key={`${r.strand}-${r.level}`}
-            className="bg-white rounded-2xl border border-sam-gray-light/40 p-5"
-          >
-            <span className="text-[10px] uppercase tracking-wider text-sam-gray-mid">
-              {ENGINE_STRAND_LABELS[r.strand]}
-            </span>
-            <p className="font-headline-adult text-sam-navy mt-1">{r.primary}</p>
-          </li>
-        ))}
-      </ul>
+      {authored.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-sam-gray-light p-6">
+          <p className="text-sm text-sam-gray-mid">
+            Recommendations pending instructor review.
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {authored.map((r) => (
+            <li
+              key={`${r.strand}-${r.level}`}
+              className="bg-white rounded-2xl border border-sam-gray-light/40 p-5"
+            >
+              <span className="text-[10px] uppercase tracking-wider text-sam-gray-mid">
+                {ENGINE_STRAND_LABELS[r.strand]}
+              </span>
+              <p className="font-headline-adult text-sam-navy mt-1">
+                {r.primary}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -456,8 +648,8 @@ function ItemReviewSection({ items }: { items: ItemReviewRow[] }) {
     <section>
       <SectionHeading>Item-level review</SectionHeading>
       <p className="text-sm text-sam-gray-mid mb-4">
-        Per-item outcome, timing, and any detected pattern. Question content
-        is licensed S.A.M material and is not shown here (compliance §8).
+        Per-item outcome, strand, time, and any detected pattern. Question shown
+        only in S.A.M. materials (licensed content).
       </p>
       {items.length === 0 ? (
         <p className="text-sm text-sam-gray-mid">No item responses recorded.</p>
@@ -466,7 +658,7 @@ function ItemReviewSection({ items }: { items: ItemReviewRow[] }) {
           {items.map((item) => (
             <li
               key={item.index}
-              className="bg-white rounded-xl border border-sam-gray-light/40 px-5 py-3 flex items-center gap-4"
+              className="bg-white rounded-xl border border-sam-gray-light/40 px-5 py-3 flex items-center gap-3"
             >
               <span className="text-xs font-bold text-sam-gray-mid w-8 shrink-0">
                 #{item.index}
@@ -480,6 +672,11 @@ function ItemReviewSection({ items }: { items: ItemReviewRow[] }) {
               >
                 {item.isCorrect ? "check_circle" : "cancel"}
               </span>
+              {item.strandLabel && (
+                <span className="hidden sm:inline text-[11px] bg-sam-navy/5 text-sam-navy rounded-full px-2.5 py-0.5 whitespace-nowrap shrink-0">
+                  {item.strandLabel}
+                </span>
+              )}
               <div className="flex-grow flex flex-wrap items-center gap-2">
                 {item.misconceptionLabels.map((label) => (
                   <span
@@ -490,6 +687,9 @@ function ItemReviewSection({ items }: { items: ItemReviewRow[] }) {
                   </span>
                 ))}
               </div>
+              <span className="text-[11px] font-medium text-sam-gray-mid tabular-nums whitespace-nowrap shrink-0">
+                {formatClock(item.timeTakenSeconds)}
+              </span>
               {item.timeBadge && (
                 <span className="text-[11px] text-sam-gray-mid whitespace-nowrap shrink-0">
                   {item.timeBadge}

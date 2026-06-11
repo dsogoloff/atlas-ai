@@ -56,9 +56,55 @@ export default async function InstructorHomePage() {
         </p>
       </div>
 
-      {roster.length > 0 && <RosterTable rows={roster} />}
+      {roster.length > 0 && (
+        <>
+          <RosterStats rows={roster} />
+          <RosterTable rows={roster} />
+        </>
+      )}
     </InstructorShell>
   );
+}
+
+// Honest at-a-glance counts of THIS instructor's roster — derived from the
+// rows already loaded. Deliberately NOT cohort analytics (no cross-student
+// aggregates, trends, or averages): that surface is deferred.
+function RosterStats({ rows }: { rows: RosterRow[] }) {
+  const completed = rows.filter((r) => r.status === "completed").length;
+  const inProgress = rows.filter((r) => r.status === "in_progress").length;
+  const notStarted = rows.length - completed - inProgress;
+  const cards: { label: string; value: number; cls: string }[] = [
+    { label: "Total students", value: rows.length, cls: "text-sam-navy" },
+    { label: "Completed", value: completed, cls: "text-sam-teal" },
+    { label: "In progress", value: inProgress, cls: "text-[#b45309]" },
+    { label: "Not started", value: notStarted, cls: "text-sam-gray-mid" },
+  ];
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {cards.map((c) => (
+        <div
+          key={c.label}
+          className="bg-white rounded-2xl border border-sam-gray-light/40 p-5 shadow-[0px_4px_12px_rgba(27,58,107,0.06)]"
+        >
+          <p className="text-[11px] font-bold text-sam-gray-mid uppercase tracking-wider">
+            {c.label}
+          </p>
+          <p className={`font-display-child text-3xl mt-1 ${c.cls}`}>
+            {c.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** First-letter initials from a display name (max 2), for the roster
+ *  avatar tile. Mirrors wireframe 06's avatar treatment. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function RosterTable({ rows }: { rows: RosterRow[] }) {
@@ -81,8 +127,16 @@ function RosterTable({ rows }: { rows: RosterRow[] }) {
               href={`/instructor/student/${row.childId}`}
               className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1.2fr_1.4fr] gap-1 md:gap-4 px-6 py-4 hover:bg-sam-cream/60 transition-colors"
             >
-              <span className="font-headline-adult text-sam-navy font-bold">
-                {row.name}
+              <span className="flex items-center gap-3">
+                <span
+                  className="hidden md:flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sam-navy/10 text-sam-navy text-xs font-bold"
+                  aria-hidden="true"
+                >
+                  {initials(row.name)}
+                </span>
+                <span className="font-headline-adult text-sam-navy font-bold">
+                  {row.name}
+                </span>
               </span>
               <span className="text-sm text-sam-navy/70">
                 {row.gradeLabel ?? "—"}
