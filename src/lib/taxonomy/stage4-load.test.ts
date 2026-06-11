@@ -21,15 +21,19 @@ import {
   buildSeedBlock,
   categorizeSkipReason,
   collectUnknownMisconceptionCodes,
+  computeDeltaRows,
   deriveHalfGradeLevel,
   detectFlagContradictions,
   detectOptionsDivergence,
   escapeSqlString,
   formatStage4AuditLine,
   mapSubStrandToStrand,
+  mintMigrationFileName,
   normalizeOptionText,
   parseDragDropContent,
+  parseGeneratedMigrationExternalIds,
   parseSeedMisconceptionCodes,
+  planMigrationWrite,
   renderValuesRow,
   replaceSeedBlock,
   taxLevelNumber,
@@ -781,7 +785,7 @@ describe("buildMigrationFile / buildSeedBlock parity", () => {
     const migration = buildMigrationFile([SAMPLE_ROW], "2026-06-10T00:00:00.000Z");
     const seedBlock = buildSeedBlock(
       [SAMPLE_ROW],
-      "20260610000000_load_sam_questions.sql",
+      ["20260610000000_load_sam_questions.sql"],
       "2026-06-10T00:00:00.000Z",
     );
     expect(migration).toContain(insert);
@@ -822,3 +826,134 @@ describe("replaceSeedBlock", () => {
     expect(replaceSeedBlock(once, blockV1)).toBe(once);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Delta-migration planning — generated migrations are immutable history
+// ---------------------------------------------------------------------------
+
+const SECOND_ROW: LoadRow = {
+  ...SAMPLE_ROW,
+  external_id: "SAM-TEST-Q02",
+  content: { stem: "What is 9 less than 20?", correct_answer: "11" },
+};
+
+describe("parseGeneratedMigrationExternalIds", () => {
+  it("round-trips the external_ids out of a generated migration file", () => {
+    const sql = buildMigrationFile([SAMPLE_ROW, SECOND_ROW], "2026-06-10T00:00:00.000Z");
+    expect(parseGeneratedMigrationExternalIds(sql)).toEqual([
+      "SAM-TEST-Q01",
+      "SAM-TEST-Q02",
+    ]);
+  });
+
+  it("only reads tuple-opening lines — content json on its own line never matches", () => {
+    // A stem that CONTAINS a tuple-looking fragment must not leak an id:
+    // the content json renders on a continuation line (no leading "('").
+    const trap: LoadRow = {
+      ...SAMPLE_ROW,
+      external_id: "SAM-TEST-Q03",
+      content: {
+        stem: "Ben wrote ('SAM-FAKE-Q99', on the board. How many characters is that?",
+        correct_answer: "16",
+      },
+    };
+    const sql = buildMigrationFile([trap], "2026-06-10T00:00:00.000Z");
+    expect(parseGeneratedMigrationExternalIds(sql)).toEqual(["SAM-TEST-Q03"]);
+  });
+
+  it("returns [] when the SQL has no values block", () => {
+    expect(parseGeneratedMigrationExternalIds("select 1;")).toEqual([]);
+  });
+});
+
+describe("computeDeltaRows", () => {
+  it("keeps only rows whose external_id is not already in history", () => {
+    expect(
+      computeDeltaRows([SAMPLE_ROW, SECOND_ROW], new Set(["SAM-TEST-Q01"])),
+    ).toEqual([SECOND_ROW]);
+  });
+});
+
+describe("planMigrationWrite", () => {
+  const MINTED = "20260612000000_load_sam_questions.sql";
+  const PRIOR = {
+    fileName: "20260610151306_load_sam_questions.sql",
+    sql: buildMigrationFile([SAMPLE_ROW], "2026-06-10T15:13:06.000Z"),
+  };
+
+  it("first run (no prior generated migration): all rows go to the minted file", () => {
+    const plan = planMigrationWrite([], [SAMPLE_ROW, SECOND_ROW], MINTED);
+    expect(plan).toEqual({
+      immutableFileNames: [],
+      rowsToWrite: [SAMPLE_ROW, SECOND_ROW],
+      newFileName: MINTED,
+    });
+  });
+
+  it("prior migration exists: only the DELTA rows go to a NEW file; history untouched", () => {
+    const plan = planMigrationWrite([PRIOR], [SAMPLE_ROW, SECOND_ROW], MINTED);
+    expect(plan.immutableFileNames).toEqual([PRIOR.fileName]);
+    expect(plan.rowsToWrite).toEqual([SECOND_ROW]);
+    expect(plan.newFileName).toBe(MINTED);
+    expect(plan.newFileName).not.toBe(PRIOR.fileName);
+  });
+
+  it("zero-delta run: no new migration file at all", () => {
+    const plan = planMigrationWrite([PRIOR], [SAMPLE_ROW], MINTED);
+    expect(plan.rowsToWrite).toEqual([]);
+    expect(plan.newFileName).toBeNull();
+    expect(plan.immutableFileNames).toEqual([PRIOR.fileName]);
+  });
+
+  it("refuses a minted filename that collides with existing history (immutability)", () => {
+    expect(() =>
+      planMigrationWrite([PRIOR], [SECOND_ROW], PRIOR.fileName),
+    ).toThrow(/immutable/);
+  });
+});
+
+describe("mintMigrationFileName", () => {
+  it("formats the UTC timestamp into the load-migration name", () => {
+    expect(mintMigrationFileName(new Date("2026-06-11T01:02:03Z"), new Set())).toBe(
+      "20260611010203_load_sam_questions.sql",
+    );
+  });
+
+  it("bumps one second at a time past taken names", () => {
+    const taken = new Set([
+      "20260611010203_load_sam_questions.sql",
+      "20260611010204_load_sam_questions.sql",
+    ]);
+    expect(mintMigrationFileName(new Date("2026-06-11T01:02:03Z"), taken)).toBe(
+      "20260611010205_load_sam_questions.sql",
+    );
+  });
+});
+
+describe("delta-aware file headers", () => {
+  it("buildMigrationFile marks a delta file and names the prior migrations", () => {
+    const sql = buildMigrationFile([SECOND_ROW], "2026-06-12T00:00:00.000Z", [
+      "20260610151306_load_sam_questions.sql",
+    ]);
+    expect(sql).toContain(MIGRATION_MARKER);
+    expect(sql).toContain("DELTA LOAD");
+    expect(sql).toContain("--   * 20260610151306_load_sam_questions.sql");
+  });
+
+  it("buildMigrationFile without priors carries no delta header", () => {
+    const sql = buildMigrationFile([SAMPLE_ROW], "2026-06-12T00:00:00.000Z");
+    expect(sql).not.toContain("DELTA LOAD");
+  });
+
+  it("buildSeedBlock lists every generated migration when there are several", () => {
+    const block = buildSeedBlock(
+      [SAMPLE_ROW, SECOND_ROW],
+      ["20260610151306_load_sam_questions.sql", "20260612000000_load_sam_questions.sql"],
+      "2026-06-12T00:00:00.000Z",
+    );
+    expect(block).toContain("cumulative across the generated load migrations");
+    expect(block).toContain("--   supabase/migrations/20260610151306_load_sam_questions.sql");
+    expect(block).toContain("--   supabase/migrations/20260612000000_load_sam_questions.sql");
+  });
+});
+

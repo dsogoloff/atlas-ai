@@ -14,10 +14,17 @@
 //     for image curation; NEVER the displayed question image).
 //
 // Idempotency:
-//   * migration — re-runs find the existing *_load_sam_questions.sql by
-//     its marker header comment and rewrite it in place (no second file).
-//   * seed.sql — re-runs replace the marker-delimited block (no
-//     duplication). Existing hand-written blocks are never touched.
+//   * migration — existing generated *_load_sam_questions.sql files (found
+//     by their marker header comment) are IMMUTABLE HISTORY: applied
+//     migrations never change on the prod path, so re-runs never rewrite
+//     them. When prior generated migrations exist, a re-run writes a NEW
+//     timestamped migration containing only the DELTA rows (external_ids
+//     not present in any prior generated migration, parsed from their
+//     VALUES blocks); a zero-delta run writes no migration at all. The
+//     first run (no prior generated migration) writes a single full file.
+//   * seed.sql — re-runs replace the marker-delimited block with the
+//     CUMULATIVE insert across all stage3 outputs (no duplication).
+//     Existing hand-written blocks are never touched.
 //   * DB layer — `on conflict (tenant_id, external_id) do nothing`.
 //
 // Misconception-code validation: every code in misconception_tags and in
@@ -819,24 +826,44 @@ export function buildQuestionsInsert(rows: LoadRow[]): string {
 
 export const MIGRATION_MARKER = "-- stage4-load:generated-migration";
 
-export function buildMigrationFile(rows: LoadRow[], generatedAt: string): string {
+export function buildMigrationFile(
+  rows: LoadRow[],
+  generatedAt: string,
+  priorGeneratedFileNames: readonly string[] = [],
+): string {
+  const deltaHeader =
+    priorGeneratedFileNames.length === 0
+      ? []
+      : [
+          "--",
+          "-- DELTA LOAD: this file contains ONLY the external_ids not already",
+          "-- present in the prior generated load migrations (their rows are",
+          "-- NOT repeated here):",
+          ...priorGeneratedFileNames.map((name) => `--   * ${name}`),
+        ];
   return [
     "-- Atlas Assessment — Stage 4 generated S.A.M. question load.",
     MIGRATION_MARKER,
     "--",
     "-- GENERATED FILE — written by scripts/conversion/stage4-load.ts",
-    "-- (pnpm convert:load). Do not hand-edit. Re-running the script finds",
-    "-- this file by the marker comment above and rewrites it in place",
-    "-- rather than creating a second migration.",
+    "-- (pnpm convert:load). Do not hand-edit. Once written, this file is",
+    "-- IMMUTABLE HISTORY: applied migrations never change on the prod",
+    "-- path, so the loader never rewrites it. A re-run with new stage3",
+    "-- output writes a NEW timestamped migration containing only the",
+    "-- delta rows (external_ids not present in any existing generated",
+    "-- load migration); the seed.sql marker block stays the cumulative",
+    "-- mirror of all stage3 outputs.",
+    ...deltaHeader,
     "--",
     `-- Generated at: ${generatedAt}`,
     "--",
     "-- AGENTS.md §11 parity: this migration is the PRODUCTION path. On a",
     "-- dev `supabase db reset` it is a no-op (migrations run before",
     "-- seed.sql creates the inspirea_singapore_math tenant, so the CTE",
-    "-- cross-join yields zero rows). The identical statement is mirrored",
-    "-- into supabase/seed.sql between the stage4 BEGIN/END markers — that",
-    "-- mirror is the dev/CI path. Both use",
+    "-- cross-join yields zero rows). The rows are mirrored into",
+    "-- supabase/seed.sql between the stage4 BEGIN/END markers — that",
+    "-- mirror is the dev/CI path and carries the CUMULATIVE insert across",
+    "-- all generated load migrations. Both use",
     "-- `on conflict (tenant_id, external_id) do nothing`, so either path",
     "-- (or both) produces the same final state.",
     "--",
@@ -858,20 +885,28 @@ export const SEED_END_MARKER = "-- END stage4-generated-questions";
 
 export function buildSeedBlock(
   rows: LoadRow[],
-  migrationFileName: string,
+  migrationFileNames: readonly string[],
   generatedAt: string,
 ): string {
+  const mirroredFrom =
+    migrationFileNames.length <= 1
+      ? [`-- MIRRORED FROM: supabase/migrations/${migrationFileNames[0] ?? "(pending)"}`]
+      : [
+          "-- MIRRORED FROM (cumulative across the generated load migrations):",
+          ...migrationFileNames.map((name) => `--   supabase/migrations/${name}`),
+        ];
   return [
     SEED_BEGIN_MARKER,
     "-- =============================================================================",
     "-- Stage 4 generated S.A.M. questions (conversion pipeline)",
     "-- =============================================================================",
-    `-- MIRRORED FROM: supabase/migrations/${migrationFileName}`,
+    ...mirroredFrom,
     `-- Generated at: ${generatedAt}`,
     "--",
-    "-- AGENTS.md §11: the migration above is the prod path and a no-op on",
-    "-- dev reset (it runs before this file creates the tenant); this block",
-    "-- is the dev/CI path. The INSERT statement is byte-identical in both.",
+    "-- AGENTS.md §11: the migration(s) above are the prod path and no-ops",
+    "-- on dev reset (they run before this file creates the tenant); this",
+    "-- block is the dev/CI path and carries the CUMULATIVE insert across",
+    "-- all generated load migrations.",
     "",
     buildQuestionsInsert(rows),
     SEED_END_MARKER,
@@ -890,6 +925,126 @@ export function replaceSeedBlock(seedSql: string, block: string): string {
   }
   const sep = seedSql.endsWith("\n") ? "\n" : "\n\n";
   return `${seedSql}${sep}${block}\n`;
+}
+
+// ---------------------------------------------------------------------------
+// Delta-migration planning (generated migrations are immutable history).
+//
+// 20260610151306_load_sam_questions.sql is merged/applied: applied
+// migrations are immutable on the prod path, so the original
+// rewrite-in-place idempotency story is wrong as soon as a generated
+// migration lands in history — rows appended to an already-applied file
+// would never reach prod. Instead, every existing generated migration
+// (marker file) is treated as immutable, its external_ids are parsed out
+// of the VALUES blocks, and a re-run writes a NEW timestamped migration
+// containing only the rows not present in any of them. The seed.sql
+// marker block stays the cumulative mirror of ALL stage3 outputs.
+// ---------------------------------------------------------------------------
+
+export interface GeneratedMigration {
+  fileName: string;
+  sql: string;
+}
+
+/** Parse the external_ids out of a generated load migration's VALUES
+ *  block(s). Anchored from `(values` to the `) as v(` close (the same
+ *  anchoring style as parseSeedMisconceptionCodes); each tuple's first
+ *  line is `('<external_id>', '<strand>', ...`, and continuation lines
+ *  (content json, misconception arrays) never start with `('`. SQL ''
+ *  escaping is undone. */
+export function parseGeneratedMigrationExternalIds(sql: string): string[] {
+  const ids: string[] = [];
+  let from = 0;
+  for (;;) {
+    const valuesStart = sql.indexOf("(values", from);
+    if (valuesStart === -1) break;
+    const valuesEnd = sql.indexOf(") as v(", valuesStart);
+    if (valuesEnd === -1) break;
+    const block = sql.slice(valuesStart, valuesEnd);
+    const rowRe = /^\s*\('((?:[^']|'')+)',/gm;
+    let m: RegExpExecArray | null;
+    while ((m = rowRe.exec(block)) !== null) {
+      const id = m[1].replace(/''/g, "'");
+      if (!ids.includes(id)) ids.push(id);
+    }
+    from = valuesEnd + 1;
+  }
+  return ids;
+}
+
+/** Rows whose external_id is not already carried by an existing generated
+ *  migration — the only rows a re-run is allowed to emit as a migration. */
+export function computeDeltaRows(
+  rows: LoadRow[],
+  existingIds: ReadonlySet<string>,
+): LoadRow[] {
+  return rows.filter((row) => !existingIds.has(row.external_id));
+}
+
+export interface MigrationWritePlan {
+  /** Existing generated migrations — NEVER written to. */
+  immutableFileNames: string[];
+  /** Rows for the new migration: the delta when prior generated
+   *  migrations exist, all rows on a first run. */
+  rowsToWrite: LoadRow[];
+  /** File to write, or null when there is nothing new (zero delta). */
+  newFileName: string | null;
+}
+
+/** Pure write-planner. Existing generated migrations are immutable
+ *  history: a minted filename colliding with one is a hard error (it
+ *  would silently rewrite applied history), and the plan never lists an
+ *  existing file as the write target. */
+export function planMigrationWrite(
+  existing: readonly GeneratedMigration[],
+  allRows: LoadRow[],
+  mintedFileName: string,
+): MigrationWritePlan {
+  const immutableFileNames = existing.map((m) => m.fileName);
+  if (immutableFileNames.includes(mintedFileName)) {
+    throw new Error(
+      `minted migration filename '${mintedFileName}' collides with an existing ` +
+        `generated migration — generated migrations are immutable history and ` +
+        `must never be rewritten`,
+    );
+  }
+  if (existing.length === 0) {
+    return {
+      immutableFileNames,
+      rowsToWrite: allRows,
+      newFileName: allRows.length > 0 ? mintedFileName : null,
+    };
+  }
+  const existingIds = new Set<string>();
+  for (const migration of existing) {
+    for (const id of parseGeneratedMigrationExternalIds(migration.sql)) {
+      existingIds.add(id);
+    }
+  }
+  const delta = computeDeltaRows(allRows, existingIds);
+  return {
+    immutableFileNames,
+    rowsToWrite: delta,
+    newFileName: delta.length > 0 ? mintedFileName : null,
+  };
+}
+
+/** Mint a fresh `<ts>_load_sam_questions.sql` name from `now` (UTC),
+ *  bumping by one second past any taken name so an existing generated
+ *  migration written in the same second can never be clobbered. */
+export function mintMigrationFileName(
+  now: Date,
+  takenNames: ReadonlySet<string>,
+): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  for (let ms = now.getTime(); ; ms += 1000) {
+    const d = new Date(ms);
+    const ts =
+      `${String(d.getUTCFullYear())}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}` +
+      `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
+    const name = `${ts}_load_sam_questions.sql`;
+    if (!takenNames.has(name)) return name;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1030,31 +1185,30 @@ async function discoverStage3(): Promise<DiscoveredStage3[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Migration file resolution (regeneration story).
+// Migration file resolution (immutable-history story).
 // ---------------------------------------------------------------------------
 
-async function resolveMigrationFileName(): Promise<string> {
+/** Every existing generated load migration (marker files), sorted by
+ *  filename (= timestamp order). These are immutable history — the loader
+ *  never writes to them again. */
+async function findGeneratedMigrations(): Promise<GeneratedMigration[]> {
   let entries: string[] = [];
   try {
     entries = await readdir(MIGRATIONS_DIR);
   } catch {
     throw new Error(`Missing migrations dir at ${MIGRATIONS_DIR}.`);
   }
-  for (const name of entries) {
+  const found: GeneratedMigration[] = [];
+  for (const name of [...entries].sort()) {
     if (!/_load_sam_questions\.sql$/.test(name)) continue;
     try {
       const text = await readFile(path.join(MIGRATIONS_DIR, name), "utf8");
-      if (text.includes(MIGRATION_MARKER)) return name;
+      if (text.includes(MIGRATION_MARKER)) found.push({ fileName: name, sql: text });
     } catch {
       continue;
     }
   }
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const ts =
-    `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}` +
-    `${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}`;
-  return `${ts}_load_sam_questions.sql`;
+  return found;
 }
 
 // ---------------------------------------------------------------------------
@@ -1399,13 +1553,41 @@ async function main(): Promise<void> {
   }
 
   const generatedAt = new Date().toISOString();
-  const migrationFileName = await resolveMigrationFileName();
-  const migrationPath = path.join(MIGRATIONS_DIR, migrationFileName);
-  await writeFile(migrationPath, buildMigrationFile(allRows, generatedAt), "utf8");
-  console.log(`\nMigration written: ${path.relative(process.cwd(), migrationPath)}`);
+  const existingGenerated = await findGeneratedMigrations();
+  const minted = mintMigrationFileName(
+    new Date(),
+    new Set(existingGenerated.map((m) => m.fileName)),
+  );
+  const plan = planMigrationWrite(existingGenerated, allRows, minted);
+  if (plan.newFileName) {
+    const migrationPath = path.join(MIGRATIONS_DIR, plan.newFileName);
+    await writeFile(
+      migrationPath,
+      buildMigrationFile(plan.rowsToWrite, generatedAt, plan.immutableFileNames),
+      "utf8",
+    );
+    console.log(
+      plan.immutableFileNames.length > 0
+        ? `\nDelta migration written: ${path.relative(process.cwd(), migrationPath)} ` +
+            `(${String(plan.rowsToWrite.length)} new row(s); ` +
+            `${String(plan.immutableFileNames.length)} prior generated migration(s) ` +
+            `left untouched as immutable history)`
+        : `\nMigration written: ${path.relative(process.cwd(), migrationPath)}`,
+    );
+  } else {
+    console.log(
+      `\nNo new external_ids vs the existing generated migration(s) ` +
+        `(${plan.immutableFileNames.join(", ")}) — no new migration written; ` +
+        `applied migrations are immutable history.`,
+    );
+  }
 
+  const mirrorFileNames = [
+    ...plan.immutableFileNames,
+    ...(plan.newFileName ? [plan.newFileName] : []),
+  ];
   const seedSql = await readFile(SEED_FILE, "utf8");
-  let block = buildSeedBlock(allRows, migrationFileName, generatedAt);
+  let block = buildSeedBlock(allRows, mirrorFileNames, generatedAt);
   // Match the seed file's dominant line-ending so the marker block doesn't
   // introduce mixed EOLs on a CRLF working tree.
   if (seedSql.includes("\r\n")) block = block.replace(/\n/g, "\r\n");
