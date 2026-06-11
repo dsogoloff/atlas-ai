@@ -354,7 +354,11 @@ function extractCorrectAnswer(format: QuestionFormat, content: Json): string {
       }
       return "—";
     }
-    case "NUMERIC_ENTRY": {
+    case "NUMERIC_ENTRY":
+    case "TEXT_ENTRY": {
+      // Same content key for both typed-entry formats. Any-of
+      // NUMERIC_ENTRY keys keep correct_answer as the human-readable
+      // form ("1, 2, 3, 6, 9 or 18") — what the parent should see.
       const ans = obj.correct_answer;
       return typeof ans === "string" ? ans : "—";
     }
@@ -387,8 +391,8 @@ function formatChildAnswer(format: QuestionFormat, answerGiven: string): string 
     }
   }
   // MULTIPLE_CHOICE: answer_given is the chosen option's text (handler
-  // stores it as-text, not as index). NUMERIC_ENTRY: child's typed
-  // string. Both render verbatim.
+  // stores it as-text, not as index). NUMERIC_ENTRY / TEXT_ENTRY: child's
+  // typed string. All render verbatim.
   return answerGiven;
 }
 

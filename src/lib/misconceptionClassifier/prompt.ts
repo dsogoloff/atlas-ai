@@ -133,10 +133,14 @@ function readCorrectAnswer(
       }
       return opt;
     }
-    case "NUMERIC_ENTRY": {
+    case "NUMERIC_ENTRY":
+    case "TEXT_ENTRY": {
+      // Same content key for both typed-entry formats. For any-of
+      // NUMERIC_ENTRY keys, correct_answer is the human-readable form
+      // ("1, 2, 3, 6, 9 or 18") — exactly what the LLM should see.
       const correct = obj.correct_answer;
       if (typeof correct !== "string") {
-        throw new Error("[prompt] NUMERIC_ENTRY correct_answer not a string");
+        throw new Error(`[prompt] ${format} correct_answer not a string`);
       }
       return correct;
     }

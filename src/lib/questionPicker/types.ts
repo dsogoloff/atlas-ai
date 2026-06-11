@@ -88,7 +88,8 @@ void _pickedRowKeyCheck;
 //                              from text alone).
 //
 //   MULTIPLE_CHOICE — stem, options[], correct_index, distractor_misconceptions?
-//   NUMERIC_ENTRY   — stem, correct_answer
+//   NUMERIC_ENTRY   — stem, correct_answer, accepted_answers? (any-of keys)
+//   TEXT_ENTRY      — stem, correct_answer
 //   DRAG_DROP       — stem, items[], correct_order
 //
 // (See correctness.ts header for the per-format correct-answer key
@@ -103,7 +104,8 @@ void _pickedRowKeyCheck;
  * serializer in serialize.ts — anything not on this list is dropped.
  *
  * Per compliance.md §8 the following MUST NOT appear on the wire:
- *   * correct_answer        (NUMERIC_ENTRY)
+ *   * correct_answer        (NUMERIC_ENTRY / TEXT_ENTRY)
+ *   * accepted_answers      (NUMERIC_ENTRY any-of keys)
  *   * correct_index         (MULTIPLE_CHOICE)
  *   * correct_order         (DRAG_DROP)
  *   * distractor_misconceptions  (any format)
@@ -152,7 +154,7 @@ export interface ClientQuestionImage {
 
 export type ClientQuestionContent =
   | { stem: string; options: string[]; image?: ClientQuestionImage }   // MULTIPLE_CHOICE
-  | { stem: string; image?: ClientQuestionImage }                       // NUMERIC_ENTRY
+  | { stem: string; image?: ClientQuestionImage }                       // NUMERIC_ENTRY / TEXT_ENTRY
   | { stem: string; items: string[]; image?: ClientQuestionImage };     // DRAG_DROP
 
 // ---------------------------------------------------------------------------

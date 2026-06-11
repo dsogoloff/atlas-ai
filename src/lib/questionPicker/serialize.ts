@@ -4,7 +4,8 @@
 // includes the stem and visible answer choices and NOTHING ELSE from
 // `questions.content`. Specifically prohibited from crossing the boundary:
 //
-//   * correct_answer            (NUMERIC_ENTRY)
+//   * correct_answer            (NUMERIC_ENTRY / TEXT_ENTRY)
+//   * accepted_answers          (NUMERIC_ENTRY any-of keys)
 //   * correct_index             (MULTIPLE_CHOICE)
 //   * correct_order             (DRAG_DROP)
 //   * distractor_misconceptions (MULTIPLE_CHOICE)
@@ -74,6 +75,9 @@ function stripContent(
         ...(image ? { image } : {}),
       };
     case "NUMERIC_ENTRY":
+    case "TEXT_ENTRY":
+      // TEXT_ENTRY mirrors NUMERIC_ENTRY on the wire: stem only. Both
+      // correct_answer and accepted_answers stay server-side.
       return { stem, ...(image ? { image } : {}) };
     case "DRAG_DROP":
       return {

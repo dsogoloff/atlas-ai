@@ -1,0 +1,22 @@
+-- Atlas Assessment — add TEXT_ENTRY to question_format.
+--
+-- QA Bucket 2 (format reclassification): the question bank holds active
+-- questions whose answers are words/phrases ("cylinder", "smaller than",
+-- "Ninety-six") but which were loaded as NUMERIC_ENTRY — unanswerable on
+-- the child's decimal keypad. TEXT_ENTRY is the format for typed
+-- word/phrase answers: content shape {stem, correct_answer}, judged by
+-- normalizeTextAnswer() equality (src/lib/responseSubmit/correctness.ts),
+-- rendered by TextEntryInput (full keyboard, not the numeric keypad).
+--
+-- Postgres constraint: ALTER TYPE ... ADD VALUE may run inside a
+-- transaction (PG >= 12) but the new value cannot be USED until that
+-- transaction commits. Supabase runs each migration file in its own
+-- transaction, so the enum DDL lives alone here and the data migration
+-- that uses 'TEXT_ENTRY' follows in the next migration file.
+--
+-- AGENTS.md §11 note: enum DDL is schema, not tenant-scoped row data.
+-- Migrations run on BOTH the production path and the dev `supabase db
+-- reset` path (before seed.sql), so no seed.sql mirror is needed for
+-- this file.
+
+alter type question_format add value if not exists 'TEXT_ENTRY';
