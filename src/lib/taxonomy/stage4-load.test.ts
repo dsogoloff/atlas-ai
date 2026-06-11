@@ -957,3 +957,49 @@ describe("delta-aware file headers", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Level-band pins for the full-library levels (pre-run lane).
+//
+// deriveHalfGradeLevel was anchor-tested on L2 only. These pins derive
+// the expected values MECHANICALLY from the current formula
+// (L2_BAND_CUTS = [-1.65, -1.4, -0.95] shifted by (n-2) * 12/17 per tax
+// level; band index 2(n-1)+band clamped to [KA, 8B]) so the full-library
+// run can't silently drift. They PIN current behavior — any deliberate
+// recalibration must update them consciously.
+// ---------------------------------------------------------------------------
+
+describe("deriveHalfGradeLevel — full-library level pins", () => {
+  it("pins l0a (n=0; cuts ≈ -3.062 / -2.812 / -2.362; idx = band - 2, clamped at KA)", () => {
+    expect(deriveHalfGradeLevel("l0a", -3.2)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0a", -2.9)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0a", -2.5)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0a", -2.0)).toBe("KB");
+  });
+
+  it("pins l0b/l0c: the letter suffix is IGNORED — all kindergarten codes share one mapping", () => {
+    // taxLevelNumber() drops the a/b/c suffix, so l0a (Nursery), l0b (K1)
+    // and l0c (K2) derive identical half-grades for the same seed. Pinned
+    // as current behavior; flagged in the PR body as a possible follow-up
+    // (the three kindergarten sub-levels cannot differentiate KA vs KB by
+    // level code alone — only difficulty_seed separates them).
+    expect(deriveHalfGradeLevel("l0b", -2.5)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0b", -2.0)).toBe("KB");
+    expect(deriveHalfGradeLevel("l0c", -2.5)).toBe("KA");
+    expect(deriveHalfGradeLevel("l0c", -2.0)).toBe("KB");
+    expect(deriveHalfGradeLevel("l0c", -3.2)).toBe("KA");
+  });
+
+  it("pins l5 (n=5; bands 4A/4B/5A/5B; cuts ≈ 0.468 / 0.718 / 1.168)", () => {
+    expect(deriveHalfGradeLevel("l5", 0.3)).toBe("4A");
+    expect(deriveHalfGradeLevel("l5", 0.6)).toBe("4B");
+    expect(deriveHalfGradeLevel("l5", 1.0)).toBe("5A");
+    expect(deriveHalfGradeLevel("l5", 1.5)).toBe("5B");
+  });
+
+  it("pins l6 (n=6; bands 5A/5B/6A/6B; cuts ≈ 1.174 / 1.424 / 1.874)", () => {
+    expect(deriveHalfGradeLevel("l6", 1.0)).toBe("5A");
+    expect(deriveHalfGradeLevel("l6", 1.3)).toBe("5B");
+    expect(deriveHalfGradeLevel("l6", 1.6)).toBe("6A");
+    expect(deriveHalfGradeLevel("l6", 2.2)).toBe("6B");
+  });
+});
