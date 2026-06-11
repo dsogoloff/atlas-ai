@@ -92,7 +92,9 @@ never carry secrets, child data, or licensed S.A.M. question text off-box.
 
 ## Environment
 - Branch `ATLAS-ASSESSMENT` (protected — rejects direct pushes; work via `lane/*` PRs).
-  Repo `dsogoloff/atlas-ai`. pnpm. Verify baseline: 554 tests.
+  Repo `dsogoloff/atlas-ai`. pnpm. Verify baseline = whatever `pnpm test` reports
+  all-green on the current `ATLAS-ASSESSMENT` head (~864 tests as of 2026-06-10); treat
+  the live `pnpm test` count as the source of truth, not a number pinned here.
 - Dimitri runs `pnpm dev` and the local Supabase stack himself — you do not.
 - Migrations emit a migration file AND a `seed.sql` mirror (AGENTS.md).
 - Secrets (`ANTHROPIC_API_KEY`, `MISCONCEPTION_CLASSIFIER_LIVE`, Supabase/Resend keys)
