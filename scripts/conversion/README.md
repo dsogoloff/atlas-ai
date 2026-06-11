@@ -188,6 +188,42 @@ DB layer is additionally protected by
 Unit tests for the pure mapping/SQL functions live at
 `src/lib/taxonomy/stage4-load.test.ts` (vitest only discovers `src/**`).
 
+## Pipeline guards
+
+Deterministic guards added after the 2026-06-10 conversion root-cause memo
+(`docs/conversion-root-cause-memo-2026-06-10.md`). They make the NEXT
+segment/tag/load run trustworthy; they change no loaded data themselves.
+
+- **Stage 2 — answer-key fullRow continuation**: the right column of a
+  two-column tab-table row now opens a continuation accumulator (like the
+  halfRow path) instead of committing on its first line, so multi-line
+  worked solutions are no longer truncated (memo M3). Footer noise lines
+  commit-and-close the open entry instead of being absorbed.
+- **Stage 2 — orphan option-block re-attribution**: a contiguous
+  `(1)..(4)` option run that sits immediately after the NEXT task's
+  `Answer:` line is moved back to the preceding option-less task on the
+  same page (memo M2 — the PDF reading-order interleave that cost
+  L3 Q22/Q23 and Q03/Q04). Conservative: all three conditions (complete
+  ordered run, after `Answer:`, marker-free previous task on the same
+  page) must hold; every move is warned to console + `conversion.log`.
+- **Stage 3 — raw answer-key context**: `buildUserPrompt` now includes the
+  worksheet's verbatim Stage 1 answer-key text (bounded), so the model can
+  cross-check a parsed key entry that the deterministic parser truncated
+  (memo M3 / leverage #4). INPUT CONTEXT only — system prompt, voice, and
+  model are unchanged; spot-revalidate on the L2 sample before the
+  full-library run.
+- **Stage 4 — flag-contradiction gate**: a record whose `review_flags`
+  state an explicit `correct_index`/`correct_answer` correction that
+  contradicts the emitted field is skipped (category `flag-contradiction`)
+  — the SAM-L3-Q11 emission slip would have been caught here.
+- **Stage 4 — verbatim-options gate**: when Stage 2 parsed an
+  `options_guess` for the task, Stage 3's options must match it up to
+  whitespace/case/unicode normalization; divergence (model-reconstructed
+  option text, memo M4) skips the record (category `options-divergence`).
+
+Both Stage 4 gates report loudly (`[ERROR]` per record + skip categories in
+the `conversion.log` stage4 line) and land in `stage4-skipped.json`.
+
 ## Why `input/` and `output/` are gitignored
 
 Both directories hold **licensed third-party PDF content** (S.A.M. placement

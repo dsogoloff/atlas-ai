@@ -1569,3 +1569,61 @@ from t,
          is_active, content_key)
 on conflict (tenant_id, external_id) do nothing;
 -- END stage4-generated-questions
+
+-- BEGIN founder-confirmed-content-fixes (mirror of supabase/migrations/20260610180000_fix_sam_question_content.sql)
+-- =============================================================================
+-- Founder-confirmed S.A.M. question content fixes (remediation FIX 1)
+-- =============================================================================
+-- AGENTS.md §11: the migration above is the prod path and a no-op on dev
+-- reset (it runs before this file creates the tenant); this block is the
+-- dev/CI path, applied AFTER the stage4 generated insert block above so
+-- the rows exist. Statements are identical to the migration; every
+-- UPDATE carries an idempotent guard on the old value. Full before/after
+-- table in the migration header.
+
+-- 1) SAM-L3-Q11 — correct_index 1 -> 0; drop the distractor code that now
+--    sits on the correct option. Guarded on the old index.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content #- '{distractor_misconceptions,0}',
+      '{correct_index}',
+      '0'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q11'
+  and q.format = 'MULTIPLE_CHOICE'
+  and (q.content ->> 'correct_index')::int = 1;
+
+-- 2) SAM-L3-Q22 — restore to MULTIPLE_CHOICE with the verbatim page-14
+--    options; key "3" (1-based) -> correct_index 2. Stem kept as loaded
+--    (it matches the page). Guarded on the old format + stored answer.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTIPLE_CHOICE'::question_format,
+    content = jsonb_build_object(
+      'stem', q.content ->> 'stem',
+      'options', '["1000","1001","9998","9999"]'::jsonb,
+      'correct_index', 2)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q22'
+  and q.format = 'NUMERIC_ENTRY'
+  and q.content ->> 'correct_answer' = '9998';
+
+-- 3) SAM-L3-Q03 — replace the model-reconstructed value-equivalent options
+--    with the verbatim printed option text. correct_index 2 still points
+--    at the key's option ("8 hundreds" = key "3"). Guarded on the old
+--    options array.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{options}',
+      '["8 ones","8 tens","8 hundreds","8 thousands"]'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L3-Q03'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["8","80","800","8000"]'::jsonb;
+-- END founder-confirmed-content-fixes

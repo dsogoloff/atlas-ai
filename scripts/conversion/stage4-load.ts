@@ -346,6 +346,7 @@ interface Stage2LineageQuestion {
   task_number: number;
   pages: number[];
   page_images: string[];
+  options_guess?: string[];
 }
 
 interface Stage2LineageOutput {
@@ -391,6 +392,109 @@ export interface SkippedRecord {
   external_id: string;
   task_number: number;
   reasons: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Deterministic load gates (root-cause memo 2026-06-10, leverage list #1).
+//
+// Stage 3's review_flags announced every model misstep that mattered
+// (SAM-L3-Q11's flag literally said "correct_index corrected to 0" while
+// the emitted field stayed 1), but Stage 4 only COUNTED flags. These two
+// gates act on them:
+//
+//   * detectFlagContradictions — a record whose review_flags state an
+//     explicit index/answer correction that contradicts the emitted field
+//     is skipped (category `flag-contradiction`). Would have caught Q11.
+//   * detectOptionsDivergence — when Stage 2 parsed an options_guess for
+//     the task, the Stage 3 options must match it up to whitespace/case
+//     normalization; divergence means the model reconstructed option text
+//     the extractor lost (memo failure mode M4) and the record is skipped
+//     (category `options-divergence`). Would have caught SAM-L3-Q03/Q15
+//     and SAM-L4-Q18.
+// ---------------------------------------------------------------------------
+
+/** Conservative whitespace/case/unicode normalization for option-text
+ *  comparison. NFKC folds the worksheets' mathematical-bold digits; dash
+ *  variants unify; whitespace collapses; case folds. Anything beyond this
+ *  counts as real divergence. */
+export function normalizeOptionText(raw: string): string {
+  return raw
+    .normalize("NFKC")
+    .replace(/[−–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+const INDEX_CORRECTION_RE =
+  /correct[_\s]?index\s+(?:was\s+)?(?:corrected|changed|fixed|updated)\s+to\s+(\d+)|correct[_\s]?index\s+should\s+be\s+(\d+)/i;
+const ANSWER_CORRECTION_RE =
+  /correct[_\s]?answer\s+(?:was\s+)?(?:corrected|changed|fixed|updated)\s+to\s+["']?([^"';,(—–]+?)["']?\s*(?:[;,(—–]|$)|correct[_\s]?answer\s+should\s+be\s+["']?([^"';,(—–]+?)["']?\s*(?:[;,(—–]|$)/i;
+
+/** Every review flag that states an explicit correction contradicting the
+ *  emitted field. A flag that AGREES with the emitted field (the model
+ *  corrected itself and the correction landed) is not a contradiction.
+ *  Reasons are prefixed "flag contradiction:" for categorizeSkipReason. */
+export function detectFlagContradictions(q: Stage3Question): string[] {
+  const reasons: string[] = [];
+  if (!Array.isArray(q.review_flags)) return reasons;
+  for (const flag of q.review_flags) {
+    if (typeof flag !== "string") continue;
+    const idx = INDEX_CORRECTION_RE.exec(flag);
+    if (idx) {
+      const stated = Number(idx[1] ?? idx[2]);
+      if (q.correct_index !== stated) {
+        reasons.push(
+          `flag contradiction: review flag states correct_index should be ${String(stated)} ` +
+            `but the record emits ${String(q.correct_index)} — flag: "${flag}"`,
+        );
+      }
+    }
+    const ans = ANSWER_CORRECTION_RE.exec(flag);
+    if (ans) {
+      const stated = (ans[1] ?? ans[2] ?? "").trim().replace(/\.$/, "");
+      const emitted = typeof q.correct_answer === "string" ? q.correct_answer : "";
+      if (stated.length > 0 && normalizeOptionText(emitted) !== normalizeOptionText(stated)) {
+        reasons.push(
+          `flag contradiction: review flag states correct_answer should be "${stated}" ` +
+            `but the record emits "${emitted}" — flag: "${flag}"`,
+        );
+      }
+    }
+  }
+  return reasons;
+}
+
+/** Compare Stage 3's emitted options against Stage 2's parsed
+ *  options_guess for the same task. Returns a skip reason (prefixed
+ *  "options divergence:") when they differ beyond whitespace/case
+ *  normalization, or null when the gate passes / does not apply (no
+ *  options_guess parsed, or the record has no options). */
+export function detectOptionsDivergence(
+  stage3Options: string[] | null | undefined,
+  optionsGuess: string[] | null | undefined,
+): string | null {
+  if (!Array.isArray(optionsGuess) || optionsGuess.length === 0) return null;
+  if (!Array.isArray(stage3Options) || stage3Options.length === 0) return null;
+  if (stage3Options.length !== optionsGuess.length) {
+    return (
+      `options divergence: stage3 emitted ${String(stage3Options.length)} options but stage2 ` +
+      `parsed ${String(optionsGuess.length)} (${JSON.stringify(optionsGuess)})`
+    );
+  }
+  const diverging: string[] = [];
+  for (let i = 0; i < optionsGuess.length; i += 1) {
+    if (normalizeOptionText(stage3Options[i]) !== normalizeOptionText(optionsGuess[i])) {
+      diverging.push(
+        `[${String(i)}] stage3 "${stage3Options[i]}" vs stage2 "${optionsGuess[i]}"`,
+      );
+    }
+  }
+  if (diverging.length === 0) return null;
+  return (
+    `options divergence: stage3 options are not verbatim from the stage2 extraction — ` +
+    diverging.join("; ")
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -881,6 +985,9 @@ interface DiscoveredStage3 {
   data: Stage3Output;
   /** task_number → page image filenames, from stage2-questions.json. */
   pageImagesByTask: Map<number, string[]>;
+  /** task_number → parsed options_guess, from stage2-questions.json
+   *  (verbatim-options gate input). */
+  optionsGuessByTask: Map<number, string[]>;
 }
 
 async function discoverStage3(): Promise<DiscoveredStage3[]> {
@@ -901,17 +1008,22 @@ async function discoverStage3(): Promise<DiscoveredStage3[]> {
       continue;
     }
     const pageImagesByTask = new Map<number, string[]>();
+    const optionsGuessByTask = new Map<number, string[]>();
     try {
       const stage2File = path.join(OUTPUT_DIR, entry.name, "stage2-questions.json");
       const stage2 = JSON.parse(await readFile(stage2File, "utf8")) as Stage2LineageOutput;
       for (const q of stage2.questions) {
         pageImagesByTask.set(q.task_number, q.page_images);
+        if (Array.isArray(q.options_guess) && q.options_guess.length > 0) {
+          optionsGuessByTask.set(q.task_number, q.options_guess);
+        }
       }
     } catch {
       // Lineage optional — uploads for this worksheet will be marked
-      // un-uploadable in the manifest.
+      // un-uploadable in the manifest, and the verbatim-options gate
+      // cannot fire (no options_guess to compare against).
     }
-    found.push({ folder: entry.name, data, pageImagesByTask });
+    found.push({ folder: entry.name, data, pageImagesByTask, optionsGuessByTask });
   }
   found.sort((a, b) => a.folder.localeCompare(b.folder));
   return found;
@@ -1049,6 +1161,8 @@ async function stagePageImages(
 export function categorizeSkipReason(reason: string): string {
   if (reason.startsWith("stage3 status=failed")) return "stage3-failed";
   if (reason.startsWith("duplicate external_id")) return "duplicate-external-id";
+  if (reason.startsWith("flag contradiction")) return "flag-contradiction";
+  if (reason.startsWith("options divergence")) return "options-divergence";
   if (reason.includes("unknown misconception code")) return "unknown-misconception-code";
   if (reason.includes("not in taxonomy")) return "unknown-content-key";
   return "invalid-fields";
@@ -1170,6 +1284,27 @@ async function main(): Promise<void> {
           external_id: q.external_id,
           task_number: q.task_number,
           reasons: ["duplicate external_id (already loaded from an earlier worksheet/record)"],
+        });
+        continue;
+      }
+      // Deterministic gates (memo leverage #1) — loud, never silent:
+      // a review flag that contradicts the emitted field, or option text
+      // that is not verbatim from the Stage 2 extraction, skips the
+      // record before any further validation.
+      const gateReasons = detectFlagContradictions(q);
+      const divergence = detectOptionsDivergence(
+        q.options ?? null,
+        ws.optionsGuessByTask.get(q.task_number) ?? null,
+      );
+      if (divergence) gateReasons.push(divergence);
+      if (gateReasons.length > 0) {
+        for (const reason of gateReasons) {
+          console.error(`  [ERROR] ${q.external_id}: ${reason} — record skipped`);
+        }
+        skipped.push({
+          external_id: q.external_id,
+          task_number: q.task_number,
+          reasons: gateReasons,
         });
         continue;
       }

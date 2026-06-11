@@ -144,7 +144,7 @@ interface Misconception {
   description: string;
 }
 
-interface Stage2Question {
+export interface Stage2Question {
   task_number: number;
   pages: number[];
   page_images: string[];
@@ -488,16 +488,33 @@ QUALITY:
 - options (MC only) must be exactly the 4 option strings as printed.
 - review_flags is your channel to flag anything a human should double-check.`;
 
-interface PromptInput {
+export interface PromptInput {
   question: Stage2Question;
   taxonomyContent: TaxonomyContent[];
   misconceptions: Misconception[];
   testLevelLabel: string | null;
   evalResultsRaw: string | null;
+  /** Verbatim Stage 1 answer-key text for the whole worksheet
+   *  (stage2-questions.json `answer_key_raw`). Lets the model self-correct
+   *  parsed key entries that the deterministic parser truncated (memo M3:
+   *  multi-line worked solutions). Bounded by MAX_ANSWER_KEY_RAW_CHARS. */
+  answerKeyRaw: string | null;
 }
 
-function buildUserPrompt(input: PromptInput): string {
+/** Upper bound on the raw answer-key text included per prompt. The four
+ *  observed keys are 0.4–1.3 KB; the bound only exists so a pathological
+ *  extraction cannot blow up every per-question prompt. */
+export const MAX_ANSWER_KEY_RAW_CHARS = 6000;
+
+export function boundAnswerKeyRaw(raw: string | null): string | null {
+  if (raw === null) return null;
+  if (raw.length <= MAX_ANSWER_KEY_RAW_CHARS) return raw;
+  return `${raw.slice(0, MAX_ANSWER_KEY_RAW_CHARS)}\n[… truncated at ${String(MAX_ANSWER_KEY_RAW_CHARS)} chars]`;
+}
+
+export function buildUserPrompt(input: PromptInput): string {
   const { question: q, taxonomyContent, misconceptions, testLevelLabel, evalResultsRaw } = input;
+  const answerKeyRaw = boundAnswerKeyRaw(input.answerKeyRaw);
   const taxonomyJson = JSON.stringify(
     taxonomyContent.map((c) => ({
       key: c.key,
@@ -531,6 +548,11 @@ ${q.raw_text}
 - options_guess (Stage 2 heuristic): ${q.options_guess ? JSON.stringify(q.options_guess) : "(none)"}
 - image_likely (Stage 2 heuristic): ${q.image_likely}
 - answer key entry: ${q.correct_answer ? JSON.stringify(q.correct_answer) : "null"}
+
+RAW ANSWER-KEY TEXT for the whole worksheet (verbatim Stage 1 extraction; may interleave columns or carry reading-order noise — locate task ${q.task_number}'s entry to cross-check the parsed answer key entry above, especially when that entry looks truncated or is a multi-line worked solution):
+\`\`\`
+${answerKeyRaw ?? "(not available)"}
+\`\`\`
 
 TAXONOMY content items in scope (filtered to the worksheet level ± 1):
 \`\`\`json
@@ -1070,6 +1092,7 @@ async function processWorksheet(
       misconceptions,
       testLevelLabel: data.test_level_label,
       evalResultsRaw: data.eval_results_raw,
+      answerKeyRaw: data.answer_key_raw,
     });
     if (result.ok) {
       const enriched = validateAndEnrich(
@@ -1194,8 +1217,18 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((err: unknown) => {
-  const message = err instanceof Error ? (err.stack ?? err.message) : String(err);
-  console.error("Stage 3 failed:", message);
-  process.exit(1);
-});
+// Only run when executed directly (pnpm convert:tag / tsx) — the module is
+// also imported by unit tests for buildUserPrompt/boundAnswerKeyRaw (same
+// guard as stages 2 and 4; without it, importing this file would fire an
+// API run).
+const isDirectRun =
+  typeof process.argv[1] === "string" &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main().catch((err: unknown) => {
+    const message = err instanceof Error ? (err.stack ?? err.message) : String(err);
+    console.error("Stage 3 failed:", message);
+    process.exit(1);
+  });
+}
