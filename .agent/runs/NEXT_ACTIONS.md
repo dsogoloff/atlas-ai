@@ -190,8 +190,37 @@
   skipped questions (recoverable via human-authored equivalents), per-question flags.
 - [ ] Comprehensive-test assembly — engine reparameterization (config); needs the bank.
 - [ ] Curriculum-recommendation table population.
-- [ ] Full-library digitization (0A–0C, 5–7; PDFs already in input/) — separate planned
-  follow-up; no timeline set.
+- [~] Full-library digitization (0A–0C, 5–7; PDFs already in input/). **Phase 1 DONE
+  2026-06-11 (lane/full-library-run, worktree atlas-stage4):** tagged+loaded 0A/0B/0C/5/6
+  (L7 parked). Tagged 117 (0 failed). Loaded **81 rows** (active 50 / inactive 31; 32
+  skipped — mostly Kindergarten DRAG_DROP picture/drawing tasks + L5/L6 symbol-font MC
+  caught by the options-divergence guard). Delta migration
+  `20260611134158_load_sam_questions.sql` (81 new external_ids only).
+  - **L6 key recovery:** the 7 symbol-font L6 keys (Q9–Q13 text/arithmetic, Q15/Q16 area)
+    were vision-recovered from the answer-key + worksheet page images and injected into L6
+    stage2 before tagging. Q9–Q13 loaded ACTIVE; Q15/Q16 INACTIVE (image-essential, key
+    stored — activate at curation). Q17 (draw top/side view) skipped (drawing, no key).
+    Mixed/fraction answers (Q9 "8 1/28", Q11 "88 1/2", Q12 "5/18") reclassified
+    NUMERIC→TEXT_ENTRY via `20260611140000_reclassify_l6_recovered_text_entry.sql`
+    (mirrored in seed after the new-levels INSERT). Q10 "2.17", Q13 "100" stay NUMERIC.
+  - **⚠ PENDING RECONCILIATION (founder Option-1 decision 2026-06-11):** to leave the
+    L1–4 rows byte-for-byte unchanged, the new-levels rows were added to `seed.sql` as a
+    **separate block OUTSIDE the stage4 BEGIN/END markers** (the loader rebuilds the
+    marker block from on-disk stage3 outputs, and L1–4's stage3 outputs are stale vs the
+    two correction migrations — a cumulative re-run would drop the gated L3 rows). A
+    future full cumulative re-load must (a) make the L1–4 stage3 sources guard-clean
+    (fold in the `20260610170100`/`20260610180000` fixes) and then (b) fold the new-levels
+    block back inside the single stage4 marker block. Until then the stage5/qa audits
+    label the new levels "hand-seeded"/"UNKNOWN" (cosmetic artifact of the split).
+  - Backups left in place: `supabase/seed.sql.prefulllib.bak` (pre-new-levels seed) and
+    `output/Level 6 Placement Worksheet/stage2-questions.json.pre-recovery.bak`.
+  - Phase 2 sweep GREEN: mc-index 51 MC (44 match / 1 known L3-Q11 mismatch / 6 no-key);
+    stage5 audit checked=161 suspect=37 unverifiable=17; QA refreshed
+    `output/QA-audit-L1-4.{md,csv}` (161 rows, 99 active / 62 inactive). Verify bar GREEN
+    (864 tests / 52 files, tsc 0, lint 2 known warnings). Phase 3 NOT started (stopped per
+    instruction).
+- [ ] Remaining digitization: L7 (parked); image curation for the new inactive image-
+  essential rows; recover the L5/L6 symbol-font MC options skipped by the guard.
 
 ## 4b. Assessment mascot (DONE-pending-merge 2026-06-10 — PR #34, lane/assessment-mascot)
 - [x] Dachshund mascot integrated into the child flow (3 poses at stable paths:
