@@ -43,6 +43,8 @@ import { InstructorNotice, InstructorTopBar } from "../../_components/shell";
 import { resolveInstructor } from "../../lib/instructor";
 import { fetchNotesForChild } from "../../lib/notes";
 import { NotesPanel } from "./notes-panel";
+import { ReportViewTracker } from "./report-view-tracker";
+import { UsefulnessPanel } from "./usefulness-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -200,6 +202,13 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           />
         ) : (
           <EmptyDiagnostic body="This student hasn't completed an assessment yet." />
+        )}
+
+        {report && session && (
+          <>
+            <ReportViewTracker sessionId={session.id} />
+            <UsefulnessPanel sessionId={session.id} />
+          </>
         )}
 
         <NotesPanel

@@ -48,7 +48,7 @@ export async function recordReportViewed(sessionId: string): Promise<void> {
     // dual-role bypass before we attribute the view.
     const { data: session } = await rls
       .from("assessment_sessions")
-      .select("id, child_id")
+      .select("id, child_id, test_type")
       .eq("id", sessionId)
       .maybeSingle();
     if (!session) return;
@@ -61,11 +61,23 @@ export async function recordReportViewed(sessionId: string): Promise<void> {
       .maybeSingle();
     if (!ownedChild) return;
 
-    await emit(createServiceClient(), ANALYTICS_EVENTS.PARENT_REPORT_VIEWED, {
+    const serviceClient = createServiceClient();
+    await emit(serviceClient, ANALYTICS_EVENTS.PARENT_REPORT_VIEWED, {
       tenantId: parent.tenant_id,
       childId: session.child_id,
       sessionId: session.id,
     });
+
+    // The parent report doubles as the short-test result surface (no
+    // standalone short-result page exists). Fire short_result_viewed only for
+    // short-test sessions; comprehensive sessions are tracked separately.
+    if (session.test_type === "short") {
+      await emit(serviceClient, ANALYTICS_EVENTS.SHORT_RESULT_VIEWED, {
+        tenantId: parent.tenant_id,
+        childId: session.child_id,
+        sessionId: session.id,
+      });
+    }
   } catch (e) {
     console.error("[analytics] recordReportViewed threw", {
       err: e instanceof Error ? e.message : "unknown",

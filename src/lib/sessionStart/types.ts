@@ -21,6 +21,10 @@ import type { ClientQuestion } from "@/lib/questionPicker/types";
 
 export const StartRequestSchema = z.object({
   child_id: z.string().uuid(),
+  /** Opt into the comprehensive assessment instead of the short test. Only
+   *  honoured when the ENABLE_COMPREHENSIVE_PILOT flag is on (the handler
+   *  fails safe to the short test otherwise). Absent ⇒ short test. */
+  comprehensive: z.boolean().optional(),
 });
 
 export type StartRequest = z.infer<typeof StartRequestSchema>;

@@ -98,6 +98,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { emit } from "@/lib/analytics/emit";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { isComprehensivePilotEnabled } from "@/lib/env";
 import {
   createEngineState,
   nextQuestionRequest,
@@ -224,6 +225,14 @@ export async function sessionStartHandler({
     );
   }
 
+  // Effective test type. Comprehensive ONLY when the request asked for it AND
+  // the pilot flag is on; otherwise fail safe to the short test (even if the
+  // request asked for comprehensive while the flag is off).
+  const testType: "short" | "comprehensive" =
+    request.comprehensive === true && isComprehensivePilotEnabled()
+      ? "comprehensive"
+      : "short";
+
   // ---------------------------------------------------------------------------
   // 3. Existing IN_PROGRESS session?
   // ---------------------------------------------------------------------------
@@ -253,6 +262,7 @@ export async function sessionStartHandler({
       child_id: child.id,
       status: "IN_PROGRESS",
       engine_prior_version: ACTIVE_PRIOR_VERSION,
+      test_type: testType,
     })
     .select("id")
     .single();
@@ -297,6 +307,9 @@ export async function sessionStartHandler({
   // either (a) the picker serves OR (b) every strand is excluded
   // (truly bank-unservable for this tenant).
   // ---------------------------------------------------------------------------
+  // TODO(comprehensive-engine): comprehensive sessions currently run short
+  // engine params; reparameterize item cap / confidence stop here (separate
+  // session).
   const state = createEngineState({
     grade: child.grade_level as GradeKey | null,
     config: PRIORS_V1,
@@ -369,14 +382,20 @@ export async function sessionStartHandler({
   }
 
   // Funnel: a NEW assessment actually began (fresh session + first question
-  // served). Resume paths deliberately don't emit this. Fail-soft, off the
-  // response path.
+  // served). Resume paths deliberately don't emit this. Comprehensive vs short
+  // is keyed off the session's test_type. Fail-soft, off the response path.
   after(() =>
-    emit(serviceClient, ANALYTICS_EVENTS.SHORT_TEST_STARTED, {
-      tenantId: parent.tenant_id,
-      childId: child.id,
-      sessionId,
-    }),
+    emit(
+      serviceClient,
+      testType === "comprehensive"
+        ? ANALYTICS_EVENTS.COMPREHENSIVE_TEST_STARTED
+        : ANALYTICS_EVENTS.SHORT_TEST_STARTED,
+      {
+        tenantId: parent.tenant_id,
+        childId: child.id,
+        sessionId,
+      },
+    ),
   );
 
   // Fresh-session first pick: no responses persisted yet, so the served
