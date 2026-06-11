@@ -1569,3 +1569,56 @@ from t,
          is_active, content_key)
 on conflict (tenant_id, external_id) do nothing;
 -- END stage4-generated-questions
+
+-- ---------------------------------------------------------------------------
+-- QA Bucket 2 — format reclassification (dev/CI mirror of
+-- supabase/migrations/20260610170100_reclassify_format_misclassified_questions.sql;
+-- see that file's header for the full before/after table).
+--
+-- Hand-written; lives AFTER the generated stage4 block on purpose: the
+-- generated INSERT above still loads the pre-fix rows (the conversion
+-- pipeline regenerates that block byte-identically), and these UPDATEs
+-- re-apply the reclassification on every `supabase db reset`. Idempotent:
+-- each UPDATE is guarded on the pre-change format/content. The TEXT_ENTRY
+-- enum value itself is added by migration 20260610170000 (schema DDL runs
+-- in both paths; no mirror needed).
+-- ---------------------------------------------------------------------------
+
+-- 1) Word/phrase answers -> TEXT_ENTRY (content unchanged).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'TEXT_ENTRY'
+from t
+where q.tenant_id = t.id
+  and q.format = 'NUMERIC_ENTRY'
+  and q.external_id in (
+    'SAM-L1-Q20', 'SAM-L1-Q25', 'SAM-L2-Q04', 'SAM-L2-Q08',
+    'SAM-L3-Q02', 'SAM-L3-Q18', 'SAM-L4-Q15', 'SAM-L4-Q22'
+  );
+
+-- 2) SAM-L1-Q28 "Write the numbers in order" -> DRAG_DROP.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'DRAG_DROP',
+    content = jsonb_build_object(
+      'stem', q.content->>'stem',
+      'items', jsonb_build_array('17', '20', '10'),
+      'correct_order', jsonb_build_array('10', '17', '20')
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q28'
+  and q.format = 'NUMERIC_ENTRY';
+
+-- 3) SAM-L4-Q27 stays NUMERIC_ENTRY; the "Accept ..." instruction key
+--    becomes a human-readable correct_answer + an any-of judging key.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = q.content || jsonb_build_object(
+      'correct_answer', '1, 2, 3, 6, 9 or 18',
+      'accepted_answers', jsonb_build_array('1', '2', '3', '6', '9', '18')
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L4-Q27'
+  and q.content->>'correct_answer' = 'Accept 1, 2, 3, 6, 9 or 18';
