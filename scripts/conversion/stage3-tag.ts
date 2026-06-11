@@ -113,14 +113,14 @@ interface TaxonomySubStrand {
   applies: string[];
 }
 
-interface TaxonomyLevel {
+export interface TaxonomyLevel {
   key: string;
   name: string;
   sort: number;
   mvp: boolean;
 }
 
-interface TaxonomyContent {
+export interface TaxonomyContent {
   key: string;
   level: string;
   sub_strand: string;
@@ -129,7 +129,7 @@ interface TaxonomyContent {
   mvp: boolean;
 }
 
-interface Taxonomy {
+export interface Taxonomy {
   version: string;
   source: string;
   strands: TaxonomyStrand[];
@@ -765,10 +765,23 @@ async function tagQuestion(
 // Validation + enrichment
 // ---------------------------------------------------------------------------
 
-function shortLevelSlug(label: string | null): string {
+// "Level <n>" or the Kindergarten labels "Level 0A/0B/0C" (the 0A|0B|0C
+// alternatives come first so "Level 0A" captures "0A", not "0"). Kept in
+// sync with Stage 2's LEVEL_LABEL.
+const LEVEL_LABEL = /\bLevel\s+(0A|0B|0C|\d+)\b/i;
+
+/** "Level 0A" -> "l0a", "Level 5" -> "l5" — the taxonomy `levels[].key`
+ *  space. Null when the label is missing or unrecognizable. */
+export function levelKeyFromLabel(label: string | null): string | null {
+  if (!label) return null;
+  const m = LEVEL_LABEL.exec(label);
+  return m ? `l${m[1].toLowerCase()}` : null;
+}
+
+export function shortLevelSlug(label: string | null): string {
   if (!label) return "X";
-  const m = /\bLevel\s+(\d+)\b/i.exec(label);
-  return m ? `L${m[1]}` : label.replace(/\s+/g, "").toUpperCase();
+  const m = LEVEL_LABEL.exec(label);
+  return m ? `L${m[1].toUpperCase()}` : label.replace(/\s+/g, "").toUpperCase();
 }
 
 function countWords(text: string): number {
@@ -815,10 +828,15 @@ function validateAndEnrich(
     subStrandKey = content.sub_strand;
     const subStrand = taxonomy.sub_strands.find((s) => s.key === content.sub_strand);
     strandKey = subStrand?.strand ?? null;
-    // sam_level / content level consistency. Both sides normalized to "l<n>".
+    // sam_level / content level consistency. Both sides normalized to
+    // "l<n>". The submit_tagging schema forces sam_level to an INTEGER, so
+    // the Kindergarten levels can only be expressed as 0 — accept any of
+    // l0a/l0b/l0c against sam_level=0 instead of flagging.
     if (normalizedLevel !== null) {
       const levelKey = `l${normalizedLevel}`;
-      if (content.level !== levelKey) {
+      const kindergartenOk =
+        normalizedLevel === 0 && /^l0[abc]$/.test(content.level);
+      if (content.level !== levelKey && !kindergartenOk) {
         flags.add(
           `sam_level=${normalizedLevel} does not match content_key level ${content.level}`,
         );
@@ -1056,19 +1074,21 @@ async function appendAuditLine(
   await appendFile(LOG_FILE, line, "utf8");
 }
 
-function filterTaxonomyForLevel(
+export function filterTaxonomyForLevel(
   taxonomy: Taxonomy,
   testLevelLabel: string | null,
 ): TaxonomyContent[] {
-  if (!testLevelLabel) return taxonomy.content;
-  const m = /\bLevel\s+(\d+)\b/i.exec(testLevelLabel);
-  if (!m) return taxonomy.content;
-  const level = Number(m[1]);
-  const window = new Set<string>([
-    `l${Math.max(0, level - 1)}`,
-    `l${level}`,
-    `l${level + 1}`,
-  ]);
+  const levelKey = levelKeyFromLabel(testLevelLabel);
+  if (!levelKey) return taxonomy.content;
+  // The taxonomy's own `levels` array carries the ordering (l0a, l0b, l0c,
+  // l1, …, l6 by `sort`) — window ±1 by ORDINAL position, not by arithmetic
+  // on the digit, so the 0A/0B/0C levels chain correctly into l1.
+  const ordered = [...taxonomy.levels]
+    .sort((a, b) => a.sort - b.sort)
+    .map((l) => l.key);
+  const idx = ordered.indexOf(levelKey);
+  if (idx === -1) return taxonomy.content;
+  const window = new Set(ordered.slice(Math.max(0, idx - 1), idx + 2));
   return taxonomy.content.filter((c) => window.has(c.level));
 }
 
