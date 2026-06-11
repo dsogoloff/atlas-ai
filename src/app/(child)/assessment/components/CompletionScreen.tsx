@@ -7,10 +7,13 @@
 //     "All done, [name]!" headline. Warm and personal.
 //
 //   * G5_8: adapted from stitch/module-c/09-g58-completion-journey.html —
-//     `workspace_premium` (medal-laurel) icon on a sam-teal rounded square,
 //     "Mathematical Journey Complete!" headline (per gate decision #7),
-//     parent-handoff subtitle keeps the child's name. No Sammy mascot
-//     (asset deferred per gate decision #8).
+//     parent-handoff subtitle keeps the child's name.
+//
+// Both tiers center the celebrating-pose mascot where the placeholder
+// material icon used to sit (the asset deferred by gate decision #8 has
+// landed — see stitch/mascot/). K_4 gets the idle bounce inside the
+// existing entrance spring; G5_8 stays still and slightly smaller.
 //
 // Both tiers receive placement + termination_reason but do NOT render
 // numeric placement to the child (parent-facing detail lives elsewhere).
@@ -21,6 +24,9 @@ import Link from "next/link";
 
 import type { TerminationReasonWire } from "@/lib/responseSubmit/types";
 import type { Tier } from "@/lib/tier/derive";
+
+import { mascotPoseFor } from "../lib/mascot";
+import { Mascot } from "./Mascot";
 
 interface Props {
   /** First name (or whole `children.name` — schema stores full name; v1
@@ -81,15 +87,7 @@ export function CompletionScreen({ childName, terminationReason, tier }: Props) 
           transition={{ type: "spring", stiffness: 180, damping: 12 }}
           className="relative mb-8"
         >
-          <div className="grid h-48 w-48 place-items-center rounded-[40px] bg-sam-teal/30">
-            <span
-              className="material-symbols-outlined text-9xl text-sam-navy drop-shadow-md"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-              aria-hidden="true"
-            >
-              workspace_premium
-            </span>
-          </div>
+          <Mascot pose={mascotPoseFor("completed")} tier="G5_8" size={160} />
           {accents.map((s, i) => (
             <motion.span
               key={s.name}
@@ -161,15 +159,7 @@ export function CompletionScreen({ childName, terminationReason, tier }: Props) 
         transition={{ type: "spring", stiffness: 180, damping: 12 }}
         className="relative mb-8"
       >
-        <div className="grid h-48 w-48 place-items-center rounded-[40px] bg-sam-yellow/30">
-          <span
-            className="material-symbols-outlined text-9xl text-sam-navy drop-shadow-md"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-            aria-hidden="true"
-          >
-            auto_awesome
-          </span>
-        </div>
+        <Mascot pose={mascotPoseFor("completed")} tier="K_4" size={192} />
         {[
           { name: "star", className: "-right-6 -top-4 text-sam-yellow text-5xl" },
           {

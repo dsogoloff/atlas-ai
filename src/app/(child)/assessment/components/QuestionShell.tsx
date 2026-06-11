@@ -17,13 +17,19 @@
 // the brand red bar; G5-8 uses a muted neutral, matching the existing
 // tier-aware chrome distinction (cheerful for K-4, measured for G5-8).
 //
-// Pure presentational; no state, no fetch, no framer-motion. Imported into
-// a "use client" boundary by assessment-client.
+// Pure presentational; no state, no fetch. The K-4 footer hosts the
+// thinking-pose mascot (slowest/smallest idle motion — it sits beside live
+// questions and must stay decorative; all motion lives inside Mascot).
+// G5-8 renders no mascot during questions — measured chrome, per the
+// tier-aware restraint above. Imported into a "use client" boundary by
+// assessment-client.
 
 import type { Tier } from "@/lib/tier/derive";
 import type { ProgressDisplay } from "@/lib/display/progress";
 import type { ClientQuestionImage } from "@/lib/questionPicker/types";
 
+import { mascotPoseFor } from "../lib/mascot";
+import { Mascot } from "./Mascot";
 import { QuestionImage } from "./QuestionImage";
 
 interface Props {
@@ -134,6 +140,14 @@ export function QuestionShell({
         <span className="text-sm font-medium text-sam-gray-dark">
           Read carefully!
         </span>
+        {/* In-flow at the footer's right edge — can never overlap the
+            answer UI, on any viewport. */}
+        <Mascot
+          pose={mascotPoseFor("running")}
+          tier="K_4"
+          size={44}
+          className="ml-auto"
+        />
       </footer>
     </div>
   );

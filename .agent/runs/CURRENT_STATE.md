@@ -4,7 +4,10 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-10 (PRs #16/#18/#20 attended-merged; PRs #21/#22/#23 open; origin head `d4743c7`).
+**As of:** 2026-06-10 later session (PRs #21/#22/#23/#24 attended-merged; origin head `cb57a84`; mascot lane `lane/assessment-mascot` in progress).
+**Session split:** CONVERSION Stage 4 / question-bank work runs in a SEPARATE session. This
+session must NOT touch `scripts/conversion/` or taxonomy migrations; coordinate via repo
+memory only.
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
 **Origin head:** `d4743c7` — reflects attended merges #16/#18/#20 since last snapshot.
@@ -17,8 +20,9 @@ added (default-off); ops runbook shipped; parent Sign-Out wired; dev-seed comple
 added; three-section report layout shipped. G1 LIFTED 2026-06-10 (S.A.M. founder granted
 permission to digitize entire test library). CONVERSION Stage 4 built (PR #23, worktree
 atlas-stage4). Content-id backfill built (PR #22, worktree atlas-backfill).
-**Verify baseline:** 604 tests / 44 files (Stage 4 worktree green); 0 type errors; 2 known
-lint warnings (no-img-element in profile-menu.tsx, no-page-custom-font in layout.tsx).
+**Verify baseline:** 644 tests / 47 files (lane/assessment-mascot, post-#22/#23 merges);
+0 type errors; 2 known lint warnings (no-img-element in profile-menu.tsx,
+no-page-custom-font in layout.tsx).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
@@ -37,9 +41,11 @@ lint warnings (no-img-element in profile-menu.tsx, no-page-custom-font in layout
 | Codex reachability docs | OPEN PR #17 — not merged | lane/codex-reachability-finding. `tools/relay/README.md` updated with 2026-06-05 reachability check results (NOT reachable — credential blocker). CI GREEN. |
 | Memory update | MERGED PR #18 | lane/memory-session-2026-06-05. Run-state memory update for 2026-06-05 session. Merged in origin head `d4743c7`. |
 | Marketing §2.4 diagnostic scrub | MERGED PR #20 | lane/marketing-diagnostic-scrub. Remaining rendered "diagnostic" claims → "assessment" (commit `e6d9515`). Merged in origin head `d4743c7`. |
-| Marketing §2.4 precision claim | OPEN PR #21 — not merged | lane/marketing-precision-claim. Removes unbacked "98% accuracy" claim; card heading "Diagnostic Precision" → "Misconception Mapping" (commits `e52258c`+`32f35d6`). Awaiting attended merge. |
-| Content-id backfill | OPEN PR #22 — not merged | lane/questions-content-id-backfill. Worktree `atlas-backfill` (commits `5b249f5`+`c6e1485`). Migration `20260610000000_backfill_question_content_ids.sql` + seed.sql mirror maps all 11 SAM-L2 questions to `content_id`. New drift test. Verify GREEN: 569 tests / 44 files. DONE-pending-merge. |
-| CONVERSION Stage 4 — DB load + L1–4 run | OPEN PR #23 — not merged | lane/conversion-stage4-load. Worktree `atlas-stage4`. Loader built (`40d32b3`+guards `903650a`) AND the full L1–4 run executed: 79 rows loaded (L1 12 / L2 22 / L3 20 / L4 25; 49 active, 30 inactive image-essential), all with content_id, in migration `20260610151306` + seed.sql marker block (commits `97bcf49`, `23da354`, `9b2db6c`, `8e71b08`). Parser fix `5c13070`, 429-retry `506936d`, skip-guards `a1685d6`. Verify GREEN: 630 tests / 45 files; CI verify-bar pass. DONE-pending-merge. |
+| Marketing §2.4 precision claim | MERGED PR #21 (`a3d7d46`) | lane/marketing-precision-claim. Removes unbacked "98% accuracy" claim; card heading "Diagnostic Precision" → "Misconception Mapping" (commits `e52258c`+`32f35d6`). §2.4 scrub now complete across PRs #16/#20/#21. |
+| Content-id backfill | MERGED PR #22 (`016357e`) | lane/questions-content-id-backfill. Worktree `atlas-backfill` (commits `5b249f5`+`c6e1485`). Migration `20260610000000_backfill_question_content_ids.sql` + seed.sql mirror maps all 11 SAM-L2 questions to `content_id`. New drift test. |
+| CONVERSION Stage 4 — DB load + L1–4 run | MERGED PR #23 (`1ebb01e`) | lane/conversion-stage4-load. Worktree `atlas-stage4`. Loader built (`40d32b3`+guards `903650a`) AND the full L1–4 run executed: 79 rows loaded (L1 12 / L2 22 / L3 20 / L4 25; 49 active, 30 inactive image-essential), all with content_id, in migration `20260610151306` + seed.sql marker block. Follow-on conversion work continues in a SEPARATE session. |
+| Memory session 2026-06-10 | MERGED PR #24 (`cb57a84`) | lane/memory-session-2026-06-10. Run-state snapshot. |
+| Assessment mascot | OPEN PR #34 — DONE-pending-merge | lane/assessment-mascot. Dachshund mascot (3 poses, `stitch/mascot/mascot1-3.png`, stable swap paths) wired into loading (waving) / K-4 question footer (thinking, in-flow) / completion (celebrating, both tiers). Motion policy in `lib/mascot.ts` (tested): K_4 lively, G5_8 still, reduced-motion still. No streak celebrations possible (correctness never reaches the child client by design). Verify GREEN 644/47. Awaiting attended merge after Vercel preview. |
 
 ## Sibling topics (now repo-tracked, not chat handovers)
 - **CONVERSION** — 5-stage CLI in `scripts/conversion/`. **L1–4 MVP run COMPLETE
@@ -59,15 +65,12 @@ lint warnings (no-img-element in profile-menu.tsx, no-page-custom-font in layout
   `atlas-memory` (this lane). Remove each after its PR merges.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. Open PRs needing Dimitri's attended merge (Vercel preview review):
-- **PR #17** (lane/codex-reachability-finding) — relay README reachability check. DONE-pending-merge.
-- **PR #21** (lane/marketing-precision-claim) — §2.4 98%-accuracy claim removal + "Misconception Mapping" card rename. DONE-pending-merge.
-- **PR #22** (lane/questions-content-id-backfill) — content_id backfill migration. DONE-pending-merge.
-- **PR #23** (lane/conversion-stage4-load) — CONVERSION Stage 4 DB load script. DONE-pending-merge.
+See `NEXT_ACTIONS.md`. PRs #17/#19/#21/#22/#23/#24 are merged (origin head `cb57a84`).
+In flight: **lane/assessment-mascot** (this lane — mascot integration + this memory sync).
 
 Founder actions (conversion run COMPLETE 2026-06-10 — these remain):
-1. Merge PRs #21, #22, #23, #24 (attended, after Vercel preview).
-2. After merging #22/#23: `supabase db reset`, complete one fresh dev assessment, confirm the report radar populates (see Radar acceptance below).
+1. ~~Merge PRs #21, #22, #23, #24~~ DONE (merged on origin).
+2. After the #22/#23 merges: `supabase db reset`, complete one fresh dev assessment, confirm the report radar populates (see Radar acceptance below).
 3. Curate per-question images for the 30 inactive image-essential questions (upload manifests in each worksheet's output folder); full-page renders must never ship (they leak neighboring questions).
 
 Radar acceptance (after PR #22 merges + `supabase db reset`): demo report radar still reads "not assessed" (seed has zero responses rows by design). Real acceptance = complete one fresh dev assessment, open its report, confirm radar populates. Reset output should show `sam-l2 total=11 mapped=11 unmapped=0`.
@@ -78,15 +81,16 @@ Radar acceptance (after PR #22 merges + `supabase db reset`): demo report radar 
 - **OPTIONAL (no gate; only if pilot needs it):** service-role report-narration regen script (`docs/ops-runbook.md` §3 KNOWN GAP).
 
 Housekeeping notes (non-blocking):
-- Main checkout has an uncommitted `CLAUDE.md` modification (older garbled copy with `\\_` artifacts). Founder to discard (`git checkout -- CLAUDE.md`) or explain.
-- Untracked `stitch/mascot/` in main checkout — left untouched.
+- Main checkout's uncommitted `CLAUDE.md` modification (older garbled copy with `\\_` artifacts) has been moved to a git stash ("premove CLAUDE.md working-copy edit") so lane branches can be switched; recover with `git stash list` / `git stash pop`, or drop the stash to discard. Founder call.
+- `stitch/mascot/` assets committed on lane/assessment-mascot (3 pose PNGs + 3 Stitch screen mockups).
 - `conversion.log` in PR #23 carries two committed `stage4 | synthetic-smoke.pdf` audit lines from smoke runs (harmless; flagged in PR).
 - Orchestration incident logged in `AGENTS.md` §11: background subagent Bash gating caused a Lane A "blocked" report; both lanes re-dispatched foreground; no work lost.
 
 ## External gates (business — not build)
 G1 S.A.M. license — LIFTED 2026-06-10 (founder granted permission to digitize entire
 library; see DECISIONS.md) · G2 franchisor pilot approval (separate; routing unconfirmed) ·
-G3 consent legal review before real families · G4 Anthropic minors (RESOLVED).
+G3 consent legal review — CLEARED 2026-06-10 (counsel approved the consent flow) ·
+G4 Anthropic minors (RESOLVED).
 
 ## Environment notes
 Dimitri runs `pnpm dev` + local Supabase. After checkout into the short path:

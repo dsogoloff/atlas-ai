@@ -13,9 +13,11 @@ import { useEffect, useReducer } from "react";
 
 import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
+import { mascotPoseFor } from "./lib/mascot";
 import { computeProgressDisplay } from "@/lib/display/progress";
 import type { Tier } from "@/lib/tier/derive";
 
+import { Mascot } from "./components/Mascot";
 import { QuestionShell } from "./components/QuestionShell";
 import { QuestionTimer } from "./components/QuestionTimer";
 import { CompletionScreen } from "./components/CompletionScreen";
@@ -103,7 +105,7 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
   }
 
   if (state.kind === "starting") {
-    return <Loading />;
+    return <Loading tier={tier} />;
   }
 
   if (state.kind === "completed") {
@@ -151,9 +153,17 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
   );
 }
 
-function Loading() {
+function Loading({ tier }: { tier: Tier }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sam-cream">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-sam-cream">
+      {/* Greeting beat — mascot waves while the session starts. K-4 gets
+          the entrance pop + idle bounce; G5-8 stays smaller and still. */}
+      <Mascot
+        pose={mascotPoseFor("starting")}
+        tier={tier}
+        size={tier === "K_4" ? 144 : 96}
+        entrance
+      />
       <div className="flex items-center gap-3 rounded-full border border-sam-gray-light bg-white px-6 py-3 shadow-sm">
         <span
           className="material-symbols-outlined animate-spin text-sam-teal"
