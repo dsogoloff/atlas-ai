@@ -393,7 +393,7 @@ describe("submitResponseHandler — happy path mid-session", () => {
     };
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence check
+        { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay responses (empty -> no questions read)
         { data: null, error: null }, // insert response
       ],
@@ -406,7 +406,10 @@ describe("submitResponseHandler — happy path mid-session", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // estimate update
       ],
-      question_access_log: [{ data: null, error: null }], // log insert
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served-question gate check
+        { data: null, error: null }, // log insert
+      ],
     });
 
     const result = await submitResponseHandler({
@@ -457,7 +460,7 @@ describe("submitResponseHandler — happy path terminating", () => {
     const p = priors(24);
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence
+        { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replay responses
         { data: null, error: null }, // insert
         { data: aggRows(25, 0), error: null }, // aggregation re-read
@@ -473,6 +476,7 @@ describe("submitResponseHandler — happy path terminating", () => {
         { data: null, error: null }, // close update
         { data: null, error: null }, // summary update
       ],
+      question_access_log: [{ data: { id: 1 }, error: null }], // served-question gate check
     });
 
     const result = await submitResponseHandler({
@@ -518,92 +522,49 @@ describe("submitResponseHandler — happy path terminating", () => {
   });
 });
 
-describe("submitResponseHandler — idempotent retry", () => {
-  it("non-terminal retry with outstanding question: returns it as next_question, NO new audit-log row", async () => {
-    // Scenario: original submit succeeded, picked next question, wrote
-    // log row for it, response sent — but the client retried before
-    // receiving the response. On retry, findOutstandingQuestion locates
-    // the already-served-but-unanswered question and we return it
-    // without re-running the picker or writing a duplicate log row.
-    const outstandingQ = {
-      id: "outstanding-q",
-      external_id: "EXT-OUT",
+// ===========================================================================
+// Served-question gate (security — external audit Lane 1)
+// ===========================================================================
+//
+// A submit may proceed ONLY when (1) a question_access_log row proves the
+// (session, question) was served to this session AND (2) no responses row
+// already exists for it. The served-question SELECT (question_access_log) and
+// the already-answered SELECT (responses, existence) run BEFORE any question
+// load / judge / classifier call.
+//
+// rlsHappy()'s session is the caller's own session — so these tests isolate
+// the served-question / already-answered checks from the auth/ownership/
+// consent chain, which is covered separately above.
+
+describe("submitResponseHandler — served-question gate", () => {
+  it("served + unanswered: handler proceeds (happy path holds)", async () => {
+    const nextPick = {
+      id: "next-q-gate",
+      external_id: "EXT-NEXT",
       strand: "operations_algorithms",
       level: "KA",
       difficulty: 0,
       format: "MULTIPLE_CHOICE",
-      content: { stem: "outstanding?", options: ["o", "p"] },
+      content: { stem: "next?", options: ["x", "y"] },
     };
     const svc = makeServiceClient({
-      responses: [
-        { data: { is_correct: true, time_flag: "NORMAL" }, error: null }, // existence hits
-        { data: [], error: null }, // replay responses (empty)
-        { data: [], error: null }, // findOutstanding responses read
-      ],
       question_access_log: [
-        // findOutstanding logs read — one outstanding row
-        {
-          data: [
-            {
-              question_id: outstandingQ.id,
-              created_at: "2026-05-07T10:00:00Z",
-            },
-          ],
-          error: null,
-        },
+        { data: { id: 1 }, error: null }, // served check — row present
+        { data: null, error: null }, // log insert for the next pick
+      ],
+      responses: [
+        { data: null, error: null }, // already-answered check — no row
+        { data: [], error: null }, // replay responses (empty)
+        { data: null, error: null }, // insert response
       ],
       questions: [
-        // findOutstanding materialises the outstanding row
-        { data: outstandingQ, error: null },
+        { data: QUESTION, error: null }, // initial question fetch
+        { data: [nextPick], error: null }, // picker
       ],
-      assessment_sessions: [],
-    });
-
-    const result = await submitResponseHandler({
-      request: makeRequest(),
-      rlsClient: makeRlsClient(rlsHappy()),
-      serviceClient: svc.client,
-      ip: null,
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.body.is_correct).toBe(true);
-    expect(result.body.time_flag).toBe("NORMAL");
-    expect(result.body.done).toBe(false);
-    expect(result.body.next_question?.id).toBe(outstandingQ.id);
-
-    // Critical: no new INSERT into responses or question_access_log.
-    // Compliance §8 — retransmissions don't count as new serves.
-    expect(svc.inserts).toHaveLength(0);
-    expect(svc.updates).toHaveLength(0);
-  });
-
-  it("non-terminal retry without outstanding row: re-runs picker and writes a fresh log", async () => {
-    // Scenario: original submit's response insert succeeded but the
-    // picker/log step crashed before logging. On retry, findOutstanding
-    // returns null, so the handler re-runs the picker and writes a
-    // fresh audit-log row.
-    const freshPick = {
-      id: "fresh-q",
-      external_id: "EXT-FRESH",
-      strand: "operations_algorithms",
-      level: "KA",
-      difficulty: 0,
-      format: "MULTIPLE_CHOICE",
-      content: { stem: "fresh?", options: ["m", "n"] },
-    };
-    const svc = makeServiceClient({
-      responses: [
-        { data: { is_correct: true, time_flag: "NORMAL" }, error: null }, // existence
-        { data: [], error: null }, // replay
-        { data: [], error: null }, // findOutstanding responses
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null }, // estimate update
       ],
-      question_access_log: [
-        { data: [], error: null }, // findOutstanding logs (empty)
-        { data: null, error: null }, // log insert for fresh pick
-      ],
-      questions: [{ data: [freshPick], error: null }], // picker
     });
 
     const result = await submitResponseHandler({
@@ -615,17 +576,72 @@ describe("submitResponseHandler — idempotent retry", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.body.next_question?.id).toBe(freshPick.id);
+    expect(result.body.done).toBe(false);
+    expect(result.body.next_question?.id).toBe(nextPick.id);
+    // The response was inserted and scoring ran.
+    expect(svc.inserts.some((i) => i.table === "responses")).toBe(true);
+    expect(mockClassify).toHaveBeenCalledTimes(1);
+  });
 
-    // No response insert (it already existed), but a fresh log insert.
-    expect(svc.inserts.some((i) => i.table === "responses")).toBe(false);
-    const logInsert = svc.inserts.find(
-      (i) => i.table === "question_access_log",
-    );
-    expect(logInsert?.row).toMatchObject({
-      question_id: freshPick.id,
-      ip_address: "203.0.113.7",
+  it("unserved valid question_id: rejects question_not_served (403); no insert, no scoring", async () => {
+    // Syntactically valid question_id with NO question_access_log row — a
+    // forged/guessed/probed id the caller was never served. Must reject
+    // before any question load / judge / classifier call.
+    const svc = makeServiceClient({
+      question_access_log: [
+        { data: null, error: null }, // served check — NO row
+      ],
     });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("question_not_served");
+    expect(result.error.status).toBe(403);
+
+    // No response accepted, no state mutated, and — critically — no
+    // scoring/classifier call happened.
+    expect(svc.inserts).toHaveLength(0);
+    expect(svc.updates).toHaveLength(0);
+    expect(mockClassify).not.toHaveBeenCalled();
+  });
+
+  it("already answered: rejects already_answered (409); no second insert, no scoring", async () => {
+    // question_access_log row present (served) BUT a responses row already
+    // exists for (session, question). Replaces the prior idempotent-retry
+    // return — see the SECURITY-OVER-IDEMPOTENCY DELTA in handler.ts.
+    const svc = makeServiceClient({
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served check — row present
+      ],
+      responses: [
+        { data: { id: "existing-response" }, error: null }, // already-answered
+      ],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("already_answered");
+    expect(result.error.status).toBe(409);
+
+    // No second response insert; no scoring.
+    expect(svc.inserts.some((i) => i.table === "responses")).toBe(false);
+    expect(svc.inserts).toHaveLength(0);
+    expect(svc.updates).toHaveLength(0);
+    expect(mockClassify).not.toHaveBeenCalled();
   });
 });
 
@@ -749,7 +765,8 @@ describe("submitResponseHandler — ownership failures", () => {
 describe("submitResponseHandler — session/question state errors", () => {
   it("returns 409 when a NEW submit hits a COMPLETED session", async () => {
     const svc = makeServiceClient({
-      responses: [{ data: null, error: null }], // existence (no row)
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
+      responses: [{ data: null, error: null }], // already-answered (no row)
       questions: [],
       assessment_sessions: [],
     });
@@ -770,7 +787,8 @@ describe("submitResponseHandler — session/question state errors", () => {
 
   it("returns 404 when the question is not found", async () => {
     const svc = makeServiceClient({
-      responses: [{ data: null, error: null }], // existence (no row)
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
+      responses: [{ data: null, error: null }], // already-answered (no row)
       questions: [{ data: null, error: null }], // question not found
       assessment_sessions: [],
     });
@@ -792,6 +810,7 @@ describe("submitResponseHandler — flagger errors", () => {
     // would fail the questions_num_operations_chk constraint, but the test
     // exercises the runtime safety path.
     const svc = makeServiceClient({
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
       responses: [{ data: null, error: null }],
       questions: [
         {
@@ -843,7 +862,10 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // estimate update
       ],
-      question_access_log: [{ data: null, error: null }], // log insert
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served check
+        { data: null, error: null }, // log insert
+      ],
     });
     const result = await submitResponseHandler({
       request: makeRequest({ time_ms: 500 }),
@@ -865,7 +887,7 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
     const p = priors(24);
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence
+        { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replay
         { data: null, error: null }, // insert
         { data: aggRows(24, 1), error: null }, // aggregation: 24 NORMAL + 1 INVALID
@@ -881,6 +903,7 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
         { data: null, error: null }, // close
         { data: null, error: null }, // summary
       ],
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
     });
     const result = await submitResponseHandler({
       request: makeRequest({ time_ms: 500 }),
@@ -915,7 +938,7 @@ describe("submitResponseHandler — bank exhausted mid-session", () => {
   it("closes the session with bank-exhausted, returns placement, NO audit-log row, NO next_question", async () => {
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence
+        { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay (empty)
         { data: null, error: null }, // insert response
         { data: aggRows(1, 0), error: null }, // close summary aggregation
@@ -931,7 +954,9 @@ describe("submitResponseHandler — bank exhausted mid-session", () => {
         { data: null, error: null }, // close UPDATE
         { data: null, error: null }, // summary UPDATE
       ],
-      question_access_log: [], // MUST NOT be written
+      // Only the served-question gate check reads here; NO log INSERT
+      // (no question was served on a bank-exhausted close).
+      question_access_log: [{ data: { id: 1 }, error: null }],
     });
 
     const result = await submitResponseHandler({
@@ -980,7 +1005,7 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
     };
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence check
+        { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay responses (empty)
         { data: null, error: null }, // insert response
       ],
@@ -994,7 +1019,10 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // current_estimate update
       ],
-      question_access_log: [{ data: null, error: null }],
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served-question gate check
+        { data: null, error: null }, // log insert (for served question)
+      ],
     });
 
     const result = await submitResponseHandler({
@@ -1017,7 +1045,7 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
   it("ALL strands exhausted across the loop → bank-exhausted termination, single close UPDATE", async () => {
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence
+        { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay
         { data: null, error: null }, // insert response
         { data: aggRows(1, 0), error: null }, // close summary aggregation
@@ -1039,6 +1067,7 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
         { data: null, error: null }, // close UPDATE
         { data: null, error: null }, // summary UPDATE
       ],
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
     });
 
     const result = await submitResponseHandler({
@@ -1086,7 +1115,7 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
     };
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence
+        { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay
         { data: null, error: null }, // insert response
       ],
@@ -1110,7 +1139,10 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null },
       ],
-      question_access_log: [{ data: null, error: null }],
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served-question gate check
+        { data: null, error: null }, // log insert
+      ],
     });
 
     const result = await submitResponseHandler({
@@ -1152,7 +1184,7 @@ describe("submitResponseHandler — classifier integration", () => {
     };
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existence check
+        { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay responses (empty)
         { data: null, error: null }, // insert response
       ],
@@ -1165,7 +1197,10 @@ describe("submitResponseHandler — classifier integration", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null }, // estimate update
       ],
-      question_access_log: [{ data: null, error: null }], // log insert
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served check
+        { data: null, error: null }, // log insert
+      ],
     });
 
     const result = await submitResponseHandler({
@@ -1251,7 +1286,10 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null },
       ],
-      question_access_log: [{ data: null, error: null }],
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served check
+        { data: null, error: null }, // log insert
+      ],
     });
 
     const result = await submitResponseHandler({
@@ -1289,7 +1327,10 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
         { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
         { data: null, error: null },
       ],
-      question_access_log: [{ data: null, error: null }],
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served check
+        { data: null, error: null }, // log insert
+      ],
     });
 
     const result = await submitResponseHandler({
@@ -1323,6 +1364,7 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
         { data: null, error: null },
         { data: null, error: null },
       ],
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
     });
 
     const result = await submitResponseHandler({
@@ -1365,7 +1407,7 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
     const p = priors(25);
     const svc = makeServiceClient({
       responses: [
-        { data: null, error: null }, // existing-response check
+        { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replayEngineState
         { data: null, error: null }, // response insert next()
         { data: [], error: null }, // replayStrandCounts (empty → {} )
@@ -1381,6 +1423,7 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
         { data: null, error: null },
         { data: null, error: null },
       ],
+      question_access_log: [{ data: { id: 1 }, error: null }], // served check
     });
 
     const result = await submitResponseHandler({

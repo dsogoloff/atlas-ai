@@ -95,6 +95,8 @@ export type SubmitErrorCode =
   | "consent_required"
   | "session_not_found"
   | "session_completed"
+  | "question_not_served"
+  | "already_answered"
   | "question_not_found"
   | "flagger_error"
   | "internal";
