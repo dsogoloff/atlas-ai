@@ -66,6 +66,7 @@ import type {
   EngineResponse,
   EngineState,
   GradeKey,
+  Strand,
 } from "@/lib/engine/types";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -192,4 +193,61 @@ export async function replayEngineState(
   }
 
   return state;
+}
+
+/**
+ * Per-strand served-item counts for a session — comprehensive-engine lane.
+ *
+ * Sibling to replayEngineState (NOT folded into its return shape, to avoid
+ * rippling the {state}→{state,strandCounts} change through ~6 production
+ * callers and ~10 test sites; the short path never needs counts). Used ONLY
+ * on the comprehensive branch of responseSubmit, where strand coverage drives
+ * the phase-1 floor and the per-strand stopping floor.
+ *
+ * Counts every answered response in the session, keyed by its question's
+ * strand. Same service-role / no-is_active-filter rationale as
+ * replayEngineState above (counts reflect what was actually served, even if a
+ * question was deactivated since).
+ */
+export async function replayStrandCounts(
+  supabase: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<Partial<Record<Strand, number>>> {
+  const { data: responseRows, error: respErr } = await supabase
+    .from("responses")
+    .select("question_id")
+    .eq("session_id", sessionId);
+
+  if (respErr) {
+    throw new Error(`[replay] strand-count responses read failed: ${respErr.message}`);
+  }
+
+  const responses = responseRows ?? [];
+  if (responses.length === 0) return {};
+
+  const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
+  const { data: questionRows, error: qErr } = await supabase
+    .from("questions")
+    .select("id, strand")
+    .in("id", questionIds);
+
+  if (qErr) {
+    throw new Error(`[replay] strand-count questions read failed: ${qErr.message}`);
+  }
+
+  const strandById = new Map(
+    (questionRows ?? []).map((q) => [q.id, q.strand] as const),
+  );
+
+  const counts: Partial<Record<Strand, number>> = {};
+  for (const row of responses) {
+    const strand = strandById.get(row.question_id);
+    if (!strand) {
+      throw new Error(
+        `[replay] response references missing question ${row.question_id}`,
+      );
+    }
+    counts[strand] = (counts[strand] ?? 0) + 1;
+  }
+  return counts;
 }

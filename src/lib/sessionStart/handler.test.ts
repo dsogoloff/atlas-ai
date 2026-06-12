@@ -219,14 +219,18 @@ const PARENT_OK: MockResult = {
   error: null,
 };
 const CHILD_OK: MockResult = {
-  data: { id: CHILD_ID },
+  // grade_level/birth_year are read by the comprehensive-engine tier
+  // derivation (deriveTier) on the comprehensive first-pick branch. null grade
+  // + a K-4-aged birth_year keeps short-path fixtures realistic (grade_level
+  // is nullable text; birth_year is NOT NULL in the schema).
+  data: { id: CHILD_ID, grade_level: null, birth_year: 2018 },
   error: null,
 };
 
 // Item #10 Phase 3 — child fixture with grade_level set, used by the
 // grade-aware-seeding describe block at the end of this file.
 const CHILD_GRADE_K: MockResult = {
-  data: { id: CHILD_ID, grade_level: "K" },
+  data: { id: CHILD_ID, grade_level: "K", birth_year: 2018 },
   error: null,
 };
 
@@ -435,6 +439,36 @@ describe("sessionStartHandler / consent gate (per-child / Model B)", () => {
     if (!result.ok) return;
     expect(result.status).toBe(200);
     expect(result.body.session_id).toBe(SESSION_ID);
+  });
+
+  it("comprehensive request + pilot flag ON still fails closed with 403 and creates no session when consent is missing", async () => {
+    // Enabling the comprehensive path must not open a consent bypass: the
+    // gate runs unconditionally, BEFORE test_type resolution and the session
+    // insert. With the pilot flag on and comprehensive requested but no valid
+    // consent, the handler refuses exactly as it does for a short request.
+    vi.stubEnv("ENABLE_COMPREHENSIVE_PILOT", "true");
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_OK,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: [], error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      request: { child_id: CHILD_ID, comprehensive: true },
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "consent_required", status: 403 },
+    });
+    expect(svc.inserts.some((i) => i.table === "assessment_sessions")).toBe(
+      false,
+    );
   });
 
   it("returns 500 when the consent lookup itself errors (does not fail open)", async () => {
