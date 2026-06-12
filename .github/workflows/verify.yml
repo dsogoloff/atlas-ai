@@ -53,3 +53,9 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      # Building also validates the app compiles. No secret is required: routes are
+      # server-rendered on demand and narration/classifier are flag-gated/fail-soft,
+      # so no live ANTHROPIC_API_KEY (or other secret) is read at build time.
+      - name: Build
+        run: pnpm build
