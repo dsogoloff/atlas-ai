@@ -4,13 +4,15 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-11 session (PRs #41/#42/#43 opened, awaiting attended merge; ATLAS-ASSESSMENT head confirmed 864 tests / 52 files all-green this session).
+**As of:** 2026-06-12 session (PRs #50/#51/#52/#53 opened, awaiting attended merge;
+ATLAS-ASSESSMENT head b9b0662 confirmed 900 tests / 55 files all-green after re-landing
+stranded PRs #42/#46 via PR #49 merge).
 **Session split:** CONVERSION Stage 4 / question-bank work runs in a SEPARATE session. This
 session must NOT touch `scripts/conversion/` or taxonomy migrations; coordinate via repo
 memory only.
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `86f8cad` (lane/verify-baseline-count — see recent commits).
+**Origin head:** `b9b0662` (PR #49 cherry-pick re-land of #42/#46).
 ATLAS-ASSESSMENT is protected by the "Branch Protection" GitHub ruleset (scope
 `~DEFAULT_BRANCH`; requires PR + the `verify-bar` status check; no direct pushes). All work
 goes via `lane/*` branches opened as PRs; Dimitri merges attended after Vercel preview
@@ -20,9 +22,11 @@ added (default-off); ops runbook shipped; parent Sign-Out wired; dev-seed comple
 added; three-section report layout shipped. G1 LIFTED 2026-06-10 (S.A.M. founder granted
 permission to digitize entire test library). CONVERSION Stage 4 built (PR #23, worktree
 atlas-stage4). Content-id backfill built (PR #22, worktree atlas-backfill).
-**Verify baseline:** 864 tests / 52 files (ATLAS-ASSESSMENT head, confirmed 2026-06-11);
+Comprehensive-test instrumentation + consent regression test (PRs #41/#42) and comprehensive
+engine (PR #46) are ALL on ATLAS-ASSESSMENT via PR #49 cherry-pick re-land.
+**Verify baseline:** 900 tests / 55 files (ATLAS-ASSESSMENT head b9b0662, confirmed 2026-06-12);
 0 type errors; 2 known lint warnings (no-img-element in profile-menu.tsx,
-no-page-custom-font in layout.tsx). (Earlier snapshots of 644/47 and 554 were pre-merge counts; CLAUDE.md still shows an older 554 — treat the live pnpm test count as authoritative.)
+no-page-custom-font in layout.tsx). (Earlier snapshots: 864/52 was pre-#49; 554 was pre-merge era.)
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
@@ -30,9 +34,13 @@ no-page-custom-font in layout.tsx). (Earlier snapshots of 644/47 and 554 were pr
 | Consent (per-child + gate + classifier-live) | MERGED | `4dc9dc1`+`0a99f76`. Gate server-side, per `child_id`, fails closed. Classifier live in code; needs Vercel env. |
 | Instructor portal | MERGED | `48c7378` (merge `a8a988c`). Roster, diagnostic view, notes, response-derived item review. Raw question content gated. |
 | Analytics + satisfaction | MERGED + PUSHED | `a16fd15` (merge `71205e5`). Event store, funnel, parent satisfaction island. 2 report-resident events unwired. |
-| Comprehensive-test instrumentation (M2 KPI) | OPEN PR #41 | lane/comprehensive-instructor-analytics. Instrument-only: test_type discriminator, 6 new analytics_event_name enum values, new assessment_test_type enum + assessment_sessions.test_type column (default 'short'), instructor_usefulness table + RLS, all comprehensive_* / short_* / instructor_* events wired. ADAPTIVE ENGINE PARAMS UNCHANGED — TODO(comprehensive-engine) left for the separate comprehensive-assembly session. Migration 20260611090000. Hand-edited database.types.ts to match DDL. Verify GREEN: 882 tests / 54 files; tsc clean; lint 0 errors (2 pre-existing warnings). Codex skipped (relay credential-blocked). Awaiting Dimitri's attended merge + supabase db reset. |
-| Consent gate regression — comprehensive (stacked) | OPEN PR #42 (STACKED on #41) | lane/consent-gate-comprehensive. Regression test only: dual server-side consent gate (sessionStart + responseSubmit) fails closed for a comprehensive session exactly as for short. MERGE #41 FIRST — GitHub auto-retargets to ATLAS-ASSESSMENT once #41 merges. Verify GREEN: 884 tests / 54 files. |
-| Ops runbook gaps | OPEN PR #43 | lane/ops-runbook-gaps. Docs only (docs/ops-runbook.md). §3 rewritten: stuck/abandoned sessions + report regen (Option A reset-by-delete, Option B force-close). §4 consent revoke: companion vpc_audit_log insert + revoke-all-children variant. §7: new "child can't start a new assessment" scenario. Narration-regen KNOWN GAP remains (needs service-role script, not SQL) — documented as optional follow-on. |
+| Comprehensive-test instrumentation + engine (M2 KPI) | MERGED to ATLAS via PR #49 | Originally PRs #41/#42/#46. #41 (instrumentation) and #46 (engine) had merged into their stacked parent lane branch and were stranded off ATLAS. Re-landed 2026-06-12 via cherry-pick PR #49 (commits 7e7c37e + 2dad26c). Includes: test_type discriminator, 6 analytics enum values, assessment_test_type enum, instructor_usefulness table + RLS, all comprehensive_*/short_*/instructor_* events, per-strand coverage summary. Conflict resolved: instructor student page import union (#47 strand labels + #46 coverage summary coexist). ATLAS head b9b0662. Verify 900/55. Migration 20260611090000 still requires `supabase db reset`. |
+| Consent gate regression — comprehensive | MERGED to ATLAS via PR #49 | Originally PR #42. Cherry-picked in PR #49. Asserts dual server-side consent gate fails closed for comprehensive session. |
+| Ops runbook gaps | OPEN PR #43 | lane/ops-runbook-gaps. Docs only (docs/ops-runbook.md). §3 rewritten: stuck/abandoned sessions + Option A reset-by-delete / Option B force-close; §4 consent revoke + vpc_audit_log insert + revoke-all-children variant; §7 new scenario. Narration-regen KNOWN GAP documented as optional follow-on. Awaiting attended merge (no supabase db reset needed). |
+| Served-question gate (security) | OPEN PR #50 | lane/served-question-gate, base ATLAS. responseSubmit requires question_access_log row for (tenant,session,question) + no existing response before scoring; else 403 question_not_served. Removes silent idempotent-retry; already_answered hard-rejected (409). Verify 901/55. Codex skipped. |
+| Duplicate-response constraint (security) | OPEN PR #51 (STACKED on #50 — MERGE #50 FIRST) | lane/duplicate-response-constraint. Migration 20260612090000_responses_unique_session_question.sql: unique(session_id,question_id) on responses; insert conflict-safe (23505 → idempotent return). Seed clean (no violations). Verify 902/55. |
+| AI data minimization (security) | OPEN PR #52 | lane/ai-data-minimization, base ATLAS, independent. TEXT_ENTRY math-safe sanitizer (allowlist, max 40 — PII never reaches Haiku, fail-soft method:'none'); narration sends firstName only; .env.example MISCONCEPTION_CLASSIFIER_LIVE default → false. Voice-locked Step-4 SYSTEM prompt TEXT unchanged. Verify 913/56. |
+| Next.js upgrade + CI build step (security) | OPEN PR #53 | lane/next-upgrade-ci, base ATLAS, independent. next + eslint-config-next 16.2.4→16.2.9 (exact pins; lockfile regenerated); 'pnpm build' step added to verify.yml. 3 MODERATE transitive advisories (no high/critical). Verify 900/55 + build GREEN. |
 | Comprehensive-test assembly | NOT STARTED | Config (engine reparameterization — item cap / confidence stop / routing depth); deferred to SEPARATE comprehensive-assembly session by decision 2026-06-11. Gated on question bank. |
 | Admin/support tooling | DONE | Ops runbook shipped (`5709c13`); admin UI deferred by decision 2026-05-30. Stuck-session operator gap now closed in PR #43. OPTIONAL follow-on: service-role report-narration regen script (only if pilot needs it; documented in ops-runbook §3). |
 | Feature flags | MERGED | 11 §12 rollout flags, all default-off, env-var mechanism; `ROLLOUT_FLAGS` registry; new test pins invariant. Fix `efccf4f`, merge `a9d45ba`. |
@@ -68,14 +76,20 @@ no-page-custom-font in layout.tsx). (Earlier snapshots of 644/47 and 554 were pr
   `atlas-memory` (this lane). Remove each after its PR merges.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. Three PRs opened 2026-06-11 and awaiting attended merge.
+See `NEXT_ACTIONS.md`. Four security PRs opened 2026-06-12 await attended merge.
 
-Founder actions (2026-06-11):
-1. Merge PR #41 (lane/comprehensive-instructor-analytics) after Vercel preview review.
-2. After #41 merges: `supabase db reset` to apply migration 20260611090000; confirm the instructor usefulness card and analytics events in the Supabase dashboard.
-3. Merge PR #43 (lane/ops-runbook-gaps — docs only; no DB; can merge in any order relative to #41).
-4. AFTER #41 merges: merge PR #42 (lane/consent-gate-comprehensive; stacked — GitHub auto-retargets base to ATLAS-ASSESSMENT once #41 is merged).
-5. Curate per-question images for the 30 inactive image-essential questions (upload manifests in each worksheet's output folder); full-page renders must never ship.
+Founder actions (2026-06-12):
+1. Merge PR #50 (lane/served-question-gate) after Vercel preview review.
+2. Merge PR #51 (lane/duplicate-response-constraint — STACKED on #50, merge AFTER #50).
+   After both merge: run `supabase db reset` to apply migration 20260612090000_responses_unique_session_question.
+3. Merge PR #52 (lane/ai-data-minimization) — independent, any order.
+4. Merge PR #53 (lane/next-upgrade-ci) — independent, any order.
+5. After ALL four security PRs merge: run full verify + report final test count.
+6. Merge PR #43 (lane/ops-runbook-gaps — docs only; no DB; no supabase db reset needed).
+7. Run `supabase db reset` (also applies migration 20260611090000 from comprehensive-instrumentation,
+   now on ATLAS via PR #49) and confirm instructor usefulness card + analytics events.
+8. Curate per-question images for the 30+ inactive image-essential questions (upload manifests
+   in each worksheet's output folder); full-page renders must never ship.
 
 - **RESOLVED (was parked):** the 5 marketing "diagnostic" occurrences — merged PR #20 scrubbed the remaining rendered "diagnostic" strings; open PR #21 renames the "Diagnostic Precision" card (line 170) and removes the 98% claim.
 - **PARKED — needs Dimitri action:** Codex CLI auth (`codex login` or set `OPENAI_API_KEY` on this box) to unblock automated relay + `.mcp.json`.
@@ -83,6 +97,11 @@ Founder actions (2026-06-11):
 - **OPTIONAL (no gate; only if pilot needs it):** service-role report-narration regen script (`docs/ops-runbook.md` §3 KNOWN GAP — now documented as such in PR #43; the operator stuck-session gap is closed; the narration-regen follow-on remains open).
 
 Housekeeping notes (non-blocking):
+- Stale fully-merged lane branches safe to delete on origin: `lane/comprehensive-instructor-analytics`,
+  `lane/consent-gate-comprehensive`, `lane/comprehensive-engine` (all content is on ATLAS via PR #49).
+  Also: the closed PR #48 reland branch. Dangling memory commit 8efad71 on
+  `lane/memory-session-2026-06-11` (PR #44 closed before it merged) is superseded by this session's
+  record — that branch can be deleted.
 - Main checkout's uncommitted `CLAUDE.md` modification (older garbled copy with `\\_` artifacts) has been moved to a git stash ("premove CLAUDE.md working-copy edit") so lane branches can be switched; recover with `git stash list` / `git stash pop`, or drop the stash to discard. Founder call.
 - `stitch/mascot/` assets committed on lane/assessment-mascot (3 pose PNGs + 3 Stitch screen mockups).
 - `conversion.log` in PR #23 carries two committed `stage4 | synthetic-smoke.pdf` audit lines from smoke runs (harmless; flagged in PR).
