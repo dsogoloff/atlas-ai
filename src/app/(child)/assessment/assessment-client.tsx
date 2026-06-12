@@ -9,7 +9,7 @@
 // header for the rationale (compiler-lint constraints around refs and
 // purity in render).
 
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
@@ -23,22 +23,43 @@ import { QuestionTimer } from "./components/QuestionTimer";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { ResumeBanner } from "./components/ResumeBanner";
 import { ErrorPanel } from "./components/ErrorPanel";
+import { DevTestModeChooser } from "./components/DevTestModeChooser";
 
 interface Props {
   childId: string;
   childName: string;
   tier: Tier;
+  /** DEV-ONLY. True iff ENABLE_COMPREHENSIVE_PILOT is on (read server-side in
+   *  page.tsx). When false (always, in prod) the session auto-starts a SHORT
+   *  test with no extra UI — the default path is unchanged. When true, the
+   *  pre-start DevTestModeChooser gates the auto-start so QA can pick the test
+   *  type. The server re-checks the same flag, so this is convenience UI only. */
+  comprehensivePilotEnabled?: boolean;
 }
 
-export function AssessmentClient({ childId, childName, tier }: Props) {
+export function AssessmentClient({
+  childId,
+  childName,
+  tier,
+  comprehensivePilotEnabled = false,
+}: Props) {
   const [state, dispatch] = useReducer(reduce, initialState);
 
-  // Effect: startSession on every entry into 'starting'.
+  // Pre-start gate. Initialised `true` when the pilot flag is OFF, so the
+  // start effect fires immediately for a SHORT test (unchanged default path).
+  // When the flag is ON, it stays `false` until the operator clicks Start in
+  // the chooser, holding back the auto-start.
+  const [startConfirmed, setStartConfirmed] = useState(
+    !comprehensivePilotEnabled,
+  );
+  const [comprehensive, setComprehensive] = useState(false);
+
+  // Effect: startSession on every entry into 'starting' (once confirmed).
   const isStarting = state.kind === "starting";
   useEffect(() => {
-    if (!isStarting) return;
+    if (!isStarting || !startConfirmed) return;
     let cancelled = false;
-    void startSession(childId).then((result) => {
+    void startSession(childId, comprehensive).then((result) => {
       if (cancelled) return;
       if (result.ok) {
         dispatch(
@@ -53,7 +74,7 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [isStarting, childId]);
+  }, [isStarting, startConfirmed, childId, comprehensive]);
 
   // Effect: submitResponse when (running, submitting) with pending args.
   // The reducer creates a fresh `pending` object on each SUBMIT and on
@@ -105,6 +126,18 @@ export function AssessmentClient({ childId, childName, tier }: Props) {
   }
 
   if (state.kind === "starting") {
+    // DEV-ONLY: flag on and not yet started → let QA pick the test type.
+    // Never reached in production (flag off → startConfirmed true at init).
+    if (comprehensivePilotEnabled && !startConfirmed) {
+      return (
+        <DevTestModeChooser
+          tier={tier}
+          comprehensive={comprehensive}
+          onChange={setComprehensive}
+          onStart={() => setStartConfirmed(true)}
+        />
+      );
+    }
     return <Loading tier={tier} />;
   }
 

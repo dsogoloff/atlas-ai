@@ -20,6 +20,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { deriveTier } from "@/lib/tier/derive";
+import { isComprehensivePilotEnabled } from "@/lib/env";
 
 import { AssessmentClient } from "./assessment-client";
 import { ErrorPanel } from "./components/ErrorPanel";
@@ -73,11 +74,15 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
     birth_year: child.birth_year,
   });
 
+  // DEV-ONLY: when the comprehensive pilot flag is on, the client shows a
+  // pre-start chooser so QA can pick short vs comprehensive. Off in prod, so
+  // the client auto-starts the short test unchanged.
   return (
     <AssessmentClient
       childId={childId}
       childName={child.name}
       tier={tier}
+      comprehensivePilotEnabled={isComprehensivePilotEnabled()}
     />
   );
 }

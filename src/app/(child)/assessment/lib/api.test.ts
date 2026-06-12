@@ -61,16 +61,25 @@ const submitBodyDone: SubmitResponseBody = {
   termination_reason: "confidence-threshold-met",
 };
 
-function mockFetchOnce(status: number, body: unknown): void {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async () =>
-      new Response(JSON.stringify(body), {
-        status,
-        headers: { "content-type": "application/json" },
-      }),
-    ),
+function mockFetchOnce(status: number, body: unknown) {
+  const fetchMock = vi.fn(async () =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { "content-type": "application/json" },
+    }),
   );
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+/** Parsed JSON body of the first fetch call recorded by a mock. The mock fn is
+ *  declared param-less (it ignores its args), so the recorded call is cast to
+ *  the real fetch signature to read the request init. */
+function firstRequestBody(
+  fetchMock: ReturnType<typeof mockFetchOnce>,
+): Record<string, unknown> {
+  const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+  return JSON.parse(init.body as string) as Record<string, unknown>;
 }
 
 function mockFetchThrows(): void {
@@ -166,6 +175,29 @@ describe("startSession", () => {
     const r = await startSession("child-id");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.kind).toBe(kind);
+  });
+
+  it("default (short): body omits comprehensive", async () => {
+    const fetchMock = mockFetchOnce(200, startBody);
+    await startSession("child-id");
+    const body = firstRequestBody(fetchMock);
+    expect(body).toEqual({ child_id: "child-id" });
+    expect(body.comprehensive).toBeUndefined();
+  });
+
+  it("comprehensive=true: body carries comprehensive:true", async () => {
+    const fetchMock = mockFetchOnce(200, startBody);
+    await startSession("child-id", true);
+    expect(firstRequestBody(fetchMock)).toEqual({
+      child_id: "child-id",
+      comprehensive: true,
+    });
+  });
+
+  it("comprehensive=false: body omits comprehensive (no false flag on the wire)", async () => {
+    const fetchMock = mockFetchOnce(200, startBody);
+    await startSession("child-id", false);
+    expect(firstRequestBody(fetchMock)).toEqual({ child_id: "child-id" });
   });
 
   it("network failure → kind: network", async () => {
