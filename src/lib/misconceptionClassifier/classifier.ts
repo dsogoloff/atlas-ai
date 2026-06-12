@@ -22,6 +22,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { extractFromContent } from "./distractorMap";
 import { callHaiku } from "./llmClient";
 import { PROMPT_VERSION } from "./prompt";
+import { isMathSafeAnswer } from "./sanitizer";
 import { loadTaxonomy } from "./taxonomy";
 import type { ClassifierInput, ClassifierOutput } from "./types";
 
@@ -57,6 +58,18 @@ export async function classify(
     }
     // Fall through — content has no map, or the answer didn't match
     // a tagged distractor. Haiku is the catch-all.
+  }
+
+  // Data-minimization gate (audit Lane 3): for free-text TEXT_ENTRY answers,
+  // refuse to send anything that is not a math-shaped answer to the model.
+  // A free-text answer that looks like a NAME or EMAIL (e.g. "John Smith",
+  // "kid@example.com") must NEVER reach the Anthropic prompt. Non-conforming
+  // input skips the LLM entirely and returns the same "no misconception"
+  // shape the router uses elsewhere (fail-soft, no API call).
+  // MULTIPLE_CHOICE / NUMERIC_ENTRY answers are an option index or a numeric
+  // value, not free text, so they keep their existing path.
+  if (input.format === "TEXT_ENTRY" && !isMathSafeAnswer(input.answerGiven)) {
+    return { codes: [], method: "none", version: null };
   }
 
   // Haiku branch (NE / TE, or MC fallback). Wrap in try/catch so any failure
