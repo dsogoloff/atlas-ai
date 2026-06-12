@@ -54,7 +54,12 @@
 //       'bank-exhausted' termination reason and return placement
 //       instead of next_question.
 //
-// Pragmatic, NOT transactional. Partial-failure modes:
+// Pragmatic, NOT transactional. Partial-failure modes (NOTE: the (b)→(d)
+// and (c1)→(c2) recovery-on-retry described below was the pre-Lane-1
+// idempotent-retry behaviour; Lane 1's served-question gate now rejects an
+// already-answered submit instead of replaying, so these crashed-mid-write
+// states recover via the out-of-band path, not a client retry — see the
+// "Served-question gate" section and step 3.6):
 //
 //   * Failure between (a) and (b): response is in DB; current_estimate is
 //     stale. Acceptable — current_estimate is a cached projection of the
@@ -78,24 +83,27 @@
 //     accurate (one row per actual serve).
 //
 // =============================================================================
-// Idempotent retry semantics
+// Served-question gate + idempotency (security — external audit Lane 1)
 // =============================================================================
 //
-// On retry of an already-submitted (session, question), the existing-
-// response branch returns the SAME wire shape the original successful
-// call would have. Specifically, for the non-terminal case:
+// Before any scoring, a submit must clear two service-role checks (step 3.6):
 //
-//   * findOutstandingQuestion locates the question the original call
-//     already picked + audit-logged (its log row has no matching response
-//     yet). We return that as next_question with NO new log row.
-//   * If no outstanding row exists (the original call crashed between (b)
-//     and (d) before logging), we re-run the picker and write a fresh
-//     audit log. Per compliance.md §8 every actual serve gets exactly
-//     one log row; a network retry of a successful response is NOT a
-//     new serve.
+//   (1) question_access_log has a row for (tenant, session, question) — the
+//       question was actually SERVED to this session. A valid-but-unserved
+//       (forged/guessed/probed) question_id is rejected `question_not_served`
+//       (403) with no question load / judge / classifier call.
+//   (2) responses has NO row for (session, question) — not already answered.
+//       An already-answered submit is rejected `already_answered` (409).
 //
-// This is "Option A" from the design memo — idempotent on the wire,
-// audit-log-accurate, one extra cheap query per retry.
+// SECURITY-OVER-IDEMPOTENCY DELTA (Lane 1): the previous behaviour replayed
+// state on a duplicate submit and returned the SAME wire shape the original
+// call produced (next_question / placement) with no re-insert — "Option A",
+// idempotent on the wire. That return path is REMOVED: an already-answered
+// (session, question) now hard-rejects with `already_answered`. The audit
+// found the silent idempotent return masked replays of a question that was
+// never legitimately served and made the served-question requirement
+// unenforceable. Lane 2 (stacked) converts the hard reject into a conflict-
+// safe deterministic return and adds UNIQUE(session_id, question_id).
 //
 // =============================================================================
 // Concurrency
@@ -149,7 +157,6 @@ import {
 } from "@/lib/questionPicker/picker";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
-import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import {
   aggregateSessionFlags,
@@ -331,13 +338,59 @@ export async function submitResponseHandler({
   }
 
   // ---------------------------------------------------------------------------
-  // 4. Idempotency — has this (session, question) already been submitted?
-  //    Checked BEFORE the "session completed" guard so a retry can recover
-  //    from the (c1)→(c2) partial-failure mode documented above.
+  // 3.6 Served-question gate (security — external audit Lane 1).
+  //
+  // A submit may proceed ONLY when BOTH hold:
+  //   (1) this exact (session, question) was actually SERVED to this session
+  //       — i.e. a question_access_log row exists for it. Without this, a
+  //       caller who passes the auth/ownership/consent chain (their own
+  //       session) could still submit a forged/guessed/probed question_id
+  //       that was never picked for them, scoring an arbitrary bank item
+  //       (and triggering an LLM/classifier call) on a question they were
+  //       never shown.
+  //   (2) it has NOT already been answered — no responses row exists for it.
+  //
+  // Both reads are service-role (question_access_log + responses are not
+  // client-readable). Scoped by tenant_id where the table carries it. Run
+  // BEFORE loading question content / judging / scoring, so an unserved or
+  // already-answered submit does ZERO scoring work and makes no classifier
+  // call. Fail closed (500) on a DB error.
+  //
+  // SECURITY-OVER-IDEMPOTENCY DELTA: this supersedes the prior idempotent-
+  // retry behaviour for the already-answered case. Previously a duplicate
+  // submit of an already-answered (session, question) replayed state and
+  // returned the SAME wire shape as the first call (next_question /
+  // placement) without re-inserting. That return path is removed here: an
+  // already-answered submit now hard-rejects with `already_answered` (409).
+  // Lane 2 (stacked) converts this into a conflict-safe deterministic
+  // return + adds the UNIQUE(session_id, question_id) constraint.
   // ---------------------------------------------------------------------------
+  const { data: servedLog, error: servedErr } = await serviceClient
+    .from("question_access_log")
+    .select("id")
+    .eq("tenant_id", parent.tenant_id)
+    .eq("session_id", request.session_id)
+    .eq("question_id", request.question_id)
+    .maybeSingle();
+
+  if (servedErr) {
+    return fail(
+      "internal",
+      500,
+      `served-question check failed: ${servedErr.message}`,
+    );
+  }
+  if (!servedLog) {
+    return fail(
+      "question_not_served",
+      403,
+      "question was not served to this session",
+    );
+  }
+
   const { data: existing, error: existingErr } = await serviceClient
     .from("responses")
-    .select("is_correct, time_flag")
+    .select("id")
     .eq("session_id", request.session_id)
     .eq("question_id", request.question_id)
     .maybeSingle();
@@ -349,99 +402,12 @@ export async function submitResponseHandler({
       `existing-response check failed: ${existingErr.message}`,
     );
   }
-
   if (existing) {
-    // Replay reflects the existing row, so the resulting state IS the
-    // post-submit state. Recompute done + next/placement so a retry
-    // returns the same shape as the first call.
-    const state = await replayEngineState(serviceClient, request.session_id);
-    const term = await decideTermination(
-      serviceClient,
-      request.session_id,
-      state,
-      emptyBankStrands,
-      comprehensive,
+    return fail(
+      "already_answered",
+      409,
+      "this question has already been answered for this session",
     );
-
-    if (term.done) {
-      return success({
-        is_correct: existing.is_correct,
-        time_flag: existing.time_flag,
-        done: true,
-        response_count: state.responseCount,
-        placement: toPlacementEstimateJson(placementEstimate(state)),
-        termination_reason: toWireReason(term.reason),
-      });
-    }
-
-    // Non-terminal retry: prefer the outstanding question (already
-    // picked and logged by the original call) over re-picking. See
-    // "Idempotent retry semantics" in the file header.
-    const outstanding = await findOutstandingQuestion(
-      serviceClient,
-      request.session_id,
-    );
-    const router = await buildRouter(
-      serviceClient,
-      request.session_id,
-      comprehensive,
-    );
-    if (outstanding) {
-      // next_request for the outstanding-question case is the engine's
-      // current ask, excluding empty-bank strands. Reaching null here
-      // would mean every strand is empty AND term.done was false — a
-      // contradiction (shouldTerminate would have fired bank-exhausted).
-      // Defensive 500 if it ever does.
-      const outstandingReq = router(state, emptyBankStrands);
-      if (outstandingReq === null) {
-        return fail("internal", 500, "next_request not computable on outstanding");
-      }
-      return success({
-        is_correct: existing.is_correct,
-        time_flag: existing.time_flag,
-        done: false,
-        response_count: state.responseCount,
-        next_request: toNextRequestJson(outstandingReq),
-        next_question: await serveQuestion(serviceClient, outstanding),
-      });
-    }
-
-    // No outstanding row — the original call crashed between (b) and
-    // (d). Fall through to the same pick-and-log path as a fresh
-    // non-terminal submit.
-    const retryPick = await pickAndMaybeClose(
-      serviceClient,
-      {
-        sessionId: request.session_id,
-        tenantId: parent.tenant_id,
-        childId: session.child_id,
-        ip,
-      },
-      state,
-      emptyBankStrands,
-      router,
-    );
-    if (retryPick.kind === "error") {
-      return fail("internal", 500, retryPick.message);
-    }
-    if (retryPick.kind === "exhausted") {
-      return success({
-        is_correct: existing.is_correct,
-        time_flag: existing.time_flag,
-        done: true,
-        response_count: state.responseCount,
-        placement: toPlacementEstimateJson(placementEstimate(state)),
-        termination_reason: "bank-exhausted",
-      });
-    }
-    return success({
-      is_correct: existing.is_correct,
-      time_flag: existing.time_flag,
-      done: false,
-      response_count: state.responseCount,
-      next_request: toNextRequestJson(retryPick.request),
-      next_question: await serveQuestion(serviceClient, retryPick.question),
-    });
   }
 
   // ---------------------------------------------------------------------------
