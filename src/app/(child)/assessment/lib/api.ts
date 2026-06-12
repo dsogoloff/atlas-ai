@@ -65,13 +65,22 @@ export interface SubmitArgs {
   timeMs: number;
 }
 
-export async function startSession(childId: string): Promise<StartResult> {
+export async function startSession(
+  childId: string,
+  comprehensive = false,
+): Promise<StartResult> {
   let res: Response;
   try {
     res = await fetch("/api/assess/start", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ child_id: childId }),
+      // `comprehensive` is sent only when explicitly opted in (the dev-only
+      // chooser). The server still double-gates on ENABLE_COMPREHENSIVE_PILOT
+      // and ignores the flag in production, so a forged `true` can never
+      // start a comprehensive session there.
+      body: JSON.stringify(
+        comprehensive ? { child_id: childId, comprehensive: true } : { child_id: childId },
+      ),
     });
   } catch {
     return { ok: false, error: { kind: "network" } };
