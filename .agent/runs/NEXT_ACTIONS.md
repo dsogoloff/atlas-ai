@@ -128,35 +128,28 @@
       insert + revoke-all-children variant; §7 new scenario. Narration-regen KNOWN GAP
       documented as optional code follow-on.
 
-## 3c. Security remediation lanes (external audit) — 2026-06-12
+## 3c. Security remediation lanes (external audit) — 2026-06-12 — ALL MERGED
 
-Merge order: **#50 then #51** (stacked); #52 and #53 are independent (any order).
-After ALL four merge: founder runs `supabase db reset` (applies migration 20260612090000),
-then full verify + report final test count.
+All four security lanes are merged to ATLAS-ASSESSMENT (head 970698e). `supabase db reset`
+run (applies 20260612090000 + 20260611090000). Verify baseline 915/56/build GREEN.
 
-- [ ] **OPEN PR #50 — lane/served-question-gate (base ATLAS).**
-      responseSubmit now requires a question_access_log row for (tenant,session,question)
-      AND no existing response before scoring; else 403 question_not_served. Removes silent
-      idempotent-retry; already_answered is hard 409. Verify 901/55. Codex skipped.
-      **Dimitri: merge first in the security sequence.**
+- [x] **MERGED PR #50 (ea53da5) — lane/served-question-gate.** responseSubmit requires
+      question_access_log row for (tenant,session,question) AND no existing response; else 403
+      question_not_served. already_answered is hard 409.
 
-- [ ] **OPEN PR #51 — lane/duplicate-response-constraint (STACKED on #50 — MERGE #50 FIRST).**
-      Migration 20260612090000_responses_unique_session_question.sql: unique(session_id,question_id)
-      on responses; insert conflict-safe (23505 detection) → deterministic idempotent return
-      (race-safe). Converts #50's already_answered 409 into a race-safe response. Seed clean.
-      Verify 902/55.
+- [x] **MERGED PR #55 (4b31baa) — supersedes CLOSED PR #51.** PR #51 stacked on
+      lane/served-question-gate; did NOT auto-retarget on #50's merge (third stranded-PR incident;
+      DECISIONS.md updated). PR #51 closed; PR #55 opened directly against ATLAS-ASSESSMENT.
+      Migration 20260612090000: unique(session_id,question_id) on responses; conflict-safe insert.
 
-- [ ] **OPEN PR #52 — lane/ai-data-minimization (base ATLAS, independent).**
-      TEXT_ENTRY math-safe sanitizer (allowlist digits/ws/operators, max 40 chars — non-conforming
-      skips Haiku, fail-soft method:'none'; PII never reaches the model; MC unchanged). Narration
-      sends firstName only. .env.example MISCONCEPTION_CLASSIFIER_LIVE default → false.
-      Voice-locked Step-4 SYSTEM prompt TEXT unchanged. Verify 913/56.
+- [x] **MERGED PR #52 (57e5f93) — lane/ai-data-minimization.** TEXT_ENTRY math-safe sanitizer
+      (allowlist, max 40; PII never reaches Haiku; fail-soft method:'none'). Narration firstName
+      only. .env.example MISCONCEPTION_CLASSIFIER_LIVE default → false. Voice-locked Step-4
+      SYSTEM prompt TEXT unchanged.
 
-- [ ] **OPEN PR #53 — lane/next-upgrade-ci (base ATLAS, independent).**
-      next + eslint-config-next 16.2.4→16.2.9 (exact pins; lockfile regenerated). 'pnpm build'
-      added to .github/workflows/verify.yml. Post-upgrade pnpm audit: 3 MODERATE transitive
-      advisories (postcss/ws/brace-expansion) — no high/critical; transitive pins not chased
-      per scope. Verify 900/55 + build GREEN.
+- [x] **MERGED PR #53 (1997b3d) — lane/next-upgrade-ci.** next + eslint-config-next
+      16.2.4→16.2.9. 'pnpm build' step added to verify.yml. 3 MODERATE transitive advisories
+      (postcss/ws/brace-expansion) — no high/critical.
 
 ## 3d. Pre-scale security mediums (NOT in scope this session — pre-pilot-hardening)
 
@@ -169,14 +162,28 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
 - [ ] **PARKED (pre-scale):** RLS integration tests — prove cross-parent / cross-center
       isolation at the DB layer.
 
-## 3e. QA-prep for founder's end-to-end run (gated on 3c security lanes merging + GREEN)
+## 3e. QA-prep for founder's end-to-end run — DELIVERED 2026-06-12
 
-- [ ] Dev-only idempotent SQL script to create an instructor login + link its roster to a
-      parent's children by email (founder self-service QA setup).
-- [ ] Confirm local env lines for live narration + live misconception classifier and which
-      file they belong in (`.env.local`).
-- [ ] Confirm 4 grades (K-4 and 5-8 mix) with enough active question coverage for a
-      comprehensive run without hitting the hard cap on unsatisfiable strand floors.
+- [x] Dev-only idempotent SQL script: `supabase/dev-seed-instructor-roster.sql`.
+      Creates qa-instructor@atlas.test / Atlas-Pilot-2026; aligns instructor center to
+      parent's children's center; parent-email param at top; Studio-paste-ready.
+- [x] Env lines confirmed: `docs/qa-prep-e2e-run.md` documents REPORT_NARRATION_LIVE +
+      MISCONCEPTION_CLASSIFIER_LIVE in `.env.local`; 4-grade coverage recommendation
+      Grade 1/3/4/5.
+- [x] Coverage checked. Key QA findings surfaced in the doc:
+      - **COMPREHENSIVE not reachable from UI** — startSession sends only `{child_id}`;
+        requires ENABLE_COMPREHENSIVE_PILOT=true AND manual POST to /api/assess/start
+        with `comprehensive:true`. Short-path assessment unaffected.
+      - **data_statistics strand: 0 active questions** — auto-excluded from scope.
+      - **geometry strand: only 4 active questions bank-wide** — thin coverage.
+- [ ] **OPEN PR (lane/qa-prep-2026-06-12) — Dimitri: merge after Vercel preview review.**
+      Adds supabase/dev-seed-instructor-roster.sql + docs/qa-prep-e2e-run.md.
+- [ ] **PARKED — needs Dimitri decision:** COMPREHENSIVE test UI reachability. Options:
+      (a) leave as manual-POST only for pilot (no UI change; document for pilot testers);
+      (b) add a dev-mode toggle in the assessment start flow. Plain-English: the
+      "comprehensive" assessment mode cannot be triggered by a parent clicking Start — it
+      needs a direct API call. Is that acceptable for the pilot, or do you want a UI
+      path? Needs product call before building.
 
 ## 4. G1 LIFTED (2026-06-10) — CONVERSION L1–4 run COMPLETE; merge + radar check remain
 
@@ -295,14 +302,14 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
 - **Codex CLI auth — PARKED (updated 2026-06-05).** Reachability confirmed as a
   credential blocker (not transport). Automated relay + `.mcp.json` unblocked once Dimitri
   runs `codex login` or supplies `OPENAI_API_KEY` on this box (see item 2 above).
-- **Attend-merge PRs #41 / #43 / #42 (in order) — PARKED awaiting Dimitri (new, 2026-06-11).**
-  PR #41 (comprehensive instrumentation + migration) → PR #43 (ops-runbook docs, any order
-  relative to #41) → PR #42 (consent regression, stacked: merge AFTER #41). After #41 merges:
-  run `supabase db reset` to apply migration 20260611090000 and confirm instructor usefulness
-  card + analytics. PR #42 base auto-retargets to ATLAS-ASSESSMENT once #41 is merged.
+- **Attend-merge PR #43 (ops-runbook-gaps) — PARKED awaiting Dimitri.** Docs only; no DB;
+  no supabase db reset needed. (PRs #41 and #42 are now on ATLAS via earlier merges;
+  migration 20260611090000 applied via supabase db reset 2026-06-12.)
 - **Founder actions for conversion run — PARKED (updated, 2026-06-10).** Image curation for
   30 inactive image-essential questions (upload manifests in each worksheet output folder).
   Radar acceptance check: complete one fresh dev assessment, confirm radar populates.
+- **COMPREHENSIVE test UI reachability — PARKED (new, 2026-06-12).** See 3e above for the
+  plain-English question. Needs product call before any build.
 - Franchisor pilot-approval routing — G2 (business gate).
 - Pricing model (business gate); G1 license scope specifics (now LIFTED for digitization
   permission; geography/duration/derivative rights remain open).
