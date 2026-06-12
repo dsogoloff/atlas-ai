@@ -106,46 +106,77 @@
       see `docs/ops-runbook.md` §3 KNOWN GAP — now explicitly documented in PR #43 as an
       optional code follow-on).
 
-## 3b. Comprehensive-test instrumentation (M2 KPI coverage) — 2026-06-11
+## 3b. Comprehensive-test instrumentation (M2 KPI coverage) — COMPLETE on ATLAS
 
-- [x] **OPEN PR #41 — lane/comprehensive-instructor-analytics.** Instrument-only:
-      migration 20260611090000_comprehensive_instructor_analytics.sql; 6 new
-      analytics_event_name enum values; new assessment_test_type enum +
-      assessment_sessions.test_type column (default 'short'); instructor_usefulness table +
-      RLS; events wired: comprehensive_test_started/_item_answered/_completed (test_type='comprehensive'),
-      short_test_started/_item_answered/_completed (test_type='short'),
-      instructor_report_viewed (tracker island + server action),
-      placement_recommendation_created (fires once at session completion, both terminal
-      paths; PII-free), instructor_usefulness_submitted (1-5 + optional note; RLS table +
-      server action + client island), short_result_viewed (parent report view, test_type='short').
-      sessionStart honors a comprehensive? flag only when ENABLE_COMPREHENSIVE_PILOT is on
-      (fail-safe to short). Hand-edited database.types.ts to match DDL. Adaptive ENGINE
-      PARAMS UNCHANGED — TODO(comprehensive-engine) marker left for the separate
-      comprehensive-assembly session. Verify GREEN: 882 tests / 54 files; tsc clean; lint
-      0 errors (2 pre-existing warnings). Codex SKIPPED (relay credential-blocked).
-      **Dimitri: merge after Vercel preview review; then run `supabase db reset` to apply
-      migration 20260611090000 and confirm instructor usefulness card + analytics.**
+- [x] **MERGED to ATLAS via PR #49 (2026-06-12).** PRs #41 (instrumentation) and #46
+      (engine) had landed in the stacked parent lane branch and were stranded. PR #48
+      (reland attempt) CLOSED (conflicts). PR #49 cherry-picked commits 7e7c37e (#42 consent
+      regression) + 2dad26c (#46 engine) onto current ATLAS head; single conflict resolved
+      (instructor student page import union). Verify 900/55. ATLAS head b9b0662. Migration
+      20260611090000 present — requires `supabase db reset` (see founder actions).
 
-- [x] **OPEN PR #42 — lane/consent-gate-comprehensive (STACKED on PR #41).**
-      Regression test only: asserts dual server-side consent gate (sessionStart +
-      responseSubmit) fails closed for a comprehensive session (test_type='comprehensive',
-      ENABLE_COMPREHENSIVE_PILOT on, no consent) — 403 consent_required, no session
-      created / no response accepted. NO handler fix needed (gate runs unconditionally
-      before test_type resolution). Verify GREEN: 884 tests / 54 files.
-      **MERGE #41 FIRST.** GitHub auto-retargets this PR's base to ATLAS-ASSESSMENT once
-      #41 merges.
+- [x] **MERGED to ATLAS via PR #49 — consent gate regression test (was PR #42).**
 
 - [ ] **Comprehensive-engine reparameterization** — item cap / confidence stop / routing
       depth for the comprehensive test type. DEFERRED to the SEPARATE
       comprehensive-assembly session (decision 2026-06-11). TODO(comprehensive-engine)
       marker in codebase identifies the hook point.
 
-- [x] **OPEN PR #43 — lane/ops-runbook-gaps (docs only).** docs/ops-runbook.md §3
-      rewritten (stuck/abandoned sessions + Option A reset-by-delete / Option B
-      force-close); §4 consent revoke + companion vpc_audit_log insert + revoke-all-children
-      variant; §7 new "child can't start a new assessment" scenario. Narration-regen KNOWN
-      GAP documented as optional code follow-on (not closed). No DB changes.
-      **Dimitri: can merge in any order relative to #41/#42; no supabase db reset needed.**
+- [ ] **OPEN PR #43 — lane/ops-runbook-gaps (docs only). Dimitri: merge in any order;
+      no supabase db reset needed.** docs/ops-runbook.md §3 (stuck/abandoned sessions +
+      Option A reset-by-delete / Option B force-close); §4 consent revoke + vpc_audit_log
+      insert + revoke-all-children variant; §7 new scenario. Narration-regen KNOWN GAP
+      documented as optional code follow-on.
+
+## 3c. Security remediation lanes (external audit) — 2026-06-12
+
+Merge order: **#50 then #51** (stacked); #52 and #53 are independent (any order).
+After ALL four merge: founder runs `supabase db reset` (applies migration 20260612090000),
+then full verify + report final test count.
+
+- [ ] **OPEN PR #50 — lane/served-question-gate (base ATLAS).**
+      responseSubmit now requires a question_access_log row for (tenant,session,question)
+      AND no existing response before scoring; else 403 question_not_served. Removes silent
+      idempotent-retry; already_answered is hard 409. Verify 901/55. Codex skipped.
+      **Dimitri: merge first in the security sequence.**
+
+- [ ] **OPEN PR #51 — lane/duplicate-response-constraint (STACKED on #50 — MERGE #50 FIRST).**
+      Migration 20260612090000_responses_unique_session_question.sql: unique(session_id,question_id)
+      on responses; insert conflict-safe (23505 detection) → deterministic idempotent return
+      (race-safe). Converts #50's already_answered 409 into a race-safe response. Seed clean.
+      Verify 902/55.
+
+- [ ] **OPEN PR #52 — lane/ai-data-minimization (base ATLAS, independent).**
+      TEXT_ENTRY math-safe sanitizer (allowlist digits/ws/operators, max 40 chars — non-conforming
+      skips Haiku, fail-soft method:'none'; PII never reaches the model; MC unchanged). Narration
+      sends firstName only. .env.example MISCONCEPTION_CLASSIFIER_LIVE default → false.
+      Voice-locked Step-4 SYSTEM prompt TEXT unchanged. Verify 913/56.
+
+- [ ] **OPEN PR #53 — lane/next-upgrade-ci (base ATLAS, independent).**
+      next + eslint-config-next 16.2.4→16.2.9 (exact pins; lockfile regenerated). 'pnpm build'
+      added to .github/workflows/verify.yml. Post-upgrade pnpm audit: 3 MODERATE transitive
+      advisories (postcss/ws/brace-expansion) — no high/critical; transitive pins not chased
+      per scope. Verify 900/55 + build GREEN.
+
+## 3d. Pre-scale security mediums (NOT in scope this session — pre-pilot-hardening)
+
+These were identified during the external audit but are out of scope until the 4 security
+lanes above are merged and stable. Do not build until Dimitri confirms prioritization.
+
+- [ ] **PARKED (pre-scale):** Rate limiting on assessment/submit endpoints.
+- [ ] **PARKED (pre-scale):** Trusted-IP extraction for question_access_log / audit
+      (don't trust client-supplied IP).
+- [ ] **PARKED (pre-scale):** RLS integration tests — prove cross-parent / cross-center
+      isolation at the DB layer.
+
+## 3e. QA-prep for founder's end-to-end run (gated on 3c security lanes merging + GREEN)
+
+- [ ] Dev-only idempotent SQL script to create an instructor login + link its roster to a
+      parent's children by email (founder self-service QA setup).
+- [ ] Confirm local env lines for live narration + live misconception classifier and which
+      file they belong in (`.env.local`).
+- [ ] Confirm 4 grades (K-4 and 5-8 mix) with enough active question coverage for a
+      comprehensive run without hitting the hard cap on unsatisfiable strand floors.
 
 ## 4. G1 LIFTED (2026-06-10) — CONVERSION L1–4 run COMPLETE; merge + radar check remain
 

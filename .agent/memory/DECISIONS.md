@@ -3,6 +3,52 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-12
+
+* ⚑ **PROCESS RULE — Stacked-PR hygiene (second incident; founder-instructed, 2026-06-12).**
+  Before merging any stacked (child) PR, confirm its base is `ATLAS-ASSESSMENT` (not a
+  parent lane branch). If the parent branch was already merged and not deleted, the child PR
+  will show "MERGED" but its commits land on the dead parent branch — stranded off the
+  default branch. Prevention: retarget the child PR's base to `ATLAS-ASSESSMENT` (or delete
+  the parent lane branch so GitHub auto-retargets) BEFORE merging the child. After merging
+  any parent PR, immediately delete its lane branch. First incident: CONVERSION PR #35
+  (2026-06-10). Second incident: PRs #42/#46 (2026-06-12) — see re-landing record below.
+
+* **Stranded PRs #42/#46 re-landed via cherry-pick PR #49 (merged to ATLAS, 2026-06-12).**
+  Root cause: #42 (consent regression test, 7e7c37e) and #46 (comprehensive engine,
+  2dad26c) had merged into their stacked parent lane branch (lane/comprehensive-instructor-analytics,
+  already merged as #41), not ATLAS-ASSESSMENT. ATLAS-ASSESSMENT was verified to have
+  882/54 tests (missing both commits). First reland attempt PR #48 conflicted (#45
+  full-library-conversion and #47 instructor-portal-polish had landed since #41). PR #48
+  CLOSED. PR #49 cherry-picked both commits onto current ATLAS head, resolving one
+  single-file conflict (instructor student page: #47 added per-item strand labels; #46
+  adds per-strand coverage summary — both coexist via import union resolution). Verified
+  GREEN 900/55. Founder-authorized merge. ATLAS-ASSESSMENT head is now b9b0662.
+  Verify baseline updated: 900 tests / 55 files.
+
+* **Four security-remediation PRs opened (external audit findings), all verify GREEN,
+  Codex skipped (relay credential-blocked), awaiting attended merge (2026-06-12).**
+  - PR #50 (lane/served-question-gate, base ATLAS): served-question gate in responseSubmit —
+    requires a question_access_log row for (tenant,session,question) AND no existing response
+    before scoring; else 403 question_not_served. Removes silent idempotent-retry;
+    already_answered is now a hard 409. Verify 901/55.
+  - PR #51 (lane/duplicate-response-constraint, STACKED on #50 — MERGE #50 FIRST): migration
+    20260612090000_responses_unique_session_question.sql adds unique(session_id,question_id)
+    on responses; insert is conflict-safe (23505 detection) returns existing result
+    deterministically — converts #50's 409 into a race-safe idempotent return. Seed check
+    clean (no violations). DDL-only (no seed.sql mirror needed). Verify 902/55.
+  - PR #52 (lane/ai-data-minimization, base ATLAS, independent): (a) misconception classifier
+    math-safe sanitizer for TEXT_ENTRY answer_given (allowlist digits/ws/operators/symbols,
+    max 40 chars) — non-conforming skips the Haiku call, returns fail-soft method:'none', so
+    PII never reaches the model; MC path unchanged. (b) narration sends FIRST NAME only via
+    firstName(display_name); voice-locked Step-4 SYSTEM prompt TEXT unchanged (data-only).
+    (c) .env.example MISCONCEPTION_CLASSIFIER_LIVE default flipped true→false. Verify 913/56.
+  - PR #53 (lane/next-upgrade-ci, base ATLAS, independent): next + eslint-config-next
+    16.2.4→16.2.9 (exact pins; lockfile regenerated; no code fixes); 'pnpm build' step added
+    to .github/workflows/verify.yml. Post-upgrade pnpm audit: 3 MODERATE transitive advisories
+    (postcss/ws/brace-expansion) — no high/critical; transitive pins not chased per scope.
+    Verify 900/55 + build GREEN.
+
 ## 2026-06-11
 
 * ⚑ **Comprehensive-test instrumentation is "instrument-only" for this session — adaptive
