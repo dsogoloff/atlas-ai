@@ -5,6 +5,33 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-12
 
+* ⚑ **PROCESS RULE HARDENED — "GitHub auto-retargets on parent merge" is FALSE (third
+  stranded-PR incident, 2026-06-12).** PR #51 (duplicate-response unique constraint) was
+  opened STACKED on its parent lane branch `lane/served-question-gate` (PR #50). The PR #51
+  body asserted its base would auto-retarget to `ATLAS-ASSESSMENT` once #50 merged. It did
+  NOT: after #50 merged, #51's base still pointed at the now-dead parent lane branch, so
+  merging it would have stranded the unique-constraint commit + migration off the default
+  branch (a fourth would-be incident, caught before merge). Resolution: #51 was CLOSED and
+  superseded by **PR #55**, opened directly against `ATLAS-ASSESSMENT` with the same content
+  (commit `4b31baa`, migration 20260612090000_responses_unique_session_question). #55 merged
+  clean. **Rule (canonical, supersedes the optimistic half of the prior entry):** GitHub only
+  auto-retargets a child PR when the parent branch is DELETED, never merely on parent *merge*.
+  Before merging any stacked child PR, MANUALLY verify the base label reads `ATLAS-ASSESSMENT`
+  (`gh pr view <n> --json baseRefName`); if it still names a lane branch, either retarget it
+  (`gh pr edit <n> --base ATLAS-ASSESSMENT`) or re-open it fresh against the trunk. Do NOT
+  trust a PR-body claim that it "will auto-retarget." Prefer NOT stacking security/migration
+  PRs at all — open each independently against `ATLAS-ASSESSMENT`. Incidents: #35 (2026-06-10),
+  #42/#46 (2026-06-12), #51 (2026-06-12).
+
+* **Security lanes all merged to ATLAS-ASSESSMENT; verify baseline → 915/56 (2026-06-12).**
+  Merge order landed: #50 (served-question gate, `ea53da5`) → #55 (unique constraint +
+  conflict-safe submit, `4b31baa`; replaces stranded/closed #51) → #52 (AI data
+  minimization, `57e5f93`) → #53 (Next 16.2.4→16.2.9 + CI build step, `1997b3d`) → #54
+  (memory). PRs #48 and #51 closed. ATLAS-ASSESSMENT head `970698e`. `supabase db reset`
+  run (applies 20260612090000 + 20260611090000). Full verify on the merged head: **915
+  tests / 56 files GREEN**, tsc 0 errors, lint 2 known warnings (profile-menu.tsx:48 img,
+  layout.tsx:56 font), `pnpm build` success. New verify baseline = 915/56.
+
 * ⚑ **PROCESS RULE — Stacked-PR hygiene (second incident; founder-instructed, 2026-06-12).**
   Before merging any stacked (child) PR, confirm its base is `ATLAS-ASSESSMENT` (not a
   parent lane branch). If the parent branch was already merged and not deleted, the child PR
