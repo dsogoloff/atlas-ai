@@ -81,7 +81,10 @@ beforeEach(() => {
 
 interface MockResult {
   data: unknown;
-  error: { message: string } | null;
+  // `code` carries the Postgres SQLSTATE on insert errors (e.g. "23505" for a
+  // unique-constraint violation) so the handler's isUniqueViolation branch can
+  // be exercised. Optional — most scripted errors only need a message.
+  error: { message: string; code?: string } | null;
 }
 
 interface ServiceMock {
@@ -612,16 +615,28 @@ describe("submitResponseHandler — served-question gate", () => {
     expect(mockClassify).not.toHaveBeenCalled();
   });
 
-  it("already answered: rejects already_answered (409); no second insert, no scoring", async () => {
-    // question_access_log row present (served) BUT a responses row already
-    // exists for (session, question). Replaces the prior idempotent-retry
-    // return — see the SECURITY-OVER-IDEMPOTENCY DELTA in handler.ts.
+  it("already answered (sequential duplicate): returns prior result deterministically (idempotent, NOT 409); no second insert, no scoring", async () => {
+    // question_access_log row present (served) AND a responses row already
+    // exists for (session, question). Lane 2: instead of the Lane 1 409, the
+    // handler replays state and returns the SAME wire shape the original
+    // submit produced — here a terminal placement (25 prior responses replay
+    // past MAX_QUESTIONS=25) — with NO re-insert and NO classifier call.
+    const p = priors(25);
     const svc = makeServiceClient({
       question_access_log: [
         { data: { id: 1 }, error: null }, // served check — row present
       ],
       responses: [
-        { data: { id: "existing-response" }, error: null }, // already-answered
+        { data: { id: "existing-response" }, error: null }, // existence check — row present
+        { data: { is_correct: true, time_flag: "NORMAL" }, error: null }, // duplicateResult re-read
+        { data: p.responses, error: null }, // replayEngineState
+      ],
+      questions: [
+        // (auto-discover consumes the first questions entry)
+        { data: p.questions, error: null }, // replayEngineState in() join
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null }, // replay session select
       ],
     });
 
@@ -632,16 +647,83 @@ describe("submitResponseHandler — served-question gate", () => {
       ip: null,
     });
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.code).toBe("already_answered");
-    expect(result.error.status).toBe(409);
+    // Idempotent success — NOT an error.
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.is_correct).toBe(true);
+    expect(result.body.time_flag).toBe("NORMAL");
+    expect(result.body.done).toBe(true);
+    expect(result.body.placement).toBeDefined();
+    expect(result.body.termination_reason).toBe("max-questions-reached");
 
-    // No second response insert; no scoring.
+    // No second response insert; no re-scoring; no audit-log row.
     expect(svc.inserts.some((i) => i.table === "responses")).toBe(false);
     expect(svc.inserts).toHaveLength(0);
-    expect(svc.updates).toHaveLength(0);
     expect(mockClassify).not.toHaveBeenCalled();
+  });
+
+  it("concurrent duplicate (insert hits 23505): returns the SAME deterministic result, exactly ONE response row, NOT 409", async () => {
+    // True race: this submit clears the pre-insert existence check (NO row
+    // yet) at the same instant a sibling submit for the same (session,
+    // question) does. This one scores and INSERTs, but the sibling's INSERT
+    // won first — so the UNIQUE(session_id, question_id) constraint rejects
+    // THIS insert with SQLSTATE 23505. The handler must NOT 500/409: it
+    // discards its scoring and returns the same deterministic wire shape as
+    // the sequential-duplicate path (here: a terminal placement). Exactly one
+    // responses row was attempted to land (the constraint kept the second
+    // out); the body mirrors the WINNER's persisted is_correct/time_flag.
+    const p = priors(25);
+    const svc = makeServiceClient({
+      question_access_log: [
+        { data: { id: 1 }, error: null }, // served check — row present
+      ],
+      responses: [
+        { data: null, error: null }, // existence check — NO row (race window)
+        { data: p.responses, error: null }, // replayEngineState (preState, for scoring)
+        // INSERT lands here and returns the unique-violation:
+        { data: null, error: { message: "duplicate key value", code: "23505" } },
+        // duplicateResult: re-read the WINNER's persisted row...
+        { data: { is_correct: false, time_flag: "SLOW" }, error: null },
+        { data: p.responses, error: null }, // ...then replayEngineState again
+      ],
+      questions: [
+        // (auto-discover consumes the first questions entry)
+        { data: QUESTION, error: null }, // initial question fetch (this submit scores)
+        { data: p.questions, error: null }, // replayEngineState in() (preState)
+        { data: p.questions, error: null }, // replayEngineState in() (duplicateResult)
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null }, // replay (preState)
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null }, // replay (duplicateResult)
+      ],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest({ answer_given: "B" }), // wrong answer → this submit's scoring differs from winner
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(true);
+    expect(result.body.placement).toBeDefined();
+    expect(result.body.termination_reason).toBe("max-questions-reached");
+    // Body mirrors the WINNER's persisted row, not this submit's scoring.
+    expect(result.body.is_correct).toBe(false);
+    expect(result.body.time_flag).toBe("SLOW");
+
+    // Exactly ONE responses insert was ATTEMPTED (this submit's); the
+    // constraint kept it from landing a duplicate. The handler issued no
+    // second insert after the 23505.
+    expect(
+      svc.inserts.filter((i) => i.table === "responses"),
+    ).toHaveLength(1);
+    // No audit-log row was written on the duplicate replay (terminal path).
+    expect(
+      svc.inserts.some((i) => i.table === "question_access_log"),
+    ).toBe(false);
   });
 });
 

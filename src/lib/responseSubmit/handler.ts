@@ -93,28 +93,35 @@
 //       (forged/guessed/probed) question_id is rejected `question_not_served`
 //       (403) with no question load / judge / classifier call.
 //   (2) responses has NO row for (session, question) — not already answered.
-//       An already-answered submit is rejected `already_answered` (409).
+//       An already-answered submit returns the prior result deterministically
+//       (Lane 2: idempotent, no re-insert, no re-scoring) — see below.
 //
-// SECURITY-OVER-IDEMPOTENCY DELTA (Lane 1): the previous behaviour replayed
-// state on a duplicate submit and returned the SAME wire shape the original
-// call produced (next_question / placement) with no re-insert — "Option A",
-// idempotent on the wire. That return path is REMOVED: an already-answered
-// (session, question) now hard-rejects with `already_answered`. The audit
-// found the silent idempotent return masked replays of a question that was
-// never legitimately served and made the served-question requirement
-// unenforceable. Lane 2 (stacked) converts the hard reject into a conflict-
-// safe deterministic return and adds UNIQUE(session_id, question_id).
+// SECURITY-OVER-IDEMPOTENCY DELTA (Lane 1 → Lane 2): Lane 1 removed the prior
+// silent idempotent return (which masked replays of a never-served question)
+// and hard-rejected an already-answered (session, question) with
+// `already_answered` (409). Lane 2 restores the deterministic idempotent
+// return — but ONLY behind the served-question gate (1), and now backed by a
+// DB constraint. A duplicate submit of a SERVED, already-answered question no
+// longer errors: it replays engine state and returns the SAME wire shape the
+// original successful submit produced (next_question / placement), with NO
+// re-insert and NO re-scoring (the classifier/LLM is never re-run on a known
+// duplicate). The `already_answered` 409 is gone; `question_not_served` (403)
+// is unchanged — an unserved question still cannot be replayed.
 //
 // =============================================================================
 // Concurrency
 // =============================================================================
 //
 // Two truly-concurrent submits for the same (session, question) can both
-// pass the existence check before either inserts, producing two rows that
-// replay into a double-counted response. There is no UNIQUE constraint on
-// (session_id, question_id) in the schema today. v1 posture: rely on the
-// client UI to disable submit while in-flight. Add the constraint when
-// the symptom is observed.
+// pass the pre-insert existence check (step 3.6) before either INSERTs.
+// UNIQUE(session_id, question_id) — migration 20260612090000 (Lane 2) — is
+// the final arbiter: the losing INSERT fails with SQLSTATE 23505 and the
+// handler routes it into the SAME deterministic idempotent return as a
+// sequential duplicate (see duplicateResult below). Exactly one response
+// row persists; both callers get the identical wire result. The pre-insert
+// SELECT still short-circuits the common (sequential) duplicate without
+// reaching the INSERT, avoiding the classifier call; the 23505 path covers
+// only the rare true race.
 
 import "server-only";
 
@@ -157,6 +164,7 @@ import {
 } from "@/lib/questionPicker/picker";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
+import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import {
   aggregateSessionFlags,
@@ -356,14 +364,17 @@ export async function submitResponseHandler({
   // already-answered submit does ZERO scoring work and makes no classifier
   // call. Fail closed (500) on a DB error.
   //
-  // SECURITY-OVER-IDEMPOTENCY DELTA: this supersedes the prior idempotent-
-  // retry behaviour for the already-answered case. Previously a duplicate
-  // submit of an already-answered (session, question) replayed state and
-  // returned the SAME wire shape as the first call (next_question /
-  // placement) without re-inserting. That return path is removed here: an
-  // already-answered submit now hard-rejects with `already_answered` (409).
-  // Lane 2 (stacked) converts this into a conflict-safe deterministic
-  // return + adds the UNIQUE(session_id, question_id) constraint.
+  // LANE 2 — DETERMINISTIC IDEMPOTENT RETURN: when (1) holds (the question
+  // WAS served) but a responses row already exists, this is a duplicate of a
+  // legitimate submit. We do NOT re-insert and do NOT re-score; instead we
+  // replay engine state and return the SAME wire shape the original submit
+  // produced (duplicateResult). This is the common, sequential duplicate
+  // path — caught here, before the classifier call. The rare truly-concurrent
+  // race (two submits both clearing this check before either inserts) is
+  // caught instead by the UNIQUE(session_id, question_id) constraint at the
+  // INSERT (23505 → same duplicateResult). The served-question gate (1) is
+  // never bypassed: an UNSERVED question still hard-rejects 403 above and is
+  // never replayed.
   // ---------------------------------------------------------------------------
   const { data: servedLog, error: servedErr } = await serviceClient
     .from("question_access_log")
@@ -403,10 +414,19 @@ export async function submitResponseHandler({
     );
   }
   if (existing) {
-    return fail(
-      "already_answered",
-      409,
-      "this question has already been answered for this session",
+    // Sequential duplicate of a served, already-answered question. Replay
+    // and return the original wire shape (no re-insert, no re-scoring).
+    return duplicateResult(
+      serviceClient,
+      {
+        sessionId: request.session_id,
+        tenantId: parent.tenant_id,
+        childId: session.child_id,
+        ip,
+      },
+      request.question_id,
+      emptyBankStrands,
+      comprehensive,
     );
   }
 
@@ -546,6 +566,28 @@ export async function submitResponseHandler({
   });
 
   if (insertErr) {
+    // Concurrent-race duplicate: a truly-simultaneous submit for the same
+    // (session, question) cleared the pre-insert existence check (step 3.6)
+    // at the same time as this one, and the OTHER submit's INSERT won. The
+    // UNIQUE(session_id, question_id) constraint (migration 20260612090000)
+    // makes this INSERT fail with SQLSTATE 23505 instead of landing a
+    // duplicate row. We discarded our scoring (the winner's row stands) and
+    // return the SAME deterministic wire shape as the sequential duplicate
+    // path — exactly one response persists, both callers see one result.
+    if (isUniqueViolation(insertErr)) {
+      return duplicateResult(
+        serviceClient,
+        {
+          sessionId: request.session_id,
+          tenantId: parent.tenant_id,
+          childId: session.child_id,
+          ip,
+        },
+        request.question_id,
+        emptyBankStrands,
+        comprehensive,
+      );
+    }
     return fail("internal", 500, `response insert failed: ${insertErr.message}`);
   }
 
@@ -858,6 +900,155 @@ function fail(
   message: string,
 ): SubmitHandlerResult {
   return { ok: false, error: { code, status, message } };
+}
+
+function isUniqueViolation(err: { code?: string } | unknown): boolean {
+  if (err && typeof err === "object" && "code" in err) {
+    return (err as { code?: string }).code === "23505";
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Deterministic idempotent return (Lane 2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Reconstruct the SAME wire response the original successful submit produced,
+ * WITHOUT re-inserting or re-scoring. Reached from two places (step 3.6
+ * existence check, and the INSERT 23505 race), so a duplicate submit —
+ * sequential OR concurrent — is idempotent on the wire rather than an error.
+ *
+ * The persisted response row is the source of truth: we re-read its
+ * is_correct / time_flag (the body echoes them) and replay engine state from
+ * `responses` (which already reflects that row) to recompute done +
+ * next_question / placement. This restores the pre-Lane-1 "Option A" idempotent
+ * path, but now only reachable AFTER the served-question gate (step 3.6) has
+ * proven the question was legitimately served — an unserved question is
+ * rejected 403 and never replayed.
+ *
+ * For the non-terminal case we prefer the OUTSTANDING question (the next
+ * question the original call already picked + audit-logged) over re-picking,
+ * so a duplicate writes no second question_access_log row (compliance §8: a
+ * retry of a successful response is not a new serve). If no outstanding row
+ * exists (the original call crashed between (b) and (d) before logging), we
+ * fall through to the same pick-and-log path as a fresh non-terminal submit.
+ */
+async function duplicateResult(
+  serviceClient: SupabaseClient<Database>,
+  ctx: PickContext,
+  questionId: string,
+  emptyBankStrands: ReadonlySet<Strand>,
+  comprehensive: ComprehensiveContext | null,
+): Promise<SubmitHandlerResult> {
+  const { data: row, error: rowErr } = await serviceClient
+    .from("responses")
+    .select("is_correct, time_flag")
+    .eq("session_id", ctx.sessionId)
+    .eq("question_id", questionId)
+    .maybeSingle();
+
+  if (rowErr) {
+    return fail("internal", 500, `duplicate read failed: ${rowErr.message}`);
+  }
+  if (!row) {
+    // The persisted row vanished between the conflict and this read — only
+    // possible via a concurrent delete, which the app never issues. Fail
+    // closed rather than fabricate a result.
+    return fail("internal", 500, "duplicate response row not found on replay");
+  }
+
+  // Replay reflects the existing row, so the resulting state IS the
+  // post-submit state.
+  let state: EngineState;
+  try {
+    state = await replayEngineState(serviceClient, ctx.sessionId);
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+
+  let term: TerminationDecision;
+  try {
+    term = await decideTermination(
+      serviceClient,
+      ctx.sessionId,
+      state,
+      emptyBankStrands,
+      comprehensive,
+    );
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+
+  if (term.done) {
+    return success({
+      is_correct: row.is_correct,
+      time_flag: row.time_flag,
+      done: true,
+      response_count: state.responseCount,
+      placement: toPlacementEstimateJson(placementEstimate(state)),
+      termination_reason: toWireReason(term.reason),
+    });
+  }
+
+  const router = await buildRouter(serviceClient, ctx.sessionId, comprehensive);
+
+  let outstanding: PickedQuestionRow | null;
+  try {
+    outstanding = await findOutstandingQuestion(serviceClient, ctx.sessionId);
+  } catch (e) {
+    return fail("internal", 500, errorMessage(e));
+  }
+
+  if (outstanding) {
+    // next_request for the outstanding-question case is the engine's current
+    // ask, excluding empty-bank strands. null here would mean every strand is
+    // empty AND term.done was false — a contradiction (decideTermination would
+    // have fired bank-exhausted). Defensive 500 if it ever does.
+    const outstandingReq = router(state, emptyBankStrands);
+    if (outstandingReq === null) {
+      return fail("internal", 500, "next_request not computable on outstanding");
+    }
+    return success({
+      is_correct: row.is_correct,
+      time_flag: row.time_flag,
+      done: false,
+      response_count: state.responseCount,
+      next_request: toNextRequestJson(outstandingReq),
+      next_question: await serveQuestion(serviceClient, outstanding),
+    });
+  }
+
+  // No outstanding row — the original call crashed between (b) and (d).
+  // Fall through to the same pick-and-log path as a fresh non-terminal submit.
+  const retryPick = await pickAndMaybeClose(
+    serviceClient,
+    ctx,
+    state,
+    emptyBankStrands,
+    router,
+  );
+  if (retryPick.kind === "error") {
+    return fail("internal", 500, retryPick.message);
+  }
+  if (retryPick.kind === "exhausted") {
+    return success({
+      is_correct: row.is_correct,
+      time_flag: row.time_flag,
+      done: true,
+      response_count: state.responseCount,
+      placement: toPlacementEstimateJson(placementEstimate(state)),
+      termination_reason: "bank-exhausted",
+    });
+  }
+  return success({
+    is_correct: row.is_correct,
+    time_flag: row.time_flag,
+    done: false,
+    response_count: state.responseCount,
+    next_request: toNextRequestJson(retryPick.request),
+    next_question: await serveQuestion(serviceClient, retryPick.question),
+  });
 }
 
 // ---------------------------------------------------------------------------
