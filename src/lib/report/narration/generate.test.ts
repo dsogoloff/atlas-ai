@@ -50,10 +50,31 @@ describe("buildNarrationPrompt", () => {
     expect(system).toMatch(/patterns observed in THIS assessment/);
   });
 
-  it("includes the child's display name and grade label in the prompt body", () => {
+  it("passes only the child's FIRST NAME (not the full display name) and the grade label", () => {
+    // Data-minimization (Lane 3): the surname must never reach the model. The
+    // golden fixture's display_name is "Aiden Park"; the prompt body must
+    // carry "Aiden" and must NOT carry "Aiden Park" or the surname "Park".
     const { prompt } = buildNarrationPrompt(aidenGrade3Report);
-    expect(prompt).toContain("Aiden Park");
+    expect(prompt).toContain("Aiden");
+    expect(prompt).not.toContain("Aiden Park");
+    expect(prompt).not.toMatch(/\bPark\b/);
     expect(prompt).toContain("Grade 3");
+  });
+
+  it("uses the single-name display name as-is and trims surrounding whitespace", () => {
+    const mononym: ReportContent = {
+      ...aidenGrade3Report,
+      child: { ...aidenGrade3Report.child, display_name: "Maya" },
+    };
+    expect(buildNarrationPrompt(mononym).prompt).toContain("Display name: Maya\n");
+
+    const padded: ReportContent = {
+      ...aidenGrade3Report,
+      child: { ...aidenGrade3Report.child, display_name: "  Maya   Tan  " },
+    };
+    const { prompt } = buildNarrationPrompt(padded);
+    expect(prompt).toContain("Display name: Maya\n");
+    expect(prompt).not.toContain("Tan");
   });
 
   it("takes the non-empty branch when misconceptions are present", () => {

@@ -58,6 +58,14 @@ const NE_INPUT: ClassifierInput = {
   isCorrect: false,
 };
 
+const TE_INPUT_MATH: ClassifierInput = {
+  format: "TEXT_ENTRY",
+  strand: "fractions_decimals",
+  content: { stem: "What is half of 1 1/2?", correct_answer: "3/4" },
+  answerGiven: "1/2",
+  isCorrect: false,
+};
+
 const DD_INPUT: ClassifierInput = {
   format: "DRAG_DROP",
   strand: "fractions_decimals",
@@ -170,5 +178,65 @@ describe("classify", () => {
     } finally {
       errorSpy.mockRestore();
     }
+  });
+});
+
+describe("classify — TEXT_ENTRY data-minimization gate (Lane 3)", () => {
+  it("forwards a math-shaped TEXT_ENTRY answer to Haiku (normal path)", async () => {
+    mockCallHaiku.mockResolvedValueOnce({
+      codes: ["FR_PARTITION_ERROR"],
+      method: "haiku",
+      version: "v1",
+      tokens: { input: 55, output: 5 },
+      elapsedMs: 210,
+    });
+
+    const result = await classify(TE_INPUT_MATH, SERVICE_CLIENT, TENANT_ID);
+    expect(result.codes).toEqual(["FR_PARTITION_ERROR"]);
+    expect(result.method).toBe("haiku");
+    expect(mockLoadTaxonomy).toHaveBeenCalledWith(SERVICE_CLIENT, TENANT_ID);
+    expect(mockCallHaiku).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT call the model for a name-like TEXT_ENTRY answer", async () => {
+    const result = await classify(
+      { ...TE_INPUT_MATH, answerGiven: "John Smith" },
+      SERVICE_CLIENT,
+      TENANT_ID,
+    );
+    expect(result).toEqual({ codes: [], method: "none", version: null });
+    expect(mockCallHaiku).not.toHaveBeenCalled();
+    expect(mockLoadTaxonomy).not.toHaveBeenCalled();
+  });
+
+  it("does NOT call the model for an email-like TEXT_ENTRY answer", async () => {
+    const result = await classify(
+      { ...TE_INPUT_MATH, answerGiven: "kid@example.com" },
+      SERVICE_CLIENT,
+      TENANT_ID,
+    );
+    expect(result).toEqual({ codes: [], method: "none", version: null });
+    expect(mockCallHaiku).not.toHaveBeenCalled();
+    expect(mockLoadTaxonomy).not.toHaveBeenCalled();
+  });
+
+  it("does NOT call the model for an over-length TEXT_ENTRY answer", async () => {
+    const result = await classify(
+      { ...TE_INPUT_MATH, answerGiven: "1".repeat(41) },
+      SERVICE_CLIENT,
+      TENANT_ID,
+    );
+    expect(result).toEqual({ codes: [], method: "none", version: null });
+    expect(mockCallHaiku).not.toHaveBeenCalled();
+    expect(mockLoadTaxonomy).not.toHaveBeenCalled();
+  });
+
+  it("leaves the MULTIPLE_CHOICE path unaffected by the free-text gate", async () => {
+    // A MC answerGiven is an option index, not free text — the gate must not
+    // touch it. This MC input has a distractor-map hit, so it never reaches
+    // Haiku regardless; the assertion guards that the gate didn't reroute it.
+    const result = await classify(MC_INPUT_WITH_MAP, SERVICE_CLIENT, TENANT_ID);
+    expect(result.method).toBe("distractor-map");
+    expect(mockCallHaiku).not.toHaveBeenCalled();
   });
 });

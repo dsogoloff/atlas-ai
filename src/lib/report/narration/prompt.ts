@@ -16,6 +16,7 @@
 // strips fences defensively for robustness against models that wrap
 // output despite explicit instructions.
 
+import { firstName } from "@/lib/format/firstName";
 import type { ReportContent, Strand } from "@/lib/report/types";
 
 const SYSTEM = `You are writing short, warm, parent-readable narration text for a child's math diagnostic assessment report. The report shows the child's placement, per-strand performance, key findings from the assessment, and recommended next steps. Your job is to write the framing sentences and the key findings list — nothing more.
@@ -112,8 +113,14 @@ export function buildNarrationPrompt(content: ReportContent): PromptBundle {
           .join("\n")}`
       : `RECOMMENDATIONS\nnone on this report.`;
 
+  // Data-minimization (external-audit Lane 3): only the child's FIRST NAME
+  // crosses to the model, never the full display name. The voice-locked SYSTEM
+  // text already requires first-name-only prose; we make the injected DATA
+  // match that, so a surname is never sent off-box. Empty/mononym names degrade
+  // safely via firstName(). This changes the value injected, not the prompt
+  // wording — the Step-4 narration voice is untouched.
   const prompt = `CHILD
-Display name: ${child.display_name}
+Display name: ${firstName(child.display_name)}
 Grade: ${child.grade_label}
 
 PLACEMENT
