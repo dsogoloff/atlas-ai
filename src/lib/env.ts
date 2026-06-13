@@ -97,6 +97,25 @@ function rolloutFlag(envVar: string): boolean {
   return process.env[envVar] === "true";
 }
 
+/**
+ * Dev-only gate for the visual-primitive gallery/preview route
+ * (/dev/visual-primitives). NOT a §12 strategy flag — it never gates a
+ * user/parent/child-facing feature, only an internal eyeball page — so it is
+ * deliberately kept OUT of ROLLOUT_FLAGS and its default-off invariant test.
+ *
+ * Always reachable in non-production (local dev, test). In a production build
+ * (which is also what Vercel preview deployments run) it stays hidden unless
+ * ENABLE_VISUAL_PRIMITIVES_GALLERY === 'true' — so the founder can flip it ON
+ * for a specific preview deployment to review the primitives, and it stays OFF
+ * in real production by default. The route calls notFound() when this is false.
+ */
+export function isVisualPrimitivesGalleryEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.ENABLE_VISUAL_PRIMITIVES_GALLERY === "true"
+  );
+}
+
 export function isShortTestBetaEnabled(): boolean {
   return rolloutFlag("ENABLE_SHORT_TEST_BETA");
 }
