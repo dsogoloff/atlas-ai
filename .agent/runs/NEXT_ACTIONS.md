@@ -185,6 +185,51 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       needs a direct API call. Is that acceptable for the pilot, or do you want a UI
       path? Needs product call before building.
 
+## 3f. Visual-primitive + answer-input library (G1-3) — PR #59 OPEN 2026-06-13
+
+- [ ] **PARKED — needs Dimitri:** Eyeball the gallery on the PR #59 Vercel preview. Steps:
+      (1) set `ENABLE_VISUAL_PRIMITIVES_GALLERY=true` in the Vercel Preview env for this PR,
+      (2) redeploy the preview, (3) open `/dev/visual-primitives`. Then merge if satisfied.
+      No DB change; no supabase db reset needed.
+
+- [ ] **★ PRIORITY (QA-unblocking) — MERGE PR #58 (Issue-1 served-gate multirow fix).**
+      lane/served-gate-multirow-fix, commit `7245826`. `responseSubmit/handler.ts` access-log
+      existence check `.maybeSingle()` → `.limit(1)`. Verified 2026-06-13: the fix is NOT on
+      trunk (head f8c0f30 still `.maybeSingle()` at handler.ts:385); first-submit/Strict-Mode
+      resume still 500s on trunk. PR #58 is MERGEABLE/CLEAN, verify-bar SUCCESS, Vercel SUCCESS —
+      attended merge only; no DB change / no supabase db reset. (Earlier "uncommitted, no PR"
+      note superseded — founder committed + opened #58 mid-session.)
+
+- [ ] **Follow-up PR (lane/memory-audit-2026-06-13)** carries this session's 3 memory/
+      run-state files + `docs/sam-content-authenticity-audit.md` Appendix A — moved off
+      lane/served-gate-multirow-fix to keep PR #58 = Issue-1 fix only. Off ATLAS-ASSESSMENT,
+      not stacked. Its audit doc is the FULL file and overlaps #58's base audit doc → merge
+      #58 first, then resolve the one-file conflict by keeping the fuller (Appendix A) version.
+
+- [ ] **CONVERSION session — re-author SAM-L1-Q25** ("write a fact family 6,8,2") from a
+      collapsed single TEXT_ENTRY answer to the equation-set answer input + set-equality
+      grading model (per `docs/answer-model-spec.md` worked 6/8/2 example). This is the one
+      gradeability-flagged active G1-3 item. Bank-owned; do not touch in app lanes.
+
+- [ ] **CONVERSION — content-integrity gate (PARKED, bank-owned).** Root cause: `questions`
+      has no provenance/rights/"model-reconstructed" column (authenticity only inferable from
+      `external_id` + migration comments). ~5 ACTIVE rows need PDF-faithful re-authoring before
+      they can be trusted as served items: **SAM-L3-Q15** (mojibake MC, options invented→dropped,
+      now TEXT_ENTRY "4/6"); **SAM-L3-Q03** (options were model value-equivalents, replaced with
+      page-verbatim — re-confirm); **SAM-L6-Q09/Q11/Q12** (fraction answers vision-recovered from
+      symbol-font keys); **SAM-L4-Q15** (answer "1 km 750 m" self-flagged suspect — pending founder
+      PDF check). See `docs/sam-content-authenticity-audit.md` ACTIVE-candidates section.
+
+- [ ] **CONVERSION/content — 24 inactive image-essential L1-L3 rows** (L1 6 / L2 8 / L3 10)
+      are the bespoke tail; each needs either a curated per-question image OR re-authoring
+      against the parametric primitives before activation. The active G1-3 set has ZERO
+      bespoke-image items; no blocker on the current active bank.
+
+- [ ] **Picker level-band widening — decided-in-principle: ±3 half-grades, graceful widening**
+      (`docs/picker-level-band-proposal.md`, on PR #58). IMPLEMENT AFTER the CONVERSION
+      re-authoring above (don't widen the served band while model-reconstructed rows are still
+      unverified). Sequencing decision; not yet built.
+
 ## 4. G1 LIFTED (2026-06-10) — CONVERSION L1–4 run COMPLETE; merge + radar check remain
 
 **G1 status:** S.A.M. founder granted permission to digitize the entire test library

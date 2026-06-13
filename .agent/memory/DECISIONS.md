@@ -3,6 +3,82 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-13
+
+* **G1-3 visual-primitive + answer-input + grading library built as app code, own PR #59
+  off ATLAS-ASSESSMENT (lane/visual-primitives-g1-3, branched from head f8c0f30 — NOT
+  stacked), per founder brief.** Bank untouched; CONVERSION session owns all bank-side
+  changes. Adds: 11 stem SVG primitives (`src/components/visual-primitives/`), 3 answer-input
+  components (`src/components/answer-inputs/`), standalone grading module (`src/lib/grading/`),
+  2 spec docs (`docs/visual-primitives-spec.md`, `docs/answer-model-spec.md`), dev-only gallery
+  at `/dev/visual-primitives`. Verify GREEN 979 tests / 72 files (+64/+16 over 915/56
+  baseline), tsc 0 errors, lint 0 errors (2 known warnings), `pnpm build` GREEN.
+
+* **Grading kept as a standalone pure module (`src/lib/grading/`), explicitly NOT wired into
+  `responseSubmit/handler.ts`.** Rationale: avoids entangling with or regressing the Issue-1
+  served-question gate; grading logic is exercised by its own spec suite and can be integrated
+  cleanly in a dedicated wiring lane after the gate is stable.
+
+* ⚑ **Hard rule documented: every ACTIVE assessment item must be auto-gradeable.**
+  Non-auto-gradeable answer types (free drawing, open production) cannot be active items.
+  Gradeability flag raised for SAM-L1-Q25 ("write a fact family 6,8,2") — the one active
+  G1-3 item not yet mapped to an auto-gradeable answer type; queued for CONVERSION re-authoring
+  (equation-set answer input + set-equality grading model per `docs/answer-model-spec.md`).
+
+* **Dev gallery (`/dev/visual-primitives`) gated by a standalone env flag
+  (`ENABLE_VISUAL_PRIMITIVES_GALLERY` / `isVisualPrimitivesGalleryEnabled`) kept OUT of the
+  §12 `ROLLOUT_FLAGS` registry.** Rationale: it gates an internal developer eyeball page, not
+  a user-facing feature; adding it to the registry would break the existing test that pins the
+  registry's default-off count. Flag is always-on in dev/test, 404 in prod unless the env var
+  is set.
+
+* **New shared UI home `src/components/` introduced (reversible call).** No shared component
+  directory existed in the repo before this lane. The split (`visual-primitives/` and
+  `answer-inputs/` subdirs) is consistent with standard Next.js layout conventions.
+
+* **Read-only audit extended — Appendix A added to `docs/sam-content-authenticity-audit.md`.**
+  29 active G1-3 items classified by rendering bucket: 13 pure-text / 15 math-notation /
+  1 parametric-visual / 0 bespoke-image / 0 drawing. Answer-format breakdown: 15 single /
+  9 MC / 4 ordering-matching / 1 set-of-equations. One gradeability flag: SAM-L1-Q25 (see
+  above). Active G1-3 set has ZERO bespoke-image items. Moved off lane/served-gate-multirow-fix
+  (to keep PR #58 = Issue-1 fix only) into its own follow-up PR `lane/memory-audit-2026-06-13`
+  off ATLAS-ASSESSMENT, bundled with this session's three memory/run-state files (not stacked).
+
+* **Issue-1 (submit 500 / served-gate multirow) fix is on PR #58, OPEN — the QA-unblocking
+  priority.** `lane/served-gate-multirow-fix`, commit `7245826`. The fix: the
+  `question_access_log` existence check in `responseSubmit/handler.ts` switched from
+  `.maybeSingle()` (raises PGRST116/500 on >1 row) to `.limit(1)` (0-or-1 array), so the
+  served-gate tolerates multiple access-log rows on first submit / Strict-Mode resume. Verified
+  on origin 2026-06-13: trunk (head f8c0f30) STILL has `.maybeSingle()` (handler.ts:385) — the
+  fix is NOT on trunk; `.limit(1)` exists only on the lane branch. PR #58 is MERGEABLE / CLEAN /
+  verify-bar SUCCESS / Vercel SUCCESS — needs only the attended merge button. PR #58 also carries
+  two read-only docs (the base `sam-content-authenticity-audit.md` + `picker-level-band-proposal.md`).
+  (Earlier same-session note "uncommitted, no PR" was true at session start; superseded — the
+  founder committed + opened #58 mid-session.)
+
+* **Content-integrity gate PARKED for the CONVERSION session (bank-owned).** Root cause:
+  the `questions` table has NO provenance/rights/"model-reconstructed" column, so authenticity
+  is only inferable from `external_id` + migration comments. ~5 ACTIVE model-reconstructed/
+  vision-recovered SAM-* rows need PDF-faithful re-authoring before they can be trusted as
+  served items: **SAM-L3-Q15** (mojibake-page MC, options invented then dropped → TEXT_ENTRY
+  "4/6"), **SAM-L3-Q03** (options were model value-equivalents, since replaced with page-verbatim —
+  re-confirm), **SAM-L6-Q09/Q11/Q12** (fraction answers vision-recovered from symbol-font keys),
+  plus **SAM-L4-Q15** (answer "1 km 750 m" self-flagged suspect — pending founder PDF check).
+  Separately, **24 inactive image-essential L1-3 rows** (L1 6 / L2 8 / L3 10) need either curated
+  per-question images OR re-authoring against the new parametric primitives before activation.
+  All of this is CONVERSION-owned; other sessions coordinate via repo memory only.
+
+* **Picker level-band widening decided-in-principle: ±3 half-grades with graceful widening**
+  (see `docs/picker-level-band-proposal.md`, carried on PR #58). IMPLEMENT AFTER the CONVERSION
+  re-authoring above — widening the served band before the model-reconstructed rows are
+  PDF-faithful would surface untrusted content more often. Sequencing decision, not yet built.
+
+* **Grading machinery (PR #59) is built but deliberately NOT wired to the live submit path —
+  gated on CONVERSION authoring `correctAnswer` models.** The `src/lib/grading/` rules are
+  proven by their own suite; wiring them into `responseSubmit` is a future lane that can only
+  add value once bank records carry `correctAnswer` (CorrectAnswerModel) per
+  `docs/answer-model-spec.md`. Until then the live path is unchanged.
+
 ## 2026-06-12
 
 * ⚑ **PROCESS RULE HARDENED — "GitHub auto-retargets on parent merge" is FALSE (third
