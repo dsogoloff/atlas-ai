@@ -4,10 +4,18 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-12 QA-prep session — all four security lanes MERGED (PRs #50/#52/#53/#55);
-PR #51 CLOSED (superseded by #55); PR #54 memory lane merged; `supabase db reset` run
-(applies 20260612090000 + 20260611090000). QA-prep package delivered. lane/qa-prep-2026-06-12
-open, PR pending.
+**As of:** 2026-06-13 visual-primitives session — PR #59 OPEN (lane/visual-primitives-g1-3),
+verify-bar SUCCESS + Vercel preview built, awaiting attended merge. G1-3 visual-primitive +
+answer-input + grading library shipped as app code; bank untouched. Verify GREEN 979 tests /
+72 files, tsc 0, lint 0 errors (2 known warnings), pnpm build GREEN.
+**QA-UNBLOCKING PRIORITY:** Issue-1 served-gate multirow fix is on **PR #58 (OPEN, green,
+mergeable)** — NOT yet on trunk (trunk head f8c0f30 still has the buggy `.maybeSingle()`).
+Merge #58 to unblock first-submit QA. A follow-up PR (lane/memory-audit-2026-06-13) carries
+this session's memory + audit Appendix A, kept off #58.
+Previously (2026-06-12): all four security lanes MERGED (PRs #50/#52/#53/#55); PR #51 CLOSED
+(superseded by #55); PR #54 memory lane merged; `supabase db reset` run (applies
+20260612090000 + 20260611090000). QA-prep package delivered. lane/qa-prep-2026-06-12 open,
+PR pending.
 **Session split:** CONVERSION Stage 4 / question-bank work runs in a SEPARATE session. This
 session must NOT touch `scripts/conversion/` or taxonomy migrations; coordinate via repo
 memory only.
@@ -25,13 +33,17 @@ permission to digitize entire test library). CONVERSION Stage 4 built (PR #23, w
 atlas-stage4). Content-id backfill built (PR #22, worktree atlas-backfill).
 Comprehensive-test instrumentation + consent regression test (PRs #41/#42) and comprehensive
 engine (PR #46) are ALL on ATLAS-ASSESSMENT via PR #49 cherry-pick re-land.
-**Verify baseline:** 915 tests / 56 files (ATLAS-ASSESSMENT head 970698e, confirmed 2026-06-12);
-0 type errors; 2 known lint warnings (no-img-element in profile-menu.tsx:48,
-no-page-custom-font in layout.tsx:56); `pnpm build` GREEN.
+**Verify baseline (ATLAS-ASSESSMENT head 970698e / f8c0f30):** 915 tests / 56 files
+(confirmed 2026-06-12); 0 type errors; 2 known lint warnings (no-img-element in
+profile-menu.tsx:48, no-page-custom-font in layout.tsx:56); `pnpm build` GREEN.
+PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 (Earlier snapshots: 900/55 was post-#49; 864/52 was pre-#49; 554 was pre-merge era.)
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Visual-primitive + answer-input library (G1-3) | OPEN PR #59 | lane/visual-primitives-g1-3, branched off ATLAS-ASSESSMENT head f8c0f30 (NOT stacked). App code only — no bank/seed/picker changes. Adds: 11 stem SVG primitives (`src/components/visual-primitives/`), 3 answer-input components (`src/components/answer-inputs/`), standalone grading module (`src/lib/grading/` — decoupled from Issue-1 served-question gate), 2 spec docs (`docs/visual-primitives-spec.md`, `docs/answer-model-spec.md`), dev-only gallery at `/dev/visual-primitives` (flag `isVisualPrimitivesGalleryEnabled` in `src/lib/env.ts`: always-on in dev/test, 404 in prod unless `ENABLE_VISUAL_PRIMITIVES_GALLERY=true`). Also establishes first shared UI home `src/components/` (no shared component dir existed before). Verify GREEN 979/72, tsc 0, lint 0 errors (2 known warnings), build GREEN. Vercel preview built; verify-bar running. Awaiting attended merge. |
+| Served-gate multirow fix (Issue-1) | OPEN PR #58 — QA-UNBLOCKING PRIORITY | lane/served-gate-multirow-fix, commit `7245826`. `responseSubmit/handler.ts` access-log existence check `.maybeSingle()` → `.limit(1)` (tolerates >1 access-log row on first submit / Strict-Mode resume; `.maybeSingle()` raised PGRST116/500). Verified on origin 2026-06-13: trunk head f8c0f30 STILL has `.maybeSingle()` (handler.ts:385) — fix NOT on trunk. PR #58 MERGEABLE/CLEAN, verify-bar SUCCESS, Vercel SUCCESS — needs attended merge. Also carries 2 read-only docs (base sam-content-authenticity-audit.md + picker-level-band-proposal.md). |
+| Session memory + audit Appendix A | follow-up PR (lane/memory-audit-2026-06-13) | The 4 uncommitted files from lane/served-gate-multirow-fix's tree (3 `.agent/` memory files + `docs/sam-content-authenticity-audit.md` Appendix A) moved to their own branch off ATLAS-ASSESSMENT to keep PR #58 = Issue-1 fix only. Docs/memory only; not stacked. NOTE: its audit doc is the FULL file (base + Appendix A) and overlaps PR #58's base audit doc — whichever merges second conflicts on that one file; resolve by keeping the fuller (Appendix A) version (recommend merge #58 first). |
 | Report reskin (layout) | MERGED, BUGS OPEN | `204166b`. Editorial format in; bugs 1 & 2 fixed (`a74c613`, `fbe8c5b`); both analytics events wired. Bugs 1 & 3 (placement bar / radar / sub-strand pills on the `unreliable` degraded branch) PARKED — see NEXT_ACTIONS. |
 | Consent (per-child + gate + classifier-live) | MERGED | `4dc9dc1`+`0a99f76`. Gate server-side, per `child_id`, fails closed. Classifier live in code; needs Vercel env. |
 | Instructor portal | MERGED | `48c7378` (merge `a8a988c`). Roster, diagnostic view, notes, response-derived item review. Raw question content gated. |
@@ -79,9 +91,9 @@ no-page-custom-font in layout.tsx:56); `pnpm build` GREEN.
   `atlas-memory` (this lane). Remove each after its PR merges.
 
 ## Immediate next actions
-See `NEXT_ACTIONS.md`. Four security PRs opened 2026-06-12 await attended merge.
+See `NEXT_ACTIONS.md`.
 
-Founder actions (2026-06-12 — security lanes DONE):
+Founder actions (current):
 1. [DONE] Merged PR #50 (served-question-gate, ea53da5).
 2. [DONE] Merged PR #55 (duplicate-response-constraint, 4b31baa) — superseded PR #51 (closed).
 3. [DONE] Merged PR #52 (ai-data-minimization, 57e5f93).
@@ -90,8 +102,9 @@ Founder actions (2026-06-12 — security lanes DONE):
 6. [DONE] Verify baseline confirmed: 915 tests / 56 files GREEN; tsc 0 errors; build GREEN.
 7. Merge PR #43 (lane/ops-runbook-gaps — docs only; no DB; no supabase db reset needed).
 8. Merge PR (lane/qa-prep-2026-06-12) after Vercel preview review — adds dev-seed-instructor-roster.sql + qa-prep-e2e-run.md.
-9. For QA run: set ENABLE_COMPREHENSIVE_PILOT=true in .env.local; COMPREHENSIVE test also requires a manual POST to /api/assess/start with `comprehensive:true` — not reachable from the UI via startSession({child_id}) alone.
-10. Curate per-question images for the 30+ inactive image-essential questions (upload manifests in each worksheet's output folder); full-page renders must never ship.
+9. **NEW (2026-06-13):** Eyeball PR #59 Vercel preview — set `ENABLE_VISUAL_PRIMITIVES_GALLERY=true` on the Preview env + redeploy, open `/dev/visual-primitives`; then merge if satisfied. No supabase db reset needed.
+10. For QA run: set ENABLE_COMPREHENSIVE_PILOT=true in .env.local; COMPREHENSIVE test also requires a manual POST to /api/assess/start with `comprehensive:true` — not reachable from the UI via startSession({child_id}) alone.
+11. Curate per-question images for the 30+ inactive image-essential questions (upload manifests in each worksheet's output folder); full-page renders must never ship.
 
 - **RESOLVED (was parked):** the 5 marketing "diagnostic" occurrences — merged PR #20 scrubbed the remaining rendered "diagnostic" strings; open PR #21 renames the "Diagnostic Precision" card (line 170) and removes the 98% claim.
 - **PARKED — needs Dimitri action:** Codex CLI auth (`codex login` or set `OPENAI_API_KEY` on this box) to unblock automated relay + `.mcp.json`.

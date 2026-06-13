@@ -134,3 +134,99 @@ is active — it is listed in the ACTIVE candidates above, not here.)*
   original load values are in `20260611134158_load_sam_questions.sql:383-405`.
 - This audit makes no claim about answer-key *correctness* beyond what the migration comments
   self-report; correctness suspects are in `docs/question-bank-audit-2026-06-10.md`.
+
+---
+
+# APPENDIX A — Rendering & answer-format classification (active grades 1–3) — 2026-06-13
+
+**Read-only, additive.** This appendix machine-classifies **every ACTIVE question in
+the grade 1–3 band** (S.A.M. levels L1=grade 1, L2=grade 2, L3=grade 3) along two
+independent axes — how the **stem** must render, and how the **answer** is shaped —
+so we can size the bespoke-image tail and the auto-grading tail and prioritise. It
+makes **no changes** to the bank. Final `is_active`/`format` were traced through
+`supabase/seed.sql` (the dev/CI mirror = final state) cross-checked against the load
+migrations (`20260610151306`, `20260611134158`) and the fix/reclassify migrations
+(`20260610170100`, `20260610180000`, `20260610190000`, `20260611014520`,
+`20260611140000`).
+
+## Authoritative active set
+
+**L1 = 6, L2 = 13, L3 = 10 → 29 active grade-1–3 items.** (The touched-rows table
+above lists only rows changed by a fix migration; it does **not** enumerate the
+untouched-but-active rows, so counting "active G1–3" from that table alone
+undercounts. These are the authoritative totals.) Key `is_active` flips inside the
+band: **SAM-L2-Q04** deactivated (`20260611014520_prerun_q4_q15.sql:45-49`,
+`seed.sql:1750-1756`, image_required); **SAM-L3-Q15** net **active** (deactivated by
+`…190000`, reactivated TEXT_ENTRY by `…014520:51-62` / `seed.sql:1762-1770`). **No
+active L1–L3 row has `image_required:true`** — every image-essential row in the band
+is inactive.
+
+## Axis 1 — rendering bucket (how the stem renders)
+
+| bucket | count | meaning |
+|---|---|---|
+| pure-text | **13** | plain words/numbers, no diagram, no special notation |
+| math-notation | **15** | inline math symbols / fractions / expressions, no diagram |
+| parametric-visual | **1** | needs a diagram our primitive library renders from params |
+| bespoke-image-essential | **0** | needs a specific non-parameterisable picture |
+| drawing-answer | **0** | inherently requires a free-drawn answer |
+
+- pure-text (13): L1-Q21/23/24; L2-Q08/Q09/Q11/Q14/Q17/Q20; L3-Q02/Q05/Q18/Q22.
+- math-notation (15): L1-Q20/Q25/Q28; L2-Q01/Q07/Q10/Q13/Q19/Q21; L3-Q03/Q07/Q11/Q14/Q15/Q21.
+- parametric-visual (1): **L2-Q22** (number pattern `860 840 820 800 ?` — borderline;
+  pure-text is also defensible, but a `pattern-sequence`/`number-line` primitive is the
+  natural rendering).
+
+**Sizing takeaway:** within the *currently active* G1–3 band the bespoke-image tail is
+**zero** — all 28 non-parametric items are text/notation, and only 1 is even a
+candidate for a parametric visual. The bespoke-image demand lives entirely in the
+**inactive** image-essential rows (24 inactive L1–L3 rows: L1 6 / L2 8 / L3 10 — see
+the touched-row table and load migrations), which are the rows that will need curated
+per-question images **or** re-authoring against the parametric primitives before they
+can be activated. The new primitive library is therefore most valuable as the path to
+**activate the inactive image-essential tail** (and to author future items) rather than
+to re-skin the already-active set.
+
+## Axis 2 — answer-format taxonomy + gradeability
+
+| answer-format | count | notes |
+|---|---|---|
+| single (one numeric/text box) | **15** | NUMERIC_ENTRY + single-value TEXT_ENTRY |
+| MC | **9** | MULTIPLE_CHOICE |
+| ordering-matching | **4** | DRAG_DROP, each with `items` + `correct_order` |
+| set-of-equations | **1** | fact family |
+| multi-blank | **0** | none active in band |
+| drawing-production | **0** | none active in band (correctly — see the hard constraint) |
+
+- single (15): L1-Q20/Q21/Q23/Q24; L2-Q08/Q11/Q17/Q19/Q20/Q22; L3-Q02/Q05/Q15/Q18/Q21.
+- MC (9): L2-Q01/Q07/Q09/Q13/Q14; L3-Q03/Q07/Q11/Q22.
+- ordering-matching (4): L1-Q28; L2-Q10/Q21; L3-Q14 (all carry a usable `correct_order`,
+  e.g. L1-Q28 `correct_order ["10","17","20"]` at `seed.sql:1605-1606` — gradeable).
+- set-of-equations (1): L1-Q25 (see flag below).
+
+## Flagged — not cleanly auto-gradeable as currently shaped
+
+- **SAM-L1-Q25** (`seed.sql:1153-1157`). Stem: *"Write a fact family with these
+  numbers: 6, 8, 2."* Final format **TEXT_ENTRY**, `correct_answer` =
+  `"6 + 2 = 8, 2 + 6 = 8, 8 – 2 = 6, 8 – 6 = 2"` (`num_operations = 4`). This is a
+  **four-equation fact family collapsed into a single TEXT_ENTRY string**: a correct
+  learner who reorders the sentences, omits the commutative duplicate, or spaces
+  `-`/`=` differently is marked wrong by an exact-text match. It is semantically
+  `set-of-equations` but stored as `single`. **This is the only gradeability defect in
+  the active G1–3 band.** It is precisely the case the new `equation-set` answer input +
+  `set-equality` grading rule (see `docs/answer-model-spec.md`, worked 6/8/2 example)
+  is built to handle — re-authoring this item's answer model is an app-side fix the
+  CONVERSION session can make against that contract. *(This appendix does not change
+  the row; per the rule that the bank is CONVERSION-owned.)*
+
+No other active L1–L3 item is collapsed/ungradeable: all four DRAG_DROP rows have a
+usable `correct_order`; no active item is drawing-production (consistent with the hard
+constraint in `docs/answer-model-spec.md` that non-auto-gradeable answer types cannot
+be active assessment items).
+
+## Cross-reference correction
+
+The touched-rows table above rates **SAM-L1-Q25** as "Low — format-only, content
+unchanged." That is accurate for *provenance/authenticity* (its scope), but for the
+**gradeability** surface L1-Q25 must be read as **flagged** (collapsed
+set-of-equations), per the row above.
