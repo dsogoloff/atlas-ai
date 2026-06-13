@@ -1,0 +1,381 @@
+{
+  "$schema_note": "L1 re-authoring overlay (lane/l1-reauthoring). SOURCE OF TRUTH for the interaction/primitive/answer-model/blocker metadata of all 28 Level 1 Placement Worksheet tasks. Consumed by scripts/conversion/apply-l1-overlay.ts (pnpm convert:apply-overlay), which emits an ADDITIVE migration + appends statements after the generated stage4 block in seed.sql. It NEVER rewrites the generated block or any existing migration (Option 3, founder-directed 2026-06-13). Only entries with action in {insert,update} emit SQL; action=none rows are recorded for the audit trail only and are left byte-for-byte as committed.",
+  "meta": {
+    "lane": "lane/l1-reauthoring",
+    "worksheet": "Level 1 Placement Worksheet.pdf",
+    "answer_key": "Level 1 Placement Worksheet Answer Key.pdf",
+    "tenant_slug": "inspirea_singapore_math",
+    "generated_by": "pnpm convert:apply-overlay",
+    "current_head_note": "Q20/Q25 are TEXT_ENTRY and Q28 is DRAG_DROP at head (migrations 20260610170000 + 20260610170100). UPDATE guards tolerate NUMERIC_ENTRY|TEXT_ENTRY so they are idempotent on either state. Q28 needs no change.",
+    "guardrail": "Rows with authoring.requires_format_swap=true carry content._authoring.requires_format_swap=true and MUST stay is_active=false. The CHECK constraint added by the guardrail migration makes a bare is_active=true on such a row INVALID; activation is the atomic step: add the real question_format enum value -> set the real format + content -> clear requires_format_swap -> set is_active=true.",
+    "format_enum_at_head": ["MULTIPLE_CHOICE", "NUMERIC_ENTRY", "DRAG_DROP", "TEXT_ENTRY"],
+    "valid_operation_type": ["ADDITION","SUBTRACTION","MULTIPLICATION","DIVISION","FRACTION_OP","DECIMAL_OP","PERCENT_OP","GEOMETRY","MEASUREMENT","PATTERN","ALGEBRA","COUNTING","IDENTIFY"],
+    "valid_representation": ["SYMBOLIC","PICTORIAL","BAR_MODEL_REQUIRED","WORD_PROBLEM_SINGLE","WORD_PROBLEM_MULTI"],
+    "counts": {
+      "active": 8,
+      "active_ids": ["SAM-L1-Q11","SAM-L1-Q17","SAM-L1-Q20","SAM-L1-Q21","SAM-L1-Q23","SAM-L1-Q24","SAM-L1-Q27","SAM-L1-Q28"],
+      "deactivated": ["SAM-L1-Q25"],
+      "staged_inactive_author_but_hold": ["SAM-L1-Q01","SAM-L1-Q02","SAM-L1-Q03","SAM-L1-Q04","SAM-L1-Q05","SAM-L1-Q06","SAM-L1-Q07","SAM-L1-Q08","SAM-L1-Q10","SAM-L1-Q12","SAM-L1-Q13","SAM-L1-Q14","SAM-L1-Q16","SAM-L1-Q19","SAM-L1-Q22","SAM-L1-Q26"],
+      "parked": ["SAM-L1-Q15"],
+      "genuinely_inactive_oral": ["SAM-L1-Q09","SAM-L1-Q18"]
+    }
+  },
+  "tasks": {
+    "SAM-L1-Q01": {
+      "task_number": 1, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -2.0, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Click on the things that are the same color." },
+        "misconception_tags": [], "word_count": 8, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "select-multiple-MC", "primitive": "shape-2d",
+        "answer_model": { "rule": "select-all", "correct": ["flower", "car", "hat"], "note": "pick every object sharing the target color; distractors present" },
+        "blocker_code": "D", "also_blocked_by": "A", "held": true, "requires_format_swap": true,
+        "spelling_americanized": true, "notes": "source: 'Circle the things that have the same colour.' -> click + colour->color. select-multiple input does not exist (the 'make 10' gap)." }
+    },
+    "SAM-L1-Q02": {
+      "task_number": 2, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "measurement", "level": "1A", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Click on the bigger animal.", "options": ["the elephant", "the mouse"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 5, "operation_type": "MEASUREMENT", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-measurement-1"
+      },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": "shape-2d",
+        "answer_model": { "rule": "mc-index", "correct_index": 0, "answer_key": "Elephant" },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "MC answer is on a wired format; activation gated only on the parametric visual renderer (size-comparison shapes)." }
+    },
+    "SAM-L1-Q03": {
+      "task_number": 3, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "measurement", "level": "1A", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Which is longer, the toy car or the toy plane?", "options": ["the toy car", "the toy plane"], "correct_index": 1 },
+        "misconception_tags": [], "word_count": 9, "operation_type": "MEASUREMENT", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-measurement-1"
+      },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": "bar-model",
+        "answer_model": { "rule": "mc-index", "correct_index": 1, "answer_key": "Toy plane" },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "length comparison; answer by name (wired MC). Visual (two lengths) gates activation." }
+    },
+    "SAM-L1-Q04": {
+      "task_number": 4, "status": "staged-inactive", "action": "none", "is_active": false,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "Lin", "is_active": false, "level": "1A", "in_migration": "20260610151306" },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": "bar-model",
+        "answer_model": { "rule": "mc-index", "options": ["Lin", "George"], "correct_index": 0 },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "Already banked is_active=false. Left byte-for-byte this pass (corrections capped at Q20/Q25 per founder). Target recorded here; flip when blocker A lands. Stays banded 1A (no re-band)." }
+    },
+    "SAM-L1-Q05": {
+      "task_number": 5, "status": "staged-inactive", "action": "none", "is_active": false,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "B", "is_active": false, "level": "1A", "in_migration": "20260610151306" },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": "shape-2d",
+        "answer_model": { "rule": "mc-index", "options": ["Group A", "Group B"], "correct_index": 1 },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "Banked inactive; left as-is. Fold 'Answer: Group ___' into the MC on activation. Stays 1A." }
+    },
+    "SAM-L1-Q06": {
+      "task_number": 6, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Click on the flower that comes next in the pattern.", "options": ["option 1", "option 2", "option 3"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 9, "operation_type": "PATTERN", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "click-on-visual", "primitive": "pattern-sequence",
+        "answer_model": { "rule": "mc-index", "note": "continue the AB pattern; options are rendered pattern candidates" },
+        "blocker_code": "A", "also_blocked_by": "B", "held": true, "requires_format_swap": false,
+        "notes": "answer-key text 'Circle the bigger purple flower' is the next pattern term. Provisional content_key l1-geometry-1 (no l1 'patterns' code exists); options are placeholders pending pattern-sequence render." }
+    },
+    "SAM-L1-Q07": {
+      "task_number": 7, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -2.0, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Match the pieces to complete the picture." },
+        "misconception_tags": [], "word_count": 7, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "ordering-matching", "primitive": null,
+        "answer_model": { "rule": "set-order", "note": "low tractability: picture-assembly/matching; needs a curated visual + a matching input" },
+        "blocker_code": "A", "also_blocked_by": "B", "held": true, "requires_format_swap": true,
+        "notes": "LOW TRACTABILITY. May end genuinely-inactive if no clean auto-grade shape emerges; parked as held." }
+    },
+    "SAM-L1-Q08": {
+      "task_number": 8, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -2.0, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Look at the picture. (a) The ball is on the ___ . (b) The box is on the ___ shelf. (c) The shoe is on the ___ ." },
+        "misconception_tags": [], "word_count": 28, "operation_type": "IDENTIFY", "num_operations": 3,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "primitive": "shape-2d",
+        "answer_model": { "rule": "per-blank", "blanks": { "a": "right", "b": "top", "c": "left" }, "alt": "decompose into 3 single-MC items (right/left, top/bottom, right/left) to avoid multi-blank" },
+        "blocker_code": "E", "also_blocked_by": "A", "held": true, "requires_format_swap": true,
+        "notes": "position words. 3-blank; or split to 3 wired single-MC. Still needs the shelf visual (A)." }
+    },
+    "SAM-L1-Q09": {
+      "task_number": 9, "status": "genuinely-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "1A", "difficulty": -2.0, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Count aloud from 1 to 10." },
+        "misconception_tags": [], "word_count": 6, "operation_type": "COUNTING", "num_operations": 1,
+        "representation": "SYMBOLIC", "content_key": "l1-whole_numbers-1"
+      },
+      "authoring": {
+        "target_interaction": "open-production(inactive)", "primitive": null,
+        "answer_model": null, "blocker_code": "none-oral", "held": true, "requires_format_swap": false,
+        "notes": "Oral rote count; answer key says 'Observe the student's pronunciation'. No auto-grade path; instructor/print use only." }
+    },
+    "SAM-L1-Q10": {
+      "task_number": 10, "status": "staged-inactive", "action": "none", "is_active": false,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "9", "is_active": false, "level": "1A", "in_migration": "20260610151306" },
+      "authoring": {
+        "target_interaction": "numeric-single", "primitive": "ten-frame",
+        "answer_model": { "rule": "exact-numeric", "value": 9 },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "Banked inactive; numeric answer already wired. Only the count visual (ten-frame/array) gates activation. Stays 1A." }
+    },
+    "SAM-L1-Q12": {
+      "task_number": 12, "status": "staged-inactive", "action": "none", "is_active": false,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "A", "is_active": false, "level": "1A", "in_migration": "20260610151306" },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": "array",
+        "answer_model": { "rule": "mc-index", "options": ["Set A", "Set B"], "correct_index": 0 },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "Banked inactive; left as-is. Fold 'Answer: Set ___' into MC on activation. Stays 1A." }
+    },
+    "SAM-L1-Q13": {
+      "task_number": 13, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -2.0, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Match each shape to its name: rectangle, circle, square, triangle." },
+        "misconception_tags": ["GE_SHAPE_PROPERTY"], "word_count": 10, "operation_type": "GEOMETRY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "ordering-matching", "primitive": "shape-2d",
+        "answer_model": { "rule": "set-order", "pairs": { "rectangle": "rectangle", "circle": "circle", "square": "square", "triangle": "triangle" } },
+        "blocker_code": "A", "also_blocked_by": "B", "held": true, "requires_format_swap": true,
+        "notes": "2D shape naming; needs shape glyphs rendered (shape-2d) + a matching/visual-MC input." }
+    },
+    "SAM-L1-Q14": {
+      "task_number": 14, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "operations_algorithms", "level": "1A", "difficulty": -1.8, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "___ apples and ___ apples make 8 apples." },
+        "misconception_tags": ["NS_COUNTING_ERROR"], "word_count": 7, "operation_type": "ADDITION", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-whole_numbers-2"
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "primitive": "number-bond",
+        "answer_model": { "rule": "per-blank", "blanks": { "a": "5", "b": "3" }, "note": "part-whole decomposition of 8; could render as number-bond whole=8 parts=[5,3]" },
+        "blocker_code": "E", "also_blocked_by": "A", "held": true, "requires_format_swap": true,
+        "notes": "two answer blanks (5 and 3). Needs multi-blank input + apple/array visual." }
+    },
+    "SAM-L1-Q15": {
+      "task_number": 15, "status": "parked", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -1.8, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Match each solid to its name: sphere, cylinder, cube, cone." },
+        "misconception_tags": ["GE_SHAPE_PROPERTY"], "word_count": 9, "operation_type": "GEOMETRY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "ordering-matching", "primitive": null,
+        "answer_model": { "rule": "set-order", "pairs": { "sphere": "sphere", "cylinder": "cylinder", "cube": "cube", "cone": "cone" } },
+        "blocker_code": "F", "also_blocked_by": "A,B", "held": true, "requires_format_swap": true,
+        "notes": "PARKED (founder): no 3D-solid primitive and no bespoke art. Leave inactive; do not build a primitive this pass." }
+    },
+    "SAM-L1-Q16": {
+      "task_number": 16, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "1A", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Who is in front of the tree, Louis or Andy?", "options": ["Louis", "Andy"], "correct_index": 1 },
+        "misconception_tags": [], "word_count": 9, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-geometry-1"
+      },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": "shape-2d",
+        "answer_model": { "rule": "mc-index", "correct_index": 1, "answer_key": "Andy" },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "position 'in front of'. Wired MC; needs the front/behind visual to activate." }
+    },
+    "SAM-L1-Q17": {
+      "task_number": 17, "status": "active", "action": "insert", "is_active": true,
+      "row": {
+        "strand": "number_sense", "level": "1A", "difficulty": -2.0, "format": "DRAG_DROP",
+        "content": {
+          "stem": "Put the parts of Tom's day in order. Begin with what he does first.",
+          "items": ["Studying in class", "Sleeping", "Brushing teeth", "Walking to school"],
+          "correct_order": ["Brushing teeth", "Walking to school", "Studying in class", "Sleeping"]
+        },
+        "misconception_tags": ["WP_MULTI_STEP_SEQUENCE"], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "WORD_PROBLEM_SINGLE", "content_key": "l1-whole_numbers-1"
+      },
+      "authoring": {
+        "target_interaction": "ordering-matching", "primitive": null,
+        "answer_model": { "rule": "drag-drop-order", "correct_order": ["Brushing teeth", "Walking to school", "Studying in class", "Sleeping"] },
+        "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "level_assignment": "1A (founder-locked)",
+        "notes": "reframe: picture-ordering -> ordered TEXT label cards (live DRAG_DROP). PROVISIONAL content_key l1-whole_numbers-1 (no l1 ordinal/sequence code exists) -> content_id may resolve loosely; strand number_sense. Flagged for taxonomy review." }
+    },
+    "SAM-L1-Q18": {
+      "task_number": 18, "status": "genuinely-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "1A", "difficulty": -2.0, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Count aloud from 1 to 30. Then write the number 8. Which activity took a longer time to finish? Color the box." },
+        "misconception_tags": [], "word_count": 24, "operation_type": "COUNTING", "num_operations": 1,
+        "representation": "SYMBOLIC", "content_key": "l1-whole_numbers-1"
+      },
+      "authoring": {
+        "target_interaction": "open-production(inactive)", "primitive": null,
+        "answer_model": null, "blocker_code": "none-oral", "held": true, "requires_format_swap": false,
+        "spelling_americanized": true,
+        "notes": "Oral count + marking ('Colour'->'Color'). No clean auto-grade path; a 'which took longer' single-MC sub-question is salvageable later." }
+    },
+    "SAM-L1-Q19": {
+      "task_number": 19, "status": "staged-inactive", "action": "none", "is_active": false,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "9; yes", "is_active": false, "level": "1A", "in_migration": "20260610151306" },
+      "authoring": {
+        "target_interaction": "multi-blank", "primitive": "array",
+        "answer_model": { "rule": "per-blank", "blanks": { "count": "9", "same": "yes" } },
+        "blocker_code": "E", "also_blocked_by": "A", "held": true, "requires_format_swap": true,
+        "notes": "Banked inactive; left byte-for-byte (corrections capped at Q20/Q25). NOT brought under the CHECK guardrail this pass because its row is unchanged — tracked in the broader reconciliation. Conservation-of-number: count + yes/no, two blanks." }
+    },
+    "SAM-L1-Q20": {
+      "task_number": 20, "status": "active", "action": "update", "is_active": true,
+      "update": {
+        "format": "MULTIPLE_CHOICE",
+        "content": {
+          "stem": "Write greater than or smaller than.\n5 is ___ 7.",
+          "options": ["greater than", "smaller than"],
+          "correct_index": 1,
+          "distractor_misconceptions": { "0": "NS_MAGNITUDE_MISJUDGE" }
+        }
+      },
+      "guard": { "external_id": "SAM-L1-Q20", "format_in": ["NUMERIC_ENTRY", "TEXT_ENTRY"] },
+      "authoring": {
+        "target_interaction": "single-MC", "primitive": null,
+        "answer_model": { "rule": "mc-index", "correct_index": 1 },
+        "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "notes": "Head state is TEXT_ENTRY (answerable). This converts to MC greater/smaller (founder end-state) — enhancement, not bug-fix. Guard tolerates NUMERIC_ENTRY|TEXT_ENTRY for idempotency. No visual needed." }
+    },
+    "SAM-L1-Q21": {
+      "task_number": 21, "status": "active", "action": "none", "is_active": true,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "8", "is_active": true },
+      "authoring": { "target_interaction": "numeric-single", "primitive": null, "answer_model": { "rule": "exact-numeric", "value": 8 }, "blocker_code": "none", "held": false, "requires_format_swap": false, "notes": "Already clean + active. Unchanged (byte-for-byte)." }
+    },
+    "SAM-L1-Q22": {
+      "task_number": 22, "status": "staged-inactive", "action": "none", "is_active": false,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "8", "is_active": false, "level": "1A", "in_migration": "20260610151306" },
+      "authoring": {
+        "target_interaction": "numeric-single", "primitive": "number-bond",
+        "answer_model": { "rule": "exact-numeric", "value": 8, "visual_spec": { "kind": "number-bond", "whole": "?", "parts": [2, 6] } },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "Banked inactive; numeric answer wired. number-bond primitive must render to activate. Stays 1A." }
+    },
+    "SAM-L1-Q23": {
+      "task_number": 23, "status": "active", "action": "none", "is_active": true,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "10", "is_active": true },
+      "authoring": { "target_interaction": "numeric-single", "primitive": null, "answer_model": { "rule": "exact-numeric", "value": 10 }, "blocker_code": "none", "held": false, "requires_format_swap": false, "notes": "Already clean + active. Unchanged." }
+    },
+    "SAM-L1-Q24": {
+      "task_number": 24, "status": "active", "action": "none", "is_active": true,
+      "current": { "format": "NUMERIC_ENTRY", "content_correct_answer": "5", "is_active": true },
+      "authoring": { "target_interaction": "numeric-single", "primitive": null, "answer_model": { "rule": "exact-numeric", "value": 5 }, "blocker_code": "none", "held": false, "requires_format_swap": false, "notes": "Already clean + active. Unchanged." }
+    },
+    "SAM-L1-Q25": {
+      "task_number": 25, "status": "deactivated", "action": "update", "is_active": false,
+      "update": {
+        "is_active": false,
+        "content_merge": {
+          "_authoring": {
+            "target_interaction": "equation-set",
+            "answer_model": {
+              "rule": "set-equality",
+              "allowCommutative": true,
+              "canonical": [
+                { "a": 6, "op": "+", "b": 2, "result": 8 },
+                { "a": 2, "op": "+", "b": 6, "result": 8 },
+                { "a": 8, "op": "-", "b": 6, "result": 2 },
+                { "a": 8, "op": "-", "b": 2, "result": 6 }
+              ]
+            },
+            "blocker_code": "C",
+            "held": true,
+            "requires_format_swap": true
+          }
+        }
+      },
+      "guard": { "external_id": "SAM-L1-Q25", "is_active": true },
+      "authoring": {
+        "target_interaction": "equation-set", "primitive": null,
+        "answer_model": { "rule": "set-equality", "note": "fact family 6,8,2 — the exact worked example in docs/answer-model-spec.md" },
+        "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "notes": "Head state TEXT_ENTRY + active (child would have to type the whole fact family string). DEACTIVATE now; carries the equation-set model in content._authoring + requires_format_swap so the guardrail forbids a bare is_active=true until ATLAS wires equation-set. Guard on is_active=true for idempotency." }
+    },
+    "SAM-L1-Q26": {
+      "task_number": 26, "status": "staged-inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "1A", "difficulty": -1.8, "format": "NUMERIC_ENTRY",
+        "content": { "stem": "Count the objects. Write the number." },
+        "misconception_tags": ["NS_COUNTING_ERROR", "NS_PLACE_VALUE_CONFUSION"], "word_count": 6, "operation_type": "COUNTING", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l1-whole_numbers-8"
+      },
+      "authoring": {
+        "target_interaction": "numeric-single", "primitive": "ten-frame",
+        "answer_model": { "rule": "exact-numeric", "value": 17 },
+        "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "notes": "source: 'Circle a group of 10. Count. Write the number.' answer key total = 17. The 'circle a group of 10' marking sub-task is dropped; gradeable part = count total (Numbers to 20). Needs count visual (~17 objects)." }
+    },
+    "SAM-L1-Q27": {
+      "task_number": 27, "status": "active", "action": "insert", "is_active": true,
+      "row": {
+        "strand": "number_sense", "level": "1B", "difficulty": -1.2, "format": "DRAG_DROP",
+        "content": {
+          "stem": "Put these number words in order. Begin with the smallest.",
+          "items": ["twenty", "eleven", "thirteen", "twelve"],
+          "correct_order": ["eleven", "twelve", "thirteen", "twenty"]
+        },
+        "misconception_tags": ["NS_MAGNITUDE_MISJUDGE", "NS_PLACE_VALUE_CONFUSION"], "word_count": 10, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "SYMBOLIC", "content_key": "l1-whole_numbers-8"
+      },
+      "authoring": {
+        "target_interaction": "ordering-matching", "primitive": null,
+        "answer_model": { "rule": "drag-drop-order", "correct_order": ["eleven", "twelve", "thirteen", "twenty"] },
+        "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "level_assignment": "1B (founder-locked)",
+        "notes": "reframe: 'match number to number word (11-20)' -> order the number-words by value (live DRAG_DROP, text-only). Recognising each word's value is still exercised. Numbers to 20 => l1-whole_numbers-8, 1B." }
+    },
+    "SAM-L1-Q11": {
+      "task_number": 11, "status": "active", "action": "insert", "is_active": true,
+      "row": {
+        "strand": "number_sense", "level": "1A", "difficulty": -2.0, "format": "DRAG_DROP",
+        "content": {
+          "stem": "Put these number words in order. Begin with the smallest.",
+          "items": ["seven", "one", "ten", "four", "nine"],
+          "correct_order": ["one", "four", "seven", "nine", "ten"]
+        },
+        "misconception_tags": ["NS_MAGNITUDE_MISJUDGE"], "word_count": 10, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "SYMBOLIC", "content_key": "l1-whole_numbers-1"
+      },
+      "authoring": {
+        "target_interaction": "ordering-matching", "primitive": null,
+        "answer_model": { "rule": "drag-drop-order", "correct_order": ["one", "four", "seven", "nine", "ten"] },
+        "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "level_assignment": "1A (founder-locked)",
+        "subset_choice": "5-word subset of the worksheet's 1-10 set (one, four, seven, nine, ten) — founder-approved; ordering 9 cards is heavy for age 6-7.",
+        "notes": "reframe: 'match number to number word (1-10)' -> order number-words by value (live DRAG_DROP, text-only)." }
+    }
+  }
+}

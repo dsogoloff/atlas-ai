@@ -2303,3 +2303,145 @@ where q.tenant_id = t.id
   and q.format = 'NUMERIC_ENTRY'
   and q.external_id in ('SAM-L6-Q09', 'SAM-L6-Q11', 'SAM-L6-Q12');
 
+
+-- BEGIN l1-overlay (lane/l1-reauthoring — do not hand-edit; pnpm convert:apply-overlay)
+-- MIRRORS supabase/migrations/20260613120100_l1_overlay_load.sql (dev/CI path; runs after the
+-- generated stage4 block and the reclassify mirrors). Idempotent.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active, content_id)
+select t.id, v.external_id, v.strand::strand, v.level::half_grade_level,
+       v.difficulty, v.format::question_format,
+       v.content::jsonb, v.misconception_tags,
+       v.word_count, v.operation_type::operation_type, v.num_operations,
+       v.representation::representation_kind,
+       v.is_active,
+       (select tc.id from tax_content tc
+          where tc.tenant_id = t.id and tc.code = v.content_key)
+from t,
+  (values
+    -- SAM-L1-Q01 | staged-inactive | blocker D
+    ('SAM-L1-Q01', 'geometry', '1A', -2, 'NUMERIC_ENTRY',
+     '{"stem":"Click on the things that are the same color.","_authoring":{"target_interaction":"select-multiple-MC","blocker_code":"D","held":true,"requires_format_swap":true}}'::jsonb,
+     array[]::text[],
+     8, 'IDENTIFY', 1, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q02 | staged-inactive | blocker A
+    ('SAM-L1-Q02', 'measurement', '1A', -2, 'MULTIPLE_CHOICE',
+     '{"stem":"Click on the bigger animal.","options":["the elephant","the mouse"],"correct_index":0,"_authoring":{"target_interaction":"single-MC","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
+     array[]::text[],
+     5, 'MEASUREMENT', 1, 'PICTORIAL', false, 'l1-measurement-1'),
+
+    -- SAM-L1-Q03 | staged-inactive | blocker A
+    ('SAM-L1-Q03', 'measurement', '1A', -2, 'MULTIPLE_CHOICE',
+     '{"stem":"Which is longer, the toy car or the toy plane?","options":["the toy car","the toy plane"],"correct_index":1,"_authoring":{"target_interaction":"single-MC","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
+     array[]::text[],
+     9, 'MEASUREMENT', 1, 'PICTORIAL', false, 'l1-measurement-1'),
+
+    -- SAM-L1-Q06 | staged-inactive | blocker A
+    ('SAM-L1-Q06', 'geometry', '1A', -2, 'MULTIPLE_CHOICE',
+     '{"stem":"Click on the flower that comes next in the pattern.","options":["option 1","option 2","option 3"],"correct_index":0,"_authoring":{"target_interaction":"click-on-visual","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
+     array[]::text[],
+     9, 'PATTERN', 1, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q07 | staged-inactive | blocker A
+    ('SAM-L1-Q07', 'geometry', '1A', -2, 'NUMERIC_ENTRY',
+     '{"stem":"Match the pieces to complete the picture.","_authoring":{"target_interaction":"ordering-matching","blocker_code":"A","held":true,"requires_format_swap":true}}'::jsonb,
+     array[]::text[],
+     7, 'IDENTIFY', 1, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q08 | staged-inactive | blocker E
+    ('SAM-L1-Q08', 'geometry', '1A', -2, 'NUMERIC_ENTRY',
+     '{"stem":"Look at the picture. (a) The ball is on the ___ . (b) The box is on the ___ shelf. (c) The shoe is on the ___ .","_authoring":{"target_interaction":"multi-blank","blocker_code":"E","held":true,"requires_format_swap":true}}'::jsonb,
+     array[]::text[],
+     28, 'IDENTIFY', 3, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q09 | genuinely-inactive | blocker none-oral
+    ('SAM-L1-Q09', 'number_sense', '1A', -2, 'NUMERIC_ENTRY',
+     '{"stem":"Count aloud from 1 to 10.","_authoring":{"target_interaction":"open-production(inactive)","blocker_code":"none-oral","held":true,"requires_format_swap":false}}'::jsonb,
+     array[]::text[],
+     6, 'COUNTING', 1, 'SYMBOLIC', false, 'l1-whole_numbers-1'),
+
+    -- SAM-L1-Q11 | active | blocker none
+    ('SAM-L1-Q11', 'number_sense', '1A', -2, 'DRAG_DROP',
+     '{"stem":"Put these number words in order. Begin with the smallest.","items":["seven","one","ten","four","nine"],"correct_order":["one","four","seven","nine","ten"]}'::jsonb,
+     array['NS_MAGNITUDE_MISJUDGE'],
+     10, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l1-whole_numbers-1'),
+
+    -- SAM-L1-Q13 | staged-inactive | blocker A
+    ('SAM-L1-Q13', 'geometry', '1A', -2, 'NUMERIC_ENTRY',
+     '{"stem":"Match each shape to its name: rectangle, circle, square, triangle.","_authoring":{"target_interaction":"ordering-matching","blocker_code":"A","held":true,"requires_format_swap":true}}'::jsonb,
+     array['GE_SHAPE_PROPERTY'],
+     10, 'GEOMETRY', 1, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q14 | staged-inactive | blocker E
+    ('SAM-L1-Q14', 'operations_algorithms', '1A', -1.8, 'NUMERIC_ENTRY',
+     '{"stem":"___ apples and ___ apples make 8 apples.","_authoring":{"target_interaction":"multi-blank","blocker_code":"E","held":true,"requires_format_swap":true}}'::jsonb,
+     array['NS_COUNTING_ERROR'],
+     7, 'ADDITION', 1, 'PICTORIAL', false, 'l1-whole_numbers-2'),
+
+    -- SAM-L1-Q15 | parked | blocker F
+    ('SAM-L1-Q15', 'geometry', '1A', -1.8, 'NUMERIC_ENTRY',
+     '{"stem":"Match each solid to its name: sphere, cylinder, cube, cone.","_authoring":{"target_interaction":"ordering-matching","blocker_code":"F","held":true,"requires_format_swap":true}}'::jsonb,
+     array['GE_SHAPE_PROPERTY'],
+     9, 'GEOMETRY', 1, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q16 | staged-inactive | blocker A
+    ('SAM-L1-Q16', 'geometry', '1A', -2, 'MULTIPLE_CHOICE',
+     '{"stem":"Who is in front of the tree, Louis or Andy?","options":["Louis","Andy"],"correct_index":1,"_authoring":{"target_interaction":"single-MC","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
+     array[]::text[],
+     9, 'IDENTIFY', 1, 'PICTORIAL', false, 'l1-geometry-1'),
+
+    -- SAM-L1-Q17 | active | blocker none
+    ('SAM-L1-Q17', 'number_sense', '1A', -2, 'DRAG_DROP',
+     '{"stem":"Put the parts of Tom''s day in order. Begin with what he does first.","items":["Studying in class","Sleeping","Brushing teeth","Walking to school"],"correct_order":["Brushing teeth","Walking to school","Studying in class","Sleeping"]}'::jsonb,
+     array['WP_MULTI_STEP_SEQUENCE'],
+     14, 'IDENTIFY', 1, 'WORD_PROBLEM_SINGLE', true, 'l1-whole_numbers-1'),
+
+    -- SAM-L1-Q18 | genuinely-inactive | blocker none-oral
+    ('SAM-L1-Q18', 'number_sense', '1A', -2, 'NUMERIC_ENTRY',
+     '{"stem":"Count aloud from 1 to 30. Then write the number 8. Which activity took a longer time to finish? Color the box.","_authoring":{"target_interaction":"open-production(inactive)","blocker_code":"none-oral","held":true,"requires_format_swap":false}}'::jsonb,
+     array[]::text[],
+     24, 'COUNTING', 1, 'SYMBOLIC', false, 'l1-whole_numbers-1'),
+
+    -- SAM-L1-Q26 | staged-inactive | blocker A
+    ('SAM-L1-Q26', 'number_sense', '1A', -1.8, 'NUMERIC_ENTRY',
+     '{"stem":"Count the objects. Write the number.","_authoring":{"target_interaction":"numeric-single","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
+     array['NS_COUNTING_ERROR', 'NS_PLACE_VALUE_CONFUSION'],
+     6, 'COUNTING', 1, 'PICTORIAL', false, 'l1-whole_numbers-8'),
+
+    -- SAM-L1-Q27 | active | blocker none
+    ('SAM-L1-Q27', 'number_sense', '1B', -1.2, 'DRAG_DROP',
+     '{"stem":"Put these number words in order. Begin with the smallest.","items":["twenty","eleven","thirteen","twelve"],"correct_order":["eleven","twelve","thirteen","twenty"]}'::jsonb,
+     array['NS_MAGNITUDE_MISJUDGE', 'NS_PLACE_VALUE_CONFUSION'],
+     10, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l1-whole_numbers-8')
+  ) as v(external_id, strand, level, difficulty, format, content,
+         misconception_tags, word_count, operation_type, num_operations,
+         representation, is_active, content_key)
+on conflict (tenant_id, external_id) do nothing;
+
+-- SAM-L1-Q20: active (single-MC, blocker none)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTIPLE_CHOICE',
+    content = '{"stem":"Write greater than or smaller than.\n5 is ___ 7.","options":["greater than","smaller than"],"correct_index":1,"distractor_misconceptions":{"0":"NS_MAGNITUDE_MISJUDGE"}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q20'
+  and q.format in ('NUMERIC_ENTRY', 'TEXT_ENTRY');
+
+-- SAM-L1-Q25: deactivated (equation-set, blocker C)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set is_active = false,
+    content = q.content || '{"_authoring":{"target_interaction":"equation-set","answer_model":{"rule":"set-equality","allowCommutative":true,"canonical":[{"a":6,"op":"+","b":2,"result":8},{"a":2,"op":"+","b":6,"result":8},{"a":8,"op":"-","b":6,"result":2},{"a":8,"op":"-","b":2,"result":6}]},"blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q25'
+  and q.is_active = true;
+
+-- END l1-overlay
