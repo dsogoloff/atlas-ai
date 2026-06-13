@@ -156,7 +156,26 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
         return builder;
       };
 
-      builder.maybeSingle = () => Promise.resolve(next());
+      builder.limit = () => builder;
+      // Faithful PostgREST: .maybeSingle() raises PGRST116 when MORE THAN ONE
+      // row matches (0 or 1 row is fine). Modelling this is what gives the
+      // served-question-gate multi-row regression test its teeth — it catches a
+      // revert from the tolerant .limit(1) existence check back to .maybeSingle()
+      // (which 500'd the first submit when question_access_log held 2 rows for
+      // one question — the Strict-Mode/resume double-serve).
+      builder.maybeSingle = () => {
+        const r = next();
+        if (Array.isArray(r.data) && r.data.length > 1) {
+          return Promise.resolve({
+            data: null,
+            error: {
+              message: "JSON object requested, multiple (or no) rows returned",
+              code: "PGRST116",
+            },
+          });
+        }
+        return Promise.resolve(r);
+      };
       builder.single = () => Promise.resolve(next());
       builder.order = () => Promise.resolve(next());
 
@@ -584,6 +603,59 @@ describe("submitResponseHandler — served-question gate", () => {
     // The response was inserted and scoring ran.
     expect(svc.inserts.some((i) => i.table === "responses")).toBe(true);
     expect(mockClassify).toHaveBeenCalledTimes(1);
+  });
+
+  it("served TWICE (≥2 access-log rows): handler proceeds, does NOT 500 (Strict-Mode/resume regression)", async () => {
+    // question_access_log holds MULTIPLE rows for the same (tenant, session,
+    // question) by design — every serve writes a new audit row, including a
+    // resume / React-Strict-Mode dev double-serve of the FIRST question. The
+    // gate must treat ≥1 rows as "served" via a .limit(1) existence check.
+    // The prior .maybeSingle() raised PGRST116 on 2 rows and 500'd every first
+    // submit. Here the served check returns TWO rows; the handler must proceed.
+    const nextPick = {
+      id: "next-q-gate-dup",
+      external_id: "EXT-NEXT-DUP",
+      strand: "operations_algorithms",
+      level: "KA",
+      difficulty: 0,
+      format: "MULTIPLE_CHOICE",
+      content: { stem: "next?", options: ["x", "y"] },
+    };
+    const svc = makeServiceClient({
+      question_access_log: [
+        // Served check — TWO rows for this (session, question). With the
+        // tolerant .limit(1) existence check this is a 0-or-1 array in prod;
+        // we stage 2 rows to prove a multi-row serve does not error the gate.
+        { data: [{ id: 1 }, { id: 2 }], error: null },
+        { data: null, error: null }, // log insert for the next pick
+      ],
+      responses: [
+        { data: null, error: null }, // already-answered check — no row
+        { data: [], error: null }, // replay responses (empty)
+        { data: null, error: null }, // insert response
+      ],
+      questions: [
+        { data: QUESTION, error: null }, // initial question fetch
+        { data: [nextPick], error: null }, // picker
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null }, // estimate update
+      ],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: "203.0.113.7",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(false);
+    expect(result.body.next_question?.id).toBe(nextPick.id);
+    expect(svc.inserts.some((i) => i.table === "responses")).toBe(true);
   });
 
   it("unserved valid question_id: rejects question_not_served (403); no insert, no scoring", async () => {

@@ -376,13 +376,23 @@ export async function submitResponseHandler({
   // never bypassed: an UNSERVED question still hard-rejects 403 above and is
   // never replayed.
   // ---------------------------------------------------------------------------
+  // Existence check, NOT .maybeSingle(): question_access_log intentionally
+  // holds MULTIPLE rows per (tenant, session, question) — every serve writes a
+  // new audit row, including resumes and React-Strict-Mode dev double-serves
+  // (see questionAccessLog/log.ts: "every serve is a serve … resumes get a NEW
+  // log row, not a deduped one"). .maybeSingle() raises PGRST116 on >1 row,
+  // which 500'd the FIRST submit whenever the first question had been served
+  // twice (the Strict-Mode/resume case). .limit(1) returns a 0-or-1 array and
+  // never errors on duplicates; the gate only needs to know a serve EXISTS for
+  // this (tenant, session, question), not that exactly one does. Security
+  // property is unchanged: ≥1 row ⇒ served; 0 rows ⇒ 403 question_not_served.
   const { data: servedLog, error: servedErr } = await serviceClient
     .from("question_access_log")
     .select("id")
     .eq("tenant_id", parent.tenant_id)
     .eq("session_id", request.session_id)
     .eq("question_id", request.question_id)
-    .maybeSingle();
+    .limit(1);
 
   if (servedErr) {
     return fail(
@@ -391,7 +401,7 @@ export async function submitResponseHandler({
       `served-question check failed: ${servedErr.message}`,
     );
   }
-  if (!servedLog) {
+  if (!servedLog || servedLog.length === 0) {
     return fail(
       "question_not_served",
       403,
