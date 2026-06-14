@@ -29,7 +29,12 @@
     "deny": [
       "Bash(rm -rf *)", "Bash(git reset --hard *)",
       "Bash(git push --force *)", "Bash(git push -f *)", "Bash(git branch -D *)",
-      "Bash(supabase db reset *)", "Bash(supabase db reset)"
+      "Bash(supabase db reset *)", "Bash(supabase db reset)",
+      "Bash(supabase)", "Bash(supabase *)",
+      "Bash(pnpm dev)", "Bash(pnpm dev *)", "Bash(pnpm run dev *)",
+      "Read(.env)", "Read(.env.*)", "Read(.env.local)", "Read(**/.env)", "Read(**/.env.*)",
+      "Bash(cat .env*)", "Bash(cat *.env)", "Bash(cat *.env.*)",
+      "Bash(env)", "Bash(env *)", "Bash(printenv*)"
     ]
   }
 }
