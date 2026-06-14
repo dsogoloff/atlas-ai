@@ -150,5 +150,16 @@ function readCorrectAnswer(
       throw new Error(
         "[prompt] DRAG_DROP not supported by the LLM classifier path (R1 lock)",
       );
+    // L1 structured-input formats are not on the LLM classifier path (like
+    // DRAG_DROP): their correct answers are multi-field/id-keyed, not a
+    // single human-readable string. The router must filter them out before
+    // this point; reaching here is a router bug.
+    case "SELECT_MULTIPLE":
+    case "VISUAL_MATCHING":
+    case "MULTI_BLANK":
+    case "EQUATION_SET":
+      throw new Error(
+        `[prompt] ${format} not supported by the LLM classifier path`,
+      );
   }
 }

@@ -1289,6 +1289,10 @@ export type Database = {
         | "NUMERIC_ENTRY"
         | "DRAG_DROP"
         | "TEXT_ENTRY"
+        | "SELECT_MULTIPLE"
+        | "VISUAL_MATCHING"
+        | "MULTI_BLANK"
+        | "EQUATION_SET"
       representation_kind:
         | "SYMBOLIC"
         | "PICTORIAL"
@@ -1498,6 +1502,10 @@ export const Constants = {
         "NUMERIC_ENTRY",
         "DRAG_DROP",
         "TEXT_ENTRY",
+        "SELECT_MULTIPLE",
+        "VISUAL_MATCHING",
+        "MULTI_BLANK",
+        "EQUATION_SET",
       ],
       representation_kind: [
         "SYMBOLIC",

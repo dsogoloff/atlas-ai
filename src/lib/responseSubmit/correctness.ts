@@ -42,6 +42,14 @@
 // route surfaces them as 500s rather than silently scoring a wrong-answer.
 
 import type { Enums, Json } from "@/lib/supabase/database.types";
+import { grade } from "@/lib/grading/grade";
+import type {
+  AnswerValue,
+  BlankKey,
+  CorrectAnswerModel,
+  Equation,
+  Op,
+} from "@/lib/grading/types";
 
 export type QuestionFormat = Enums<"question_format">;
 
@@ -174,7 +182,116 @@ export function judgeAnswer(
         JSON.stringify(given.map(normalizeJsonToken))
       );
     }
+
+    case "SELECT_MULTIPLE": {
+      // content.select_rule: "all" → set-equality against content.correct;
+      // "count" → distinct count of valid option ids === content.count.
+      const answer = parseAnswerValue(answerGiven);
+      const rule = readString(obj, "select_rule", format);
+      let model: CorrectAnswerModel;
+      if (rule === "all") {
+        model = { rule: "select-all", correct: readStringArray(obj, "correct", format) };
+      } else if (rule === "count") {
+        model = {
+          rule: "select-count",
+          count: readInteger(obj, "count", format),
+          optionIds: readOptionIds(obj, format),
+        };
+      } else {
+        throw new Error(
+          `[correctness] select_rule "${rule}" is not "all" or "count" on ${format} content`,
+        );
+      }
+      return grade(answer, model).correct;
+    }
+
+    case "VISUAL_MATCHING": {
+      const answer = parseAnswerValue(answerGiven);
+      const model: CorrectAnswerModel = {
+        rule: "match-pairs",
+        pairs: readStringRecord(obj, "pairs", format),
+      };
+      return grade(answer, model).correct;
+    }
+
+    case "MULTI_BLANK": {
+      const answer = parseAnswerValue(answerGiven);
+      const model: CorrectAnswerModel = {
+        rule: "per-blank",
+        blanks: readBlanks(obj, format),
+      };
+      return grade(answer, model).correct;
+    }
+
+    case "EQUATION_SET": {
+      // content.answer_rule: "set-equality" reads content.canonical (+
+      // allowCommutative); "equation-validity" reads allowedNumbers /
+      // requireCount (+ requireDistinct, validityOps).
+      const answer = parseAnswerValue(answerGiven);
+      const rule = readString(obj, "answer_rule", format);
+      let model: CorrectAnswerModel;
+      if (rule === "set-equality") {
+        model = {
+          rule: "set-equality",
+          canonical: readEquations(obj, "canonical", format),
+          allowCommutative: readOptionalBoolean(obj, "allowCommutative", format),
+        };
+      } else if (rule === "equation-validity") {
+        model = {
+          rule: "equation-validity",
+          allowedNumbers: readNumberArray(obj, "allowedNumbers", format),
+          requireCount: readInteger(obj, "requireCount", format),
+          requireDistinct: readOptionalBoolean(obj, "requireDistinct", format),
+          ops: readOptionalOps(obj, "validityOps", format),
+        };
+      } else {
+        throw new Error(
+          `[correctness] answer_rule "${rule}" is not "set-equality" or "equation-validity" on ${format} content`,
+        );
+      }
+      return grade(answer, model).correct;
+    }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Wire-string → AnswerValue (new structured inputs)
+// ---------------------------------------------------------------------------
+
+const ANSWER_VALUE_TYPES = new Set<AnswerValue["type"]>([
+  "scalar",
+  "mc-index",
+  "blanks",
+  "equation-set",
+  "id-set",
+  "pairs",
+]);
+
+/**
+ * Parse a client-submitted `answer_given` wire string (the new structured
+ * inputs submit `JSON.stringify(answerValue)`) back into an AnswerValue.
+ * Throws on malformed JSON or an unrecognized discriminator — mirrors the
+ * throws-on-malformed posture of judgeAnswer for content. The grading
+ * primitive itself handles a shape that mismatches the rule (clean wrong),
+ * so this only guards the parse + the type tag.
+ */
+export function parseAnswerValue(raw: string): AnswerValue {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("[correctness] answer_given is not valid JSON");
+  }
+  if (
+    parsed === null ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed) ||
+    typeof (parsed as { type?: unknown }).type !== "string" ||
+    !ANSWER_VALUE_TYPES.has((parsed as { type: string }).type as AnswerValue["type"])
+  ) {
+    throw new Error("[correctness] answer_given is not a recognized AnswerValue");
+  }
+  return parsed as AnswerValue;
 }
 
 // ---------------------------------------------------------------------------
@@ -299,4 +416,184 @@ function readArray(
     );
   }
   return v;
+}
+
+// ---------------------------------------------------------------------------
+// L1-input content readers (SELECT_MULTIPLE / VISUAL_MATCHING / MULTI_BLANK
+// / EQUATION_SET) — read REAL top-level content fields, never _authoring.
+// ---------------------------------------------------------------------------
+
+const VALID_OPS = new Set<Op>(["+", "-", "x", "/"]);
+
+/** content.options is an array of { id }; return the option ids. */
+function readOptionIds(
+  obj: Record<string, Json>,
+  format: QuestionFormat,
+): string[] {
+  const options = readArray(obj, "options", format);
+  return options.map((opt) => {
+    if (
+      opt === null ||
+      typeof opt !== "object" ||
+      Array.isArray(opt) ||
+      typeof (opt as Record<string, Json>).id !== "string"
+    ) {
+      throw new Error(
+        `[correctness] options on ${format} content has an entry without a string id`,
+      );
+    }
+    return (opt as Record<string, Json>).id as string;
+  });
+}
+
+/** A plain string→string record (e.g. content.pairs). */
+function readStringRecord(
+  obj: Record<string, Json>,
+  key: string,
+  format: QuestionFormat,
+): Record<string, string> {
+  const v = obj[key];
+  if (v === null || typeof v !== "object" || Array.isArray(v)) {
+    throw new Error(
+      `[correctness] ${key} missing or not an object on ${format} content`,
+    );
+  }
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v)) {
+    if (typeof val !== "string") {
+      throw new Error(
+        `[correctness] ${key} on ${format} content has a non-string value`,
+      );
+    }
+    out[k] = val;
+  }
+  return out;
+}
+
+/** content.blanks: id → BlankKey (validated). */
+function readBlanks(
+  obj: Record<string, Json>,
+  format: QuestionFormat,
+): Record<string, BlankKey> {
+  const v = obj["blanks"];
+  if (v === null || typeof v !== "object" || Array.isArray(v)) {
+    throw new Error(
+      `[correctness] blanks missing or not an object on ${format} content`,
+    );
+  }
+  const out: Record<string, BlankKey> = {};
+  for (const [id, raw] of Object.entries(v)) {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+      throw new Error(
+        `[correctness] blanks.${id} is not a BlankKey object on ${format} content`,
+      );
+    }
+    const keyObj = raw as Record<string, Json>;
+    if (typeof keyObj.value !== "string") {
+      throw new Error(
+        `[correctness] blanks.${id}.value missing or not a string on ${format} content`,
+      );
+    }
+    const key: BlankKey = { value: keyObj.value };
+    if (Array.isArray(keyObj.accepted)) {
+      key.accepted = keyObj.accepted.map((a) => {
+        if (typeof a !== "string") {
+          throw new Error(
+            `[correctness] blanks.${id}.accepted has a non-string entry on ${format} content`,
+          );
+        }
+        return a;
+      });
+    }
+    if (typeof keyObj.numeric === "boolean") key.numeric = keyObj.numeric;
+    if (typeof keyObj.tolerance === "number") key.tolerance = keyObj.tolerance;
+    out[id] = key;
+  }
+  return out;
+}
+
+/** An array of Equation objects (e.g. content.canonical). */
+function readEquations(
+  obj: Record<string, Json>,
+  key: string,
+  format: QuestionFormat,
+): Equation[] {
+  const arr = readArray(obj, key, format);
+  return arr.map((raw) => {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+      throw new Error(
+        `[correctness] ${key} on ${format} content has a non-object equation`,
+      );
+    }
+    const eq = raw as Record<string, Json>;
+    if (
+      typeof eq.a !== "number" ||
+      typeof eq.b !== "number" ||
+      typeof eq.result !== "number" ||
+      typeof eq.op !== "string" ||
+      !VALID_OPS.has(eq.op as Op)
+    ) {
+      throw new Error(
+        `[correctness] ${key} on ${format} content has a malformed equation`,
+      );
+    }
+    return { a: eq.a, op: eq.op as Op, b: eq.b, result: eq.result };
+  });
+}
+
+/** An array of numbers (e.g. content.allowedNumbers). */
+function readNumberArray(
+  obj: Record<string, Json>,
+  key: string,
+  format: QuestionFormat,
+): number[] {
+  const arr = readArray(obj, key, format);
+  return arr.map((n) => {
+    if (typeof n !== "number") {
+      throw new Error(
+        `[correctness] ${key} on ${format} content has a non-number entry`,
+      );
+    }
+    return n;
+  });
+}
+
+/** Optional boolean field; undefined when absent. Throws if present but
+ *  not a boolean. */
+function readOptionalBoolean(
+  obj: Record<string, Json>,
+  key: string,
+  format: QuestionFormat,
+): boolean | undefined {
+  const v = obj[key];
+  if (v === undefined) return undefined;
+  if (typeof v !== "boolean") {
+    throw new Error(
+      `[correctness] ${key} on ${format} content is not a boolean`,
+    );
+  }
+  return v;
+}
+
+/** Optional array-of-ops field; undefined when absent. */
+function readOptionalOps(
+  obj: Record<string, Json>,
+  key: string,
+  format: QuestionFormat,
+): Op[] | undefined {
+  const v = obj[key];
+  if (v === undefined) return undefined;
+  if (!Array.isArray(v)) {
+    throw new Error(
+      `[correctness] ${key} on ${format} content is not an array`,
+    );
+  }
+  return v.map((op) => {
+    if (typeof op !== "string" || !VALID_OPS.has(op as Op)) {
+      throw new Error(
+        `[correctness] ${key} on ${format} content has an invalid operator`,
+      );
+    }
+    return op as Op;
+  });
 }

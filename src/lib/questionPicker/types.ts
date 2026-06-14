@@ -152,10 +152,51 @@ export interface ClientQuestionImage {
   required: boolean;
 }
 
+/** One render-safe option/target for SELECT_MULTIPLE / VISUAL_MATCHING. */
+export interface ClientLabeledItem {
+  id: string;
+  label: string;
+}
+
+/** One template cell for MULTI_BLANK on the wire (text or a fillable blank).
+ *  Mirrors FillToken in answer-inputs/types.ts — render-safe (no answer). */
+export type ClientFillToken =
+  | { t: "text"; value: string }
+  | { t: "blank"; id: string; placeholder?: string };
+
 export type ClientQuestionContent =
   | { stem: string; options: string[]; image?: ClientQuestionImage }   // MULTIPLE_CHOICE
   | { stem: string; image?: ClientQuestionImage }                       // NUMERIC_ENTRY / TEXT_ENTRY
-  | { stem: string; items: string[]; image?: ClientQuestionImage };     // DRAG_DROP
+  | { stem: string; items: string[]; image?: ClientQuestionImage }      // DRAG_DROP
+  | {
+      // SELECT_MULTIPLE — answer field `correct` stripped.
+      stem: string;
+      select_rule: string;
+      options: ClientLabeledItem[];
+      count?: number;
+      image?: ClientQuestionImage;
+    }
+  | {
+      // VISUAL_MATCHING — answer field `pairs` stripped.
+      stem: string;
+      left: ClientLabeledItem[];
+      right: ClientLabeledItem[];
+      image?: ClientQuestionImage;
+    }
+  | {
+      // MULTI_BLANK — answer field `blanks` stripped.
+      stem: string;
+      tokens: ClientFillToken[];
+      image?: ClientQuestionImage;
+    }
+  | {
+      // EQUATION_SET — every answer field (canonical / allowedNumbers / …)
+      // stripped.
+      stem: string;
+      rows: number;
+      ops?: string[];
+      image?: ClientQuestionImage;
+    };
 
 // ---------------------------------------------------------------------------
 // Picker contract

@@ -34,6 +34,8 @@
 import type { Json } from "@/lib/supabase/database.types";
 
 import type {
+  ClientFillToken,
+  ClientLabeledItem,
   ClientQuestion,
   ClientQuestionContent,
   ClientQuestionImage,
@@ -85,6 +87,46 @@ function stripContent(
         items: readStringArray(obj, "items"),
         ...(image ? { image } : {}),
       };
+    case "SELECT_MULTIPLE": {
+      // Render-safe: stem, select_rule, options[{id,label}], count?.
+      // Answer field `correct` is NEVER read here.
+      const out: Extract<ClientQuestionContent, { select_rule: string }> = {
+        stem,
+        select_rule: readString(obj, "select_rule"),
+        options: readLabeledItems(obj, "options"),
+        ...(image ? { image } : {}),
+      };
+      const count = readOptionalInteger(obj, "count");
+      return count === undefined ? out : { ...out, count };
+    }
+    case "VISUAL_MATCHING":
+      // Render-safe: stem, left[{id,label}], right[{id,label}].
+      // Answer field `pairs` is NEVER read here.
+      return {
+        stem,
+        left: readLabeledItems(obj, "left"),
+        right: readLabeledItems(obj, "right"),
+        ...(image ? { image } : {}),
+      };
+    case "MULTI_BLANK":
+      // Render-safe: stem, tokens (text + blank ids).
+      // Answer field `blanks` is NEVER read here.
+      return {
+        stem,
+        tokens: readFillTokens(obj, "tokens"),
+        ...(image ? { image } : {}),
+      };
+    case "EQUATION_SET": {
+      // Render-safe: stem, rows, ops?. EVERY answer field
+      // (canonical/allowedNumbers/requireCount/…) is NEVER read here.
+      const out: Extract<ClientQuestionContent, { rows: number }> = {
+        stem,
+        rows: readInteger(obj, "rows"),
+        ...(image ? { image } : {}),
+      };
+      const ops = readOptionalStringArray(obj, "ops");
+      return ops === undefined ? out : { ...out, ops };
+    }
   }
 }
 
@@ -124,4 +166,104 @@ function readStringArray(obj: Record<string, Json>, key: string): string[] {
     }
   }
   return v as string[];
+}
+
+function readInteger(obj: Record<string, Json>, key: string): number {
+  const v = obj[key];
+  if (typeof v !== "number" || !Number.isInteger(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an integer`);
+  }
+  return v;
+}
+
+function readOptionalInteger(
+  obj: Record<string, Json>,
+  key: string,
+): number | undefined {
+  const v = obj[key];
+  if (v === undefined) return undefined;
+  if (typeof v !== "number" || !Number.isInteger(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an integer`);
+  }
+  return v;
+}
+
+function readOptionalStringArray(
+  obj: Record<string, Json>,
+  key: string,
+): string[] | undefined {
+  if (obj[key] === undefined) return undefined;
+  return readStringArray(obj, key);
+}
+
+/**
+ * Render-safe {id,label} array (SELECT_MULTIPLE options, VISUAL_MATCHING
+ * left/right). Built field-by-field from `id` and `label` only — any other
+ * key on an authored item (none expected, but defensively) is dropped.
+ */
+function readLabeledItems(
+  obj: Record<string, Json>,
+  key: string,
+): ClientLabeledItem[] {
+  const v = obj[key];
+  if (!Array.isArray(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an array`);
+  }
+  return v.map((item, i) => {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(
+        `[serialize] questions.content.${key}[${i}] is not an object`,
+      );
+    }
+    const o = item as Record<string, Json>;
+    if (typeof o.id !== "string" || typeof o.label !== "string") {
+      throw new Error(
+        `[serialize] questions.content.${key}[${i}] missing string id/label`,
+      );
+    }
+    return { id: o.id, label: o.label };
+  });
+}
+
+/**
+ * Render-safe FillToken array (MULTI_BLANK tokens). Built field-by-field —
+ * a blank token carries only its id + optional placeholder; no answer.
+ */
+function readFillTokens(
+  obj: Record<string, Json>,
+  key: string,
+): ClientFillToken[] {
+  const v = obj[key];
+  if (!Array.isArray(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an array`);
+  }
+  return v.map((item, i) => {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(
+        `[serialize] questions.content.${key}[${i}] is not an object`,
+      );
+    }
+    const o = item as Record<string, Json>;
+    if (o.t === "text") {
+      if (typeof o.value !== "string") {
+        throw new Error(
+          `[serialize] questions.content.${key}[${i}] text token missing string value`,
+        );
+      }
+      return { t: "text", value: o.value };
+    }
+    if (o.t === "blank") {
+      if (typeof o.id !== "string") {
+        throw new Error(
+          `[serialize] questions.content.${key}[${i}] blank token missing string id`,
+        );
+      }
+      return typeof o.placeholder === "string"
+        ? { t: "blank", id: o.id, placeholder: o.placeholder }
+        : { t: "blank", id: o.id };
+    }
+    throw new Error(
+      `[serialize] questions.content.${key}[${i}] has unknown token type`,
+    );
+  });
 }
