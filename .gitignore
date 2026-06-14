@@ -54,6 +54,10 @@ tmp/
 # Relay review payloads (local-only diffs/findings — never committed)
 tools/relay/.reviews/
 
+# Python bytecode caches (e.g. from code_relay.py py_compile checks)
+__pycache__/
+*.pyc
+
 # Claude Code config: shared governance (agents, hooks, settings.json,
 # relay-agent.settings.json) is committed; everything else under .claude/
 # stays per-developer.
