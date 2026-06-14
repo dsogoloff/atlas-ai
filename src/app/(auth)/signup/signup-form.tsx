@@ -1,27 +1,26 @@
 "use client";
 
 // Signup form. Visual layout is the Stitch port from cycle 1 (kept
-// faithful) plus a S.A.M. center selector (features.md §5) and live
-// validation via react-hook-form + zod.
+// faithful) with live validation via react-hook-form + zod.
+//
+// Day-1 is single-center: the parent is NOT asked to choose a center.
+// The server attaches the one ACTIVE center on submit (see actions.ts).
+// `centerName` is passed in purely so the consent disclosure can name the
+// center the child's data will be shared with.
 
 import Link from "next/link";
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { signupAction, type SignupResult } from "./actions";
 import { SignupSchema, type SignupInput } from "./schema";
 
-export interface CenterOption {
-  id: string;
-  name: string;
-}
-
 interface Props {
-  centers: CenterOption[];
+  centerName: string | null;
 }
 
-export function SignupForm({ centers }: Props) {
+export function SignupForm({ centerName }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SignupResult | null>(null);
@@ -29,7 +28,6 @@ export function SignupForm({ centers }: Props) {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm<SignupInput>({
     resolver: zodResolver(SignupSchema),
@@ -38,16 +36,9 @@ export function SignupForm({ centers }: Props) {
       lastName: "",
       email: "",
       password: "",
-      // Auto-select when exactly one ACTIVE center exists (Phase 4b /
-      // Item #7). Otherwise the user picks via the multi-center <select>
-      // rendered below.
-      centerId: centers.length === 1 ? centers[0].id : "",
       consent: false as unknown as true,
     },
   });
-
-  const selectedCenterId = useWatch({ control, name: "centerId" });
-  const selectedCenter = centers.find((c) => c.id === selectedCenterId);
 
   async function onSubmit(values: SignupInput) {
     setSubmitting(true);
@@ -203,60 +194,11 @@ export function SignupForm({ centers }: Props) {
         )}
       </div>
 
-      {/* Center selector — features.md §5. When exactly one ACTIVE
-          center exists, auto-select it and render as a bordered chip
-          (Phase 4b / Item #7); the hidden input keeps the field
-          registered with react-hook-form so it's included in submission.
-          When > 1, render the existing <select>. */}
-      {centers.length === 1 ? (
-        <div className="space-y-2">
-          <label className="font-caption text-caption text-sam-navy ml-1">
-            Your S.A.M Center
-          </label>
-          <div className="flex items-center gap-3 px-4 py-3 bg-sam-cream border border-sam-orange/20 rounded-2xl">
-            <span
-              className="material-symbols-outlined text-sam-orange"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              business
-            </span>
-            <span className="font-headline-adult text-sam-navy font-semibold">
-              {centers[0].name}
-            </span>
-          </div>
-          <input type="hidden" {...register("centerId")} />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <label
-            className="font-caption text-caption text-sam-navy ml-1"
-            htmlFor="center"
-          >
-            Your S.A.M Center
-          </label>
-          <select
-            className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all bg-white aria-[invalid=true]:border-sam-red"
-            id="center"
-            aria-invalid={!!errors.centerId}
-            defaultValue=""
-            {...register("centerId")}
-          >
-            <option value="" disabled>
-              Select your center
-            </option>
-            {centers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          {errors.centerId && (
-            <p className="text-caption text-sam-red ml-1">
-              {errors.centerId.message}
-            </p>
-          )}
-        </div>
-      )}
+      {/* Center selector removed — day-1 is single-center, so the parent
+          is not asked to choose. The server attaches the one ACTIVE
+          center on submit (actions.ts). The center is still named in the
+          consent disclosure below so the parent knows where their child's
+          data will be shared. */}
 
       {/* COPPA + school-operator consent — language tracks compliance.md §2 */}
       <div className="bg-sam-cream p-4 rounded-2xl border border-sam-orange/20 space-y-3">
@@ -288,7 +230,7 @@ export function SignupForm({ centers }: Props) {
               misconceptions, and response patterns — never the questions
               themselves) with instructors at{" "}
               <span className="font-semibold text-sam-navy">
-                {selectedCenter?.name ?? "the S.A.M center I&rsquo;ve selected"}
+                {centerName ?? "your S.A.M center"}
               </span>{" "}
               for as long as my child is enrolled there. I can change or remove
               the center any time from my account settings; a 30-day grace

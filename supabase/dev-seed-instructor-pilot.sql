@@ -81,11 +81,15 @@ values (
 )
 on conflict (provider_id, provider) do nothing;
 
+-- Resolve the single ACTIVE center for the tenant. Day-1 is single-center;
+-- matching by status (not a placeholder name) keeps this correct regardless
+-- of what the pilot center is called.
 with t as (select id from tenants where slug = 'inspirea_singapore_math'),
      c as (
        select id from centers
        where tenant_id = (select id from tenants where slug = 'inspirea_singapore_math')
-         and name like '%Singapore HQ'
+         and status = 'ACTIVE'
+       order by created_at
        limit 1
      )
 insert into instructors (id, auth_user_id, tenant_id, center_id, email, name, status)
@@ -153,11 +157,15 @@ on conflict (auth_user_id) do nothing;
 -- 3. Pilot child — home center = Singapore HQ so the pilot instructor's
 --    center-scoped RLS roster read can see them. grade_level '1' => K-4 tier.
 -- -----------------------------------------------------------------------------
+-- Resolve the single ACTIVE center for the tenant. Day-1 is single-center;
+-- matching by status (not a placeholder name) keeps this correct regardless
+-- of what the pilot center is called.
 with t as (select id from tenants where slug = 'inspirea_singapore_math'),
      c as (
        select id from centers
        where tenant_id = (select id from tenants where slug = 'inspirea_singapore_math')
-         and name like '%Singapore HQ'
+         and status = 'ACTIVE'
+       order by created_at
        limit 1
      )
 insert into children (id, parent_id, tenant_id, home_center_id, name, birth_year, grade_level)

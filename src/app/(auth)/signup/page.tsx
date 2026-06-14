@@ -5,28 +5,32 @@
 // component (./signup-form.tsx) that wires to the server action.
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { SignupForm, type CenterOption } from "./signup-form";
+import { SignupForm } from "./signup-form";
 
-// Centers are loaded per-request (changes roughly never but we want
-// dashboard edits to surface without a redeploy). Opting out of static
-// prerender also keeps `pnpm build` from needing real Supabase env vars.
+// Loaded per-request (changes roughly never but we want dashboard edits to
+// surface without a redeploy). Opting out of static prerender also keeps
+// `pnpm build` from needing real Supabase env vars.
 export const dynamic = "force-dynamic";
 
-async function loadCenters(): Promise<CenterOption[]> {
-  // Service role bypasses RLS so the public signup form can list active
-  // centers without a session. Selected fields are non-sensitive (id + name).
+// Day-1 is single-center: the form no longer offers a selector. We load the
+// one ACTIVE center's name purely to display it in the consent disclosure.
+// The authoritative attach (and the >1-active-center guard) lives in the
+// signup server action, not here.
+async function loadCenterName(): Promise<string | null> {
+  // Service role bypasses RLS so the public signup page can read the active
+  // center without a session. Only the non-sensitive name is selected.
   const admin = createServiceClient();
   const { data, error } = await admin
     .from("centers")
-    .select("id, name")
+    .select("name")
     .eq("status", "ACTIVE")
     .order("name");
-  if (error || !data) return [];
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0].name;
 }
 
 export default async function SignupPage() {
-  const centers = await loadCenters();
+  const centerName = await loadCenterName();
 
   return (
     <>
@@ -108,7 +112,7 @@ export default async function SignupPage() {
                   Empower your child&rsquo;s math learning path today.
                 </p>
               </header>
-              <SignupForm centers={centers} />
+              <SignupForm centerName={centerName} />
             </div>
           </div>
         </div>
