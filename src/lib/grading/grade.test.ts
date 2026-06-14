@@ -7,6 +7,9 @@ import {
   gradeEquationValidity,
   gradeExactNumeric,
   gradeExactText,
+  gradeMatchPairs,
+  gradeSelectAll,
+  gradeSelectCount,
   gradeSetEquality,
   isValidEquation,
   normalizeText,
@@ -168,6 +171,77 @@ describe("equation-validity", () => {
   });
 });
 
+describe("select-all", () => {
+  it("matches the exact selected set (order-irrelevant)", () => {
+    expect(gradeSelectAll(["c", "a"], ["a", "b", "c"]).correct).toBe(false);
+    expect(gradeSelectAll(["c", "a", "b"], ["a", "b", "c"]).correct).toBe(true);
+  });
+  it("rejects an extra selection", () => {
+    expect(gradeSelectAll(["a", "b", "c", "d"], ["a", "b", "c"]).correct).toBe(
+      false,
+    );
+  });
+  it("rejects a missing selection", () => {
+    expect(gradeSelectAll(["a", "b"], ["a", "b", "c"]).correct).toBe(false);
+  });
+  it("collapses duplicate selections before comparing", () => {
+    expect(gradeSelectAll(["a", "a", "b", "c"], ["a", "b", "c"]).correct).toBe(
+      true,
+    );
+  });
+});
+
+describe("select-count", () => {
+  const optionIds = Array.from({ length: 15 }, (_, i) => `o${i}`);
+  it("accepts the right distinct count of valid ids (any 10 of 15)", () => {
+    const ten = optionIds.slice(0, 10);
+    expect(gradeSelectCount(ten, 10, optionIds).correct).toBe(true);
+  });
+  it("rejects the wrong count", () => {
+    expect(gradeSelectCount(optionIds.slice(0, 9), 10, optionIds).correct).toBe(
+      false,
+    );
+  });
+  it("rejects an out-of-set id", () => {
+    expect(
+      gradeSelectCount([...optionIds.slice(0, 9), "nope"], 10, optionIds)
+        .correct,
+    ).toBe(false);
+  });
+  it("counts DISTINCT ids — duplicates do not pad the count", () => {
+    const nineDistinctPlusDup = [...optionIds.slice(0, 9), "o0"];
+    expect(gradeSelectCount(nineDistinctPlusDup, 10, optionIds).correct).toBe(
+      false,
+    );
+  });
+});
+
+describe("match-pairs", () => {
+  const correct = { l1: "r1", l2: "r2", l3: "r3" };
+  it("grades all-right true with a full perPair", () => {
+    const res = gradeMatchPairs({ l1: "r1", l2: "r2", l3: "r3" }, correct);
+    expect(res.correct).toBe(true);
+    expect(res.perPair).toEqual({ l1: true, l2: true, l3: true });
+  });
+  it("is BINARY false when one pair is wrong, with a per-pair breakdown", () => {
+    const res = gradeMatchPairs({ l1: "r1", l2: "rX", l3: "r3" }, correct);
+    expect(res.correct).toBe(false);
+    expect(res.perPair).toEqual({ l1: true, l2: false, l3: true });
+  });
+  it("rejects a missing left id", () => {
+    const res = gradeMatchPairs({ l1: "r1", l2: "r2" }, correct);
+    expect(res.correct).toBe(false);
+    expect(res.perPair?.l3).toBe(false);
+  });
+  it("rejects an extra left id the model does not expect", () => {
+    const res = gradeMatchPairs(
+      { l1: "r1", l2: "r2", l3: "r3", l4: "r4" },
+      correct,
+    );
+    expect(res.correct).toBe(false);
+  });
+});
+
 describe("grade() dispatcher", () => {
   it("routes each rule and rejects shape mismatches", () => {
     const factFamily: CorrectAnswerModel = {
@@ -211,6 +285,41 @@ describe("grade() dispatcher", () => {
     );
     expect(partial.correct).toBe(false);
     expect(partial.perBlank).toEqual({ sum: true, a: false });
+  });
+
+  it("routes select-all / select-count / match-pairs and rejects shape mismatches", () => {
+    expect(
+      grade(
+        { type: "id-set", ids: ["a", "b"] },
+        { rule: "select-all", correct: ["a", "b"] },
+      ).correct,
+    ).toBe(true);
+    expect(
+      grade(
+        { type: "id-set", ids: ["a"] },
+        { rule: "select-count", count: 1, optionIds: ["a", "b"] },
+      ).correct,
+    ).toBe(true);
+    const pairRes = grade(
+      { type: "pairs", pairs: { l1: "r1" } },
+      { rule: "match-pairs", pairs: { l1: "r1" } },
+    );
+    expect(pairRes.correct).toBe(true);
+    expect(pairRes.perPair).toEqual({ l1: true });
+
+    // wrong-shaped answers are a clean (non-throwing) incorrect
+    expect(
+      grade(
+        { type: "scalar", value: "a" },
+        { rule: "select-all", correct: ["a"] },
+      ).correct,
+    ).toBe(false);
+    expect(
+      grade(
+        { type: "id-set", ids: ["l1"] },
+        { rule: "match-pairs", pairs: { l1: "r1" } },
+      ).correct,
+    ).toBe(false);
   });
 
   it("grades mc-index and exact-numeric/text", () => {

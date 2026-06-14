@@ -118,6 +118,177 @@ describe("toClientQuestion / DRAG_DROP", () => {
   });
 });
 
+describe("toClientQuestion / SELECT_MULTIPLE", () => {
+  it("rule=all: stem + select_rule + options only; strips correct", () => {
+    const out = toClientQuestion(
+      row("SELECT_MULTIPLE", {
+        stem: "Pick all even numbers",
+        select_rule: "all",
+        options: [
+          { id: "a", label: "2" },
+          { id: "b", label: "3" },
+          { id: "c", label: "4" },
+        ],
+        correct: ["a", "c"],
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Pick all even numbers",
+      select_rule: "all",
+      options: [
+        { id: "a", label: "2" },
+        { id: "b", label: "3" },
+        { id: "c", label: "4" },
+      ],
+    });
+    expect(Object.keys(out.content).sort()).toEqual([
+      "options",
+      "select_rule",
+      "stem",
+    ]);
+    expect(Object.keys(out.content)).not.toContain("correct");
+  });
+
+  it("rule=count: keeps render-safe count; never leaks correct", () => {
+    const out = toClientQuestion(
+      row("SELECT_MULTIPLE", {
+        stem: "Pick any 2",
+        select_rule: "count",
+        count: 2,
+        options: [{ id: "a", label: "1" }],
+        correct: ["a"],
+      }),
+    );
+    expect(Object.keys(out.content).sort()).toEqual([
+      "count",
+      "options",
+      "select_rule",
+      "stem",
+    ]);
+    expect("correct" in out.content).toBe(false);
+  });
+});
+
+describe("toClientQuestion / VISUAL_MATCHING", () => {
+  it("returns stem + left + right only; strips pairs (the answer)", () => {
+    const out = toClientQuestion(
+      row("VISUAL_MATCHING", {
+        stem: "Match shapes to names",
+        left: [
+          { id: "l1", label: "▲" },
+          { id: "l2", label: "■" },
+        ],
+        right: [
+          { id: "r1", label: "triangle" },
+          { id: "r2", label: "square" },
+        ],
+        pairs: { l1: "r1", l2: "r2" },
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Match shapes to names",
+      left: [
+        { id: "l1", label: "▲" },
+        { id: "l2", label: "■" },
+      ],
+      right: [
+        { id: "r1", label: "triangle" },
+        { id: "r2", label: "square" },
+      ],
+    });
+    expect(Object.keys(out.content).sort()).toEqual(["left", "right", "stem"]);
+    expect(Object.keys(out.content)).not.toContain("pairs");
+  });
+});
+
+describe("toClientQuestion / MULTI_BLANK", () => {
+  it("returns stem + tokens only; strips blanks (the answer)", () => {
+    const out = toClientQuestion(
+      row("MULTI_BLANK", {
+        stem: "__ + __ = 8",
+        tokens: [
+          { t: "blank", id: "a" },
+          { t: "text", value: " + " },
+          { t: "blank", id: "b", placeholder: "?" },
+          { t: "text", value: " = 8" },
+        ],
+        blanks: {
+          a: { value: "6", numeric: true },
+          b: { value: "2", numeric: true },
+        },
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "__ + __ = 8",
+      tokens: [
+        { t: "blank", id: "a" },
+        { t: "text", value: " + " },
+        { t: "blank", id: "b", placeholder: "?" },
+        { t: "text", value: " = 8" },
+      ],
+    });
+    expect(Object.keys(out.content).sort()).toEqual(["stem", "tokens"]);
+    expect(Object.keys(out.content)).not.toContain("blanks");
+  });
+});
+
+describe("toClientQuestion / EQUATION_SET", () => {
+  it("set-equality shape: stem + rows + ops only; strips every answer field", () => {
+    const out = toClientQuestion(
+      row("EQUATION_SET", {
+        stem: "Fact family for 6, 2, 8",
+        rows: 4,
+        ops: ["+", "-"],
+        answer_rule: "set-equality",
+        canonical: [{ a: 6, op: "+", b: 2, result: 8 }],
+        allowCommutative: true,
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Fact family for 6, 2, 8",
+      rows: 4,
+      ops: ["+", "-"],
+    });
+    expect(Object.keys(out.content).sort()).toEqual(["ops", "rows", "stem"]);
+    for (const k of [
+      "answer_rule",
+      "canonical",
+      "allowCommutative",
+      "allowedNumbers",
+      "requireCount",
+      "requireDistinct",
+      "validityOps",
+    ]) {
+      expect(Object.keys(out.content)).not.toContain(k);
+    }
+  });
+
+  it("equation-validity shape: never leaks allowedNumbers/requireCount/etc.", () => {
+    const out = toClientQuestion(
+      row("EQUATION_SET", {
+        stem: "Write 2 true equations",
+        rows: 2,
+        answer_rule: "equation-validity",
+        allowedNumbers: [2, 6, 8],
+        requireCount: 2,
+        requireDistinct: true,
+        validityOps: ["+", "-"],
+      }),
+    );
+    // No ops on the wire here (none authored as a render-safe selector).
+    expect(Object.keys(out.content).sort()).toEqual(["rows", "stem"]);
+    for (const k of [
+      "answer_rule",
+      "allowedNumbers",
+      "requireCount",
+      "requireDistinct",
+      "validityOps",
+    ]) {
+      expect(Object.keys(out.content)).not.toContain(k);
+    }
+  });
+});
+
 describe("toClientQuestion / content errors", () => {
   it("throws when content is null", () => {
     expect(() => toClientQuestion(row("MULTIPLE_CHOICE", null))).toThrow();

@@ -37,7 +37,11 @@ export type AnswerValue =
   /** Multi-blank / equation-fill: blank id → entered string. */
   | { type: "blanks"; values: Record<string, string> }
   /** Set of equations: fact families and equation-set inputs. */
-  | { type: "equation-set"; equations: Equation[] };
+  | { type: "equation-set"; equations: Equation[] }
+  /** Select-multiple: the set of selected option ids (SELECT_MULTIPLE). */
+  | { type: "id-set"; ids: string[] }
+  /** Matching: leftId → chosen rightId (VISUAL_MATCHING). */
+  | { type: "pairs"; pairs: Record<string, string> };
 
 // ---------------------------------------------------------------------------
 // CorrectAnswerModel — what the record author stores per question.
@@ -84,7 +88,18 @@ export type CorrectAnswerModel =
       ops?: Op[];
       requireCount: number;
       requireDistinct?: boolean;
-    };
+    }
+  /** Select-all: the selected id set must equal `correct` exactly (order-
+   *  irrelevant; dupes collapse; no extras, none missing). SELECT_MULTIPLE
+   *  rule "all". */
+  | { rule: "select-all"; correct: string[] }
+  /** Select-count: every selected id must be a valid option id, and the
+   *  number of DISTINCT selected ids must equal `count` (Q26 "any N of M" —
+   *  not set-equality). SELECT_MULTIPLE rule "count". */
+  | { rule: "select-count"; count: number; optionIds: string[] }
+  /** Match-pairs: each leftId must map to the correct rightId; correct iff
+   *  every pair matches AND no extra/missing left ids. VISUAL_MATCHING. */
+  | { rule: "match-pairs"; pairs: Record<string, string> };
 
 // ---------------------------------------------------------------------------
 // GradeResult.
@@ -96,4 +111,6 @@ export interface GradeResult {
   reason: string;
   /** Per-blank breakdown for the `per-blank` rule. */
   perBlank?: Record<string, boolean>;
+  /** Per-pair breakdown for the `match-pairs` rule (leftId → matched). */
+  perPair?: Record<string, boolean>;
 }

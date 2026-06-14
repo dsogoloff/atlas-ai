@@ -30,6 +30,10 @@ import { MultipleChoiceInput } from "./MultipleChoiceInput";
 import { NumericInput } from "./NumericInput";
 import { TextEntryInput } from "./TextEntryInput";
 import { DragDropInput } from "./DragDropInput";
+import { SelectMultipleInput } from "./SelectMultipleInput";
+import { MatchingInput } from "./MatchingInput";
+import { MultiBlankInput } from "./MultiBlankInput";
+import { EquationSetInput } from "./EquationSetInput";
 
 interface Props {
   question: ClientQuestion;
@@ -76,6 +80,48 @@ export function QuestionTimer({ question, onSubmit, disabled, tier }: Props) {
           disabled={disabled}
         />
       );
+    case "SELECT_MULTIPLE": {
+      const c = getSelectMultiple(question.content);
+      return (
+        <SelectMultipleInput
+          options={c.options}
+          selectRule={c.select_rule}
+          count={c.count}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
+    }
+    case "VISUAL_MATCHING": {
+      const c = getMatching(question.content);
+      return (
+        <MatchingInput
+          left={c.left}
+          right={c.right}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
+    }
+    case "MULTI_BLANK":
+      return (
+        <MultiBlankInput
+          tokens={getTokens(question.content)}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
+    case "EQUATION_SET": {
+      const c = getEquationSet(question.content);
+      return (
+        <EquationSetInput
+          rows={c.rows}
+          ops={c.ops}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
+    }
   }
 }
 
@@ -83,7 +129,10 @@ export function QuestionTimer({ question, onSubmit, disabled, tier }: Props) {
 // `in`. The serializer (serialize.ts:46-53) guarantees the per-format
 // shape, so the throws here are defensive against an impossible case.
 function getOptions(content: ClientQuestionContent): string[] {
-  if (!("options" in content)) {
+  // Two union members carry `options`: MULTIPLE_CHOICE (string[]) and
+  // SELECT_MULTIPLE ({id,label}[]). The latter also carries `select_rule`,
+  // so exclude it to land on the MC branch.
+  if (!("options" in content) || "select_rule" in content) {
     throw new Error("MULTIPLE_CHOICE content missing options");
   }
   return content.options;
@@ -94,4 +143,40 @@ function getItems(content: ClientQuestionContent): string[] {
     throw new Error("DRAG_DROP content missing items");
   }
   return content.items;
+}
+
+function getSelectMultiple(
+  content: ClientQuestionContent,
+): Extract<ClientQuestionContent, { select_rule: string }> {
+  if (!("select_rule" in content)) {
+    throw new Error("SELECT_MULTIPLE content missing select_rule");
+  }
+  return content;
+}
+
+function getMatching(
+  content: ClientQuestionContent,
+): Extract<ClientQuestionContent, { left: unknown }> {
+  if (!("left" in content)) {
+    throw new Error("VISUAL_MATCHING content missing left/right");
+  }
+  return content;
+}
+
+function getTokens(
+  content: ClientQuestionContent,
+): Extract<ClientQuestionContent, { tokens: unknown }>["tokens"] {
+  if (!("tokens" in content)) {
+    throw new Error("MULTI_BLANK content missing tokens");
+  }
+  return content.tokens;
+}
+
+function getEquationSet(
+  content: ClientQuestionContent,
+): Extract<ClientQuestionContent, { rows: number }> {
+  if (!("rows" in content)) {
+    throw new Error("EQUATION_SET content missing rows");
+  }
+  return content;
 }
