@@ -37,6 +37,11 @@ bank. Curriculum-recommendation table population.
 hold until after the SAM call).
 * Offline assessment (v2). Multi-tenant scale-out (M5). Atlas v2 subject-agnostic platform.
 * Convert remaining S.A.M levels (0A–0C, 5, 6) + public Singapore Math items (post-MVP).
+* **v1.5 — L1 number-bond visual (SAM-L1-Q22):** render the bond via the Atlas parametric
+primitive instead of a cropped image. Q22 ships text-only for MVP (stem states the numbers;
+auto-grades), so this is a presentation enhancement, not a blocker. The extracted
+`sam-l1-q22.png` is already in `question-images/l1/` if a raster fallback is ever wanted.
+(Founder decision 2026-06-14.)
 
 ## Done (this run of work, on ATLAS-ASSESSMENT)
 

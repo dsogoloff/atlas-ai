@@ -2455,3 +2455,54 @@ where q.tenant_id = t.id
   and q.is_active = true;
 
 -- END l1-overlay
+
+-- BEGIN l1-art-activation (mirror of supabase/migrations/20260614120000_l1_art_wire_activate.sql)
+-- Wires curated per-question images onto the 5 image-essential L1 rows and
+-- activates them; drops two dead stem placeholders ([object], [image]) now
+-- that each row has its image. SAM-L1-Q22 intentionally untouched (already
+-- activated as a text item by the l1-overlay block above). See the migration
+-- header for the full no-silent-edits before/after table.
+
+-- 1) Wire image_path + activate the 5 image-essential rows.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set is_active = true,
+    content = q.content || jsonb_build_object('image_path', v.image_path)
+from t,
+  (values
+    ('SAM-L1-Q04', 'l1/sam-l1-q04.png'),
+    ('SAM-L1-Q05', 'l1/sam-l1-q05.png'),
+    ('SAM-L1-Q10', 'l1/sam-l1-q10.png'),
+    ('SAM-L1-Q12', 'l1/sam-l1-q12.png'),
+    ('SAM-L1-Q19', 'l1/sam-l1-q19.png')
+  ) as v(external_id, image_path)
+where q.tenant_id = t.id
+  and q.external_id = v.external_id
+  and q.is_active = false;
+
+-- 2) SAM-L1-Q05 — drop the dead "[object]" placeholder from the stem.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content, '{stem}',
+      to_jsonb('Group A    Group B' || E'\n' ||
+               'In which group does it belong?' || E'\n' ||
+               'Answer: Group ___')
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q05'
+  and q.content->>'stem' like '%[object]%';
+
+-- 3) SAM-L1-Q12 — drop the dead "[image]" placeholders.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content, '{stem}',
+      to_jsonb('Which set has more? Answer: Set ___')
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q12'
+  and q.content->>'stem' like '%[image]%';
+-- END l1-art-activation
