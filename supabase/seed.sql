@@ -182,21 +182,19 @@ from t
 on conflict (id) do nothing;
 
 -- =============================================================================
--- Placeholder centers
+-- Pilot center (single, day-1)
 -- =============================================================================
--- Names are intentionally generic. Replace with the real S.A.M. roster
--- when licensing lands.
+-- Day-1 is single-center: the parent signup flow no longer offers a center
+-- selector and the signup server action attaches whoever the ONE ACTIVE
+-- center is (and fails loudly if it ever finds more than one). Seed exactly
+-- that single center so a fresh `supabase db reset` yields a working signup.
+-- This is the same center the signup attaches to. Add more centers here only
+-- alongside reintroducing the selector (ENABLE_MULTI_TENANT).
 
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into centers (tenant_id, name, status)
-select t.id, name, 'ACTIVE'::center_status
-from t,
-  (values
-    ('Placeholder Center — Singapore HQ'),
-    ('Placeholder Center — North'),
-    ('Placeholder Center — East'),
-    ('Placeholder Center — Online')
-  ) as v(name);
+select t.id, 'S.A.M Upper East Side', 'ACTIVE'::center_status
+from t;
 
 -- =============================================================================
 -- Misconception taxonomy (starter set per features.md §2)

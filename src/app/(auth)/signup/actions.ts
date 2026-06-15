@@ -4,7 +4,8 @@
 //
 // Flow:
 //   1. Validate input (zod).
-//   2. Verify the chosen center exists and is ACTIVE in the v1 tenant.
+//   2. Resolve the single ACTIVE center in the v1 tenant server-side
+//      (day-1 single-center; the form no longer collects a center).
 //   3. Create Supabase auth user via signUp() — this also queues a
 //      verification email (compliance.md §2 "email plus" step 2).
 //   4. Insert parents row tied to the new auth_user_id.
@@ -46,17 +47,40 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
     return { ok: false, error: "Tenant unavailable. Try again in a moment." };
   }
 
-  const { data: center, error: centerErr } = await admin
+  // Single-center attach (day-1 pilot). Resolve the one ACTIVE center in
+  // the v1 tenant ourselves — the signup form no longer asks the parent to
+  // choose. GUARD: if more than one ACTIVE center ever exists we fail
+  // LOUDLY rather than silently pick one, because "which center?" becomes a
+  // real decision the moment multi-center is live. This keeps it safe to
+  // reintroduce a selector (and the schema `centerId` field) when we go
+  // multi-tenant (ENABLE_MULTI_TENANT) — until then a second ACTIVE center
+  // is a misconfiguration we must not paper over.
+  const { data: activeCenters, error: centerErr } = await admin
     .from("centers")
     .select("id, status, tenant_id")
-    .eq("id", data.centerId)
-    .maybeSingle();
-  if (centerErr || !center) {
-    return { ok: false, error: "Selected center not found." };
+    .eq("tenant_id", tenant.id)
+    .eq("status", "ACTIVE");
+  if (centerErr) {
+    return { ok: false, error: "Center unavailable. Try again in a moment." };
   }
-  if (center.tenant_id !== tenant.id || center.status !== "ACTIVE") {
-    return { ok: false, error: "Selected center is not currently available." };
+  if (!activeCenters || activeCenters.length === 0) {
+    return {
+      ok: false,
+      error: "Signups are temporarily unavailable. Please try again later.",
+    };
   }
+  if (activeCenters.length > 1) {
+    // Loud failure — see guard note above. Surfaces as a 500 + server log
+    // so the misconfiguration is impossible to miss; do NOT downgrade this
+    // to silently attaching activeCenters[0].
+    throw new Error(
+      `[signup] expected exactly one ACTIVE center for tenant ${tenant.id}, ` +
+        `found ${activeCenters.length}. Single-center auto-attach is unsafe ` +
+        `with multiple active centers — reintroduce the center selector ` +
+        `before enabling multi-center signup.`,
+    );
+  }
+  const center = activeCenters[0];
 
   // Read request headers once — used for both the email redirect URL
   // and the audit-log entries below.
@@ -110,9 +134,11 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
     };
   }
 
-  // Audit trail (compliance.md §2). Both events fire here: the parent
-  // initiated consent (clicked the box and submitted), they selected a
-  // home center, and Supabase queued a verification email.
+  // Audit trail (compliance.md §2). All three events fire here: the parent
+  // initiated consent (clicked the box and submitted), they were attached
+  // to the single active center, and Supabase queued a verification email.
+  // The `center_selected` event name is retained (enum value) even though
+  // the center is now auto-attached rather than picked.
   const ipRaw = h.get("x-forwarded-for") ?? h.get("x-real-ip");
   const ip = ipRaw?.split(",")[0]?.trim() ?? null;
   const userAgent = h.get("user-agent") ?? null;

@@ -62,9 +62,10 @@ select
       group by c.home_center_id
       order by count(*) desc
       limit 1),
-    -- else the dev "Singapore HQ" placeholder center in this tenant
+    -- else the single ACTIVE center in this tenant (day-1 single-center)
     (select id from centers
-      where tenant_id = p.tenant_id and name like '%Singapore HQ' limit 1),
+      where tenant_id = p.tenant_id and status = 'ACTIVE'
+      order by created_at limit 1),
     -- else any center in this tenant
     (select id from centers where tenant_id = p.tenant_id order by created_at limit 1)
   ) as center_id

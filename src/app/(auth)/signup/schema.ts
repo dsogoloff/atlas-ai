@@ -22,9 +22,10 @@ export const SignupSchema = z.object({
     .string()
     .min(12, "At least 12 characters (compliance.md §7)")
     .max(200, "Too long"),
-  centerId: z
-    .string()
-    .min(1, "Pick a center"),
+  // No `centerId`: day-1 is single-center, so the form never asks the
+  // parent to choose. The server attaches the one ACTIVE center itself
+  // (see actions.ts). Reintroduce this field alongside a selector when we
+  // go multi-center (ENABLE_MULTI_TENANT).
   consent: z
     .literal<true>(true, { error: "Consent is required to register a child" }),
 });
