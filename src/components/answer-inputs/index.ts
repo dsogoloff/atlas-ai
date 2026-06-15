@@ -9,5 +9,9 @@ export {
 } from "./EquationSet";
 export type { RowDraft } from "./EquationSet";
 export { VisualMC, selectIndexAnswer } from "./VisualMC";
+export { ClickImageSingle, selectOneAnswer } from "./ClickImageSingle";
+export { ClickImageMulti, selectManyAnswer } from "./ClickImageMulti";
+export { ImageOrdering, orderToAnswer } from "./ImageOrdering";
+export { TileFace } from "./TileFace";
 
 export * from "./types";

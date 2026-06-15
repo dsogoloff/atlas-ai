@@ -869,3 +869,170 @@ describe("judgeAnswer / DRAG_DROP content errors", () => {
     ).toThrow(/correct_order/);
   });
 });
+
+describe("parseAnswerValue / ordered-ids", () => {
+  it("parses a well-formed ordered-ids value", () => {
+    expect(parseAnswerValue('{"type":"ordered-ids","ids":["a","b"]}')).toEqual({
+      type: "ordered-ids",
+      ids: ["a", "b"],
+    });
+  });
+});
+
+// Image-input formats read the authored answer model from
+// content._authoring.answer_model (these rows stay HELD until CONVERSION
+// activates them; the model lives in _authoring, not top-level). The
+// renderable tiles are top-level (and never read here).
+describe("judgeAnswer / CLICK_IMAGE_SINGLE", () => {
+  const content = (correct: string): Json =>
+    ({
+      stem: "Tap the triangle",
+      tiles: [{ id: "t1", label: "triangle" }, { id: "t2", label: "square" }],
+      _authoring: {
+        target_interaction: "click-on-image",
+        answer_model: { rule: "select-one", correct },
+        held: true,
+        requires_format_swap: true,
+      },
+    }) as Json;
+
+  it("grades the correct single tile", () => {
+    expect(
+      judgeAnswer(
+        "CLICK_IMAGE_SINGLE",
+        content("t1"),
+        JSON.stringify({ type: "id-set", ids: ["t1"] }),
+      ),
+    ).toBe(true);
+  });
+  it("grades a wrong single tile", () => {
+    expect(
+      judgeAnswer(
+        "CLICK_IMAGE_SINGLE",
+        content("t1"),
+        JSON.stringify({ type: "id-set", ids: ["t2"] }),
+      ),
+    ).toBe(false);
+  });
+  it("grades more-than-one selection wrong (single-select)", () => {
+    expect(
+      judgeAnswer(
+        "CLICK_IMAGE_SINGLE",
+        content("t1"),
+        JSON.stringify({ type: "id-set", ids: ["t1", "t2"] }),
+      ),
+    ).toBe(false);
+  });
+  it("throws when the authored answer model is missing", () => {
+    expect(() =>
+      judgeAnswer(
+        "CLICK_IMAGE_SINGLE",
+        { stem: "s", tiles: [], _authoring: {} } as Json,
+        JSON.stringify({ type: "id-set", ids: ["t1"] }),
+      ),
+    ).toThrow(/answer_model/);
+  });
+  it("throws when the _authoring block itself is absent", () => {
+    expect(() =>
+      judgeAnswer(
+        "CLICK_IMAGE_SINGLE",
+        { stem: "s", tiles: [] } as Json,
+        JSON.stringify({ type: "id-set", ids: ["t1"] }),
+      ),
+    ).toThrow(/_authoring/);
+  });
+  it("throws on an answer-model rule that does not match the format", () => {
+    expect(() =>
+      judgeAnswer(
+        "CLICK_IMAGE_SINGLE",
+        {
+          stem: "s",
+          tiles: [],
+          _authoring: { answer_model: { rule: "select-all", correct: ["t1"] } },
+        } as Json,
+        JSON.stringify({ type: "id-set", ids: ["t1"] }),
+      ),
+    ).toThrow(/select-one/);
+  });
+});
+
+describe("judgeAnswer / CLICK_IMAGE_MULTI", () => {
+  const content = (correct: string[]): Json =>
+    ({
+      stem: "Tap every red shape",
+      tiles: [
+        { id: "a", label: "1" },
+        { id: "b", label: "2" },
+        { id: "c", label: "3" },
+      ],
+      _authoring: {
+        answer_model: { rule: "select-all", correct },
+        held: true,
+        requires_format_swap: true,
+      },
+    }) as Json;
+
+  it("grades set-equality happy path (order-irrelevant)", () => {
+    expect(
+      judgeAnswer(
+        "CLICK_IMAGE_MULTI",
+        content(["a", "c"]),
+        JSON.stringify({ type: "id-set", ids: ["c", "a"] }),
+      ),
+    ).toBe(true);
+  });
+  it("grades wrong on an extra selection", () => {
+    expect(
+      judgeAnswer(
+        "CLICK_IMAGE_MULTI",
+        content(["a", "c"]),
+        JSON.stringify({ type: "id-set", ids: ["a", "b", "c"] }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("judgeAnswer / IMAGE_ORDERING", () => {
+  const content = (order: string[]): Json =>
+    ({
+      stem: "Put the steps in order",
+      tiles: [
+        { id: "s1", label: "1" },
+        { id: "s2", label: "2" },
+        { id: "s3", label: "3" },
+      ],
+      _authoring: {
+        answer_model: { rule: "order-equality", order },
+        held: true,
+        requires_format_swap: true,
+      },
+    }) as Json;
+
+  it("grades the correct sequence", () => {
+    expect(
+      judgeAnswer(
+        "IMAGE_ORDERING",
+        content(["s1", "s2", "s3"]),
+        JSON.stringify({ type: "ordered-ids", ids: ["s1", "s2", "s3"] }),
+      ),
+    ).toBe(true);
+  });
+  it("grades a wrong (reordered) sequence", () => {
+    expect(
+      judgeAnswer(
+        "IMAGE_ORDERING",
+        content(["s1", "s2", "s3"]),
+        JSON.stringify({ type: "ordered-ids", ids: ["s2", "s1", "s3"] }),
+      ),
+    ).toBe(false);
+  });
+  it("throws when the order array is missing from the model", () => {
+    expect(() =>
+      judgeAnswer(
+        "IMAGE_ORDERING",
+        { stem: "s", tiles: [], _authoring: { answer_model: { rule: "order-equality" } } } as Json,
+        JSON.stringify({ type: "ordered-ids", ids: ["s1"] }),
+      ),
+    ).toThrow(/order/);
+  });
+});

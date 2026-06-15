@@ -113,6 +113,9 @@ void _pickedRowKeyCheck;
  *   * external_id           (S.A.M. catalog ID — licensing audit, server-only)
  *   * image_path            (Phase 2 mints a signed URL from this; the
  *                            raw bucket path never crosses to the client)
+ *   * _authoring            (authored answer model + interaction metadata for
+ *                            held image-input rows — answer-bearing; the
+ *                            serializer never reads it)
  */
 export interface ClientQuestion {
   id: string;
@@ -206,6 +209,18 @@ export type ClientQuestionContent =
       stem: string;
       rows: number;
       ops?: string[];
+      image?: ClientQuestionImage;
+    }
+  | {
+      // CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI / IMAGE_ORDERING — selectable
+      // image (or text-label) tiles. The authored answer model lives at
+      // content._authoring.answer_model and is NEVER serialized (read
+      // server-side only by correctness.ts). Each tile's raw image_path stays
+      // server-side; the client sees only the per-tile minted `image`
+      // envelope. The three formats share this shape; the client narrows on
+      // ClientQuestion.format, not on content.
+      stem: string;
+      tiles: ClientLabeledItem[];
       image?: ClientQuestionImage;
     };
 

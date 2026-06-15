@@ -251,7 +251,93 @@ export function judgeAnswer(
       }
       return grade(answer, model).correct;
     }
+
+    // Image-input formats (image-answer-inputs lane). UNLIKE the L1 formats
+    // above, these read the authored answer model from
+    // content._authoring.answer_model rather than top-level content: the rows
+    // stay HELD (is_active=false, _authoring.requires_format_swap=true) until
+    // CONVERSION activates them, and the model lives in _authoring throughout
+    // (the activation step clears requires_format_swap and sets is_active but
+    // keeps the model where this reader looks). The renderable tiles are
+    // top-level content.tiles and are NEVER read here. See the
+    // 20260615120000 migration header for the activation contract.
+    case "CLICK_IMAGE_SINGLE": {
+      const answer = parseAnswerValue(answerGiven);
+      const model: CorrectAnswerModel = {
+        rule: "select-one",
+        correct: readString(
+          requireAuthoringModel(obj, format, "select-one"),
+          "correct",
+          format,
+        ),
+      };
+      return grade(answer, model).correct;
+    }
+
+    case "CLICK_IMAGE_MULTI": {
+      const answer = parseAnswerValue(answerGiven);
+      const model: CorrectAnswerModel = {
+        rule: "select-all",
+        correct: readStringArray(
+          requireAuthoringModel(obj, format, "select-all"),
+          "correct",
+          format,
+        ),
+      };
+      return grade(answer, model).correct;
+    }
+
+    case "IMAGE_ORDERING": {
+      const answer = parseAnswerValue(answerGiven);
+      const model: CorrectAnswerModel = {
+        rule: "order-equality",
+        order: readStringArray(
+          requireAuthoringModel(obj, format, "order-equality"),
+          "order",
+          format,
+        ),
+      };
+      return grade(answer, model).correct;
+    }
   }
+}
+
+// ---------------------------------------------------------------------------
+// _authoring answer-model reader (image-input formats only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Read content._authoring.answer_model for a held image-input row and assert
+ * its `rule` is the one expected for `format`. Throws on a missing/malformed
+ * _authoring block, a missing answer_model, or a rule that does not match —
+ * those are content-authoring bugs, surfaced as 500s like the rest of
+ * judgeAnswer. Returns the answer_model object so the caller reads its fields
+ * with the same per-format readers used everywhere else.
+ */
+function requireAuthoringModel(
+  obj: Record<string, Json>,
+  format: QuestionFormat,
+  expectedRule: string,
+): Record<string, Json> {
+  const authoring = obj["_authoring"];
+  if (authoring === null || typeof authoring !== "object" || Array.isArray(authoring)) {
+    throw new Error(
+      `[correctness] _authoring missing or not an object on ${format} content`,
+    );
+  }
+  const model = (authoring as Record<string, Json>)["answer_model"];
+  if (model === null || typeof model !== "object" || Array.isArray(model)) {
+    throw new Error(
+      `[correctness] _authoring.answer_model missing or not an object on ${format} content`,
+    );
+  }
+  const modelObj = model as Record<string, Json>;
+  if (modelObj.rule !== expectedRule) {
+    throw new Error(
+      `[correctness] _authoring.answer_model.rule must be "${expectedRule}" on ${format} content`,
+    );
+  }
+  return modelObj;
 }
 
 // ---------------------------------------------------------------------------
@@ -264,6 +350,7 @@ const ANSWER_VALUE_TYPES = new Set<AnswerValue["type"]>([
   "blanks",
   "equation-set",
   "id-set",
+  "ordered-ids",
   "pairs",
 ]);
 

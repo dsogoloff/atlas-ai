@@ -34,6 +34,11 @@ import { SelectMultipleInput } from "./SelectMultipleInput";
 import { MatchingInput } from "./MatchingInput";
 import { MultiBlankInput } from "./MultiBlankInput";
 import { EquationSetInput } from "./EquationSetInput";
+import {
+  ClickImageSingle,
+  ClickImageMulti,
+  ImageOrdering,
+} from "@/components/answer-inputs";
 
 interface Props {
   question: ClientQuestion;
@@ -122,6 +127,30 @@ export function QuestionTimer({ question, onSubmit, disabled, tier }: Props) {
         />
       );
     }
+    case "CLICK_IMAGE_SINGLE":
+      return (
+        <ClickImageSingle
+          tiles={getImageTiles(question.content)}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
+    case "CLICK_IMAGE_MULTI":
+      return (
+        <ClickImageMulti
+          tiles={getImageTiles(question.content)}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
+    case "IMAGE_ORDERING":
+      return (
+        <ImageOrdering
+          tiles={getImageTiles(question.content)}
+          onSubmit={handleAnswer}
+          disabled={disabled}
+        />
+      );
   }
 }
 
@@ -179,4 +208,17 @@ function getEquationSet(
     throw new Error("EQUATION_SET content missing rows");
   }
   return content;
+}
+
+// All three image-input formats (CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI /
+// IMAGE_ORDERING) share the `tiles` content shape; they differ only by the
+// rendered component (selected above on question.format) and the server-side
+// grading rule.
+function getImageTiles(
+  content: ClientQuestionContent,
+): Extract<ClientQuestionContent, { tiles: unknown }>["tiles"] {
+  if (!("tiles" in content)) {
+    throw new Error("image-input content missing tiles");
+  }
+  return content.tiles;
 }

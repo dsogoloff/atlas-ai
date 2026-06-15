@@ -8,8 +8,10 @@ import {
   gradeExactNumeric,
   gradeExactText,
   gradeMatchPairs,
+  gradeOrderEquality,
   gradeSelectAll,
   gradeSelectCount,
+  gradeSelectOne,
   gradeSetEquality,
   isValidEquation,
   normalizeText,
@@ -342,5 +344,105 @@ describe("grade() dispatcher", () => {
         },
       ).correct,
     ).toBe(true);
+  });
+});
+
+// --- image answer-input grading paths --------------------------------------
+
+describe("gradeSelectOne (click-image single-select)", () => {
+  it("is correct when exactly the one correct id is selected", () => {
+    expect(gradeSelectOne(["tile-b"], "tile-b").correct).toBe(true);
+  });
+
+  it("is wrong when the selected id is not the correct id", () => {
+    expect(gradeSelectOne(["tile-a"], "tile-b").correct).toBe(false);
+  });
+
+  it("is wrong when more than one id is selected (single-select)", () => {
+    expect(gradeSelectOne(["tile-b", "tile-c"], "tile-b").correct).toBe(false);
+  });
+
+  it("is wrong when nothing is selected", () => {
+    expect(gradeSelectOne([], "tile-b").correct).toBe(false);
+  });
+});
+
+describe("gradeOrderEquality (image-ordering)", () => {
+  it("is correct when the ids match in order", () => {
+    expect(
+      gradeOrderEquality(["a", "b", "c"], ["a", "b", "c"]).correct,
+    ).toBe(true);
+  });
+
+  it("is wrong when the same ids are in a different order", () => {
+    expect(
+      gradeOrderEquality(["a", "c", "b"], ["a", "b", "c"]).correct,
+    ).toBe(false);
+  });
+
+  it("is wrong when an id is missing or the lengths differ", () => {
+    expect(gradeOrderEquality(["a", "b"], ["a", "b", "c"]).correct).toBe(false);
+  });
+
+  it("is wrong on an unknown / extra id", () => {
+    expect(
+      gradeOrderEquality(["a", "b", "z"], ["a", "b", "c"]).correct,
+    ).toBe(false);
+  });
+});
+
+describe("grade() dispatch for image inputs", () => {
+  it("dispatches select-one against an id-set answer", () => {
+    expect(
+      grade(
+        { type: "id-set", ids: ["tile-2"] },
+        { rule: "select-one", correct: "tile-2" },
+      ).correct,
+    ).toBe(true);
+    expect(
+      grade(
+        { type: "id-set", ids: ["tile-1"] },
+        { rule: "select-one", correct: "tile-2" },
+      ).correct,
+    ).toBe(false);
+  });
+
+  it("dispatches set-equality (select-all) for multi-select, order-irrelevant", () => {
+    expect(
+      grade(
+        { type: "id-set", ids: ["c", "a", "b"] },
+        { rule: "select-all", correct: ["a", "b", "c"] },
+      ).correct,
+    ).toBe(true);
+  });
+
+  it("dispatches order-equality against an ordered-ids answer", () => {
+    expect(
+      grade(
+        { type: "ordered-ids", ids: ["a", "b", "c"] },
+        { rule: "order-equality", order: ["a", "b", "c"] },
+      ).correct,
+    ).toBe(true);
+    expect(
+      grade(
+        { type: "ordered-ids", ids: ["b", "a", "c"] },
+        { rule: "order-equality", order: ["a", "b", "c"] },
+      ).correct,
+    ).toBe(false);
+  });
+
+  it("is a clean (non-throwing) wrong on shape mismatch", () => {
+    expect(
+      grade(
+        { type: "ordered-ids", ids: ["a"] },
+        { rule: "select-one", correct: "a" },
+      ).correct,
+    ).toBe(false);
+    expect(
+      grade(
+        { type: "id-set", ids: ["a", "b", "c"] },
+        { rule: "order-equality", order: ["a", "b", "c"] },
+      ).correct,
+    ).toBe(false);
   });
 });

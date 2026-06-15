@@ -539,3 +539,58 @@ describe("toClientQuestion / VISUAL_MATCHING per-tile images", () => {
     }
   });
 });
+
+describe("toClientQuestion / image-input formats", () => {
+  const imageRow = (format: PickedQuestionRow["format"]): PickedQuestionRow =>
+    row(format, {
+      stem: "Pick the triangle",
+      tiles: [
+        { id: "t1", label: "triangle", image_path: "secret/t1.png", image_alt: "shape one" },
+        { id: "t2", label: "square" },
+      ],
+      // Answer-bearing — must NEVER be serialized.
+      _authoring: {
+        target_interaction: "click-on-image",
+        answer_model: { rule: "select-one", correct: "t1" },
+        held: true,
+        requires_format_swap: true,
+      },
+    });
+
+  for (const format of [
+    "CLICK_IMAGE_SINGLE",
+    "CLICK_IMAGE_MULTI",
+    "IMAGE_ORDERING",
+  ] as const) {
+    it(`${format}: returns stem + tiles only, stripping _authoring and per-tile image_path`, () => {
+      const out = toClientQuestion(imageRow(format));
+      expect(out.content).toEqual({
+        stem: "Pick the triangle",
+        tiles: [
+          { id: "t1", label: "triangle" },
+          { id: "t2", label: "square" },
+        ],
+      });
+      expect(Object.keys(out.content).sort()).toEqual(["stem", "tiles"]);
+      // The answer model never crosses the wire.
+      expect(Object.keys(out.content)).not.toContain("_authoring");
+      expect(JSON.stringify(out.content)).not.toContain("answer_model");
+      expect(JSON.stringify(out.content)).not.toContain("select-one");
+      // Raw per-tile bucket path stays server-side.
+      expect(JSON.stringify(out.content)).not.toContain("secret/t1.png");
+    });
+  }
+
+  it("CLICK_IMAGE_SINGLE: attaches per-tile minted image envelopes from tileImages", () => {
+    const out = toClientQuestion(imageRow("CLICK_IMAGE_SINGLE"), undefined, {
+      t1: { url: "https://signed/t1", alt: "shape one", required: true },
+    });
+    const content = out.content as Extract<typeof out.content, { tiles: unknown }>;
+    expect(content.tiles[0]).toEqual({
+      id: "t1",
+      label: "triangle",
+      image: { url: "https://signed/t1", alt: "shape one", required: true },
+    });
+    expect(content.tiles[1]).toEqual({ id: "t2", label: "square" });
+  });
+});

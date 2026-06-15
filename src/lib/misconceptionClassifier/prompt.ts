@@ -158,6 +158,9 @@ function readCorrectAnswer(
     case "VISUAL_MATCHING":
     case "MULTI_BLANK":
     case "EQUATION_SET":
+    case "CLICK_IMAGE_SINGLE":
+    case "CLICK_IMAGE_MULTI":
+    case "IMAGE_ORDERING":
       throw new Error(
         `[prompt] ${format} not supported by the LLM classifier path`,
       );

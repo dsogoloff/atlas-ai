@@ -38,8 +38,11 @@ export type AnswerValue =
   | { type: "blanks"; values: Record<string, string> }
   /** Set of equations: fact families and equation-set inputs. */
   | { type: "equation-set"; equations: Equation[] }
-  /** Select-multiple: the set of selected option ids (SELECT_MULTIPLE). */
+  /** Select-multiple / click-image select: the set of selected option/tile
+   *  ids (SELECT_MULTIPLE, CLICK_IMAGE_SINGLE one-element, CLICK_IMAGE_MULTI). */
   | { type: "id-set"; ids: string[] }
+  /** Ordered list of tile ids — order is significant (IMAGE_ORDERING). */
+  | { type: "ordered-ids"; ids: string[] }
   /** Matching: leftId → chosen rightId (VISUAL_MATCHING). */
   | { type: "pairs"; pairs: Record<string, string> };
 
@@ -89,10 +92,17 @@ export type CorrectAnswerModel =
       requireCount: number;
       requireDistinct?: boolean;
     }
+  /** Select-one: exactly one tile is selected and its id equals `correct`
+   *  (click-image single-select — CLICK_IMAGE_SINGLE). Distinct from
+   *  set-equality: more than one selection is wrong by construction. */
+  | { rule: "select-one"; correct: string }
   /** Select-all: the selected id set must equal `correct` exactly (order-
    *  irrelevant; dupes collapse; no extras, none missing). SELECT_MULTIPLE
-   *  rule "all". */
+   *  rule "all"; click-image multi-select — CLICK_IMAGE_MULTI. */
   | { rule: "select-all"; correct: string[] }
+  /** Order-equality: the produced tile-id list must equal `order` element-
+   *  for-element in sequence (IMAGE_ORDERING). */
+  | { rule: "order-equality"; order: string[] }
   /** Select-count: every selected id must be a valid option id, and the
    *  number of DISTINCT selected ids must equal `count` (Q26 "any N of M" —
    *  not set-equality). SELECT_MULTIPLE rule "count". */
