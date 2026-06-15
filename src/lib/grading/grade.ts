@@ -171,6 +171,36 @@ export function gradeSelectAll(ids: string[], correct: string[]): GradeResult {
   return ok(`selected set of ${want.size} matches`);
 }
 
+/** Exactly one id selected, equal to `correct` (click-image single-select).
+ *  More than one selection — or none — is wrong: this is an exact single-id
+ *  match, not set-equality. */
+export function gradeSelectOne(ids: string[], correct: string): GradeResult {
+  if (ids.length !== 1) {
+    return no(`selected ${ids.length} tiles, expected exactly 1`);
+  }
+  return ids[0] === correct
+    ? ok(`selected "${ids[0]}" matches`)
+    : no(`selected "${ids[0]}" ≠ "${correct}"`);
+}
+
+/** Produced id list must equal `order` element-for-element, in sequence
+ *  (image-ordering). Order is significant — same ids in a different order
+ *  is wrong. */
+export function gradeOrderEquality(
+  ids: string[],
+  order: string[],
+): GradeResult {
+  if (ids.length !== order.length) {
+    return no(`produced ${ids.length} tiles, expected ${order.length}`);
+  }
+  for (let i = 0; i < order.length; i++) {
+    if (ids[i] !== order[i]) {
+      return no(`position ${i + 1}: "${ids[i]}" ≠ "${order[i]}"`);
+    }
+  }
+  return ok(`order of ${order.length} tiles matches`);
+}
+
 /** Every selected id must be a valid option id, and the count of DISTINCT
  *  selected ids must equal `count` (Q26 "any N of M"). */
 export function gradeSelectCount(
@@ -274,9 +304,18 @@ export function grade(
         model.requireDistinct,
       );
 
+    case "select-one":
+      if (answer.type !== "id-set") return shapeMismatch(answer, model.rule);
+      return gradeSelectOne(answer.ids, model.correct);
+
     case "select-all":
       if (answer.type !== "id-set") return shapeMismatch(answer, model.rule);
       return gradeSelectAll(answer.ids, model.correct);
+
+    case "order-equality":
+      if (answer.type !== "ordered-ids")
+        return shapeMismatch(answer, model.rule);
+      return gradeOrderEquality(answer.ids, model.order);
 
     case "select-count":
       if (answer.type !== "id-set") return shapeMismatch(answer, model.rule);

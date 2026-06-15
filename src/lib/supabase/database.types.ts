@@ -1293,6 +1293,9 @@ export type Database = {
         | "VISUAL_MATCHING"
         | "MULTI_BLANK"
         | "EQUATION_SET"
+        | "CLICK_IMAGE_SINGLE"
+        | "CLICK_IMAGE_MULTI"
+        | "IMAGE_ORDERING"
       representation_kind:
         | "SYMBOLIC"
         | "PICTORIAL"
@@ -1506,6 +1509,9 @@ export const Constants = {
         "VISUAL_MATCHING",
         "MULTI_BLANK",
         "EQUATION_SET",
+        "CLICK_IMAGE_SINGLE",
+        "CLICK_IMAGE_MULTI",
+        "IMAGE_ORDERING",
       ],
       representation_kind: [
         "SYMBOLIC",

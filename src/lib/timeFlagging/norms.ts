@@ -312,6 +312,14 @@ const INPUT_SECONDS_BY_FORMAT: Record<QuestionFormat, number> = {
   VISUAL_MATCHING: 6,
   MULTI_BLANK: 6,
   EQUATION_SET: 8,
+  // Image-input formats (image-answer-inputs lane). Estimates mirror the
+  // comparable existing tap/drag inputs until empirical recalibration:
+  //   * CLICK_IMAGE_SINGLE — tap one image tile, like a multiple-choice tap.
+  //   * CLICK_IMAGE_MULTI  — tap a few image tiles, like SELECT_MULTIPLE.
+  //   * IMAGE_ORDERING     — arrange image tiles, like a drag-and-drop.
+  CLICK_IMAGE_SINGLE: 3,
+  CLICK_IMAGE_MULTI: 5,
+  IMAGE_ORDERING: 6,
 };
 
 export const DEFAULT_CONFIG: TimeFlagConfig = {

@@ -135,6 +135,19 @@ function stripContent(
       const ops = readOptionalStringArray(obj, "ops");
       return ops === undefined ? out : { ...out, ops };
     }
+    case "CLICK_IMAGE_SINGLE":
+    case "CLICK_IMAGE_MULTI":
+    case "IMAGE_ORDERING":
+      // Render-safe: stem + tiles[{id,label,image?}]. The authored answer
+      // model (content._authoring.answer_model) is answer-bearing and is
+      // NEVER read here — the key-by-key build below cannot leak it. Per-tile
+      // raw `image_path`/`image_alt` stay server-side; the client sees only
+      // the minted `image` envelope (tileImages map), same as VISUAL_MATCHING.
+      return {
+        stem,
+        tiles: readLabeledItems(obj, "tiles", tileImages),
+        ...(image ? { image } : {}),
+      };
   }
 }
 

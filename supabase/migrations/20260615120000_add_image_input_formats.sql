@@ -1,0 +1,47 @@
+-- Atlas Assessment — add the three click-image answer-input formats to
+-- question_format.
+--
+-- Image-input lane (lane/image-answer-inputs): the held image-essential rows
+-- whose real interaction is a picture click/ordering task need these three
+-- answer-input types to WORK in the live player + server grading before
+-- CONVERSION can ever activate them. This migration ONLY widens the enum; it
+-- does NOT activate any row, does NOT touch any held-row data, does NOT flip
+-- is_active or content._authoring.requires_format_swap, and leaves the
+-- questions_held_rows_inactive guardrail (20260613120000) fully valid:
+-- adding enum values cannot auto-activate anything (held rows stay
+-- is_active=false while requires_format_swap=true).
+--
+--   * CLICK_IMAGE_SINGLE — tap one image tile; graded select-one
+--                          (selected id == correct id).
+--   * CLICK_IMAGE_MULTI  — tap N image tiles; graded select-all
+--                          (set-equality, order-irrelevant).
+--   * IMAGE_ORDERING     — arrange image tiles in sequence; graded
+--                          order-equality on tile ids.
+--
+-- Content shapes + judging: the renderable tiles live at top-level
+-- content.tiles[{id,label,image_path?,image_alt?}] (stripped render-safe by
+-- src/lib/questionPicker/serialize.ts — the answer never crosses the wire);
+-- the authored answer model lives at content._authoring.answer_model and is
+-- read server-side ONLY by src/lib/responseSubmit/correctness.ts. Grading
+-- primitives: src/lib/grading/grade.ts (select-one / select-all /
+-- order-equality).
+--
+-- Activation contract (CONVERSION-owned, NOT done here): to activate such a
+-- row, set format to the matching enum value, ensure content.tiles is
+-- populated, then clear content._authoring.requires_format_swap and set
+-- is_active=true. The answer model STAYS in content._authoring.answer_model
+-- (that is where correctness.ts reads it for these formats).
+--
+-- Postgres constraint: ALTER TYPE ... ADD VALUE may run inside a transaction
+-- (PG >= 12) but the new value cannot be USED until that transaction commits.
+-- Supabase runs each migration file in its own transaction, so the enum DDL
+-- lives ALONE here; any data migration that USES these values must follow in
+-- a later migration file.
+--
+-- AGENTS.md §11 note: enum DDL is schema, not tenant-scoped row data.
+-- Migrations run on BOTH the production path and the dev `supabase db reset`
+-- path (before seed.sql), so NO seed.sql mirror is needed for this file.
+
+alter type question_format add value if not exists 'CLICK_IMAGE_SINGLE';
+alter type question_format add value if not exists 'CLICK_IMAGE_MULTI';
+alter type question_format add value if not exists 'IMAGE_ORDERING';
