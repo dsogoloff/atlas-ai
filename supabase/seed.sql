@@ -2455,3 +2455,96 @@ where q.tenant_id = t.id
   and q.is_active = true;
 
 -- END l1-overlay
+
+-- BEGIN l2-overlay (lane/l2-authoring — do not hand-edit; pnpm convert:apply-l2-overlay)
+-- MIRRORS supabase/migrations/20260614120000_l2_overlay_load.sql (dev/CI path; runs after the
+-- generated stage4 block, the reclassify mirrors and the l1-overlay block).
+-- Idempotent (on conflict do nothing).
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active, content_id)
+select t.id, v.external_id, v.strand::strand, v.level::half_grade_level,
+       v.difficulty, v.format::question_format,
+       v.content::jsonb, v.misconception_tags,
+       v.word_count, v.operation_type::operation_type, v.num_operations,
+       v.representation::representation_kind,
+       v.is_active,
+       (select tc.id from tax_content tc
+          where tc.tenant_id = t.id and tc.code = v.content_key)
+from t,
+  (values
+    -- SAM-L2-Q02 | active | blocker none
+    ('SAM-L2-Q02', 'geometry', '1A', -1.8, 'MULTIPLE_CHOICE',
+     '{"stem":"How many triangles do you see in the picture?","options":["1","5","3","7"],"correct_index":1,"image_path":"q-sam-l2-q02-triangles.png","image_alt":"A figure made up of several triangles.","image_required":true}'::jsonb,
+     array[]::text[],
+     8, 'GEOMETRY', 1, 'PICTORIAL', true, 'l1-geometry-1'),
+
+    -- SAM-L2-Q03 | active | blocker none
+    ('SAM-L2-Q03', 'geometry', '1A', -1.7, 'MULTIPLE_CHOICE',
+     '{"stem":"What are the two shapes that make up the figure below?","options":["half circle and square","half circle and triangle","quarter circle and square","quarter circle and triangle"],"correct_index":1,"image_path":"q-sam-l2-q03-composite-shape.png","image_alt":"A two-colour figure made of two simple shapes.","image_required":true}'::jsonb,
+     array[]::text[],
+     11, 'GEOMETRY', 1, 'PICTORIAL', true, 'l1-geometry-1'),
+
+    -- SAM-L2-Q04 | active | blocker none
+    ('SAM-L2-Q04', 'number_sense', '1A', -1.6, 'TEXT_ENTRY',
+     '{"stem":"Abel, Beth, Cary, Dave and Ethan are queueing at the bank. Abel is in front of Dave. Beth is behind Dave. Abel is behind Cary. Cary is not first in the queue. Who is first in the queue?","correct_answer":"Ethan"}'::jsonb,
+     array[]::text[],
+     38, 'IDENTIFY', 1, 'WORD_PROBLEM_SINGLE', true, null),
+
+    -- SAM-L2-Q05 | active | blocker none
+    ('SAM-L2-Q05', 'data_statistics', '1A', -1.5, 'NUMERIC_ENTRY',
+     '{"stem":"The picture graph below shows the number of seashells collected by four boys. How many more seashells were collected by Mark than by Adam?","correct_answer":"9","image_path":"q-sam-l2-q05-seashell-graph.png","image_alt":"A picture graph of seashells collected by Jimmy, Adam, Tom and Mark.","image_required":true}'::jsonb,
+     array[]::text[],
+     24, 'SUBTRACTION', 1, 'PICTORIAL', true, 'l1-data_representation-1'),
+
+    -- SAM-L2-Q06 | held | blocker C
+    ('SAM-L2-Q06', 'number_sense', '1A', -1.7, 'MULTIPLE_CHOICE',
+     '{"stem":"Which picture shows 37?","options":["option 1","option 2","option 3","option 4"],"correct_index":2,"_authoring":{"target_interaction":"image-option-MC (click-on-image)","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
+     array['NS_PLACE_VALUE_CONFUSION'],
+     4, 'IDENTIFY', 1, 'PICTORIAL', false, 'l1-whole_numbers-8'),
+
+    -- SAM-L2-Q08 | active | blocker none
+    ('SAM-L2-Q08', 'number_sense', '1A', -1.6, 'TEXT_ENTRY',
+     '{"stem":"Type 96 in words.","correct_answer":"ninety-six"}'::jsonb,
+     array[]::text[],
+     4, 'IDENTIFY', 1, 'SYMBOLIC', true, 'l1-whole_numbers-8'),
+
+    -- SAM-L2-Q12 | active | blocker none
+    ('SAM-L2-Q12', 'measurement', '1A', -1.4, 'NUMERIC_ENTRY',
+     '{"stem":"The picture below shows the length of a toy car. What is the length of the toy car?","correct_answer":"7","image_path":"q-sam-l2-q12-toy-car-ruler.png","image_alt":"A toy car shown above a centimetre ruler.","image_required":true}'::jsonb,
+     array[]::text[],
+     18, 'MEASUREMENT', 1, 'PICTORIAL', true, 'l1-measurement-1'),
+
+    -- SAM-L2-Q13 | active | blocker none
+    ('SAM-L2-Q13', 'operations_algorithms', '1A', -1.3, 'MULTIPLE_CHOICE',
+     '{"stem":"3 × 4 is ___.","options":["3 + 3 + 3","4 + 4 + 4","3 + 3 + 3 + 3","4 + 4 + 4 + 4"],"correct_index":1}'::jsonb,
+     array[]::text[],
+     4, 'MULTIPLICATION', 1, 'SYMBOLIC', true, 'l1-whole_numbers-10'),
+
+    -- SAM-L2-Q15 | active | blocker none
+    ('SAM-L2-Q15', 'measurement', '1A', -1.3, 'MULTIPLE_CHOICE',
+     '{"stem":"The clock shows the time Joe finished his lunch. At what time did he finish his lunch?","options":["2:45 am","2:55 am","2:45 pm","2:55 pm"],"correct_index":3,"image_path":"q-sam-l2-q15-clock.png","image_alt":"A clock face.","image_required":true}'::jsonb,
+     array[]::text[],
+     17, 'MEASUREMENT', 1, 'PICTORIAL', true, 'l1-measurement-2'),
+
+    -- SAM-L2-Q16 | active | blocker none
+    ('SAM-L2-Q16', 'measurement', '1A', -1.3, 'MULTIPLE_CHOICE',
+     '{"stem":"How much money is there?","options":["50¢","70¢","85¢","95¢"],"correct_index":2,"image_path":"q-sam-l2-q16-coins.png","image_alt":"A group of coins.","image_required":true}'::jsonb,
+     array[]::text[],
+     5, 'MEASUREMENT', 1, 'PICTORIAL', true, 'l1-measurement-3'),
+
+    -- SAM-L2-Q18 | active | blocker none
+    ('SAM-L2-Q18', 'number_sense', '2A', -1.3, 'NUMERIC_ENTRY',
+     '{"stem":"How many are there?","correct_answer":"204","image_path":"q-sam-l2-q18-base-ten.png","image_alt":"Base-ten place-value blocks (hundreds and ones).","image_required":true}'::jsonb,
+     array[]::text[],
+     4, 'COUNTING', 1, 'PICTORIAL', true, 'l2-whole_numbers-1')
+  ) as v(external_id, strand, level, difficulty, format, content,
+         misconception_tags, word_count, operation_type, num_operations,
+         representation, is_active, content_key)
+on conflict (tenant_id, external_id) do nothing;
+
+-- END l2-overlay
