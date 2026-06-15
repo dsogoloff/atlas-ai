@@ -3,7 +3,7 @@
 Authored from `Level_2_Placement_Worksheet.docx` + the founder's pre-exported
 `l2-art/` images, into a **separate** overlay `overlay/l2-authoring.json`
 (L1 rows untouched). Generated additively via `pnpm convert:apply-l2-overlay`:
-migration `supabase/migrations/20260614120000_l2_overlay_load.sql` + a mirrored
+migration `supabase/migrations/20260614130000_l2_overlay_load.sql` + a mirrored
 `-- BEGIN l2-overlay` block appended to `supabase/seed.sql`. The existing 11
 SAM-L2 rows stay byte-for-byte; the applier asserts every emitted statement
 references only `SAM-L2-*` ids.

@@ -33,8 +33,12 @@ const SEED_FILE = path.join(REPO_ROOT, "supabase", "seed.sql");
 const MIGRATIONS_DIR = path.join(REPO_ROOT, "supabase", "migrations");
 
 // Fixed timestamp — sorts after every existing migration incl. the
-// l1-overlay load (20260613120100). Committed once.
-const LOAD_TS = "20260614120000";
+// l1-overlay load (20260613120100), the l1 input-formats enum add
+// (20260614120000), and the l1-art activation (20260614120001). Stamped
+// 130000 (not 120000) to keep every migration version UNIQUE — a shared
+// 20260614120000 would risk a schema_migrations primary-key conflict and
+// fragile lexicographic ordering. Committed once.
+const LOAD_TS = "20260614130000";
 const LOAD_FILE = `${LOAD_TS}_l2_overlay_load.sql`;
 
 const TENANT_SLUG = "inspirea_singapore_math";

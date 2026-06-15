@@ -2457,7 +2457,7 @@ where q.tenant_id = t.id
 -- END l1-overlay
 
 -- BEGIN l2-overlay (lane/l2-authoring — do not hand-edit; pnpm convert:apply-l2-overlay)
--- MIRRORS supabase/migrations/20260614120000_l2_overlay_load.sql (dev/CI path; runs after the
+-- MIRRORS supabase/migrations/20260614130000_l2_overlay_load.sql (dev/CI path; runs after the
 -- generated stage4 block, the reclassify mirrors and the l1-overlay block).
 -- Idempotent (on conflict do nothing).
 
