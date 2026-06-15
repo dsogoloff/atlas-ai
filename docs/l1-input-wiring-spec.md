@@ -48,12 +48,35 @@ Wire: `{ stem, select_rule, options, count?, image? }`. STRIP `correct`.
 ### VISUAL_MATCHING
 ```
 { stem,
-  left:  [{ id, label }],            // render-safe
-  right: [{ id, label }],            // render-safe
+  left:  [{ id, label, image_path?, image_alt? }],   // render-safe (per-tile image optional)
+  right: [{ id, label, image_path?, image_alt? }],   // render-safe (per-tile image optional)
   pairs: { [leftId]: rightId },      // ANSWER (server-only)
-  image_path?, ... }
+  image_path?, ... }                 // existing QUESTION-level single-image plumbing
 ```
-Wire: `{ stem, left, right, image? }`. STRIP `pairs`.
+Wire: `{ stem, left, right, image? }` where each left/right item is
+`{ id, label, image? }`. STRIP `pairs`.
+
+**Per-tile images** (added — L1 Q13 shapes→names, Q15 3D solids→names,
+Q07 scene + candidate tiles need a separate image *per tile*, not one
+question-level image). Each `left`/`right` item may carry its own
+`image_path` (bucket-relative path into `question-images`) plus an
+optional answer-safe `image_alt`. At serve time `mintMatchingTileImages`
+(mintImage.ts) mints a short-TTL signed URL per tile — the same signed-URL
+machinery as the question-level `image_path` — and the serializer attaches
+it as the item's `image: { url, alt, required }` envelope. `image_alt`
+falls back to the tile's render-safe `label` when not authored, so the
+alt-mandatory mint invariant holds without a per-tile alt.
+
+The raw per-tile `image_path`/`image_alt` are **server-only** and never
+cross the wire (the serializer builds each item key-by-key from `id` +
+`label`, dropping everything else; the client sees only the minted
+`image` envelope). Per-tile images are **display-only**: the wire answer
+is still `{ type:"pairs", pairs }` and grading is unchanged
+(`correctness.ts` reads `content.pairs` — `match-pairs` on ids). The
+client renderer (`MatchingInput.tsx`) shows the image when present and
+falls back to the text `label` when absent or on image-load failure.
+Items with no `image_path` (e.g. Q11/Q27, labels-only) keep the exact
+prior `{ id, label }` wire shape — fully backward compatible.
 
 ### MULTI_BLANK
 ```

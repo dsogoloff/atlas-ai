@@ -54,6 +54,11 @@ tmp/
 # Relay review payloads (local-only diffs/findings — never committed)
 tools/relay/.reviews/
 
+# L1 art extraction output — crops live in Supabase Storage (question-images/l1/);
+# page renders / raw media / the rebuilt PDF are bulky, generated, and regenerable
+# from scripts/conversion/l1_*.py against the source .docx.
+scripts/conversion/output/l1-art/
+
 # Claude Code config: shared governance (agents, hooks, settings.json) is
 # committed; everything else under .claude/ stays per-developer.
 .claude/*

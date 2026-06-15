@@ -26,7 +26,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/lib/supabase/database.types";
 
-import { mintQuestionImage } from "./mintImage";
+import { mintMatchingTileImages, mintQuestionImage } from "./mintImage";
 import { toClientQuestion } from "./serialize";
 import type { ClientQuestion, PickedQuestionRow } from "./types";
 
@@ -36,11 +36,18 @@ import type { ClientQuestion, PickedQuestionRow } from "./types";
  * code instead of toClientQuestion — even for rows that have no image,
  * this is the canonical path (mint returns undefined fast for no-image
  * content, so the overhead is one cheap object inspection).
+ *
+ * For VISUAL_MATCHING rows whose left/right tiles carry their own
+ * `image_path`, this also mints a per-tile signed URL map and threads it
+ * into the serializer (mintMatchingTileImages returns an empty map for
+ * every other format, so the extra call is a no-op there). Per-tile
+ * images are display-only — grading still matches on ids.
  */
 export async function serveQuestion(
   serviceClient: SupabaseClient<Database>,
   row: PickedQuestionRow,
 ): Promise<ClientQuestion> {
   const image = await mintQuestionImage(serviceClient, row.content);
-  return toClientQuestion(row, image);
+  const tileImages = await mintMatchingTileImages(serviceClient, row);
+  return toClientQuestion(row, image, tileImages);
 }

@@ -45,6 +45,24 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   PR #60 (memory-audit-2026-06-13, eadd0c0), PR #61 (l1-reauthoring, ea5a4f7 — 6 active,
   art/format items held, Q11/Q17/Q27 corrected). Origin head as of this session = fe5e7f9.
 
+* **L1 art curation — wired curated images + activated 5 image-essential L1 items
+  (SAM-L1-Q04/Q05/Q10/Q12/Q19).** Art extracted from the founder's Level 1 worksheet `.docx`
+  (rendered via Word→PDF→200 DPI, cropped by `scripts/conversion/l1_*.py`), uploaded by founder
+  to the private `question-images/l1/` bucket. Migration
+  `20260614120000_l1_art_wire_activate.sql` (+ seed.sql mirror) sets `image_path` +
+  `is_active=true`. Cleaned dead `[object]`/`[image]` stem placeholders on Q05/Q12 (player has
+  no placeholder substitution; they would have rendered literally). Held pending Track B input
+  wiring: Q13/Q15 (visual-matching), Q07 (click/matching display plumbing), Q17 (image-ordering
+  lane) — all carry `_authoring.requires_format_swap`, so the `questions_held_rows_inactive`
+  guardrail keeps them inactive.
+
+* **SAM-L1-Q22 kept TEXT-ONLY — not re-imaged (founder decision).** The l1-overlay
+  (`20260613120100`) already activated Q22 with a stem that states the numbers ("6 and 3 make
+  9. … 2 and 6 make ___") and auto-grades from text. Adding the cropped bond image only adds a
+  render dependency for no grading benefit. → v1.5 enhancement: add the number-bond visual via
+  the Atlas parametric primitive (logged in ROADMAP Deferred). The uploaded `sam-l1-q22.png`
+  stays in the bucket, unused, for that future work.
+
 ## 2026-06-13
 
 * **G1-3 visual-primitive + answer-input + grading library built as app code, own PR #59

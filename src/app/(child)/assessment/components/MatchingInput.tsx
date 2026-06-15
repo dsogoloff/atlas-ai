@@ -11,10 +11,19 @@
 //
 // House style mirrors the other inputs (sam-* tokens, Submit button).
 //
+// Per-tile images: a left/right item may carry an optional `image` envelope
+// (a pre-minted signed URL, same path QuestionImage/mintImage use) — e.g.
+// L1 Q13 shapes→names, Q15 3D solids→names, Q07 scene + candidate tiles.
+// When present the tile renders the image; when absent (or if the image
+// fails to load) it falls back to the text `label`, so a tile is never
+// empty. Display-only: the wire answer and grading are unchanged (ids).
+//
 // Accessibility:
 //   * Each item is a real <button> — Tab to focus, Space/Enter to activate.
 //   * aria-pressed marks the armed left item.
-//   * Each left button's accessible name announces its current pairing.
+//   * The button's accessible name stays the answer-safe text `label`
+//     (image tiles included), so screen readers and the pairing
+//     announcements work identically with or without per-tile images.
 //   * An aria-live region announces each pairing for screen readers.
 //
 // Per-question state reset: caller wraps with key={question.id}.
@@ -96,7 +105,7 @@ export function MatchingInput({ left, right, onSubmit, disabled }: Props) {
                         : "border-sam-gray-light text-sam-navy hover:border-sam-red")
                   }
                 >
-                  <span>{item.label}</span>
+                  <TileFace item={item} />
                   {matchedRight && (
                     <span className="ml-2 text-base font-bold text-sam-gray-mid">
                       → {rightLabel(matchedRight)}
@@ -119,7 +128,7 @@ export function MatchingInput({ left, right, onSubmit, disabled }: Props) {
                   " border-sam-gray-light text-sam-navy hover:border-sam-red disabled:opacity-60"
                 }
               >
-                {item.label}
+                <TileFace item={item} />
               </button>
             </li>
           ))}
@@ -145,4 +154,30 @@ export function MatchingInput({ left, right, onSubmit, disabled }: Props) {
       </button>
     </div>
   );
+}
+
+// Renders a tile's face: the per-tile image when present, otherwise the
+// text label. Falls back to the label on image-load failure too, so a
+// tile is never empty. The image's signed URL + answer-safe alt come from
+// the pre-minted envelope (ClientLabeledItem.image). Tile-sized (not the
+// full-width question image) so it fits the two-column matching grid.
+function TileFace({ item }: { item: ClientLabeledItem }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (item.image && !imgError) {
+    // Plain <img> intentional: signed URLs are short-TTL and not stable,
+    // which conflicts with Next <Image> optimization — mirrors the same
+    // decision in QuestionImage.tsx.
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={item.image.url}
+        alt={item.image.alt}
+        onError={() => setImgError(true)}
+        className="mx-auto block max-h-24 w-auto object-contain"
+      />
+    );
+  }
+
+  return <span>{item.label}</span>;
 }

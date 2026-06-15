@@ -152,10 +152,21 @@ export interface ClientQuestionImage {
   required: boolean;
 }
 
-/** One render-safe option/target for SELECT_MULTIPLE / VISUAL_MATCHING. */
+/** One render-safe option/target for SELECT_MULTIPLE / VISUAL_MATCHING.
+ *
+ *  `image` is an optional per-tile signed-URL envelope (per-tile matching
+ *  images — e.g. L1 Q13 shapes→names, Q15 3D solids→names, Q07 scene +
+ *  candidate tiles). Server-side the authored item may carry its own
+ *  `image_path` (+ optional answer-safe `image_alt`); the serve path mints
+ *  a short-TTL signed URL per tile (mintMatchingTileImages) and the
+ *  serializer attaches it here. The raw `image_path` NEVER crosses to the
+ *  client — same allowlist posture as the question-level image. When
+ *  absent, the tile renders its text `label`. Display-only: grading still
+ *  matches on ids (content.pairs), never on the image. */
 export interface ClientLabeledItem {
   id: string;
   label: string;
+  image?: ClientQuestionImage;
 }
 
 /** One template cell for MULTI_BLANK on the wire (text or a fillable blank).
