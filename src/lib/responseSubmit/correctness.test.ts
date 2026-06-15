@@ -7,6 +7,7 @@ import {
   judgeAnswer,
   normalizeAnswer,
   normalizeTextAnswer,
+  parseAnswerValue,
 } from "./correctness";
 
 // Fixture helpers mirror real seed shapes (supabase/seed.sql:162-198):
@@ -483,6 +484,292 @@ describe("judgeAnswer / DRAG_DROP", () => {
         JSON.stringify(correctOrder),
       ),
     ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L1 input-wiring formats: the new structured inputs submit
+// JSON.stringify(answerValue); judgeAnswer parses it back, reads the answer
+// model from REAL top-level content fields, and delegates to grade().
+// ---------------------------------------------------------------------------
+
+describe("parseAnswerValue", () => {
+  it("parses a well-formed id-set", () => {
+    expect(parseAnswerValue('{"type":"id-set","ids":["a"]}')).toEqual({
+      type: "id-set",
+      ids: ["a"],
+    });
+  });
+  it("throws on non-JSON", () => {
+    expect(() => parseAnswerValue("not json")).toThrow(/valid JSON/);
+  });
+  it("throws on an unrecognized discriminator", () => {
+    expect(() => parseAnswerValue('{"type":"bogus"}')).toThrow(
+      /recognized AnswerValue/,
+    );
+  });
+  it("throws on a non-object payload", () => {
+    expect(() => parseAnswerValue("[1,2]")).toThrow(/recognized AnswerValue/);
+  });
+});
+
+describe("judgeAnswer / SELECT_MULTIPLE", () => {
+  const allContent = (correct: string[]): Json =>
+    ({
+      stem: "Pick all even numbers",
+      select_rule: "all",
+      options: [
+        { id: "a", label: "2" },
+        { id: "b", label: "3" },
+        { id: "c", label: "4" },
+      ],
+      correct,
+    }) as Json;
+
+  const countContent = (count: number): Json =>
+    ({
+      stem: "Pick any 2",
+      select_rule: "count",
+      count,
+      options: [
+        { id: "a", label: "1" },
+        { id: "b", label: "2" },
+        { id: "c", label: "3" },
+      ],
+    }) as Json;
+
+  it("grades select-all happy path", () => {
+    expect(
+      judgeAnswer(
+        "SELECT_MULTIPLE",
+        allContent(["a", "c"]),
+        JSON.stringify({ type: "id-set", ids: ["c", "a"] }),
+      ),
+    ).toBe(true);
+  });
+  it("grades select-all wrong (extra selection)", () => {
+    expect(
+      judgeAnswer(
+        "SELECT_MULTIPLE",
+        allContent(["a", "c"]),
+        JSON.stringify({ type: "id-set", ids: ["a", "b", "c"] }),
+      ),
+    ).toBe(false);
+  });
+  it("grades select-count happy path (any 2)", () => {
+    expect(
+      judgeAnswer(
+        "SELECT_MULTIPLE",
+        countContent(2),
+        JSON.stringify({ type: "id-set", ids: ["a", "b"] }),
+      ),
+    ).toBe(true);
+  });
+  it("grades select-count wrong (too few)", () => {
+    expect(
+      judgeAnswer(
+        "SELECT_MULTIPLE",
+        countContent(2),
+        JSON.stringify({ type: "id-set", ids: ["a"] }),
+      ),
+    ).toBe(false);
+  });
+  it("throws on an unknown select_rule (malformed content)", () => {
+    expect(() =>
+      judgeAnswer(
+        "SELECT_MULTIPLE",
+        { stem: "s", select_rule: "bogus", options: [] } as Json,
+        JSON.stringify({ type: "id-set", ids: [] }),
+      ),
+    ).toThrow(/select_rule/);
+  });
+  it("throws on a malformed answer string", () => {
+    expect(() =>
+      judgeAnswer("SELECT_MULTIPLE", allContent(["a"]), "not json"),
+    ).toThrow(/valid JSON/);
+  });
+});
+
+describe("judgeAnswer / VISUAL_MATCHING", () => {
+  const content = (): Json =>
+    ({
+      stem: "Match each shape to its name",
+      left: [
+        { id: "l1", label: "▲" },
+        { id: "l2", label: "■" },
+      ],
+      right: [
+        { id: "r1", label: "triangle" },
+        { id: "r2", label: "square" },
+      ],
+      pairs: { l1: "r1", l2: "r2" },
+    }) as Json;
+
+  it("grades a correct full matching", () => {
+    expect(
+      judgeAnswer(
+        "VISUAL_MATCHING",
+        content(),
+        JSON.stringify({ type: "pairs", pairs: { l1: "r1", l2: "r2" } }),
+      ),
+    ).toBe(true);
+  });
+  it("grades a wrong matching binary-false", () => {
+    expect(
+      judgeAnswer(
+        "VISUAL_MATCHING",
+        content(),
+        JSON.stringify({ type: "pairs", pairs: { l1: "r2", l2: "r1" } }),
+      ),
+    ).toBe(false);
+  });
+  it("throws when pairs is missing (malformed content)", () => {
+    expect(() =>
+      judgeAnswer(
+        "VISUAL_MATCHING",
+        { stem: "s", left: [], right: [] } as Json,
+        JSON.stringify({ type: "pairs", pairs: {} }),
+      ),
+    ).toThrow(/pairs/);
+  });
+});
+
+describe("judgeAnswer / MULTI_BLANK", () => {
+  const content = (): Json =>
+    ({
+      stem: "__ + __ = 8",
+      tokens: [
+        { t: "blank", id: "a" },
+        { t: "text", value: " + " },
+        { t: "blank", id: "b" },
+        { t: "text", value: " = 8" },
+      ],
+      blanks: {
+        a: { value: "6", numeric: true },
+        b: { value: "2", numeric: true },
+      },
+    }) as Json;
+
+  it("grades a correct fill", () => {
+    expect(
+      judgeAnswer(
+        "MULTI_BLANK",
+        content(),
+        JSON.stringify({ type: "blanks", values: { a: "6", b: "2" } }),
+      ),
+    ).toBe(true);
+  });
+  it("grades a wrong fill", () => {
+    expect(
+      judgeAnswer(
+        "MULTI_BLANK",
+        content(),
+        JSON.stringify({ type: "blanks", values: { a: "5", b: "2" } }),
+      ),
+    ).toBe(false);
+  });
+  it("throws when blanks is missing (malformed content)", () => {
+    expect(() =>
+      judgeAnswer(
+        "MULTI_BLANK",
+        { stem: "s", tokens: [] } as Json,
+        JSON.stringify({ type: "blanks", values: {} }),
+      ),
+    ).toThrow(/blanks/);
+  });
+});
+
+describe("judgeAnswer / EQUATION_SET", () => {
+  const setEqualityContent = (): Json =>
+    ({
+      stem: "Write the fact family for 6, 2, 8",
+      rows: 4,
+      answer_rule: "set-equality",
+      canonical: [
+        { a: 6, op: "+", b: 2, result: 8 },
+        { a: 2, op: "+", b: 6, result: 8 },
+        { a: 8, op: "-", b: 6, result: 2 },
+        { a: 8, op: "-", b: 2, result: 6 },
+      ],
+      allowCommutative: true,
+    }) as Json;
+
+  const validityContent = (): Json =>
+    ({
+      stem: "Write 2 true equations using 2, 6, 8",
+      rows: 2,
+      answer_rule: "equation-validity",
+      allowedNumbers: [2, 6, 8],
+      requireCount: 2,
+      validityOps: ["+", "-"],
+    }) as Json;
+
+  it("grades a correct set-equality answer (commutative variant)", () => {
+    expect(
+      judgeAnswer(
+        "EQUATION_SET",
+        setEqualityContent(),
+        JSON.stringify({
+          type: "equation-set",
+          equations: [
+            { a: 2, op: "+", b: 6, result: 8 },
+            { a: 8, op: "-", b: 6, result: 2 },
+            { a: 8, op: "-", b: 2, result: 6 },
+          ],
+        }),
+      ),
+    ).toBe(true);
+  });
+  it("grades a wrong set-equality answer (missing fact)", () => {
+    expect(
+      judgeAnswer(
+        "EQUATION_SET",
+        setEqualityContent(),
+        JSON.stringify({
+          type: "equation-set",
+          equations: [{ a: 6, op: "+", b: 2, result: 8 }],
+        }),
+      ),
+    ).toBe(false);
+  });
+  it("grades a correct equation-validity answer", () => {
+    expect(
+      judgeAnswer(
+        "EQUATION_SET",
+        validityContent(),
+        JSON.stringify({
+          type: "equation-set",
+          equations: [
+            { a: 6, op: "+", b: 2, result: 8 },
+            { a: 8, op: "-", b: 2, result: 6 },
+          ],
+        }),
+      ),
+    ).toBe(true);
+  });
+  it("grades a wrong equation-validity answer (false equation)", () => {
+    expect(
+      judgeAnswer(
+        "EQUATION_SET",
+        validityContent(),
+        JSON.stringify({
+          type: "equation-set",
+          equations: [
+            { a: 6, op: "+", b: 2, result: 9 },
+            { a: 8, op: "-", b: 2, result: 6 },
+          ],
+        }),
+      ),
+    ).toBe(false);
+  });
+  it("throws on an unknown answer_rule (malformed content)", () => {
+    expect(() =>
+      judgeAnswer(
+        "EQUATION_SET",
+        { stem: "s", rows: 1, answer_rule: "bogus" } as Json,
+        JSON.stringify({ type: "equation-set", equations: [] }),
+      ),
+    ).toThrow(/answer_rule/);
   });
 });
 

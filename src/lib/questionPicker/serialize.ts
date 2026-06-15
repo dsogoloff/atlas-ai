@@ -12,7 +12,11 @@
 //   * image_path                (Item #13a Phase 2 — the raw bucket path
 //                                stays server-side; a freshly minted
 //                                signed URL crosses to the client instead,
-//                                injected as content.image by the caller)
+//                                injected as content.image by the caller.
+//                                Same rule applies per-tile: VISUAL_MATCHING
+//                                left/right items' own image_path/image_alt
+//                                stay server-side; the client sees only the
+//                                minted item.image envelope.)
 //
 // We achieve this by *constructing* the output object key-by-key from the
 // allowed fields rather than spreading and deleting — a spread-then-delete
@@ -34,6 +38,8 @@
 import type { Json } from "@/lib/supabase/database.types";
 
 import type {
+  ClientFillToken,
+  ClientLabeledItem,
   ClientQuestion,
   ClientQuestionContent,
   ClientQuestionImage,
@@ -43,13 +49,14 @@ import type {
 export function toClientQuestion(
   row: PickedQuestionRow,
   image?: ClientQuestionImage,
+  tileImages?: Record<string, ClientQuestionImage>,
 ): ClientQuestion {
   return {
     id: row.id,
     strand: row.strand,
     level: row.level,
     format: row.format,
-    content: stripContent(row.format, row.content, image),
+    content: stripContent(row.format, row.content, image, tileImages),
   };
 }
 
@@ -57,6 +64,7 @@ function stripContent(
   format: PickedQuestionRow["format"],
   content: Json,
   image: ClientQuestionImage | undefined,
+  tileImages: Record<string, ClientQuestionImage> | undefined,
 ): ClientQuestionContent {
   const obj = asObject(content);
   const stem = readString(obj, "stem");
@@ -85,6 +93,48 @@ function stripContent(
         items: readStringArray(obj, "items"),
         ...(image ? { image } : {}),
       };
+    case "SELECT_MULTIPLE": {
+      // Render-safe: stem, select_rule, options[{id,label}], count?.
+      // Answer field `correct` is NEVER read here.
+      const out: Extract<ClientQuestionContent, { select_rule: string }> = {
+        stem,
+        select_rule: readString(obj, "select_rule"),
+        options: readLabeledItems(obj, "options"),
+        ...(image ? { image } : {}),
+      };
+      const count = readOptionalInteger(obj, "count");
+      return count === undefined ? out : { ...out, count };
+    }
+    case "VISUAL_MATCHING":
+      // Render-safe: stem, left[{id,label,image?}], right[{id,label,image?}].
+      // Answer field `pairs` is NEVER read here. Per-tile `image` is the
+      // pre-minted signed-URL envelope (tileImages map); the raw per-tile
+      // `image_path`/`image_alt` are dropped by the key-by-key build below.
+      return {
+        stem,
+        left: readLabeledItems(obj, "left", tileImages),
+        right: readLabeledItems(obj, "right", tileImages),
+        ...(image ? { image } : {}),
+      };
+    case "MULTI_BLANK":
+      // Render-safe: stem, tokens (text + blank ids).
+      // Answer field `blanks` is NEVER read here.
+      return {
+        stem,
+        tokens: readFillTokens(obj, "tokens"),
+        ...(image ? { image } : {}),
+      };
+    case "EQUATION_SET": {
+      // Render-safe: stem, rows, ops?. EVERY answer field
+      // (canonical/allowedNumbers/requireCount/…) is NEVER read here.
+      const out: Extract<ClientQuestionContent, { rows: number }> = {
+        stem,
+        rows: readInteger(obj, "rows"),
+        ...(image ? { image } : {}),
+      };
+      const ops = readOptionalStringArray(obj, "ops");
+      return ops === undefined ? out : { ...out, ops };
+    }
   }
 }
 
@@ -124,4 +174,115 @@ function readStringArray(obj: Record<string, Json>, key: string): string[] {
     }
   }
   return v as string[];
+}
+
+function readInteger(obj: Record<string, Json>, key: string): number {
+  const v = obj[key];
+  if (typeof v !== "number" || !Number.isInteger(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an integer`);
+  }
+  return v;
+}
+
+function readOptionalInteger(
+  obj: Record<string, Json>,
+  key: string,
+): number | undefined {
+  const v = obj[key];
+  if (v === undefined) return undefined;
+  if (typeof v !== "number" || !Number.isInteger(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an integer`);
+  }
+  return v;
+}
+
+function readOptionalStringArray(
+  obj: Record<string, Json>,
+  key: string,
+): string[] | undefined {
+  if (obj[key] === undefined) return undefined;
+  return readStringArray(obj, key);
+}
+
+/**
+ * Render-safe {id,label,image?} array (SELECT_MULTIPLE options,
+ * VISUAL_MATCHING left/right). Built field-by-field from `id` and `label`
+ * only — any other key on an authored item (notably the answer-adjacent
+ * per-tile `image_path`/`image_alt`) is dropped, never spread.
+ *
+ * When `tileImages` is supplied (VISUAL_MATCHING serve path), the
+ * pre-minted signed-URL envelope for an item is attached as `image`. The
+ * raw `image_path` stays server-side — the client only ever sees the
+ * minted `image.{url,alt,required}`, never the bucket path. Items not in
+ * the map keep the pre-existing `{id,label}` shape exactly.
+ */
+function readLabeledItems(
+  obj: Record<string, Json>,
+  key: string,
+  tileImages?: Record<string, ClientQuestionImage>,
+): ClientLabeledItem[] {
+  const v = obj[key];
+  if (!Array.isArray(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an array`);
+  }
+  return v.map((item, i) => {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(
+        `[serialize] questions.content.${key}[${i}] is not an object`,
+      );
+    }
+    const o = item as Record<string, Json>;
+    if (typeof o.id !== "string" || typeof o.label !== "string") {
+      throw new Error(
+        `[serialize] questions.content.${key}[${i}] missing string id/label`,
+      );
+    }
+    const tileImage = tileImages?.[o.id];
+    return tileImage
+      ? { id: o.id, label: o.label, image: tileImage }
+      : { id: o.id, label: o.label };
+  });
+}
+
+/**
+ * Render-safe FillToken array (MULTI_BLANK tokens). Built field-by-field —
+ * a blank token carries only its id + optional placeholder; no answer.
+ */
+function readFillTokens(
+  obj: Record<string, Json>,
+  key: string,
+): ClientFillToken[] {
+  const v = obj[key];
+  if (!Array.isArray(v)) {
+    throw new Error(`[serialize] questions.content.${key} is not an array`);
+  }
+  return v.map((item, i) => {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(
+        `[serialize] questions.content.${key}[${i}] is not an object`,
+      );
+    }
+    const o = item as Record<string, Json>;
+    if (o.t === "text") {
+      if (typeof o.value !== "string") {
+        throw new Error(
+          `[serialize] questions.content.${key}[${i}] text token missing string value`,
+        );
+      }
+      return { t: "text", value: o.value };
+    }
+    if (o.t === "blank") {
+      if (typeof o.id !== "string") {
+        throw new Error(
+          `[serialize] questions.content.${key}[${i}] blank token missing string id`,
+        );
+      }
+      return typeof o.placeholder === "string"
+        ? { t: "blank", id: o.id, placeholder: o.placeholder }
+        : { t: "blank", id: o.id };
+    }
+    throw new Error(
+      `[serialize] questions.content.${key}[${i}] has unknown token type`,
+    );
+  });
 }

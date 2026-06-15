@@ -371,6 +371,15 @@ function extractCorrectAnswer(format: QuestionFormat, content: Json): string {
       }
       return "—";
     }
+    // L1 structured-input formats (SELECT_MULTIPLE / VISUAL_MATCHING /
+    // MULTI_BLANK / EQUATION_SET): their correct-answer models are
+    // multi-field and id-keyed; a human-readable parent rendering is a
+    // separate concern from input wiring. Show a placeholder until then.
+    case "SELECT_MULTIPLE":
+    case "VISUAL_MATCHING":
+    case "MULTI_BLANK":
+    case "EQUATION_SET":
+      return "—";
   }
 }
 

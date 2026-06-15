@@ -302,6 +302,16 @@ const INPUT_SECONDS_BY_FORMAT: Record<QuestionFormat, number> = {
   // short drag-and-drop rearrangement.
   TEXT_ENTRY: 6,
   DRAG_DROP: 6,
+  // L1 structured inputs (input-wiring lane). Estimates mirror the
+  // comparable existing formats until empirical recalibration:
+  //   * SELECT_MULTIPLE — a few taps, comparable to MC plus extra picks.
+  //   * VISUAL_MATCHING — pair several items, comparable to drag-and-drop.
+  //   * MULTI_BLANK     — type a couple of blanks, like equation entry.
+  //   * EQUATION_SET    — fill several number sentences, the slowest input.
+  SELECT_MULTIPLE: 5,
+  VISUAL_MATCHING: 6,
+  MULTI_BLANK: 6,
+  EQUATION_SET: 8,
 };
 
 export const DEFAULT_CONFIG: TimeFlagConfig = {
