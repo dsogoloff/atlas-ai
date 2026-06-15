@@ -3,6 +3,48 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-14
+
+* **PR #63 `lane/answer-input-wiring` MERGED (d347c88 → fe5e7f9, 2026-06-14 18:10 UTC).**
+  Wired 4 held L1 answer-input types into the live player + server grading so CONVERSION
+  can activate the held rows. Migration 20260614120000_add_l1_input_formats.sql (additive
+  enum DDL only: SELECT_MULTIPLE, VISUAL_MATCHING, MULTI_BLANK, EQUATION_SET; no seed
+  mirror). Verify bar GREEN pre-merge: 1020 tests / 72 files, tsc 0, lint 0 (2 known
+  warnings), pnpm build GREEN. New trunk verify baseline = 1020/72.
+
+* **Held L1 input types read config from REAL top-level content fields at runtime;
+  activation (CONVERSION) promotes content._authoring → real content.** Rationale: matches
+  the guardrail migration's "set real format + content" contract, matches all existing
+  formats, keeps the answer-stripping serializer allowlist clean. `_authoring` is
+  staging/spec only and is never read at runtime.
+
+* **Two-column MATCHING (VISUAL_MATCHING) graded BINARY all-or-nothing** (correct iff
+  every pair correct), with a per-pair breakdown returned in GradeResult.perPair for
+  diagnostics only. Rationale: stays inside the locked binary grading contract the adaptive
+  engine requires — the same partial-credit conflict that previously parked Q08.
+
+* **Image-ordering (Q17) split to its own lane (`docs/image-ordering-spec.md`), not built
+  in the answer-input-wiring lane.** Rationale: no new grade rule or enum needed, but
+  requires distinct multi-image-per-tile signed-URL plumbing; Q17 is also art-blocked
+  regardless. Spec committed; lane ready to pick up when art blocker clears.
+
+* **INPUT-WIRING UNBLOCKS (cleanly activatable by CONVERSION now): Q11, Q25, Q26, Q27.**
+  The `questions_held_rows_inactive` guardrail is untouched; activation requires atomic
+  step: set real format + content, clear requires_format_swap, set is_active=true.
+  Remaining art-blocked held items (Q01/Q07/Q08/Q13/Q14/Q15/Q19 and the single-select
+  click-on-image set Q02-06/Q12/Q16) are NOT unblocked by this lane — they need curated
+  images uploaded to the Supabase Storage bucket.
+
+* ⚑ **STANDING RULE (founder-authorized 2026-06-14): Claude may now run constructive git
+  autonomously** — add/commit/push/PR, worktree add, checkout existing, fetch,
+  pull --ff-only, stash. Merges to protected branches, destructive/history-rewriting ops,
+  and supabase/prod/vercel remain founder-only.
+
+* **Previously merged PRs reconciled (confirmed on origin/ATLAS-ASSESSMENT log 2026-06-14):**
+  PR #58 (served-gate-multirow-fix, 1382fd5), PR #59 (visual-primitives-g1-3, 13179cf),
+  PR #60 (memory-audit-2026-06-13, eadd0c0), PR #61 (l1-reauthoring, ea5a4f7 — 6 active,
+  art/format items held, Q11/Q17/Q27 corrected). Origin head as of this session = fe5e7f9.
+
 ## 2026-06-13
 
 * **G1-3 visual-primitive + answer-input + grading library built as app code, own PR #59
