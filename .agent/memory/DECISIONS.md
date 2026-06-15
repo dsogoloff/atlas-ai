@@ -5,6 +5,39 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-14
 
+* **Per-tile VISUAL_MATCHING image support shipped as SUPPORT-ONLY via PR #66 (MERGED,
+  trunk `9e4462e`, feature commit `0d297f2`).** Lane `lane/matching-per-tile-images`,
+  branched off trunk head `fe5e7f9` (PR #63 answer-input-wiring). Adds `image?:
+  ClientQuestionImage` to `ClientLabeledItem`; new `mintMatchingTileImages` in
+  `mintImage.ts`; serialize + serve threading; `TileFace` subcomponent in
+  `MatchingInput.tsx` (renders tile image when present, falls back to text label on absent
+  or load-error). 8 files changed (types, mint, serve, serialize, UI component, docs,
+  2 test files). NO new enum, NO migration, NO `database.types.ts` edit (VISUAL_MATCHING
+  enum existed; per-tile fields are schemaless jsonb). Grading is unchanged and answer-safe
+  (still `match-pairs` on ids). The minted `{url, alt, required}` envelope IS present on
+  each wire item; raw `image_path`/`image_alt`/`pairs` are ABSENT (answer-leak guard test
+  asserts both invariants). Verify GREEN 1033/72, tsc 0, lint 0 errors (2 known warnings),
+  `pnpm build` GREEN. CI 58s. Vercel preview deployed before merge.
+
+* **Design decision — per-tile signed URLs minted by reusing `mintQuestionImage`, with
+  `image_alt` falling back to the tile's render-safe `label`.** Each left/right tile that
+  carries an `image_path` column value gets an independently minted short-TTL signed URL;
+  tiles without `image_path` are left unmodified (no image key on the wire item). The
+  `image_alt` field falls back to the tile `label` string so screen readers have a
+  description even when the content author omits an explicit alt. Raw bucket paths never
+  cross the wire.
+
+* **Test coverage for the per-tile render path uses data-path tests only (no RTL/jsdom
+  introduced).** `serialize.test.ts` and `mintImage.test.ts` cover the full
+  serialize→mint data path including the answer-leak guard. Consistent with the repo's
+  pure-logic testing convention (founder-approved; no RTL/jsdom in this codebase).
+
+* **Ordering decision — Q13/Q15/Q07 per-tile activation waits for the L1-art corrective
+  migration to land on trunk.** The support infrastructure is in place but no rows are
+  activated. The activation flip (setting per-tile `image_path`/`image_alt` + `is_active`
+  on Q13/Q15/Q07) is a CONVERSION session step gated on the L1-art corrective migration
+  merging first. Tracked in NEXT_ACTIONS §3g.
+
 * **L1 art curation — wired curated images + activated 5 image-essential L1 items
   (SAM-L1-Q04/Q05/Q10/Q12/Q19).** Art extracted from the founder's Level 1 worksheet `.docx`
   (rendered via Word→PDF→200 DPI, cropped by `scripts/conversion/l1_*.py`), uploaded by founder

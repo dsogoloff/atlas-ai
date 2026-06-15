@@ -4,10 +4,11 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-13 visual-primitives session — PR #59 OPEN (lane/visual-primitives-g1-3),
-verify-bar SUCCESS + Vercel preview built, awaiting attended merge. G1-3 visual-primitive +
-answer-input + grading library shipped as app code; bank untouched. Verify GREEN 979 tests /
-72 files, tsc 0, lint 0 errors (2 known warnings), pnpm build GREEN.
+**As of:** 2026-06-14 per-tile VISUAL_MATCHING image session — PR #66 MERGED
+(lane/matching-per-tile-images, feature commit `0d297f2`, trunk head after merge `9e4462e`).
+Per-tile image support (field + render + serve/mint plumbing) for VISUAL_MATCHING tiles
+shipped as SUPPORT-ONLY; no rows activated. Verify GREEN 1033 tests / 72 files, tsc 0,
+lint 0 errors (2 known warnings), pnpm build GREEN.
 **QA-UNBLOCKING PRIORITY:** Issue-1 served-gate multirow fix is on **PR #58 (OPEN, green,
 mergeable)** — NOT yet on trunk (trunk head f8c0f30 still has the buggy `.maybeSingle()`).
 Merge #58 to unblock first-submit QA. A follow-up PR (lane/memory-audit-2026-06-13) carries
@@ -33,14 +34,16 @@ permission to digitize entire test library). CONVERSION Stage 4 built (PR #23, w
 atlas-stage4). Content-id backfill built (PR #22, worktree atlas-backfill).
 Comprehensive-test instrumentation + consent regression test (PRs #41/#42) and comprehensive
 engine (PR #46) are ALL on ATLAS-ASSESSMENT via PR #49 cherry-pick re-land.
-**Verify baseline (ATLAS-ASSESSMENT head 970698e / f8c0f30):** 915 tests / 56 files
-(confirmed 2026-06-12); 0 type errors; 2 known lint warnings (no-img-element in
-profile-menu.tsx:48, no-page-custom-font in layout.tsx:56); `pnpm build` GREEN.
-PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
-(Earlier snapshots: 900/55 was post-#49; 864/52 was pre-#49; 554 was pre-merge era.)
+**Verify baseline (ATLAS-ASSESSMENT head `9e4462e` / post-PR #66 merge):** 1033 tests /
+72 files (confirmed 2026-06-14 on lane/matching-per-tile-images); 0 type errors; 2 known
+lint warnings (no-img-element in profile-menu.tsx:48, no-page-custom-font in layout.tsx:56);
+`pnpm build` GREEN.
+(Earlier snapshots: 979/72 was PR #59 lane; 915/56 was post-security-lanes baseline;
+900/55 was post-#49; 864/52 was pre-#49; 554 was pre-merge era.)
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Per-tile VISUAL_MATCHING image support | MERGED PR #66 (`0d297f2`, trunk `9e4462e`) | lane/matching-per-tile-images. SUPPORT-ONLY — adds `image?` field on `ClientLabeledItem`, `mintMatchingTileImages`, serialize + serve threading, `TileFace` subcomponent in `MatchingInput.tsx`; falls back to text label on absent/failed image. No migration; no enum change; no `database.types.ts` edit. Grading unchanged (answer-safe). Answer-leak guard test asserts minted envelope present + raw paths absent. Activation of Q13/Q15/Q07 is a separate pending CONVERSION flip step (blocked on L1-art corrective migration). Verify GREEN 1033/72, tsc 0, lint 0 errors (2 known warnings), build GREEN. CI 58s. |
 | Visual-primitive + answer-input library (G1-3) | OPEN PR #59 | lane/visual-primitives-g1-3, branched off ATLAS-ASSESSMENT head f8c0f30 (NOT stacked). App code only — no bank/seed/picker changes. Adds: 11 stem SVG primitives (`src/components/visual-primitives/`), 3 answer-input components (`src/components/answer-inputs/`), standalone grading module (`src/lib/grading/` — decoupled from Issue-1 served-question gate), 2 spec docs (`docs/visual-primitives-spec.md`, `docs/answer-model-spec.md`), dev-only gallery at `/dev/visual-primitives` (flag `isVisualPrimitivesGalleryEnabled` in `src/lib/env.ts`: always-on in dev/test, 404 in prod unless `ENABLE_VISUAL_PRIMITIVES_GALLERY=true`). Also establishes first shared UI home `src/components/` (no shared component dir existed before). Verify GREEN 979/72, tsc 0, lint 0 errors (2 known warnings), build GREEN. Vercel preview built; verify-bar running. Awaiting attended merge. |
 | Served-gate multirow fix (Issue-1) | OPEN PR #58 — QA-UNBLOCKING PRIORITY | lane/served-gate-multirow-fix, commit `7245826`. `responseSubmit/handler.ts` access-log existence check `.maybeSingle()` → `.limit(1)` (tolerates >1 access-log row on first submit / Strict-Mode resume; `.maybeSingle()` raised PGRST116/500). Verified on origin 2026-06-13: trunk head f8c0f30 STILL has `.maybeSingle()` (handler.ts:385) — fix NOT on trunk. PR #58 MERGEABLE/CLEAN, verify-bar SUCCESS, Vercel SUCCESS — needs attended merge. Also carries 2 read-only docs (base sam-content-authenticity-audit.md + picker-level-band-proposal.md). |
 | Session memory + audit Appendix A | follow-up PR (lane/memory-audit-2026-06-13) | The 4 uncommitted files from lane/served-gate-multirow-fix's tree (3 `.agent/` memory files + `docs/sam-content-authenticity-audit.md` Appendix A) moved to their own branch off ATLAS-ASSESSMENT to keep PR #58 = Issue-1 fix only. Docs/memory only; not stacked. NOTE: its audit doc is the FULL file (base + Appendix A) and overlaps PR #58's base audit doc — whichever merges second conflicts on that one file; resolve by keeping the fuller (Appendix A) version (recommend merge #58 first). |

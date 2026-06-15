@@ -185,6 +185,20 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       needs a direct API call. Is that acceptable for the pilot, or do you want a UI
       path? Needs product call before building.
 
+## 3g. Per-tile VISUAL_MATCHING image activation flip — PENDING CONVERSION (2026-06-14)
+
+Per-tile image support infrastructure merged (PR #66, trunk `9e4462e`). The following
+activation flip is a SEPARATE CONVERSION session step:
+
+- [ ] **CONVERSION — per-tile image activation for L1 Q13 / Q15 / Q07.**
+  Set `image_path` (+ answer-safe `image_alt`) on the left/right items in the
+  `questions.content` jsonb for each tile that should carry an image; set `is_active=true`
+  on those rows. Q13 = shapes→names visual matching; Q15 = 3D solids→names visual matching;
+  Q07 = scene + candidate tiles.
+  **BLOCKED ON: the L1-art corrective migration landing first.** Do not flip activation
+  until the corrective migration is on trunk. This is a CONVERSION-session owned action,
+  not a business gate.
+
 ## 3f. Visual-primitive + answer-input library (G1-3) — PR #59 OPEN 2026-06-13
 
 - [ ] **PARKED — needs Dimitri:** Eyeball the gallery on the PR #59 Vercel preview. Steps:
