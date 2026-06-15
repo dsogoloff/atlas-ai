@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
 import {
+  mintMatchingTileImages,
   mintQuestionImage,
   QUESTION_IMAGE_BUCKET,
   SIGNED_URL_TTL_SECONDS,
 } from "./mintImage";
+import type { PickedQuestionRow } from "./types";
 
 // ---------------------------------------------------------------------------
 // Test scaffolding — a minimal serviceClient fake that records storage calls.
@@ -311,5 +313,222 @@ describe("mintQuestionImage / storage SDK failures", () => {
         image_alt: "alt",
       } as Json),
     ).rejects.toThrow(/createSignedUrl failed/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-tile matching images — mintMatchingTileImages.
+// ---------------------------------------------------------------------------
+
+function matchingRow(content: Json): PickedQuestionRow {
+  return {
+    id: "11111111-1111-1111-1111-111111111111",
+    external_id: "SAM-L1-Q13",
+    strand: "geometry",
+    level: "1A",
+    difficulty: 0.0,
+    format: "VISUAL_MATCHING",
+    content,
+  };
+}
+
+describe("mintMatchingTileImages / non-matching + empty", () => {
+  it("returns {} and calls no storage for a non-VISUAL_MATCHING row", async () => {
+    const { client, calls } = fakeServiceClient(
+      successOutcome("https://example.com/x"),
+    );
+    const row = {
+      ...matchingRow({ stem: "s", options: ["a"] }),
+      format: "MULTIPLE_CHOICE" as const,
+    };
+    const result = await mintMatchingTileImages(client, row);
+    expect(result).toEqual({});
+    expect(calls).toHaveLength(0);
+  });
+
+  it("returns {} when content is not an object", async () => {
+    const { client, calls } = fakeServiceClient(
+      successOutcome("https://example.com/x"),
+    );
+    const result = await mintMatchingTileImages(client, matchingRow(null));
+    expect(result).toEqual({});
+    expect(calls).toHaveLength(0);
+  });
+
+  it("returns {} when no tile carries an image_path (labels-only Q11/Q27)", async () => {
+    const { client, calls } = fakeServiceClient(
+      successOutcome("https://example.com/x"),
+    );
+    const result = await mintMatchingTileImages(
+      client,
+      matchingRow({
+        stem: "Match the apples",
+        left: [{ id: "l1", label: "3 apples" }],
+        right: [{ id: "r1", label: "three" }],
+        pairs: { l1: "r1" },
+      }),
+    );
+    expect(result).toEqual({});
+    expect(calls).toHaveLength(0);
+  });
+});
+
+describe("mintMatchingTileImages / minting", () => {
+  it("mints a signed URL per tile that has image_path; skips tiles without one", async () => {
+    const { client, calls } = fakeServiceClient(
+      successOutcome("https://example.com/signed?token=t"),
+    );
+    const result = await mintMatchingTileImages(
+      client,
+      matchingRow({
+        stem: "Match each shape to its name",
+        left: [
+          {
+            id: "l1",
+            label: "Shape A",
+            image_path: "l1/sam-l1-q13-rectangle.png",
+            image_alt: "A four-sided shape.",
+          },
+          { id: "l2", label: "Shape B" }, // no image_path → skipped
+        ],
+        right: [{ id: "r1", label: "rectangle" }], // labels-only → skipped
+        pairs: { l1: "r1" },
+      }),
+    );
+    expect(Object.keys(result)).toEqual(["l1"]);
+    expect(result.l1).toEqual({
+      url: "https://example.com/signed?token=t",
+      alt: "A four-sided shape.",
+      required: false,
+    });
+    expect(calls).toEqual([
+      {
+        bucket: QUESTION_IMAGE_BUCKET,
+        path: "l1/sam-l1-q13-rectangle.png",
+        ttl: SIGNED_URL_TTL_SECONDS,
+      },
+    ]);
+  });
+
+  it("scans BOTH left and right columns (Q07 scene + candidate tiles)", async () => {
+    const { client, calls } = fakeServiceClient(
+      successOutcome("https://example.com/x"),
+    );
+    const result = await mintMatchingTileImages(
+      client,
+      matchingRow({
+        stem: "Match the scene to the right tile",
+        left: [
+          {
+            id: "scene",
+            label: "Scene",
+            image_path: "l1/sam-l1-q07-scene.png",
+            image_alt: "A classroom scene.",
+          },
+        ],
+        right: [
+          {
+            id: "a",
+            label: "Option A",
+            image_path: "l1/sam-l1-q07-option-a.png",
+            image_alt: "Candidate A.",
+          },
+          {
+            id: "b",
+            label: "Option B",
+            image_path: "l1/sam-l1-q07-option-b.png",
+            image_alt: "Candidate B.",
+          },
+        ],
+        pairs: { scene: "a" },
+      }),
+    );
+    expect(Object.keys(result).sort()).toEqual(["a", "b", "scene"]);
+    expect(calls).toHaveLength(3);
+  });
+
+  it("falls back to the tile label for alt when image_alt is absent", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintMatchingTileImages(
+      client,
+      matchingRow({
+        stem: "Match the solids",
+        left: [
+          {
+            id: "l1",
+            label: "Cone tile", // becomes the alt
+            image_path: "l1/sam-l1-q15-cone.png",
+          },
+        ],
+        right: [{ id: "r1", label: "cone" }],
+        pairs: { l1: "r1" },
+      }),
+    );
+    expect(result.l1?.alt).toBe("Cone tile");
+  });
+
+  it("prefers a tile-specific image_alt over the label when both are present", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintMatchingTileImages(
+      client,
+      matchingRow({
+        stem: "s",
+        left: [
+          {
+            id: "l1",
+            label: "Shape A",
+            image_path: "p.png",
+            image_alt: "Answer-safe alt text.",
+          },
+        ],
+        right: [{ id: "r1", label: "x" }],
+        pairs: { l1: "r1" },
+      }),
+    );
+    expect(result.l1?.alt).toBe("Answer-safe alt text.");
+  });
+
+  it("propagates image_required=true per tile (defaults false otherwise)", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    const result = await mintMatchingTileImages(
+      client,
+      matchingRow({
+        stem: "s",
+        left: [
+          {
+            id: "req",
+            label: "A",
+            image_path: "a.png",
+            image_alt: "a",
+            image_required: true,
+          },
+          {
+            id: "dec",
+            label: "B",
+            image_path: "b.png",
+            image_alt: "b",
+          },
+        ],
+        right: [{ id: "r1", label: "x" }],
+        pairs: { req: "r1" },
+      }),
+    );
+    expect(result.req?.required).toBe(true);
+    expect(result.dec?.required).toBe(false);
+  });
+
+  it("throws (content-authoring bug → 500) when a tile image_path is empty", async () => {
+    const { client } = fakeServiceClient(successOutcome("https://example.com/x"));
+    await expect(
+      mintMatchingTileImages(
+        client,
+        matchingRow({
+          stem: "s",
+          left: [{ id: "l1", label: "A", image_path: "" }],
+          right: [{ id: "r1", label: "x" }],
+          pairs: { l1: "r1" },
+        }),
+      ),
+    ).rejects.toThrow(/image_path/);
   });
 });
