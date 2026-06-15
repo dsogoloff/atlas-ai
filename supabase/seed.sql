@@ -2456,7 +2456,7 @@ where q.tenant_id = t.id
 
 -- END l1-overlay
 
--- BEGIN l1-art-activation (mirror of supabase/migrations/20260614120000_l1_art_wire_activate.sql)
+-- BEGIN l1-art-activation (mirror of supabase/migrations/20260614120001_l1_art_wire_activate.sql)
 -- Wires curated per-question images onto the 5 image-essential L1 rows and
 -- activates them; drops two dead stem placeholders ([object], [image]) now
 -- that each row has its image. SAM-L1-Q22 intentionally untouched (already

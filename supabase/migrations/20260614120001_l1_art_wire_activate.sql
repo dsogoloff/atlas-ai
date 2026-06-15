@@ -41,6 +41,16 @@
 -- recorded in schema_migrations) — there is no successful state to drift
 -- from, and a later corrective migration could never run anyway (reset
 -- halts at this file). The seed.sql mirror is corrected identically.
+--
+-- RE-STAMPED 2026-06-14: this file was renamed from
+-- 20260614120000_l1_art_wire_activate.sql to ...120001... to remove a
+-- duplicate migration version — 20260614120000 was shared with
+-- 20260614120000_add_l1_input_formats.sql (#63). Safe for the same reason
+-- as the in-place edit (never applied to completion anywhere). Ordering is
+-- preserved: add_l1_input_formats (…120000, enum-add) runs before this
+-- file (…120001). The L2 overlay load (#65) re-stamps to …130000 so all
+-- three versions are unique. The seed.sql mirror header reference is
+-- updated to match.
 
 -- 1) Wire image_path + activate the 5 image-essential rows.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
