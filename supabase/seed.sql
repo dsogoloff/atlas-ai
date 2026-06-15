@@ -2485,9 +2485,9 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set content = jsonb_set(
       q.content, '{stem}',
-      to_jsonb('Group A    Group B' || E'\n' ||
+      to_jsonb(('Group A    Group B' || E'\n' ||
                'In which group does it belong?' || E'\n' ||
-               'Answer: Group ___')
+               'Answer: Group ___')::text)
     )
 from t
 where q.tenant_id = t.id
@@ -2499,7 +2499,7 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set content = jsonb_set(
       q.content, '{stem}',
-      to_jsonb('Which set has more? Answer: Set ___')
+      to_jsonb('Which set has more? Answer: Set ___'::text)
     )
 from t
 where q.tenant_id = t.id

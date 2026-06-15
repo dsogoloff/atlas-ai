@@ -29,6 +29,18 @@
 -- tenant); the identical statements are mirrored into supabase/seed.sql in
 -- the l1-art-activation block. Every statement carries an idempotent guard,
 -- so either path (or both) yields the same final state.
+--
+-- IN-PLACE FIX (2026-06-14): statements 2 & 3 originally called
+-- to_jsonb() on an UNTYPED string literal, which Postgres rejects with
+-- "could not determine polymorphic type ... input has type unknown"
+-- (SQLSTATE 42804) — statement 3 (Q12, a bare literal) aborted every
+-- `supabase db reset` before seed.sql could run. Fixed by casting the
+-- literal to ::text. This migration is edited IN PLACE (not superseded by
+-- a corrective) because it failed deterministically and therefore applied
+-- to completion in NO environment (each run rolled back, so it was never
+-- recorded in schema_migrations) — there is no successful state to drift
+-- from, and a later corrective migration could never run anyway (reset
+-- halts at this file). The seed.sql mirror is corrected identically.
 
 -- 1) Wire image_path + activate the 5 image-essential rows.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
@@ -52,9 +64,9 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set content = jsonb_set(
       q.content, '{stem}',
-      to_jsonb('Group A    Group B' || E'\n' ||
+      to_jsonb(('Group A    Group B' || E'\n' ||
                'In which group does it belong?' || E'\n' ||
-               'Answer: Group ___')
+               'Answer: Group ___')::text)
     )
 from t
 where q.tenant_id = t.id
@@ -67,7 +79,7 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set content = jsonb_set(
       q.content, '{stem}',
-      to_jsonb('Which set has more? Answer: Set ___')
+      to_jsonb('Which set has more? Answer: Set ___'::text)
     )
 from t
 where q.tenant_id = t.id
