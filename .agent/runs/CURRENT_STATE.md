@@ -4,24 +4,20 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-13 visual-primitives session — PR #59 OPEN (lane/visual-primitives-g1-3),
-verify-bar SUCCESS + Vercel preview built, awaiting attended merge. G1-3 visual-primitive +
-answer-input + grading library shipped as app code; bank untouched. Verify GREEN 979 tests /
-72 files, tsc 0, lint 0 errors (2 known warnings), pnpm build GREEN.
-**QA-UNBLOCKING PRIORITY:** Issue-1 served-gate multirow fix is on **PR #58 (OPEN, green,
-mergeable)** — NOT yet on trunk (trunk head f8c0f30 still has the buggy `.maybeSingle()`).
-Merge #58 to unblock first-submit QA. A follow-up PR (lane/memory-audit-2026-06-13) carries
-this session's memory + audit Appendix A, kept off #58.
-Previously (2026-06-12): all four security lanes MERGED (PRs #50/#52/#53/#55); PR #51 CLOSED
-(superseded by #55); PR #54 memory lane merged; `supabase db reset` run (applies
-20260612090000 + 20260611090000). QA-prep package delivered. lane/qa-prep-2026-06-12 open,
-PR pending.
+**As of:** 2026-06-14 consolidated session — covering answer-input-wiring (PR #63 MERGED,
+fe5e7f9), per-tile VISUAL_MATCHING image support (PR #66 MERGED, 9e4462e), and L1-art
+corrective migration (PR #69 MERGED, cdd95a5 = current trunk). New verify baseline:
+**1033 tests / 72 files** (post-PR #66), tsc 0, lint 0 errors (2 known warnings), build GREEN.
+PRs #62 (lane/remove-center-selector) and #65 (lane/l2-overlay) are OPEN, green, and
+mergeable after a trunk catch-up merge; migration version collision resolved — three unique
+stamps: 20260614120000 add_l1_input_formats, 20260614120001 l1_art_wire_activate,
+20260614130000 l2_overlay_load.
 **Session split:** CONVERSION Stage 4 / question-bank work runs in a SEPARATE session. This
 session must NOT touch `scripts/conversion/` or taxonomy migrations; coordinate via repo
 memory only.
 **Branch:** `ATLAS-ASSESSMENT`. **Repo:** `dsogoloff/atlas-ai` → local
 `C:\Users\Acer\PROJECTS\atlas-ai`.
-**Origin head:** `970698e` (all four security PRs + memory PR #54 merged).
+**Origin head:** `cdd95a5` (trunk after PR #69 L1-art corrective migration merge).
 ATLAS-ASSESSMENT is protected by the "Branch Protection" GitHub ruleset (scope
 `~DEFAULT_BRANCH`; requires PR + the `verify-bar` status check; no direct pushes). All work
 goes via `lane/*` branches opened as PRs; Dimitri merges attended after Vercel preview
@@ -33,11 +29,21 @@ permission to digitize entire test library). CONVERSION Stage 4 built (PR #23, w
 atlas-stage4). Content-id backfill built (PR #22, worktree atlas-backfill).
 Comprehensive-test instrumentation + consent regression test (PRs #41/#42) and comprehensive
 engine (PR #46) are ALL on ATLAS-ASSESSMENT via PR #49 cherry-pick re-land.
-**Verify baseline (ATLAS-ASSESSMENT head 970698e / f8c0f30):** 915 tests / 56 files
-(confirmed 2026-06-12); 0 type errors; 2 known lint warnings (no-img-element in
-profile-menu.tsx:48, no-page-custom-font in layout.tsx:56); `pnpm build` GREEN.
-PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
-(Earlier snapshots: 900/55 was post-#49; 864/52 was pre-#49; 554 was pre-merge era.)
+**Verify baseline (ATLAS-ASSESSMENT head cdd95a5 / post-PR #69):** 1033 tests / 72 files
+(confirmed 2026-06-14 on lane/matching-per-tile-images, post-PR #66); 0 type errors;
+2 known lint warnings (no-img-element in profile-menu.tsx:48, no-page-custom-font in
+layout.tsx:56); `pnpm build` GREEN.
+
+| Head | Tests | Files | Notes |
+|------|-------|-------|-------|
+| cdd95a5 | 1033 | 72 | post-PR #69 L1-art corrective migration (current trunk) |
+| 9e4462e | 1033 | 72 | post-PR #66 per-tile VISUAL_MATCHING |
+| fe5e7f9 | 1020 | 72 | post-PR #63 answer-input-wiring |
+| (post-#59) | 979 | 72 | visual-primitives pre-merge snapshot |
+| 970698e | 915 | 56 | post-security PRs 2026-06-12 |
+| b9b0662 | 900 | 55 | post-cherry-pick PR #49 |
+| (864/52) | 864 | 52 | ATLAS-ASSESSMENT head 2026-06-11 |
+| (554) | 554 | 41 | pre-merge era |
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|

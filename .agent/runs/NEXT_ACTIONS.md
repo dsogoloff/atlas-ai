@@ -230,6 +230,34 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       re-authoring above (don't widen the served band while model-reconstructed rows are still
       unverified). Sequencing decision; not yet built.
 
+## 3g. Per-tile VISUAL_MATCHING image activation flip — PENDING CONVERSION (2026-06-14)
+
+Per-tile image support infrastructure merged (PR #66, support-only). The activation flip
+is a SEPARATE CONVERSION session step:
+
+- [ ] **CONVERSION — per-tile image activation for L1 Q13 / Q15 / Q07.**
+      Set `image_path` (+ answer-safe `image_alt`) on the left/right items in the
+      `questions.content` jsonb for each tile that should carry an image; set `is_active=true`
+      on those rows. Q13 = shapes→names visual matching; Q15 = 3D solids→names visual matching;
+      Q07 = scene + candidate tiles. The L1-art activation migration that this once waited on
+      is now FIXED + merged (PR #69 — to_jsonb `::text` cast + re-stamp to 20260614120001), so
+      that sub-blocker is CLEARED. This is a CONVERSION-session owned action, not a business gate.
+
+## 3h. Answer-input wiring (held L1 formats) — MERGED PR #63 (2026-06-14)
+
+- [x] **MERGED PR #63 (fe5e7f9, 2026-06-14)** — lane/answer-input-wiring. Migration
+      20260614120000_add_l1_input_formats.sql (enum DDL only: SELECT_MULTIPLE, VISUAL_MATCHING,
+      MULTI_BLANK, EQUATION_SET; no seed mirror). Grading rules (select-all, select-count,
+      match-pairs) + correctness.ts wiring for the four held input types; binary VISUAL_MATCHING
+      grading. UNBLOCKS clean CONVERSION activation of Q11/Q25/Q26/Q27.
+
+## 3i. Image-ordering (Q17) — PARKED, own lane
+
+- [ ] **PARKED — own lane, pick up when art is ready.** Spec: `docs/image-ordering-spec.md`.
+      Image-tile variant of DRAG_DROP (no new enum, no new grade rule; needs
+      multi-image-per-tile signed-URL plumbing). Q17 is also art-blocked (requires curated
+      images in Supabase Storage). Ready to build whenever the art blocker clears.
+
 ## 4. G1 LIFTED (2026-06-10) — CONVERSION L1–4 run COMPLETE; merge + radar check remain
 
 **G1 status:** S.A.M. founder granted permission to digitize the entire test library
