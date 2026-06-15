@@ -155,6 +155,63 @@ export function gradeEquationValidity(
   return ok(`${requireCount} valid equations`);
 }
 
+// --- selection / matching rules ---------------------------------------------
+
+/** Selected id set must equal `correct` exactly (dupes collapse; order is
+ *  irrelevant; no extras, none missing). */
+export function gradeSelectAll(ids: string[], correct: string[]): GradeResult {
+  const got = new Set(ids);
+  const want = new Set(correct);
+  if (got.size !== want.size) {
+    return no(`selected ${got.size} distinct, expected ${want.size}`);
+  }
+  for (const id of want) {
+    if (!got.has(id)) return no(`missing selection ${id}`);
+  }
+  return ok(`selected set of ${want.size} matches`);
+}
+
+/** Every selected id must be a valid option id, and the count of DISTINCT
+ *  selected ids must equal `count` (Q26 "any N of M"). */
+export function gradeSelectCount(
+  ids: string[],
+  count: number,
+  optionIds: string[],
+): GradeResult {
+  const allowed = new Set(optionIds);
+  for (const id of ids) {
+    if (!allowed.has(id)) return no(`selection "${id}" is not an option`);
+  }
+  const distinct = new Set(ids);
+  return distinct.size === count
+    ? ok(`selected ${count} distinct valid options`)
+    : no(`selected ${distinct.size} distinct, expected ${count}`);
+}
+
+/** Binary all-or-nothing match (correct iff every pair right and no extra/
+ *  missing left ids), with a per-pair breakdown for diagnostics. */
+export function gradeMatchPairs(
+  answer: Record<string, string>,
+  correct: Record<string, string>,
+): GradeResult {
+  const perPair: Record<string, boolean> = {};
+  let allCorrect = true;
+  for (const [leftId, rightId] of Object.entries(correct)) {
+    const match = answer[leftId] === rightId;
+    perPair[leftId] = match;
+    if (!match) allCorrect = false;
+  }
+  // Extra left ids the model does not expect → wrong (not in perPair).
+  for (const leftId of Object.keys(answer)) {
+    if (!(leftId in correct)) allCorrect = false;
+  }
+  return {
+    correct: allCorrect,
+    reason: allCorrect ? "all pairs match" : "one or more pairs wrong",
+    perPair,
+  };
+}
+
 // --- dispatcher -------------------------------------------------------------
 
 /** Grade a structured answer against an authored correct-answer model. */
@@ -216,6 +273,18 @@ export function grade(
         model.ops,
         model.requireDistinct,
       );
+
+    case "select-all":
+      if (answer.type !== "id-set") return shapeMismatch(answer, model.rule);
+      return gradeSelectAll(answer.ids, model.correct);
+
+    case "select-count":
+      if (answer.type !== "id-set") return shapeMismatch(answer, model.rule);
+      return gradeSelectCount(answer.ids, model.count, model.optionIds);
+
+    case "match-pairs":
+      if (answer.type !== "pairs") return shapeMismatch(answer, model.rule);
+      return gradeMatchPairs(answer.pairs, model.pairs);
 
     default: {
       const _exhaustive: never = model;

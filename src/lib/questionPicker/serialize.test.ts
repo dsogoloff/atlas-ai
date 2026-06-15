@@ -118,6 +118,177 @@ describe("toClientQuestion / DRAG_DROP", () => {
   });
 });
 
+describe("toClientQuestion / SELECT_MULTIPLE", () => {
+  it("rule=all: stem + select_rule + options only; strips correct", () => {
+    const out = toClientQuestion(
+      row("SELECT_MULTIPLE", {
+        stem: "Pick all even numbers",
+        select_rule: "all",
+        options: [
+          { id: "a", label: "2" },
+          { id: "b", label: "3" },
+          { id: "c", label: "4" },
+        ],
+        correct: ["a", "c"],
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Pick all even numbers",
+      select_rule: "all",
+      options: [
+        { id: "a", label: "2" },
+        { id: "b", label: "3" },
+        { id: "c", label: "4" },
+      ],
+    });
+    expect(Object.keys(out.content).sort()).toEqual([
+      "options",
+      "select_rule",
+      "stem",
+    ]);
+    expect(Object.keys(out.content)).not.toContain("correct");
+  });
+
+  it("rule=count: keeps render-safe count; never leaks correct", () => {
+    const out = toClientQuestion(
+      row("SELECT_MULTIPLE", {
+        stem: "Pick any 2",
+        select_rule: "count",
+        count: 2,
+        options: [{ id: "a", label: "1" }],
+        correct: ["a"],
+      }),
+    );
+    expect(Object.keys(out.content).sort()).toEqual([
+      "count",
+      "options",
+      "select_rule",
+      "stem",
+    ]);
+    expect("correct" in out.content).toBe(false);
+  });
+});
+
+describe("toClientQuestion / VISUAL_MATCHING", () => {
+  it("returns stem + left + right only; strips pairs (the answer)", () => {
+    const out = toClientQuestion(
+      row("VISUAL_MATCHING", {
+        stem: "Match shapes to names",
+        left: [
+          { id: "l1", label: "▲" },
+          { id: "l2", label: "■" },
+        ],
+        right: [
+          { id: "r1", label: "triangle" },
+          { id: "r2", label: "square" },
+        ],
+        pairs: { l1: "r1", l2: "r2" },
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Match shapes to names",
+      left: [
+        { id: "l1", label: "▲" },
+        { id: "l2", label: "■" },
+      ],
+      right: [
+        { id: "r1", label: "triangle" },
+        { id: "r2", label: "square" },
+      ],
+    });
+    expect(Object.keys(out.content).sort()).toEqual(["left", "right", "stem"]);
+    expect(Object.keys(out.content)).not.toContain("pairs");
+  });
+});
+
+describe("toClientQuestion / MULTI_BLANK", () => {
+  it("returns stem + tokens only; strips blanks (the answer)", () => {
+    const out = toClientQuestion(
+      row("MULTI_BLANK", {
+        stem: "__ + __ = 8",
+        tokens: [
+          { t: "blank", id: "a" },
+          { t: "text", value: " + " },
+          { t: "blank", id: "b", placeholder: "?" },
+          { t: "text", value: " = 8" },
+        ],
+        blanks: {
+          a: { value: "6", numeric: true },
+          b: { value: "2", numeric: true },
+        },
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "__ + __ = 8",
+      tokens: [
+        { t: "blank", id: "a" },
+        { t: "text", value: " + " },
+        { t: "blank", id: "b", placeholder: "?" },
+        { t: "text", value: " = 8" },
+      ],
+    });
+    expect(Object.keys(out.content).sort()).toEqual(["stem", "tokens"]);
+    expect(Object.keys(out.content)).not.toContain("blanks");
+  });
+});
+
+describe("toClientQuestion / EQUATION_SET", () => {
+  it("set-equality shape: stem + rows + ops only; strips every answer field", () => {
+    const out = toClientQuestion(
+      row("EQUATION_SET", {
+        stem: "Fact family for 6, 2, 8",
+        rows: 4,
+        ops: ["+", "-"],
+        answer_rule: "set-equality",
+        canonical: [{ a: 6, op: "+", b: 2, result: 8 }],
+        allowCommutative: true,
+      }),
+    );
+    expect(out.content).toEqual({
+      stem: "Fact family for 6, 2, 8",
+      rows: 4,
+      ops: ["+", "-"],
+    });
+    expect(Object.keys(out.content).sort()).toEqual(["ops", "rows", "stem"]);
+    for (const k of [
+      "answer_rule",
+      "canonical",
+      "allowCommutative",
+      "allowedNumbers",
+      "requireCount",
+      "requireDistinct",
+      "validityOps",
+    ]) {
+      expect(Object.keys(out.content)).not.toContain(k);
+    }
+  });
+
+  it("equation-validity shape: never leaks allowedNumbers/requireCount/etc.", () => {
+    const out = toClientQuestion(
+      row("EQUATION_SET", {
+        stem: "Write 2 true equations",
+        rows: 2,
+        answer_rule: "equation-validity",
+        allowedNumbers: [2, 6, 8],
+        requireCount: 2,
+        requireDistinct: true,
+        validityOps: ["+", "-"],
+      }),
+    );
+    // No ops on the wire here (none authored as a render-safe selector).
+    expect(Object.keys(out.content).sort()).toEqual(["rows", "stem"]);
+    for (const k of [
+      "answer_rule",
+      "allowedNumbers",
+      "requireCount",
+      "requireDistinct",
+      "validityOps",
+    ]) {
+      expect(Object.keys(out.content)).not.toContain(k);
+    }
+  });
+});
+
 describe("toClientQuestion / content errors", () => {
   it("throws when content is null", () => {
     expect(() => toClientQuestion(row("MULTIPLE_CHOICE", null))).toThrow();
@@ -246,5 +417,125 @@ describe("toClientQuestion / image arg propagation", () => {
       row("MULTIPLE_CHOICE", { stem: "s", options: ["a"] }),
     );
     expect(Object.keys(out.content)).not.toContain("image");
+  });
+});
+
+describe("toClientQuestion / VISUAL_MATCHING per-tile images", () => {
+  const tileEnvelope = (token: string) => ({
+    url: `https://example.com/signed?token=${token}`,
+    alt: "A shape.",
+    required: true,
+  });
+
+  // A row whose left tiles carry their own (server-only) image_path +
+  // image_alt; right tiles are labels-only. Mirrors L1 Q13 shapes→names.
+  const perTileRow = () =>
+    row("VISUAL_MATCHING", {
+      stem: "Match each shape to its name",
+      left: [
+        {
+          id: "l1",
+          label: "Shape A",
+          image_path: "l1/sam-l1-q13-rectangle.png",
+          image_alt: "A four-sided shape.",
+        },
+        {
+          id: "l2",
+          label: "Shape B",
+          image_path: "l1/sam-l1-q13-triangle.png",
+          image_alt: "A three-sided shape.",
+        },
+      ],
+      right: [
+        { id: "r1", label: "rectangle" },
+        { id: "r2", label: "triangle" },
+      ],
+      pairs: { l1: "r1", l2: "r2" },
+    });
+
+  it("attaches the minted image envelope to each mapped tile", () => {
+    const out = toClientQuestion(perTileRow(), undefined, {
+      l1: tileEnvelope("a"),
+      l2: tileEnvelope("b"),
+    });
+    expect(out.content).toEqual({
+      stem: "Match each shape to its name",
+      left: [
+        { id: "l1", label: "Shape A", image: tileEnvelope("a") },
+        { id: "l2", label: "Shape B", image: tileEnvelope("b") },
+      ],
+      right: [
+        { id: "r1", label: "rectangle" },
+        { id: "r2", label: "triangle" },
+      ],
+    });
+  });
+
+  it("MUST-NOT-REGRESS answer-stripping invariant: envelope present, raw image_path/image_alt + pairs absent", () => {
+    // (a) the minted {url,alt,required} envelope IS present on each mapped
+    // wire item; (b) the raw server-only image_path / image_alt and the
+    // correct `pairs` answer field are ALL absent from the wire payload.
+    // A per-tile image must never become a vector that leaks the answer.
+    const out = toClientQuestion(perTileRow(), undefined, {
+      l1: tileEnvelope("a"),
+      l2: tileEnvelope("b"),
+    });
+    const content = out.content as Extract<
+      typeof out.content,
+      { left: unknown }
+    >;
+
+    // (a) envelope present on every left tile.
+    for (const item of content.left) {
+      expect(item.image).toEqual({
+        url: expect.stringContaining("https://example.com/signed?token="),
+        alt: "A shape.",
+        required: true,
+      });
+      // only id, label, image — nothing else.
+      expect(Object.keys(item).sort()).toEqual(["id", "image", "label"]);
+    }
+
+    // (b) no raw answer-adjacent fields anywhere on the wire.
+    expect(Object.keys(out.content).sort()).toEqual(["left", "right", "stem"]);
+    expect("pairs" in out.content).toBe(false);
+    const serialized = JSON.stringify(out);
+    expect(serialized).not.toContain("image_path");
+    expect(serialized).not.toContain("image_alt");
+    expect(serialized).not.toContain("sam-l1-q13-rectangle.png");
+    expect(serialized).not.toContain("\"pairs\"");
+  });
+
+  it("leaves unmapped tiles as {id,label} (labels-only items unchanged, backward compatible)", () => {
+    // Only l1 is in the map; l2 + both right tiles render their labels.
+    const out = toClientQuestion(perTileRow(), undefined, {
+      l1: tileEnvelope("a"),
+    });
+    const content = out.content as Extract<
+      typeof out.content,
+      { left: unknown }
+    >;
+    expect(content.left[0]).toEqual({
+      id: "l1",
+      label: "Shape A",
+      image: tileEnvelope("a"),
+    });
+    expect(content.left[1]).toEqual({ id: "l2", label: "Shape B" });
+    expect(Object.keys(content.left[1]!)).not.toContain("image");
+    expect(content.right).toEqual([
+      { id: "r1", label: "rectangle" },
+      { id: "r2", label: "triangle" },
+    ]);
+  });
+
+  it("with no tileImages map, VISUAL_MATCHING wire items stay {id,label} (no image key)", () => {
+    const out = toClientQuestion(perTileRow());
+    const content = out.content as Extract<
+      typeof out.content,
+      { left: unknown }
+    >;
+    for (const item of [...content.left, ...content.right]) {
+      expect(Object.keys(item).sort()).toEqual(["id", "label"]);
+    }
   });
 });

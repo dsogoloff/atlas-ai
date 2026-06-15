@@ -32,7 +32,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "@/lib/supabase/database.types";
 
-import type { ClientQuestionImage } from "./types";
+import type { ClientQuestionImage, PickedQuestionRow } from "./types";
 
 export const QUESTION_IMAGE_BUCKET = "question-images";
 export const SIGNED_URL_TTL_SECONDS = 300;
@@ -106,4 +106,84 @@ export async function mintQuestionImage(
   }
 
   return { url: data.signedUrl, alt: imageAlt, required };
+}
+
+/**
+ * Mints per-tile signed URLs for a VISUAL_MATCHING row whose left/right
+ * items carry their own `image_path` (per-tile matching images — e.g. L1
+ * Q13 shapes→names, Q15 3D solids→names, Q07 scene + candidate tiles).
+ *
+ * Returns a map keyed by item id → minted envelope, for every left/right
+ * item that has an `image_path`. Items without `image_path` are skipped
+ * (they render their text `label`). Returns an empty map for any
+ * non-VISUAL_MATCHING row, so callers can always thread the result
+ * through serveQuestion unconditionally.
+ *
+ * Each tile reuses the question-level signed-URL machinery: the item is
+ * handed to mintQuestionImage as a synthetic `{ image_path, image_alt,
+ * image_required }` content object. `image_alt` falls back to the tile's
+ * render-safe `label` (always a non-empty string by the LabeledItem
+ * contract) when the author did not supply a tile-specific alt — so the
+ * alt-mandatory invariant in mintQuestionImage is always satisfied
+ * without forcing CONVERSION to author a separate alt per tile.
+ *
+ * Throws (via mintQuestionImage) on a malformed tile (empty image_path,
+ * storage failure) — same content-authoring-bug → 500 posture as the
+ * question-level path.
+ */
+export async function mintMatchingTileImages(
+  serviceClient: SupabaseClient<Database>,
+  row: PickedQuestionRow,
+): Promise<Record<string, ClientQuestionImage>> {
+  if (row.format !== "VISUAL_MATCHING") return {};
+
+  const content = row.content;
+  if (
+    content === null ||
+    typeof content !== "object" ||
+    Array.isArray(content)
+  ) {
+    return {};
+  }
+  const obj = content as Record<string, Json>;
+
+  // Collect mint jobs for every left/right item that carries an
+  // image_path; mint them concurrently (deterministic — order doesn't
+  // matter since the result is an id-keyed map).
+  const jobs: { id: string; content: Json }[] = [];
+  for (const key of ["left", "right"] as const) {
+    const items = obj[key];
+    if (!Array.isArray(items)) continue;
+    for (const item of items) {
+      if (item === null || typeof item !== "object" || Array.isArray(item)) {
+        continue;
+      }
+      const o = item as Record<string, Json>;
+      if (o.image_path === undefined || o.image_path === null) continue;
+      if (typeof o.id !== "string") continue;
+      const altFallback =
+        typeof o.image_alt === "string" && o.image_alt.length > 0
+          ? o.image_alt
+          : typeof o.label === "string"
+            ? o.label
+            : undefined;
+      const tileContent: Record<string, Json> = {
+        image_path: o.image_path,
+        ...(altFallback !== undefined ? { image_alt: altFallback } : {}),
+        ...(o.image_required === true ? { image_required: true } : {}),
+      };
+      jobs.push({ id: o.id, content: tileContent as Json });
+    }
+  }
+
+  const envelopes = await Promise.all(
+    jobs.map((j) => mintQuestionImage(serviceClient, j.content)),
+  );
+
+  const result: Record<string, ClientQuestionImage> = {};
+  jobs.forEach((j, i) => {
+    const envelope = envelopes[i];
+    if (envelope) result[j.id] = envelope;
+  });
+  return result;
 }
