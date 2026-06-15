@@ -419,3 +419,123 @@ describe("toClientQuestion / image arg propagation", () => {
     expect(Object.keys(out.content)).not.toContain("image");
   });
 });
+
+describe("toClientQuestion / VISUAL_MATCHING per-tile images", () => {
+  const tileEnvelope = (token: string) => ({
+    url: `https://example.com/signed?token=${token}`,
+    alt: "A shape.",
+    required: true,
+  });
+
+  // A row whose left tiles carry their own (server-only) image_path +
+  // image_alt; right tiles are labels-only. Mirrors L1 Q13 shapes→names.
+  const perTileRow = () =>
+    row("VISUAL_MATCHING", {
+      stem: "Match each shape to its name",
+      left: [
+        {
+          id: "l1",
+          label: "Shape A",
+          image_path: "l1/sam-l1-q13-rectangle.png",
+          image_alt: "A four-sided shape.",
+        },
+        {
+          id: "l2",
+          label: "Shape B",
+          image_path: "l1/sam-l1-q13-triangle.png",
+          image_alt: "A three-sided shape.",
+        },
+      ],
+      right: [
+        { id: "r1", label: "rectangle" },
+        { id: "r2", label: "triangle" },
+      ],
+      pairs: { l1: "r1", l2: "r2" },
+    });
+
+  it("attaches the minted image envelope to each mapped tile", () => {
+    const out = toClientQuestion(perTileRow(), undefined, {
+      l1: tileEnvelope("a"),
+      l2: tileEnvelope("b"),
+    });
+    expect(out.content).toEqual({
+      stem: "Match each shape to its name",
+      left: [
+        { id: "l1", label: "Shape A", image: tileEnvelope("a") },
+        { id: "l2", label: "Shape B", image: tileEnvelope("b") },
+      ],
+      right: [
+        { id: "r1", label: "rectangle" },
+        { id: "r2", label: "triangle" },
+      ],
+    });
+  });
+
+  it("MUST-NOT-REGRESS answer-stripping invariant: envelope present, raw image_path/image_alt + pairs absent", () => {
+    // (a) the minted {url,alt,required} envelope IS present on each mapped
+    // wire item; (b) the raw server-only image_path / image_alt and the
+    // correct `pairs` answer field are ALL absent from the wire payload.
+    // A per-tile image must never become a vector that leaks the answer.
+    const out = toClientQuestion(perTileRow(), undefined, {
+      l1: tileEnvelope("a"),
+      l2: tileEnvelope("b"),
+    });
+    const content = out.content as Extract<
+      typeof out.content,
+      { left: unknown }
+    >;
+
+    // (a) envelope present on every left tile.
+    for (const item of content.left) {
+      expect(item.image).toEqual({
+        url: expect.stringContaining("https://example.com/signed?token="),
+        alt: "A shape.",
+        required: true,
+      });
+      // only id, label, image — nothing else.
+      expect(Object.keys(item).sort()).toEqual(["id", "image", "label"]);
+    }
+
+    // (b) no raw answer-adjacent fields anywhere on the wire.
+    expect(Object.keys(out.content).sort()).toEqual(["left", "right", "stem"]);
+    expect("pairs" in out.content).toBe(false);
+    const serialized = JSON.stringify(out);
+    expect(serialized).not.toContain("image_path");
+    expect(serialized).not.toContain("image_alt");
+    expect(serialized).not.toContain("sam-l1-q13-rectangle.png");
+    expect(serialized).not.toContain("\"pairs\"");
+  });
+
+  it("leaves unmapped tiles as {id,label} (labels-only items unchanged, backward compatible)", () => {
+    // Only l1 is in the map; l2 + both right tiles render their labels.
+    const out = toClientQuestion(perTileRow(), undefined, {
+      l1: tileEnvelope("a"),
+    });
+    const content = out.content as Extract<
+      typeof out.content,
+      { left: unknown }
+    >;
+    expect(content.left[0]).toEqual({
+      id: "l1",
+      label: "Shape A",
+      image: tileEnvelope("a"),
+    });
+    expect(content.left[1]).toEqual({ id: "l2", label: "Shape B" });
+    expect(Object.keys(content.left[1]!)).not.toContain("image");
+    expect(content.right).toEqual([
+      { id: "r1", label: "rectangle" },
+      { id: "r2", label: "triangle" },
+    ]);
+  });
+
+  it("with no tileImages map, VISUAL_MATCHING wire items stay {id,label} (no image key)", () => {
+    const out = toClientQuestion(perTileRow());
+    const content = out.content as Extract<
+      typeof out.content,
+      { left: unknown }
+    >;
+    for (const item of [...content.left, ...content.right]) {
+      expect(Object.keys(item).sort()).toEqual(["id", "label"]);
+    }
+  });
+});

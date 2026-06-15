@@ -12,7 +12,11 @@
 //   * image_path                (Item #13a Phase 2 — the raw bucket path
 //                                stays server-side; a freshly minted
 //                                signed URL crosses to the client instead,
-//                                injected as content.image by the caller)
+//                                injected as content.image by the caller.
+//                                Same rule applies per-tile: VISUAL_MATCHING
+//                                left/right items' own image_path/image_alt
+//                                stay server-side; the client sees only the
+//                                minted item.image envelope.)
 //
 // We achieve this by *constructing* the output object key-by-key from the
 // allowed fields rather than spreading and deleting — a spread-then-delete
@@ -45,13 +49,14 @@ import type {
 export function toClientQuestion(
   row: PickedQuestionRow,
   image?: ClientQuestionImage,
+  tileImages?: Record<string, ClientQuestionImage>,
 ): ClientQuestion {
   return {
     id: row.id,
     strand: row.strand,
     level: row.level,
     format: row.format,
-    content: stripContent(row.format, row.content, image),
+    content: stripContent(row.format, row.content, image, tileImages),
   };
 }
 
@@ -59,6 +64,7 @@ function stripContent(
   format: PickedQuestionRow["format"],
   content: Json,
   image: ClientQuestionImage | undefined,
+  tileImages: Record<string, ClientQuestionImage> | undefined,
 ): ClientQuestionContent {
   const obj = asObject(content);
   const stem = readString(obj, "stem");
@@ -100,12 +106,14 @@ function stripContent(
       return count === undefined ? out : { ...out, count };
     }
     case "VISUAL_MATCHING":
-      // Render-safe: stem, left[{id,label}], right[{id,label}].
-      // Answer field `pairs` is NEVER read here.
+      // Render-safe: stem, left[{id,label,image?}], right[{id,label,image?}].
+      // Answer field `pairs` is NEVER read here. Per-tile `image` is the
+      // pre-minted signed-URL envelope (tileImages map); the raw per-tile
+      // `image_path`/`image_alt` are dropped by the key-by-key build below.
       return {
         stem,
-        left: readLabeledItems(obj, "left"),
-        right: readLabeledItems(obj, "right"),
+        left: readLabeledItems(obj, "left", tileImages),
+        right: readLabeledItems(obj, "right", tileImages),
         ...(image ? { image } : {}),
       };
     case "MULTI_BLANK":
@@ -197,13 +205,21 @@ function readOptionalStringArray(
 }
 
 /**
- * Render-safe {id,label} array (SELECT_MULTIPLE options, VISUAL_MATCHING
- * left/right). Built field-by-field from `id` and `label` only — any other
- * key on an authored item (none expected, but defensively) is dropped.
+ * Render-safe {id,label,image?} array (SELECT_MULTIPLE options,
+ * VISUAL_MATCHING left/right). Built field-by-field from `id` and `label`
+ * only — any other key on an authored item (notably the answer-adjacent
+ * per-tile `image_path`/`image_alt`) is dropped, never spread.
+ *
+ * When `tileImages` is supplied (VISUAL_MATCHING serve path), the
+ * pre-minted signed-URL envelope for an item is attached as `image`. The
+ * raw `image_path` stays server-side — the client only ever sees the
+ * minted `image.{url,alt,required}`, never the bucket path. Items not in
+ * the map keep the pre-existing `{id,label}` shape exactly.
  */
 function readLabeledItems(
   obj: Record<string, Json>,
   key: string,
+  tileImages?: Record<string, ClientQuestionImage>,
 ): ClientLabeledItem[] {
   const v = obj[key];
   if (!Array.isArray(v)) {
@@ -221,7 +237,10 @@ function readLabeledItems(
         `[serialize] questions.content.${key}[${i}] missing string id/label`,
       );
     }
-    return { id: o.id, label: o.label };
+    const tileImage = tileImages?.[o.id];
+    return tileImage
+      ? { id: o.id, label: o.label, image: tileImage }
+      : { id: o.id, label: o.label };
   });
 }
 
