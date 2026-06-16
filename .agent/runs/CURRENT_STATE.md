@@ -4,6 +4,24 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-15 image-answer-inputs session — **PR #71 OPEN**
+(lane/image-answer-inputs, branched off ATLAS-ASSESSMENT head `dfc9925` / PR #65, NOT
+stacked). Adds the three click-image answer formats — `CLICK_IMAGE_SINGLE` /
+`CLICK_IMAGE_MULTI` / `IMAGE_ORDERING` — fully wired through client input + server grading,
+**forward-wired ahead of CONVERSION activation**. App + enum only; **no rows touched**
+(enum-DDL-only migration `20260615120000`; no `is_active` / `requires_format_swap` flips;
+`questions_held_rows_inactive` guardrail stays enforced). Grading reuses `select-all`
+(set-equality) for multi; adds `select-one` + `order-equality`; server reads the authored
+model from `content._authoring.answer_model`, tiles served render-safe from top-level
+`content.tiles`. Verify GREEN **1074 tests / 75 files** (+95/+3 over the 979/72 snapshot),
+tsc 0, lint 0 errors (2 known warnings), `pnpm build` OK. CI verify-bar running; awaiting
+attended merge (merging is Dimitri's click). **ACTIVATION DEPENDENCY (CONVERSION-owned):**
+before any of these held rows is flipped active, per-tile image minting must be added to
+`serveQuestion.ts` (analogous to `mintMatchingTileImages` for VISUAL_MATCHING) to read
+`content.tiles[].image_path` — otherwise activated rows serve **pictureless** (label-only).
+No runtime risk while held. See NEXT_ACTIONS §3f. **(This memory PR is docs-only,
+lane/memory-image-inputs-2026-06-15, off trunk, not stacked.)**
+
 **As of:** 2026-06-13 visual-primitives session — PR #59 OPEN (lane/visual-primitives-g1-3),
 verify-bar SUCCESS + Vercel preview built, awaiting attended merge. G1-3 visual-primitive +
 answer-input + grading library shipped as app code; bank untouched. Verify GREEN 979 tests /
@@ -41,6 +59,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Image answer-inputs (3 click-image formats) | OPEN PR #71 | lane/image-answer-inputs, off ATLAS-ASSESSMENT head `dfc9925` (NOT stacked), commit `7abdf4d`. Adds question_format enum values CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI / IMAGE_ORDERING (migration `20260615120000` enum-DDL-only + database.types.ts). New grading rules `select-one` + `order-equality` and `ordered-ids` AnswerValue (`src/lib/grading/`); multi reuses `select-all`. New inputs `src/components/answer-inputs/{ClickImageSingle,ClickImageMulti,ImageOrdering,TileFace}.tsx` dispatched by question.format in QuestionTimer (QuestionShell unchanged). Server judge reads `content._authoring.answer_model` (held rows keep the model in `_authoring`); serializer strips `_authoring` and serves render-safe `content.tiles`. Exhaustive switches updated (serialize, classifier prompt, parent answers page, time norms). Resolves brief's `target_input`→`target_interaction` naming in favor of the actual key. NO rows touched; guardrail intact. Verify GREEN 1074/75, tsc 0, lint 0 errors (2 known warnings), build OK. Codex manual/skipped (relay unauth). **Activation blocker (CONVERSION): add per-tile minting to serveQuestion.ts before activating, else pictureless — see NEXT_ACTIONS §3f.** Awaiting attended merge. |
 | Visual-primitive + answer-input library (G1-3) | OPEN PR #59 | lane/visual-primitives-g1-3, branched off ATLAS-ASSESSMENT head f8c0f30 (NOT stacked). App code only — no bank/seed/picker changes. Adds: 11 stem SVG primitives (`src/components/visual-primitives/`), 3 answer-input components (`src/components/answer-inputs/`), standalone grading module (`src/lib/grading/` — decoupled from Issue-1 served-question gate), 2 spec docs (`docs/visual-primitives-spec.md`, `docs/answer-model-spec.md`), dev-only gallery at `/dev/visual-primitives` (flag `isVisualPrimitivesGalleryEnabled` in `src/lib/env.ts`: always-on in dev/test, 404 in prod unless `ENABLE_VISUAL_PRIMITIVES_GALLERY=true`). Also establishes first shared UI home `src/components/` (no shared component dir existed before). Verify GREEN 979/72, tsc 0, lint 0 errors (2 known warnings), build GREEN. Vercel preview built; verify-bar running. Awaiting attended merge. |
 | Served-gate multirow fix (Issue-1) | OPEN PR #58 — QA-UNBLOCKING PRIORITY | lane/served-gate-multirow-fix, commit `7245826`. `responseSubmit/handler.ts` access-log existence check `.maybeSingle()` → `.limit(1)` (tolerates >1 access-log row on first submit / Strict-Mode resume; `.maybeSingle()` raised PGRST116/500). Verified on origin 2026-06-13: trunk head f8c0f30 STILL has `.maybeSingle()` (handler.ts:385) — fix NOT on trunk. PR #58 MERGEABLE/CLEAN, verify-bar SUCCESS, Vercel SUCCESS — needs attended merge. Also carries 2 read-only docs (base sam-content-authenticity-audit.md + picker-level-band-proposal.md). |
 | Session memory + audit Appendix A | follow-up PR (lane/memory-audit-2026-06-13) | The 4 uncommitted files from lane/served-gate-multirow-fix's tree (3 `.agent/` memory files + `docs/sam-content-authenticity-audit.md` Appendix A) moved to their own branch off ATLAS-ASSESSMENT to keep PR #58 = Issue-1 fix only. Docs/memory only; not stacked. NOTE: its audit doc is the FULL file (base + Appendix A) and overlaps PR #58's base audit doc — whichever merges second conflicts on that one file; resolve by keeping the fuller (Appendix A) version (recommend merge #58 first). |
