@@ -12,6 +12,12 @@
 // 1:1 with the `image_path` values in overlay/l*-activation.json. SOURCE_DIRS are
 // the (untracked, licensed) crop locations; override via env if they move.
 //
+// TWO sections: (1) MANIFEST — the 32 images for the 19 newly-activated rows; and
+// (2) PREEXISTING_L2_BACKFILL — the 7 images for the ALREADY-active L2 rows whose
+// files were never uploaded to local storage (they 500 at serve until present).
+// Both upsert. The backfill bucket paths are the EXACT root-level keys those live
+// rows reference (read from overlay/l2-authoring.json), NOT the l2/ convention.
+//
 // LOCAL ONLY (QA). Reads NEXT_PUBLIC_SUPABASE_URL (default the local
 // http://127.0.0.1:54321) + SUPABASE_SERVICE_ROLE_KEY from the environment, or
 // from a dotenv file (ENV_FILE, else <repoRoot>/.env.local). The bucket is
@@ -24,7 +30,7 @@
 //
 // Run: pnpm convert:upload-activation-images
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFile, stat } from "node:fs/promises";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -39,6 +45,8 @@ const BUCKET = "question-images";
 const L0_SRC = process.env.L0_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source";
 const L1_SRC = process.env.L1_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l1-art/scripts/conversion/output/l1-art";
 const L2_SRC = process.env.L2_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/input/l2-art";
+// The Q05 seashell picture-graph is GENERATED (gen_l2_q05_graph.py), not a raw crop.
+const L2_GEN = process.env.L2_GEN_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/output/l2-art-generated";
 
 interface ManifestEntry {
   source: string; // absolute path to the source PNG
@@ -93,15 +101,20 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
 ];
 
-// 7 already-active L2 image rows — CHECK presence only, never overwrite.
-const PREEXISTING_L2 = [
-  "q-sam-l2-q02-triangles.png",
-  "q-sam-l2-q03-composite-shape.png",
-  "q-sam-l2-q05-seashell-graph.png",
-  "q-sam-l2-q12-toy-car-ruler.png",
-  "q-sam-l2-q15-clock.png",
-  "q-sam-l2-q16-coins.png",
-  "q-sam-l2-q18-base-ten.png",
+// Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
+// never uploaded to LOCAL storage (so those rows 500 at serve locally). Distinct
+// from the 32 activation images above — these belong to rows that are already
+// is_active=true; this only backfills their missing pictures for local QA. The
+// bucket paths are the EXACT image_path each live row references (root-level keys
+// from overlay/l2-authoring.json, NOT the l2/ folder convention).
+const PREEXISTING_L2_BACKFILL: ManifestEntry[] = [
+  { source: `${L2_SRC}/L2-2.png`, bucket: "q-sam-l2-q02-triangles.png" },
+  { source: `${L2_SRC}/L2-3.png`, bucket: "q-sam-l2-q03-composite-shape.png" },
+  { source: `${L2_GEN}/q-sam-l2-q05-seashell-graph.png`, bucket: "q-sam-l2-q05-seashell-graph.png" },
+  { source: `${L2_SRC}/L2-12.png`, bucket: "q-sam-l2-q12-toy-car-ruler.png" },
+  { source: `${L2_SRC}/L2-15.png`, bucket: "q-sam-l2-q15-clock.png" },
+  { source: `${L2_SRC}/L2-16.png`, bucket: "q-sam-l2-q16-coins.png" },
+  { source: `${L2_SRC}/L2-18.png`, bucket: "q-sam-l2-q18-base-ten.png" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -129,6 +142,40 @@ function fmtBytes(n: number): string {
   return `${(n / 1024).toFixed(1)} KB`;
 }
 
+interface UploadResult {
+  bucket: string;
+  uploaded: boolean;
+  bytes: number;
+  error?: string;
+}
+
+async function uploadSection(
+  supabase: SupabaseClient,
+  entries: ManifestEntry[],
+): Promise<UploadResult[]> {
+  const out: UploadResult[] = [];
+  for (const e of entries) {
+    const buf = await readFile(e.source);
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(e.bucket, buf, { upsert: true, contentType: "image/png" });
+    out.push({ bucket: e.bucket, uploaded: !error, bytes: buf.byteLength, error: error?.message });
+  }
+  return out;
+}
+
+function printSection(title: string, results: UploadResult[]): void {
+  process.stdout.write(`\n${title}:\n`);
+  process.stdout.write("  uploaded | size      | bucket path\n");
+  for (const r of results) {
+    process.stdout.write(
+      `  ${r.uploaded ? "yes" : "NO "}      | ${fmtBytes(r.bytes).padEnd(9)} | ${r.bucket}` +
+        (r.error ? `   ERROR: ${r.error}` : "") +
+        "\n",
+    );
+  }
+}
+
 async function main(): Promise<void> {
   const envFile = loadEnvFile();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -151,20 +198,21 @@ async function main(): Promise<void> {
     `[upload-activation-images] target ${url} | bucket ${BUCKET} | env ${envFile ?? "(process env)"}\n\n`,
   );
 
-  const supabase = createClient(url, key, { auth: { persistSession: false } });
+  const supabase = createClient(url, key, { auth: { persistSession: false } }) as SupabaseClient;
 
-  // --- 1) Pre-flight: every manifest source must exist ---------------------
+  // --- 1) Pre-flight: every source in BOTH sections must exist -------------
+  const ALL = [...MANIFEST, ...PREEXISTING_L2_BACKFILL];
   const missingSources: string[] = [];
-  for (const e of MANIFEST) {
+  for (const e of ALL) {
     try {
       await stat(e.source);
     } catch {
-      missingSources.push(e.source);
+      missingSources.push(`${e.source}  (→ ${e.bucket})`);
     }
   }
   if (missingSources.length > 0) {
     process.stderr.write(
-      `\nFAIL — ${String(missingSources.length)} manifest source file(s) not found:\n` +
+      `\nFAIL — ${String(missingSources.length)} source file(s) not found:\n` +
         missingSources.map((s) => `  - ${s}`).join("\n") +
         "\n",
     );
@@ -172,71 +220,31 @@ async function main(): Promise<void> {
     return;
   }
 
-  // --- 2) Upload (upsert) each manifest entry ------------------------------
-  interface Result { bucket: string; uploaded: boolean; bytes: number; error?: string }
-  const results: Result[] = [];
-  for (const e of MANIFEST) {
-    const buf = await readFile(e.source);
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(e.bucket, buf, { upsert: true, contentType: "image/png" });
-    results.push({
-      bucket: e.bucket,
-      uploaded: !error,
-      bytes: buf.byteLength,
-      error: error?.message,
-    });
-  }
+  // --- 2) Upload (upsert) both sections -----------------------------------
+  const activation = await uploadSection(supabase, MANIFEST);
+  const backfill = await uploadSection(supabase, PREEXISTING_L2_BACKFILL);
 
-  // --- 3) Check the 7 pre-existing L2 images (presence only) ---------------
-  const { data: rootList, error: listErr } = await supabase.storage
-    .from(BUCKET)
-    .list("", { limit: 1000 });
-  const rootNames = new Set((rootList ?? []).map((o) => o.name));
-  const preexisting = PREEXISTING_L2.map((name) => ({
-    name,
-    present: listErr ? false : rootNames.has(name),
-  }));
+  // --- 3) Verification tables ---------------------------------------------
+  printSection("ACTIVATION IMAGES (32 — for the 19 newly-activated rows)", activation);
+  printSection("PRE-EXISTING-L2-BACKFILL (7 — already-active rows' missing files)", backfill);
 
-  // --- 4) Verification table ----------------------------------------------
-  process.stdout.write("ACTIVATION IMAGES (upsert):\n");
-  process.stdout.write("  uploaded | size      | bucket path\n");
-  for (const r of results) {
-    process.stdout.write(
-      `  ${r.uploaded ? "yes" : "NO "}      | ${fmtBytes(r.bytes).padEnd(9)} | ${r.bucket}` +
-        (r.error ? `   ERROR: ${r.error}` : "") +
-        "\n",
-    );
-  }
-  process.stdout.write("\nPRE-EXISTING L2 IMAGES (check only, not overwritten):\n");
-  if (listErr) {
-    process.stdout.write(`  (could not list bucket: ${listErr.message})\n`);
-  }
-  for (const p of preexisting) {
-    process.stdout.write(`  ${p.present ? "present" : "MISSING"} | ${p.name}\n`);
-  }
-
-  const failedUploads = results.filter((r) => !r.uploaded);
-  const okUploads = results.length - failedUploads.length;
-  const presentPre = preexisting.filter((p) => p.present).length;
+  const results = [...activation, ...backfill];
+  const failed = results.filter((r) => !r.uploaded);
+  const ok = results.length - failed.length;
   process.stdout.write(
-    `\nSUMMARY: ${String(okUploads)}/${String(results.length)} activation images uploaded; ` +
-      `${String(presentPre)}/${String(PREEXISTING_L2.length)} pre-existing L2 images present.\n`,
+    `\nSUMMARY: ${String(activation.filter((r) => r.uploaded).length)}/${String(activation.length)} activation + ` +
+      `${String(backfill.filter((r) => r.uploaded).length)}/${String(backfill.length)} pre-existing-L2-backfill uploaded ` +
+      `(${String(ok)}/${String(results.length)} total).\n`,
   );
 
-  if (failedUploads.length > 0) {
+  if (failed.length > 0) {
     process.stderr.write(
-      `\nFAIL — ${String(failedUploads.length)} upload(s) errored (see ERROR lines above).\n`,
+      `\nFAIL — ${String(failed.length)} upload(s) errored (see ERROR lines above).\n`,
     );
     process.exitCode = 1;
     return;
   }
-  process.stdout.write("\nPASS — all activation images uploaded.\n");
-  if (presentPre < PREEXISTING_L2.length) {
-    process.stdout.write(
-      "NOTE: some pre-existing L2 images are MISSING from the bucket — the already-active L2 image rows will 500 until they are uploaded (separate from this lane).\n",
-    );
-  }
+  process.stdout.write("\nPASS — all images uploaded; local QA fully green for these rows.\n");
 }
 
 main().catch((err: unknown) => {
