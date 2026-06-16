@@ -3,6 +3,14 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-16
+
+* **L0/L1/L2 activation wave — 19 FLIP-READY rows activated end-to-end (PR #78, lane/l0-l2-activation, 2026-06-16).** All answer formats now wired: input + serialize + grade + mint. Activation follows #71 (3 click-image formats) + #77 (per-tile minting); both must be on trunk before this PR applies. Formats flipped: CLICK_IMAGE_SINGLE (L0A Q08/Q11; L0B Q02; L2 Q06), SELECT_MULTIPLE (L0C Q03), EQUATION_SET (L0C Q04), MULTI_BLANK (L0C Q08/Q11/Q16; L1 Q14+image), NUMERIC_ENTRY (L0C Q14), MC+image (L1 Q02/Q03/Q16), VISUAL_MATCHING text-tile (L1 Q11/Q27), VISUAL_MATCHING+images (L1 Q13/Q15), IMAGE_ORDERING (L1 Q17). Each activation: atomic UPDATE guarded on `is_active=false`; activated content carries NO `_authoring.requires_format_swap` (satisfies `questions_held_rows_inactive` CHECK). `activation-spec.md` documents per-format content shapes. Verify GREEN: 1091 tests / 76 files, tsc 0, lint 0 errors (2 known warnings), build OK. PR #78 OPEN — blocked on founder uploading images to `question-images` bucket before merge.
+
+* **Rule confirmed: every activated row must have an existing uploadable image — else held.** Two rows demoted from FLIP-READY to one-image-away during this pass: SAM-L0A-Q17 (group-of-balloons image absent; only single-balloon crops exist) and SAM-L0B-Q07 (two sorted-shapes part-crops need compositing into one image). Pattern: do not flip `is_active=true` for image-bearing questions until the image file exists in the `question-images` bucket.
+
+* **Trunk advanced to `a98f3e5` (PRs #74/#75/#76/#77 merged: L0 bank, L0 memory, short-test-eligible picker, per-tile minting).** PR #78 branches off this head.
+
 ## 2026-06-15
 
 * ⚑ **`half_grade_level` enum extended with pre-K bands 0A / 0B / 0C (founder-directed,

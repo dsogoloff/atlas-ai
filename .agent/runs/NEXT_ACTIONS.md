@@ -230,6 +230,41 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       re-authoring above (don't widen the served band while model-reconstructed rows are still
       unverified). Sequencing decision; not yet built.
 
+## 3i. L0/L1/L2 activation wave — PR #78 OPEN 2026-06-16
+
+- [ ] **★ BEFORE MERGING PR #78 — Dimitri: upload manifest images to the private
+      `question-images` bucket.** An activated image row whose file is missing will 500 at
+      serve time. Required folders: `l0/`, `l1/`, `l2/`. Full upload manifest is in
+      `scripts/conversion/l0-l2-activation-notes.md`. Also confirm the 7 already-active L2
+      images are present in the bucket. After upload: merge PR #78 + `supabase db reset`.
+
+- [ ] **PARKED — one-image-away (flip once founder provides a single curated image):**
+      - SAM-L0A-Q17: needs a group-of-balloons image (only single-balloon crops exist).
+      - SAM-L0B-Q07: needs the two sorted-shapes part-crops composited into one image.
+
+- [ ] **PARKED — content decisions (held inactive, non-blocking):**
+      - SAM-L0B-Q06: number-line crop has no printed numbers; answer key "Color 7 and 6"
+        conflicts with stem "greater than 6". Needs founder/S.A.M. to supply real tiles +
+        correct subset.
+      - SAM-L0B-Q03: no answer key / reference available.
+      - SAM-L0B-Q05: ambiguous given/blank layout.
+      - SAM-L1-Q07: no correct option identified.
+      - SAM-L1-Q25: verbatim stem only at DB head, not overlay — pull to overlay to flip
+        equation-set.
+      - SAM-L1-Q08: multi-axis position answer, not clean binary; held.
+
+- [ ] **PARKED — structural blocks (non-activation-path until resolved):**
+      - Single-scene no-discrete-tiles: SAM-L1-Q01/Q06/Q26.
+      - Missing source image: SAM-L0A-Q12, SAM-L0B-Q08/Q12/Q13, SAM-L0C-Q01/Q06/Q12.
+
+- [ ] **PARKED — taxonomy-gap (content_id NULL) rows remain blocked until taxonomy
+      extended (founder/S.A.M. decision):**
+      SAM-L0A-Q03/Q05/Q06/Q07/Q09/Q10/Q13/Q14/Q15/Q16, SAM-L0B-Q01/Q04,
+      SAM-L0C-Q05/Q15.
+
+- [ ] **NOTE (non-blocking, cosmetic review):** SAM-L1-Q16 crop has baked-in
+      question-number/name text — flag if undesirable for parent render.
+
 ## 3h. L0 authoring (0A/0B/0C) — PR #74 OPEN 2026-06-15
 
 - [ ] **Dimitri: merge PR #74 after Vercel preview review, then run `supabase db reset`.**
