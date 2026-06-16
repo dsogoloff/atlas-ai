@@ -29,10 +29,12 @@ pipeline skipped are inserted.
   0B = age 4 / pre-K, 0C = age 5 / K) via the enum widening above. Booklets ramp,
   so banding follows the Summary table's **Level** column, not the doc name
   (0B doc: tasks 1–12 are 0A, 13–15 are 0B; 0C doc: tasks 1–13 are 0B, 14–16 are 0C).
-- **Short flag:** taken from the docx Summary "Short" column and stored as
-  `content.short_eligible` (boolean) on every row. 31 of 49 are short-eligible.
-  (No `questions` column existed; this is the least-invasive faithful capture.
-  Wiring the picker to filter on it is a follow-up — see below.)
+- **Short flag:** taken from the docx Summary "Short" column. ATLAS-authoritative
+  field name is the real boolean column **`questions.short_test_eligible`** (added
+  by migration `20260616120050`, default false). The applier sets it per row
+  (true where Summary Short = Y); 31 of 49 are short-eligible. It is NOT stored
+  inside `content` (the ATLAS short picker reads the column literally). Existing
+  non-L0 rows keep the default false.
 
 ## Result (49 tasks: 28 insert, 21 update)
 | | active | held-A (image) | held-C (format) | inactive (manual/oral) |
@@ -92,8 +94,9 @@ Extending the taxonomy is a founder / S.A.M. decision.
 - **content_id on the 21 re-banded rows is unchanged** (the overlay UPDATE
   re-bands `level` but, like the L1/L2 appliers, does not re-resolve `content_id`).
   New inserts get `content_id` from their `content_key` at insert time.
-- **Picker short-test filtering:** `content.short_eligible` is now populated;
-  wiring the picker to read it is a separate small lane.
+- **Picker short-test filtering:** `questions.short_test_eligible` is now
+  populated for L0; wiring the picker to read it (and back-filling L1/L2+ from
+  their Summary "Short" columns) is a separate small lane.
 - Held rows store the real interaction + answer model in
   `authoring.target_interaction` / `authoring.answer_model` (overlay = source of
   truth); the DB carries only the compact `_authoring` stub until activation.

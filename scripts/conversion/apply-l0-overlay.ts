@@ -143,6 +143,17 @@ function authoringStub(a: OverlayAuthoring): Record<string, unknown> {
   };
 }
 
+/** Pull the authoritative `short_test_eligible` flag OUT of the authored content
+ *  and return it separately so the applier can emit it as a real boolean COLUMN
+ *  (ATLAS's short picker reads the column literally). The flag is stripped from
+ *  the content jsonb so it is not also duplicated/served inside content. */
+function splitShortFlag(content: Record<string, unknown>): { shortEligible: boolean; content: Record<string, unknown> } {
+  const rest = { ...content };
+  const shortEligible = rest.short_test_eligible === true;
+  delete rest.short_test_eligible;
+  return { shortEligible, content: rest };
+}
+
 /** Active rows stay clean; held/inactive rows carry the _authoring stub.
  *  Applied to BOTH insert and update content so the guardrail invariant holds
  *  regardless of action. */
@@ -154,14 +165,15 @@ function withAuthoring(task: OverlayTask, content: Record<string, unknown>): Rec
 function renderInsertTuple(externalId: string, task: OverlayTask): string {
   const row = task.row;
   if (!row) throw new Error(`insert task ${externalId} without row`);
-  const content = withAuthoring(task, row.content);
+  const { shortEligible, content: base } = splitShortFlag(row.content);
+  const content = withAuthoring(task, base);
   return (
     `    (${sqlString(externalId)}, ${sqlString(row.strand)}, ${sqlString(row.level)}, ` +
     `${row.difficulty}, ${sqlString(row.format)},\n` +
     `     ${sqlJsonb(content)},\n` +
     `     ${sqlTextArray(row.misconception_tags)},\n` +
     `     ${row.word_count}, ${sqlString(row.operation_type)}, ${row.num_operations}, ` +
-    `${sqlString(row.representation)}, ${String(task.is_active)}, ${sqlContentKey(row.content_key)})`
+    `${sqlString(row.representation)}, ${String(task.is_active)}, ${String(shortEligible)}, ${sqlContentKey(row.content_key)})`
   );
 }
 
@@ -175,13 +187,13 @@ function buildInsertStatement(inserts: Array<[string, OverlayTask]>): string {
     "  (tenant_id, external_id, strand, level, difficulty, format,",
     "   content, misconception_tags,",
     "   word_count, operation_type, num_operations, representation,",
-    "   is_active, content_id)",
+    "   is_active, short_test_eligible, content_id)",
     "select t.id, v.external_id, v.strand::strand, v.level::half_grade_level,",
     "       v.difficulty, v.format::question_format,",
     "       v.content::jsonb, v.misconception_tags,",
     "       v.word_count, v.operation_type::operation_type, v.num_operations,",
     "       v.representation::representation_kind,",
-    "       v.is_active,",
+    "       v.is_active, v.short_test_eligible,",
     "       (select tc.id from tax_content tc",
     "          where tc.tenant_id = t.id and tc.code = v.content_key)",
     "from t,",
@@ -189,7 +201,7 @@ function buildInsertStatement(inserts: Array<[string, OverlayTask]>): string {
     tuples,
     "  ) as v(external_id, strand, level, difficulty, format, content,",
     "         misconception_tags, word_count, operation_type, num_operations,",
-    "         representation, is_active, content_key)",
+    "         representation, is_active, short_test_eligible, content_key)",
     "on conflict (tenant_id, external_id) do nothing;",
   ].join("\n");
 }
@@ -202,7 +214,11 @@ function buildUpdateStatement(externalId: string, task: OverlayTask): string {
   if (upd.level !== undefined) sets.push(`level = ${sqlString(upd.level)}::half_grade_level`);
   if (upd.format !== undefined) sets.push(`format = ${sqlString(upd.format)}::question_format`);
   if (upd.is_active !== undefined) sets.push(`is_active = ${String(upd.is_active)}`);
-  if (upd.content !== undefined) sets.push(`content = ${sqlJsonb(withAuthoring(task, upd.content))}`);
+  if (upd.content !== undefined) {
+    const { shortEligible, content: base } = splitShortFlag(upd.content);
+    sets.push(`content = ${sqlJsonb(withAuthoring(task, base))}`);
+    sets.push(`short_test_eligible = ${String(shortEligible)}`);
+  }
   if (upd.content_merge !== undefined) {
     sets.push(`content = q.content || ${sqlJsonb(upd.content_merge)}`);
   }

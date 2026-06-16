@@ -19,7 +19,7 @@
     "counts": {
       "by_action": { "insert": 8, "update": 7 },
       "by_status": { "active": 5, "held_A": 1, "held_C": 8, "inactive_manual": 1, "inactive_oral": 0 },
-      "short_eligible": { "Y": 9, "N": 6 },
+      "short_test_eligible": { "Y": 9, "N": 6 },
       "active_ids": ["SAM-L0B-Q09", "SAM-L0B-Q10", "SAM-L0B-Q11", "SAM-L0B-Q14", "SAM-L0B-Q15"],
       "held_A_ids": ["SAM-L0B-Q07"],
       "held_C_ids": ["SAM-L0B-Q02", "SAM-L0B-Q03", "SAM-L0B-Q04", "SAM-L0B-Q05", "SAM-L0B-Q06", "SAM-L0B-Q08", "SAM-L0B-Q12", "SAM-L0B-Q13"],
@@ -44,7 +44,7 @@
       "task_number": 1, "status": "inactive_manual", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Look at the two pictures below. Circle 3 objects in Picture B that are not the same as the ones in Picture A.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "content": { "stem": "Look at the two pictures below. Circle 3 objects in Picture B that are not the same as the ones in Picture A.", "short_test_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
         "misconception_tags": [], "word_count": 21, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -54,7 +54,7 @@
       "task_number": 2, "status": "held_C", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Tap the object that comes next in the pattern below.", "short_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
+        "content": { "stem": "Tap the object that comes next in the pattern below.", "short_test_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
       },
       "guard": { "external_id": "SAM-L0B-Q02" },
       "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "Magnet", "note": "answer = the magnet (the next object in the pictured pattern); options are pictures (0B-02_1..4) not text" }, "image": "0B-02_1.png..0B-02_4.png", "content_key": "l0a-geometry-4", "notes": "Pattern continuation by tapping a pictured option → image-tap single → HELD-C. content_key l0a-geometry-4 (Patterns)." }
@@ -63,7 +63,7 @@
       "task_number": 3, "status": "held_C", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the part that is missing from the cake.", "short_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "content": { "stem": "Tap the part that is missing from the cake.", "short_test_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
         "misconception_tags": [], "word_count": 9, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0a-geometry-2"
       },
@@ -73,7 +73,7 @@
       "task_number": 4, "status": "held_C", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Start at X. Go right, up, left and down. Where are you? Tap the correct box below.", "short_eligible": true, "options": ["School", "Bakery", "Playground", "Home"], "correct_index": 1 },
+        "content": { "stem": "Start at X. Go right, up, left and down. Where are you? Tap the correct box below.", "short_test_eligible": true, "options": ["School", "Bakery", "Playground", "Home"], "correct_index": 1 },
         "misconception_tags": [], "word_count": 18, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -83,7 +83,7 @@
       "task_number": 5, "status": "held_C", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Count back from 10. Write the missing numbers.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
+        "content": { "stem": "Count back from 10. Write the missing numbers.", "short_test_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
       },
       "guard": { "external_id": "SAM-L0B-Q05" },
       "authoring": { "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "multi-blank", "given": ["4", "5", "6", "7", "8"], "sequence": "count back from 10", "blanks": ["9", "7", "6", "4", "3", "2", "1"], "note": "trailing 'Write the missing numbers' sequence folded here; multiple distinct blanks in a count-back sequence" }, "content_key": "l0a-whole_numbers-1", "notes": "Count-back sequence with several distinct fill-in blanks → multi-blank → HELD-C. content_key l0a-whole_numbers-1 (Numbers to 20)." }
@@ -92,7 +92,7 @@
       "task_number": 6, "status": "held_C", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the numbers greater than 6.", "short_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "content": { "stem": "Tap the numbers greater than 6.", "short_test_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
         "misconception_tags": [], "word_count": 6, "operation_type": "PATTERN", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0a-whole_numbers-1"
       },
@@ -102,7 +102,7 @@
       "task_number": 7, "status": "held_A", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "How are the shapes sorted?", "short_eligible": true, "options": ["color", "size"], "correct_index": 0, "image_alt": "Two boxes, each holding a group of shapes." }
+        "content": { "stem": "How are the shapes sorted?", "short_test_eligible": true, "options": ["color", "size"], "correct_index": 0, "image_alt": "Two boxes, each holding a group of shapes." }
       },
       "guard": { "external_id": "SAM-L0B-Q07" },
       "authoring": { "target_interaction": "single-MC", "blocker_code": "A", "held": true, "requires_format_swap": false, "answer_model": { "rule": "mc-index", "correct_index": 0, "value": "color", "derivation": "0B-07_1 = all pink shapes (circle/square/triangle); 0B-07_2 = all green shapes (rectangle/triangle/circle/triangle). Each box is a single color → sorted by color, not size." }, "image": "0B-07_1.png, 0B-07_2.png", "content_key": "l0a-geometry-3", "notes": "Format is a wired text-MC, but the answer depends on the sorted-shapes picture → HELD-A (real format MULTIPLE_CHOICE kept, is_active=false, non-revealing image_alt). content_key l0a-geometry-3 (Plane Shapes)." }
@@ -111,7 +111,7 @@
       "task_number": 8, "status": "held_C", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Read. Write the missing numbers. I have ___ toy cars. I have ___ big toy car and ___ small toy cars.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
+        "content": { "stem": "Read. Write the missing numbers. I have ___ toy cars. I have ___ big toy car and ___ small toy cars.", "short_test_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
       },
       "guard": { "external_id": "SAM-L0B-Q08" },
       "authoring": { "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "multi-blank", "blanks": ["5", "1", "4"], "note": "three distinct blanks (total / big / small); also picture-dependent (count the toy cars)" }, "content_key": "l0a-whole_numbers-2", "notes": "Multiple distinct blanks AND picture-dependent → multi-blank → HELD-C. content_key l0a-whole_numbers-2 (Number Bonds to 10)." }
@@ -120,7 +120,7 @@
       "task_number": 9, "status": "active", "action": "update", "is_active": true,
       "update": {
         "level": "0A", "format": "NUMERIC_ENTRY", "is_active": true,
-        "content": { "stem": "There are 8 candy. There are 5 candy in the bag. How many candy go in the jar?", "short_eligible": false, "correct_answer": "3" }
+        "content": { "stem": "There are 8 candy. There are 5 candy in the bag. How many candy go in the jar?", "short_test_eligible": false, "correct_answer": "3" }
       },
       "guard": { "external_id": "SAM-L0B-Q09" },
       "authoring": { "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "exact-numeric", "value": 3, "derivation": "8 - 5 = 3 (derivable from text alone)" }, "content_key": "l0a-whole_numbers-2", "notes": "Re-authored ACTIVE: answer derivable from stem text (8 - 5), NUMERIC_ENTRY supported. Set is_active=true, level 0A, strand operations_algorithms. Clean content (no _authoring emitted). content_key l0a-whole_numbers-2." }
@@ -129,7 +129,7 @@
       "task_number": 10, "status": "active", "action": "insert", "is_active": true,
       "row": {
         "strand": "operations_algorithms", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "There are 3 fish in a bowl and 5 fish in a tank. How many fish are there altogether? Tap your answer.", "short_eligible": true, "options": ["3", "6", "8"], "correct_index": 2 },
+        "content": { "stem": "There are 3 fish in a bowl and 5 fish in a tank. How many fish are there altogether? Tap your answer.", "short_test_eligible": true, "options": ["3", "6", "8"], "correct_index": 2 },
         "misconception_tags": [], "word_count": 22, "operation_type": "ADDITION", "num_operations": 1,
         "representation": "WORD_PROBLEM_SINGLE", "content_key": "l0a-whole_numbers-3"
       },
@@ -139,7 +139,7 @@
       "task_number": 11, "status": "active", "action": "insert", "is_active": true,
       "row": {
         "strand": "operations_algorithms", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Mary put 7 items in a basket. She took out 3 items. How many items were left in the basket? Tap your answer.", "short_eligible": true, "options": ["4", "2", "6"], "correct_index": 0 },
+        "content": { "stem": "Mary put 7 items in a basket. She took out 3 items. How many items were left in the basket? Tap your answer.", "short_test_eligible": true, "options": ["4", "2", "6"], "correct_index": 0 },
         "misconception_tags": [], "word_count": 24, "operation_type": "SUBTRACTION", "num_operations": 1,
         "representation": "WORD_PROBLEM_SINGLE", "content_key": "l0a-whole_numbers-3"
       },
@@ -149,7 +149,7 @@
       "task_number": 12, "status": "held_C", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Count on from 7. Help the bee find its way to its hive. Tap each number as you count.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "content": { "stem": "Count on from 7. Help the bee find its way to its hive. Tap each number as you count.", "short_test_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
         "misconception_tags": [], "word_count": 18, "operation_type": "PATTERN", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0a-whole_numbers-1"
       },
@@ -159,7 +159,7 @@
       "task_number": 13, "status": "held_C", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0B", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Color the animal in front of the mushrooms. Cross out the animal behind the mushrooms.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "content": { "stem": "Color the animal in front of the mushrooms. Cross out the animal behind the mushrooms.", "short_test_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
         "misconception_tags": [], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0b-geometry-1"
       },
@@ -169,7 +169,7 @@
       "task_number": 14, "status": "active", "action": "update", "is_active": true,
       "update": {
         "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
-        "content": { "stem": "There are 4 pieces of sushi on a tray. There are 6 pieces of sushi in a box. How many pieces of sushi are there altogether? Fill in the blanks. 4 + 6 = ___ There are ___ pieces of sushi altogether.", "short_eligible": true, "correct_answer": "10" }
+        "content": { "stem": "There are 4 pieces of sushi on a tray. There are 6 pieces of sushi in a box. How many pieces of sushi are there altogether? Fill in the blanks. 4 + 6 = ___ There are ___ pieces of sushi altogether.", "short_test_eligible": true, "correct_answer": "10" }
       },
       "guard": { "external_id": "SAM-L0B-Q14" },
       "authoring": { "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "exact-numeric", "value": 10, "derivation": "4 + 6 = 10 (text-answerable)", "note": "both blanks resolve to 10; single numeric entry" }, "content_key": "l0b-whole_numbers-3", "notes": "Re-authored ACTIVE, re-banded 0B. Answer 10 from the stem (4 + 6). Kept active, NUMERIC_ENTRY, clean content. content_key l0b-whole_numbers-3 (Add/Sub Within 20)." }
@@ -178,7 +178,7 @@
       "task_number": 15, "status": "active", "action": "update", "is_active": true,
       "update": {
         "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
-        "content": { "stem": "Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? Fill in the blanks. 10 - 7 = ___ There are ___ cookies left.", "short_eligible": true, "correct_answer": "3" }
+        "content": { "stem": "Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? Fill in the blanks. 10 - 7 = ___ There are ___ cookies left.", "short_test_eligible": true, "correct_answer": "3" }
       },
       "guard": { "external_id": "SAM-L0B-Q15" },
       "authoring": { "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "exact-numeric", "value": 3, "derivation": "10 - 7 = 3 (text-answerable)", "note": "both blanks resolve to 3; single numeric entry" }, "content_key": "l0b-whole_numbers-3", "notes": "Re-authored ACTIVE, re-banded 0B. Answer 3 from the stem (10 - 7). Kept active, NUMERIC_ENTRY, clean content. content_key l0b-whole_numbers-3." }

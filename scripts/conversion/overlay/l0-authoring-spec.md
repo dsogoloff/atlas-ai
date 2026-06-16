@@ -32,9 +32,11 @@ L0 additions below. Output is a single file:
 4. Authored interaction key is `target_interaction` (inside `authoring`).
 5. Partition/sort tasks → multi-select tap or number entry. Drag-to-target is
    not built.
-6. **Short flag:** put `"short_eligible": true|false` INSIDE the `content`
+6. **Short flag:** put `"short_test_eligible": true|false` INSIDE the `content`
    object of every row (insert `row.content`, update `update.content`), taken
-   from the Summary "Short" column (Y→true, N→false).
+   from the Summary "Short" column (Y→true, N→false). The applier LIFTS this out
+   of content into the real `questions.short_test_eligible` boolean column (the
+   name ATLAS reads literally) and strips it from the served content jsonb.
 7. **Image-tap rows are HELD** (see classification). Author fully but inactive.
 8. Activation is a later atomic step — you only author HELD state here.
 

@@ -50,7 +50,7 @@
       "task_number": 1, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Match the birds to their positions.", "options": ["1st", "2nd", "3rd", "4th", "5th"], "correct_index": 0, "short_eligible": false },
+        "content": { "stem": "Match the birds to their positions.", "options": ["1st", "2nd", "3rd", "4th", "5th"], "correct_index": 0, "short_test_eligible": false },
         "misconception_tags": [], "word_count": 5, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0b-whole_numbers-4"
       },
@@ -63,7 +63,7 @@
       "task_number": 2, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Show numbers that make 9. Color some leaves green. Color the rest red. Write the numbers in the number bond.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_eligible": false },
+        "content": { "stem": "Show numbers that make 9. Color some leaves green. Color the rest red. Write the numbers in the number bond.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
         "misconception_tags": [], "word_count": 19, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0b-whole_numbers-2"
       },
@@ -77,7 +77,7 @@
       "guard": { "external_id": "SAM-L0C-Q03" },
       "update": {
         "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Tap the boxes that make 10.", "options": ["5 + 5", "3 + 7", "2 + 8", "2 + 2", "1 + 9", "3 + 5", "9 + 2", "6 + 4"], "correct_index": 0, "short_eligible": true }
+        "content": { "stem": "Tap the boxes that make 10.", "options": ["5 + 5", "3 + 7", "2 + 8", "2 + 2", "1 + 9", "3 + 5", "9 + 2", "6 + 4"], "correct_index": 0, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "select-multiple", "blocker_code": "C", "held": true, "requires_format_swap": true,
@@ -88,7 +88,7 @@
       "task_number": 4, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Complete the fact family.", "options": ["6", "3", "9"], "correct_index": 2, "short_eligible": true },
+        "content": { "stem": "Complete the fact family.", "options": ["6", "3", "9"], "correct_index": 2, "short_test_eligible": true },
         "misconception_tags": [], "word_count": 4, "operation_type": "ADDITION", "num_operations": 1,
         "representation": "SYMBOLIC", "content_key": "l0b-whole_numbers-3"
       },
@@ -102,7 +102,7 @@
       "guard": { "external_id": "SAM-L0C-Q05" },
       "update": {
         "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Write numbers: 1 = smallest, 2 = bigger, 3 = biggest in the correct blanks.", "options": ["smallest", "bigger", "biggest"], "correct_index": 1, "short_eligible": true }
+        "content": { "stem": "Write numbers: 1 = smallest, 2 = bigger, 3 = biggest in the correct blanks.", "options": ["smallest", "bigger", "biggest"], "correct_index": 1, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
@@ -115,7 +115,7 @@
       "task_number": 6, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Look at the color pattern below. Color the squares to complete the pattern.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_eligible": false },
+        "content": { "stem": "Look at the color pattern below. Color the squares to complete the pattern.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
         "misconception_tags": [], "word_count": 12, "operation_type": "PATTERN", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0b-geometry-4"
       },
@@ -128,7 +128,7 @@
       "task_number": 7, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Draw a shape in each box. Shape with 4 sides / Shape with no sides / Shape with 3 sides.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_eligible": false },
+        "content": { "stem": "Draw a shape in each box. Shape with 4 sides / Shape with no sides / Shape with 3 sides.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
         "misconception_tags": [], "word_count": 18, "operation_type": "GEOMETRY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0b-geometry-2"
       },
@@ -142,7 +142,7 @@
       "guard": { "external_id": "SAM-L0C-Q08" },
       "update": {
         "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Skip count by 2s. Fill in the missing numbers.", "options": ["4", "8", "16", "20"], "correct_index": 0, "short_eligible": true }
+        "content": { "stem": "Skip count by 2s. Fill in the missing numbers.", "options": ["4", "8", "16", "20"], "correct_index": 0, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
@@ -154,7 +154,7 @@
       "guard": { "external_id": "SAM-L0C-Q09" },
       "update": {
         "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
-        "content": { "stem": "There are 14 blue beads and 5 green beads on Sally's necklace. How many beads are there altogether? 14 + 5 = ___. There are ___ beads altogether.", "correct_answer": "19", "short_eligible": true }
+        "content": { "stem": "There are 14 blue beads and 5 green beads on Sally's necklace. How many beads are there altogether? 14 + 5 = ___. There are ___ beads altogether.", "correct_answer": "19", "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false,
@@ -167,7 +167,7 @@
       "guard": { "external_id": "SAM-L0C-Q10" },
       "update": {
         "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
-        "content": { "stem": "There are 18 birds. 6 of the birds are blue. How many birds are yellow? Fill in the blanks. 18 - 6 = ___ There are ___ yellow birds.", "correct_answer": "12", "short_eligible": true }
+        "content": { "stem": "There are 18 birds. 6 of the birds are blue. How many birds are yellow? Fill in the blanks. 18 - 6 = ___ There are ___ yellow birds.", "correct_answer": "12", "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false,
@@ -180,7 +180,7 @@
       "guard": { "external_id": "SAM-L0C-Q11" },
       "update": {
         "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Look at the number line. Tap on the answers. 31 comes ___ 30. 31 is ___ than 30. 33 comes ___ 36. 33 is ___ than 36.", "options": ["after", "greater", "before", "smaller"], "correct_index": 0, "short_eligible": true }
+        "content": { "stem": "Look at the number line. Tap on the answers. 31 comes ___ 30. 31 is ___ than 30. 33 comes ___ 36. 33 is ___ than 36.", "options": ["after", "greater", "before", "smaller"], "correct_index": 0, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
@@ -193,7 +193,7 @@
       "task_number": 12, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the objects that look like a cube in the picture below.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_eligible": false },
+        "content": { "stem": "Tap the objects that look like a cube in the picture below.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
         "misconception_tags": [], "word_count": 11, "operation_type": "GEOMETRY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0b-geometry-3"
       },
@@ -208,7 +208,7 @@
       "guard": { "external_id": "SAM-L0C-Q13" },
       "update": {
         "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": true,
-        "content": { "stem": "Read aloud the days of the week from Monday. A part of the page is torn. What is the missing day? Tap your answer.", "options": ["Friday", "Fryday", "Thursday", "Saturday"], "correct_index": 0, "short_eligible": true }
+        "content": { "stem": "Read aloud the days of the week from Monday. A part of the page is torn. What is the missing day? Tap your answer.", "options": ["Friday", "Fryday", "Thursday", "Saturday"], "correct_index": 0, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "single-MC", "blocker_code": "none", "held": false, "requires_format_swap": false,
@@ -221,7 +221,7 @@
       "guard": { "external_id": "SAM-L0C-Q14" },
       "update": {
         "level": "0C", "format": "NUMERIC_ENTRY", "is_active": false,
-        "content": { "stem": "How many pairs of the same bikes are there? Write the number.", "correct_answer": "4", "image_alt": "A picture showing several motorcycles in different colors.", "short_eligible": true }
+        "content": { "stem": "How many pairs of the same bikes are there? Write the number.", "correct_answer": "4", "image_alt": "A picture showing several motorcycles in different colors.", "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "numeric-single", "blocker_code": "A", "held": true, "requires_format_swap": false,
@@ -234,7 +234,7 @@
       "guard": { "external_id": "SAM-L0C-Q15" },
       "update": {
         "level": "0C", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Tap the circles with odd numbers.", "options": ["1", "10", "26", "5", "12", "24", "35", "41", "40"], "correct_index": 0, "short_eligible": true }
+        "content": { "stem": "Tap the circles with odd numbers.", "options": ["1", "10", "26", "5", "12", "24", "35", "41", "40"], "correct_index": 0, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "select-multiple", "blocker_code": "C", "held": true, "requires_format_swap": true,
@@ -246,7 +246,7 @@
       "guard": { "external_id": "SAM-L0C-Q16" },
       "update": {
         "level": "0C", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Break apart 32. Fill in the boxes.", "options": ["30", "2"], "correct_index": 0, "short_eligible": true }
+        "content": { "stem": "Break apart 32. Fill in the boxes.", "options": ["30", "2"], "correct_index": 0, "short_test_eligible": true }
       },
       "authoring": {
         "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,

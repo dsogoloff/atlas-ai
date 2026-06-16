@@ -78,7 +78,7 @@
       "task_number": 1, "status": "inactive", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Help the rabbit get to the carrots. Draw a line from the rabbit to the carrots.", "short_eligible": false },
+        "content": { "stem": "Help the rabbit get to the carrots. Draw a line from the rabbit to the carrots.", "short_test_eligible": false },
         "misconception_tags": [], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0a-geometry-1"
       },
@@ -88,7 +88,7 @@
       "task_number": 2, "status": "inactive", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Help the bee get to the flower. Draw a line from the bee to the flower.", "short_eligible": false },
+        "content": { "stem": "Help the bee get to the flower. Draw a line from the bee to the flower.", "short_test_eligible": false },
         "misconception_tags": [], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0a-geometry-1"
       },
@@ -98,7 +98,7 @@
       "task_number": 3, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the big bowl.", "short_eligible": true, "image_alt": "Two bowls of different sizes shown side by side." },
+        "content": { "stem": "Tap the big bowl.", "short_test_eligible": true, "image_alt": "Two bowls of different sizes shown side by side." },
         "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -108,7 +108,7 @@
       "task_number": 4, "status": "inactive", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Color the shapes red. Color the shapes blue. Color the shapes green.", "short_eligible": false }
+        "content": { "stem": "Color the shapes red. Color the shapes blue. Color the shapes green.", "short_test_eligible": false }
       },
       "guard": { "external_id": "SAM-L0A-Q04" },
       "row_meta": {
@@ -122,7 +122,7 @@
       "task_number": 5, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the thick book.", "short_eligible": true, "image_alt": "Two books of different thicknesses shown side by side." },
+        "content": { "stem": "Tap the thick book.", "short_test_eligible": true, "image_alt": "Two books of different thicknesses shown side by side." },
         "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -132,7 +132,7 @@
       "task_number": 6, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the long branch.", "short_eligible": true, "image_alt": "Two tree branches of different lengths shown side by side." },
+        "content": { "stem": "Tap the long branch.", "short_test_eligible": true, "image_alt": "Two tree branches of different lengths shown side by side." },
         "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -142,7 +142,7 @@
       "task_number": 7, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the tall animal.", "short_eligible": true, "image_alt": "Two animals of different heights shown side by side." },
+        "content": { "stem": "Tap the tall animal.", "short_test_eligible": true, "image_alt": "Two animals of different heights shown side by side." },
         "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -152,7 +152,7 @@
       "task_number": 8, "status": "held", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Tap the object that is the same as the one in the box.", "short_eligible": true, "image_alt": "An object shown inside a box, with several objects to choose from below." }
+        "content": { "stem": "Tap the object that is the same as the one in the box.", "short_test_eligible": true, "image_alt": "An object shown inside a box, with several objects to choose from below." }
       },
       "guard": { "external_id": "SAM-L0A-Q08" },
       "row_meta": {
@@ -166,7 +166,7 @@
       "task_number": 9, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Draw an X to where you should put the pencil.", "short_eligible": false, "image_alt": "Two boxes, one holding short pencils and one holding long pencils." },
+        "content": { "stem": "Draw an X to where you should put the pencil.", "short_test_eligible": false, "image_alt": "Two boxes, one holding short pencils and one holding long pencils." },
         "misconception_tags": [], "word_count": 10, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -176,7 +176,7 @@
       "task_number": 10, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the taller door.", "short_eligible": true, "image_alt": "Two doors of different heights shown side by side." },
+        "content": { "stem": "Tap the taller door.", "short_test_eligible": true, "image_alt": "Two doors of different heights shown side by side." },
         "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -186,7 +186,7 @@
       "task_number": 11, "status": "held", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Look at the pattern below. Tap what comes next.", "short_eligible": true, "image_alt": "A repeating pattern of flowers with the last item missing, and flower choices to tap." }
+        "content": { "stem": "Look at the pattern below. Tap what comes next.", "short_test_eligible": true, "image_alt": "A repeating pattern of flowers with the last item missing, and flower choices to tap." }
       },
       "guard": { "external_id": "SAM-L0A-Q11" },
       "row_meta": {
@@ -200,7 +200,7 @@
       "task_number": 12, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Match each tail to the correct animal.", "short_eligible": false, "image_alt": "A column of animals and a column of tails to be matched." },
+        "content": { "stem": "Match each tail to the correct animal.", "short_test_eligible": false, "image_alt": "A column of animals and a column of tails to be matched." },
         "misconception_tags": [], "word_count": 7, "operation_type": "GEOMETRY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": "l0a-geometry-2"
       },
@@ -210,7 +210,7 @@
       "task_number": 13, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the bird facing left.", "short_eligible": true, "image_alt": "Two birds facing different directions." },
+        "content": { "stem": "Tap the bird facing left.", "short_test_eligible": true, "image_alt": "Two birds facing different directions." },
         "misconception_tags": [], "word_count": 5, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -220,7 +220,7 @@
       "task_number": 14, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the bird that is flying up.", "short_eligible": true, "image_alt": "Two birds in flight in different directions." },
+        "content": { "stem": "Tap the bird that is flying up.", "short_test_eligible": true, "image_alt": "Two birds in flight in different directions." },
         "misconception_tags": [], "word_count": 7, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -230,7 +230,7 @@
       "task_number": 15, "status": "held", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Tap the bowl on the bottom shelf.", "short_eligible": true, "image_alt": "A set of shelves with a bowl on each shelf." },
+        "content": { "stem": "Tap the bowl on the bottom shelf.", "short_test_eligible": true, "image_alt": "A set of shelves with a bowl on each shelf." },
         "misconception_tags": [], "word_count": 7, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -240,7 +240,7 @@
       "task_number": 16, "status": "inactive", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Draw a sweet outside the bowl.", "short_eligible": false, "image_alt": "A bowl with space around it." },
+        "content": { "stem": "Draw a sweet outside the bowl.", "short_test_eligible": false, "image_alt": "A bowl with space around it." },
         "misconception_tags": [], "word_count": 6, "operation_type": "IDENTIFY", "num_operations": 1,
         "representation": "PICTORIAL", "content_key": null
       },
@@ -250,7 +250,7 @@
       "task_number": 17, "status": "held", "action": "update", "is_active": false,
       "update": {
         "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
-        "content": { "stem": "Count the balloons. Tap the number.", "short_eligible": true, "options": ["6", "5", "2"], "correct_index": 1, "image_alt": "A group of balloons." }
+        "content": { "stem": "Count the balloons. Tap the number.", "short_test_eligible": true, "options": ["6", "5", "2"], "correct_index": 1, "image_alt": "A group of balloons." }
       },
       "guard": { "external_id": "SAM-L0A-Q17" },
       "row_meta": {
@@ -264,7 +264,7 @@
       "task_number": 18, "status": "inactive", "action": "insert", "is_active": false,
       "row": {
         "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
-        "content": { "stem": "Say the name of each shape.", "short_eligible": false },
+        "content": { "stem": "Say the name of each shape.", "short_test_eligible": false },
         "misconception_tags": [], "word_count": 6, "operation_type": "GEOMETRY", "num_operations": 1,
         "representation": "SYMBOLIC", "content_key": "l0a-geometry-3"
       },
