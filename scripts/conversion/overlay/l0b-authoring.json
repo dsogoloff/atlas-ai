@@ -1,0 +1,187 @@
+{
+  "$schema_note": "L0B authoring overlay (lane/l0-authoring). SOURCE OF TRUTH for interaction/answer-model/blocker/image metadata of the 15 Level 0B Placement Worksheet tasks. Consumed by scripts/conversion/apply-l0-overlay.ts. Mirrors the proven l2-authoring.json shape with the L0 additions from l0-authoring-spec.md. The 0B booklet RAMPS: per the Summary table LEVEL column, tasks 1-12 band 0A and tasks 13-15 band 0B (HARD RULE 1: band by level column, not doc name). Content for the 7 existing rows (Q02,Q05,Q07,Q08,Q09,Q14,Q15) was model-reconstructed and WRONG; re-authored from the docx/crops (HARD RULE 2). Stems are verbatim 'Tap'-adapted text; trailing Fill-in-the-blanks/Answer lines folded into the answer model (HARD RULE 3). Held image-tap/multi-blank rows store a MULTIPLE_CHOICE placeholder format with the real interaction in authoring.target_interaction (+ answer_model, audit-only, not emitted to SQL). Active rows' content is clean (no _authoring; the applier omits it and auto-injects the _authoring stub for held rows). image_path is never set here (founder uploads later); image_alt is deliberately NON-revealing.",
+  "meta": {
+    "lane": "lane/l0-authoring",
+    "worksheet": "Level 0B Placement Worksheet.docx",
+    "tenant_slug": "inspirea_singapore_math",
+    "generated_by": "pnpm convert:apply-l0-overlay",
+    "band_note": "HARD RULE 1: banded by the Summary table LEVEL column. Tasks 1-12 = 0A, tasks 13-15 = 0B. The existing 7 KB rows were mis-banded (KA/KB); re-banded here via the update.level field.",
+    "content_note": "HARD RULE 2: the existing SAM-L0B-Q<N> ids map correctly to printed task numbers, but their content was model-reconstructed and is wrong. All content re-authored from the docx stems + crops.",
+    "blocker_legend": {
+      "none": "active, auto-gradeable from STEM TEXT ALONE, supported format (NUMERIC_ENTRY/TEXT_ENTRY/MULTIPLE_CHOICE with text options)",
+      "A": "answer depends on an image but the format would be wired; founder rule keeps it inactive (is_active=false, held=true, requires_format_swap=false). Uses the real wired format + non-revealing image_alt.",
+      "C": "real interaction is not a wired format (click-image tap one/many, multi-blank, select-multiple, image-ordering, path). Placeholder format MULTIPLE_CHOICE, requires_format_swap=true, is_active=false, held=true. Real interaction in authoring.target_interaction; answer in authoring.answer_model.",
+      "none-manual": "drawing/coloring-to-create/tracing/maze: no auto-grade path ever.",
+      "none-oral": "say/read aloud: oral only."
+    },
+    "format_enum_at_head": ["MULTIPLE_CHOICE", "NUMERIC_ENTRY", "DRAG_DROP", "TEXT_ENTRY"],
+    "strand_enum": ["number_sense", "operations_algorithms", "fractions_decimals", "measurement", "geometry", "data_statistics"],
+    "counts": {
+      "by_action": { "insert": 8, "update": 7 },
+      "by_status": { "active": 5, "held_A": 1, "held_C": 8, "inactive_manual": 1, "inactive_oral": 0 },
+      "short_eligible": { "Y": 9, "N": 6 },
+      "active_ids": ["SAM-L0B-Q09", "SAM-L0B-Q10", "SAM-L0B-Q11", "SAM-L0B-Q14", "SAM-L0B-Q15"],
+      "held_A_ids": ["SAM-L0B-Q07"],
+      "held_C_ids": ["SAM-L0B-Q02", "SAM-L0B-Q03", "SAM-L0B-Q04", "SAM-L0B-Q05", "SAM-L0B-Q06", "SAM-L0B-Q08", "SAM-L0B-Q12", "SAM-L0B-Q13"],
+      "inactive_manual_ids": ["SAM-L0B-Q01"]
+    },
+    "taxonomy_gaps": [
+      { "id": "SAM-L0B-Q01", "topic": "Same or Different (similar objects / spot-the-difference)", "content_key": null, "reason": "No clean tax_content code at 0A for same/different comparison." },
+      { "id": "SAM-L0B-Q04", "topic": "Position and Direction Words at 0A (right/up/left/down on a map grid)", "content_key": null, "reason": "0A has no position sub-strand; only 0B (l0b-geometry-1 Positions) does. Per spec this maps to null at 0A." }
+    ],
+    "task6_answer_conflict": "Task 6 stem 'Tap the numbers greater than 6' but the answer key text says 'Color 7 and 6'. Crop 0B-06.png does NOT show a number grid/tiles with printed numbers — it is a horizontal NUMBER LINE (two filled endpoint dots + 4 interior tick marks, NO printed numbers visible on the crop). So the actual on-page numbers and the correct subset cannot be determined from this crop. The conflict is genuine and unresolved: 'greater than 6' would exclude 6, but the key includes 6 (likely the key answers a different/adjacent task or a 'color 6 and 7' counting task). FLAGGED here and recorded in SAM-L0B-Q06.authoring.answer_model.conflict for the founder to resolve before activation. Held-C regardless (select-multiple over an image is not a wired format).",
+    "crops_dir": "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/0b/",
+    "crop_confirmations": {
+      "0B-03": "Tiered cake; the 'missing part' tap target depends on the picture → HELD-C.",
+      "0B-04_1": "Street map with Bakery/School/Playground/Home tiles and an X start; path answer depends on the grid → HELD-C, content_key null (no 0A position code).",
+      "0B-06": "NUMBER LINE (not a number grid). See task6_answer_conflict.",
+      "0B-07_1": "One box: pink circle, pink square, pink triangle (all one color, different shapes/sizes).",
+      "0B-07_2": "One box: green rectangle, green triangle, green circle, green triangle (all one color). Both boxes are single-color → sorted by COLOUR. Confirms answer option 'color' (index 0)."
+    }
+  },
+  "tasks": {
+    "SAM-L0B-Q01": {
+      "task_number": 1, "status": "inactive_manual", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Look at the two pictures below. Circle 3 objects in Picture B that are not the same as the ones in Picture A.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 21, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-multi", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-multi", "select_count": 3, "value": "the 3 objects in Picture B that differ from Picture A (image-dependent)" }, "image": "0B-01 (not cropped separately; two side-by-side scenes)", "notes": "Same-or-different spot-the-difference. Circling 3 differences on the image is an image-tap multi-select — not a wired format → HELD-C. content_key null (no same/different tax code at 0A; taxonomy gap)." }
+    },
+    "SAM-L0B-Q02": {
+      "task_number": 2, "status": "held_C", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Tap the object that comes next in the pattern below.", "short_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
+      },
+      "guard": { "external_id": "SAM-L0B-Q02" },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "Magnet", "note": "answer = the magnet (the next object in the pictured pattern); options are pictures (0B-02_1..4) not text" }, "image": "0B-02_1.png..0B-02_4.png", "content_key": "l0a-geometry-4", "notes": "Pattern continuation by tapping a pictured option → image-tap single → HELD-C. content_key l0a-geometry-4 (Patterns)." }
+    },
+    "SAM-L0B-Q03": {
+      "task_number": 3, "status": "held_C", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the part that is missing from the cake.", "short_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 9, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-geometry-2"
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the missing cake part (image-dependent; options are pictures 0B-03_1..4)" }, "image": "0B-03_1.png..0B-03_4.png", "notes": "Parts-and-whole: tap the missing part of the cake → image-tap single → HELD-C. content_key l0a-geometry-2 (Parts and Whole)." }
+    },
+    "SAM-L0B-Q04": {
+      "task_number": 4, "status": "held_C", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Start at X. Go right, up, left and down. Where are you? Tap the correct box below.", "short_eligible": true, "options": ["School", "Bakery", "Playground", "Home"], "correct_index": 1 },
+        "misconception_tags": [], "word_count": 18, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "Bakery", "note": "answer depends on the map grid (0B-04_1.png shows Bakery/School/Playground/Home tiles + X start). Even though options are named, the route resolves only against the pictured grid → image-dependent tap." }, "image": "0B-04_1.png", "content_key": null, "notes": "Position/direction on a map at 0A. Answer Bakery, but the path right/up/left/down is image-dependent. content_key null (0A has no position sub-strand; taxonomy gap, only 0B has l0b-geometry-1). HELD-C." }
+    },
+    "SAM-L0B-Q05": {
+      "task_number": 5, "status": "held_C", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Count back from 10. Write the missing numbers.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
+      },
+      "guard": { "external_id": "SAM-L0B-Q05" },
+      "authoring": { "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "multi-blank", "given": ["4", "5", "6", "7", "8"], "sequence": "count back from 10", "blanks": ["9", "7", "6", "4", "3", "2", "1"], "note": "trailing 'Write the missing numbers' sequence folded here; multiple distinct blanks in a count-back sequence" }, "content_key": "l0a-whole_numbers-1", "notes": "Count-back sequence with several distinct fill-in blanks → multi-blank → HELD-C. content_key l0a-whole_numbers-1 (Numbers to 20)." }
+    },
+    "SAM-L0B-Q06": {
+      "task_number": 6, "status": "held_C", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the numbers greater than 6.", "short_eligible": true, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 6, "operation_type": "PATTERN", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-whole_numbers-1"
+      },
+      "authoring": { "target_interaction": "select-multiple", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "select-multiple", "on_page_numbers": "UNKNOWN — crop 0B-06.png is a NUMBER LINE (two endpoint dots + 4 interior ticks, NO printed numbers visible); cannot read the tile numbers from this crop", "stem_implies": "all numbers strictly greater than 6 (i.e. exclude 6)", "answer_key_text": "Color 7 and 6", "conflict": "Answer key includes 6, but 'greater than 6' excludes 6. Genuine conflict, UNRESOLVED. Founder must confirm the intended on-page tiles and correct subset before activation.", "value": "indeterminate pending founder + a crop that shows the actual number tiles" }, "image": "0B-06.png", "notes": "Select-multiple over number tiles → not a wired format → HELD-C. Task-6 answer-key conflict FLAGGED (see meta.task6_answer_conflict). content_key l0a-whole_numbers-1." }
+    },
+    "SAM-L0B-Q07": {
+      "task_number": 7, "status": "held_A", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "How are the shapes sorted?", "short_eligible": true, "options": ["color", "size"], "correct_index": 0, "image_alt": "Two boxes, each holding a group of shapes." }
+      },
+      "guard": { "external_id": "SAM-L0B-Q07" },
+      "authoring": { "target_interaction": "single-MC", "blocker_code": "A", "held": true, "requires_format_swap": false, "answer_model": { "rule": "mc-index", "correct_index": 0, "value": "color", "derivation": "0B-07_1 = all pink shapes (circle/square/triangle); 0B-07_2 = all green shapes (rectangle/triangle/circle/triangle). Each box is a single color → sorted by color, not size." }, "image": "0B-07_1.png, 0B-07_2.png", "content_key": "l0a-geometry-3", "notes": "Format is a wired text-MC, but the answer depends on the sorted-shapes picture → HELD-A (real format MULTIPLE_CHOICE kept, is_active=false, non-revealing image_alt). content_key l0a-geometry-3 (Plane Shapes)." }
+    },
+    "SAM-L0B-Q08": {
+      "task_number": 8, "status": "held_C", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Read. Write the missing numbers. I have ___ toy cars. I have ___ big toy car and ___ small toy cars.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 }
+      },
+      "guard": { "external_id": "SAM-L0B-Q08" },
+      "authoring": { "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "multi-blank", "blanks": ["5", "1", "4"], "note": "three distinct blanks (total / big / small); also picture-dependent (count the toy cars)" }, "content_key": "l0a-whole_numbers-2", "notes": "Multiple distinct blanks AND picture-dependent → multi-blank → HELD-C. content_key l0a-whole_numbers-2 (Number Bonds to 10)." }
+    },
+    "SAM-L0B-Q09": {
+      "task_number": 9, "status": "active", "action": "update", "is_active": true,
+      "update": {
+        "level": "0A", "format": "NUMERIC_ENTRY", "is_active": true,
+        "content": { "stem": "There are 8 candy. There are 5 candy in the bag. How many candy go in the jar?", "short_eligible": false, "correct_answer": "3" }
+      },
+      "guard": { "external_id": "SAM-L0B-Q09" },
+      "authoring": { "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "exact-numeric", "value": 3, "derivation": "8 - 5 = 3 (derivable from text alone)" }, "content_key": "l0a-whole_numbers-2", "notes": "Re-authored ACTIVE: answer derivable from stem text (8 - 5), NUMERIC_ENTRY supported. Set is_active=true, level 0A, strand operations_algorithms. Clean content (no _authoring emitted). content_key l0a-whole_numbers-2." }
+    },
+    "SAM-L0B-Q10": {
+      "task_number": 10, "status": "active", "action": "insert", "is_active": true,
+      "row": {
+        "strand": "operations_algorithms", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "There are 3 fish in a bowl and 5 fish in a tank. How many fish are there altogether? Tap your answer.", "short_eligible": true, "options": ["3", "6", "8"], "correct_index": 2 },
+        "misconception_tags": [], "word_count": 22, "operation_type": "ADDITION", "num_operations": 1,
+        "representation": "WORD_PROBLEM_SINGLE", "content_key": "l0a-whole_numbers-3"
+      },
+      "authoring": { "target_interaction": "single-MC", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "mc-index", "correct_index": 2, "value": "8", "derivation": "3 + 5 = 8 (text-answerable)" }, "content_key": "l0a-whole_numbers-3", "notes": "ACTIVE: text-MC with text options, answerable from the stem (3 + 5 = 8). content_key l0a-whole_numbers-3 (Add/Sub Within 10)." }
+    },
+    "SAM-L0B-Q11": {
+      "task_number": 11, "status": "active", "action": "insert", "is_active": true,
+      "row": {
+        "strand": "operations_algorithms", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Mary put 7 items in a basket. She took out 3 items. How many items were left in the basket? Tap your answer.", "short_eligible": true, "options": ["4", "2", "6"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 24, "operation_type": "SUBTRACTION", "num_operations": 1,
+        "representation": "WORD_PROBLEM_SINGLE", "content_key": "l0a-whole_numbers-3"
+      },
+      "authoring": { "target_interaction": "single-MC", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "mc-index", "correct_index": 0, "value": "4", "derivation": "7 - 3 = 4 (text-answerable)" }, "content_key": "l0a-whole_numbers-3", "notes": "ACTIVE: text-MC, answerable from the stem (7 - 3 = 4). content_key l0a-whole_numbers-3." }
+    },
+    "SAM-L0B-Q12": {
+      "task_number": 12, "status": "held_C", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0A", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Count on from 7. Help the bee find its way to its hive. Tap each number as you count.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 18, "operation_type": "PATTERN", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-whole_numbers-1"
+      },
+      "authoring": { "target_interaction": "click-image-multi", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-multi", "value": "tap the numbers along the count-on path 8, 9, 10, ... to the hive (image/path-dependent)", "note": "path tap of multiple numbers" }, "image": "0B-12 (bee maze / number path)", "notes": "Count-on path: tap each number along the maze → image-tap multi / path → HELD-C. content_key l0a-whole_numbers-1." }
+    },
+    "SAM-L0B-Q13": {
+      "task_number": 13, "status": "held_C", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0B", "difficulty": -2.1, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Color the animal in front of the mushrooms. Cross out the animal behind the mushrooms.", "short_eligible": false, "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0 },
+        "misconception_tags": [], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0b-geometry-1"
+      },
+      "authoring": { "target_interaction": "click-image", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image", "front": "rabbit", "behind": "squirrel", "note": "identify the front animal (rabbit) and behind animal (squirrel) relative to the mushrooms; image-dependent" }, "image": "0B-13 (animals around mushrooms)", "content_key": "l0b-geometry-1", "notes": "0B positions: identify front/behind animals by tapping on the image → HELD-C. content_key l0b-geometry-1 (Positions). Banded 0B per the Summary table." }
+    },
+    "SAM-L0B-Q14": {
+      "task_number": 14, "status": "active", "action": "update", "is_active": true,
+      "update": {
+        "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
+        "content": { "stem": "There are 4 pieces of sushi on a tray. There are 6 pieces of sushi in a box. How many pieces of sushi are there altogether? Fill in the blanks. 4 + 6 = ___ There are ___ pieces of sushi altogether.", "short_eligible": true, "correct_answer": "10" }
+      },
+      "guard": { "external_id": "SAM-L0B-Q14" },
+      "authoring": { "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "exact-numeric", "value": 10, "derivation": "4 + 6 = 10 (text-answerable)", "note": "both blanks resolve to 10; single numeric entry" }, "content_key": "l0b-whole_numbers-3", "notes": "Re-authored ACTIVE, re-banded 0B. Answer 10 from the stem (4 + 6). Kept active, NUMERIC_ENTRY, clean content. content_key l0b-whole_numbers-3 (Add/Sub Within 20)." }
+    },
+    "SAM-L0B-Q15": {
+      "task_number": 15, "status": "active", "action": "update", "is_active": true,
+      "update": {
+        "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
+        "content": { "stem": "Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? Fill in the blanks. 10 - 7 = ___ There are ___ cookies left.", "short_eligible": true, "correct_answer": "3" }
+      },
+      "guard": { "external_id": "SAM-L0B-Q15" },
+      "authoring": { "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false, "answer_model": { "rule": "exact-numeric", "value": 3, "derivation": "10 - 7 = 3 (text-answerable)", "note": "both blanks resolve to 3; single numeric entry" }, "content_key": "l0b-whole_numbers-3", "notes": "Re-authored ACTIVE, re-banded 0B. Answer 3 from the stem (10 - 7). Kept active, NUMERIC_ENTRY, clean content. content_key l0b-whole_numbers-3." }
+    }
+  }
+}

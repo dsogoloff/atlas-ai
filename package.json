@@ -17,7 +17,8 @@
     "convert:load": "tsx scripts/conversion/stage4-load.ts",
     "convert:mc-index": "tsx scripts/conversion/mc-index-audit.ts",
     "convert:apply-overlay": "tsx scripts/conversion/apply-l1-overlay.ts",
-    "convert:apply-l2-overlay": "tsx scripts/conversion/apply-l2-overlay.ts"
+    "convert:apply-l2-overlay": "tsx scripts/conversion/apply-l2-overlay.ts",
+    "convert:apply-l0-overlay": "tsx scripts/conversion/apply-l0-overlay.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.80",
