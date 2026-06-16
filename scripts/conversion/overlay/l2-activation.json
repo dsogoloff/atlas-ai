@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "level": "2",
+    "flip_ready_ids": ["SAM-L2-Q06"]
+  },
+  "tasks": {
+    "SAM-L2-Q06": {
+      "level": "1A",
+      "format": "CLICK_IMAGE_SINGLE",
+      "content": {
+        "stem": "Which picture shows 37?",
+        "tiles": [
+          {
+            "id": "t1",
+            "label": "Picture 1",
+            "image_path": "l2/sam-l2-q06-opt1.png",
+            "image_alt": "Base-ten blocks: loose ones only."
+          },
+          {
+            "id": "t2",
+            "label": "Picture 2",
+            "image_path": "l2/sam-l2-q06-opt2.png",
+            "image_alt": "Base-ten blocks: several ten-rods."
+          },
+          {
+            "id": "t3",
+            "label": "Picture 3",
+            "image_path": "l2/sam-l2-q06-opt3.png",
+            "image_alt": "Base-ten blocks: some ten-rods and some loose ones."
+          },
+          {
+            "id": "t4",
+            "label": "Picture 4",
+            "image_path": "l2/sam-l2-q06-opt4.png",
+            "image_alt": "Base-ten blocks: some ten-rods and some loose ones."
+          }
+        ],
+        "_authoring": {
+          "answer_model": {
+            "rule": "select-one",
+            "correct": "t3"
+          }
+        }
+      },
+      "guard": {
+        "is_active": false
+      }
+    }
+  }
+}

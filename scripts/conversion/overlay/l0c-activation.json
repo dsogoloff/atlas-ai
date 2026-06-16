@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "level": "0C",
+    "flip_ready_ids": ["SAM-L0C-Q03", "SAM-L0C-Q04", "SAM-L0C-Q08", "SAM-L0C-Q11", "SAM-L0C-Q14", "SAM-L0C-Q16"]
+  },
+  "tasks": {
+    "SAM-L0C-Q03": {
+      "level": "0C",
+      "format": "SELECT_MULTIPLE",
+      "content": {
+        "stem": "Tap the boxes that make 10.",
+        "select_rule": "all",
+        "options": [
+          { "id": "o1", "label": "5 + 5" },
+          { "id": "o2", "label": "3 + 7" },
+          { "id": "o3", "label": "2 + 8" },
+          { "id": "o4", "label": "2 + 2" },
+          { "id": "o5", "label": "1 + 9" },
+          { "id": "o6", "label": "3 + 5" },
+          { "id": "o7", "label": "9 + 2" },
+          { "id": "o8", "label": "6 + 4" }
+        ],
+        "correct": ["o1", "o2", "o3", "o5", "o8"]
+      },
+      "guard": { "is_active": false }
+    },
+    "SAM-L0C-Q04": {
+      "level": "0C",
+      "format": "EQUATION_SET",
+      "content": {
+        "stem": "Complete the fact family.",
+        "rows": 4,
+        "answer_rule": "set-equality",
+        "canonical": [
+          { "a": 6, "op": "+", "b": 3, "result": 9 },
+          { "a": 3, "op": "+", "b": 6, "result": 9 },
+          { "a": 9, "op": "-", "b": 3, "result": 6 },
+          { "a": 9, "op": "-", "b": 6, "result": 3 }
+        ],
+        "allowCommutative": true
+      },
+      "guard": { "is_active": false }
+    },
+    "SAM-L0C-Q08": {
+      "level": "0C",
+      "format": "MULTI_BLANK",
+      "content": {
+        "stem": "Skip count by 2s. Fill in the missing numbers.",
+        "tokens": [
+          { "t": "text", "value": "2," },
+          { "t": "blank", "id": "b1" },
+          { "t": "text", "value": ", 6," },
+          { "t": "blank", "id": "b2" },
+          { "t": "text", "value": ", 10, 12, 14," },
+          { "t": "blank", "id": "b3" },
+          { "t": "text", "value": ", 18," },
+          { "t": "blank", "id": "b4" }
+        ],
+        "blanks": {
+          "b1": { "value": "4", "numeric": true },
+          "b2": { "value": "8", "numeric": true },
+          "b3": { "value": "16", "numeric": true },
+          "b4": { "value": "20", "numeric": true }
+        }
+      },
+      "guard": { "is_active": false }
+    },
+    "SAM-L0C-Q11": {
+      "level": "0C",
+      "format": "MULTI_BLANK",
+      "content": {
+        "stem": "Look at the number line. Tap on the answers.",
+        "image_path": "l0/sam-l0c-q11.png",
+        "image_alt": "A number line with evenly spaced tick marks.",
+        "tokens": [
+          { "t": "text", "value": "31 comes" },
+          { "t": "blank", "id": "b1" },
+          { "t": "text", "value": "30. 31 is" },
+          { "t": "blank", "id": "b2" },
+          { "t": "text", "value": "than 30. 33 comes" },
+          { "t": "blank", "id": "b3" },
+          { "t": "text", "value": "36. 33 is" },
+          { "t": "blank", "id": "b4" },
+          { "t": "text", "value": "than 36." }
+        ],
+        "blanks": {
+          "b1": { "value": "after", "numeric": false },
+          "b2": { "value": "greater", "numeric": false },
+          "b3": { "value": "before", "numeric": false },
+          "b4": { "value": "smaller", "numeric": false }
+        }
+      },
+      "guard": { "is_active": false }
+    },
+    "SAM-L0C-Q14": {
+      "level": "0C",
+      "format": "NUMERIC_ENTRY",
+      "content": {
+        "stem": "How many pairs of the same bikes are there? Write the number.",
+        "correct_answer": "4",
+        "image_path": "l0/sam-l0c-q14.png",
+        "image_alt": "A picture showing several motorcycles in different colors.",
+        "image_required": true
+      },
+      "guard": { "is_active": false }
+    },
+    "SAM-L0C-Q16": {
+      "level": "0C",
+      "format": "MULTI_BLANK",
+      "content": {
+        "stem": "Break apart 32. Fill in the boxes.",
+        "tokens": [
+          { "t": "text", "value": "32 =" },
+          { "t": "blank", "id": "b1" },
+          { "t": "text", "value": "+" },
+          { "t": "blank", "id": "b2" }
+        ],
+        "blanks": {
+          "b1": { "value": "30", "numeric": true },
+          "b2": { "value": "2", "numeric": true }
+        }
+      },
+      "guard": { "is_active": false }
+    }
+  }
+}
