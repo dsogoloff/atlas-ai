@@ -532,3 +532,103 @@ describe("mintMatchingTileImages / minting", () => {
     ).rejects.toThrow(/image_path/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-tile images for the click-image formats (#71) — content.tiles[].
+// Same minting pass as VISUAL_MATCHING, reading the `tiles` field instead of
+// left/right.
+// ---------------------------------------------------------------------------
+
+const IMAGE_TILE_FORMATS = [
+  "CLICK_IMAGE_SINGLE",
+  "CLICK_IMAGE_MULTI",
+  "IMAGE_ORDERING",
+] as const;
+
+function tilesRow(
+  format: (typeof IMAGE_TILE_FORMATS)[number],
+  content: Json,
+): PickedQuestionRow {
+  return {
+    id: "22222222-2222-2222-2222-222222222222",
+    external_id: "SAM-L1-Q07",
+    strand: "geometry",
+    level: "1A",
+    difficulty: 0.0,
+    format,
+    content,
+  };
+}
+
+describe("mintMatchingTileImages / click-image tile formats", () => {
+  for (const format of IMAGE_TILE_FORMATS) {
+    it(`${format}: mints a signed URL per content.tiles item with image_path`, async () => {
+      const { client, calls } = fakeServiceClient(
+        successOutcome("https://example.com/signed?token=t"),
+      );
+      const result = await mintMatchingTileImages(
+        client,
+        tilesRow(format, {
+          stem: "Tap the triangle",
+          tiles: [
+            {
+              id: "t1",
+              label: "triangle",
+              image_path: "l1/sam-l1-q07-triangle.png",
+              image_alt: "A three-sided shape.",
+            },
+            { id: "t2", label: "square" }, // no image_path → skipped (label fallback)
+          ],
+        }),
+      );
+      expect(Object.keys(result)).toEqual(["t1"]);
+      expect(result.t1).toEqual({
+        url: "https://example.com/signed?token=t",
+        alt: "A three-sided shape.",
+        required: false,
+      });
+      expect(calls).toEqual([
+        {
+          bucket: QUESTION_IMAGE_BUCKET,
+          path: "l1/sam-l1-q07-triangle.png",
+          ttl: SIGNED_URL_TTL_SECONDS,
+        },
+      ]);
+    });
+
+    it(`${format}: degrades safely (no throw, {}) when no tile has image_path`, async () => {
+      const { client, calls } = fakeServiceClient(
+        successOutcome("https://example.com/x"),
+      );
+      const result = await mintMatchingTileImages(
+        client,
+        tilesRow(format, {
+          stem: "Pick one",
+          tiles: [
+            { id: "t1", label: "two" },
+            { id: "t2", label: "three" },
+          ],
+        }),
+      );
+      expect(result).toEqual({});
+      expect(calls).toHaveLength(0);
+    });
+
+    it(`${format}: falls back to the tile label for alt and honors image_required`, async () => {
+      const { client } = fakeServiceClient(
+        successOutcome("https://example.com/x"),
+      );
+      const result = await mintMatchingTileImages(
+        client,
+        tilesRow(format, {
+          stem: "s",
+          tiles: [
+            { id: "t1", label: "Cone tile", image_path: "a.png", image_required: true },
+          ],
+        }),
+      );
+      expect(result.t1?.alt).toBe("Cone tile");
+      expect(result.t1?.required).toBe(true);
+    });
+  }
+});

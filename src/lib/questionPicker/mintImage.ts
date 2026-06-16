@@ -108,16 +108,37 @@ export async function mintQuestionImage(
   return { url: data.signedUrl, alt: imageAlt, required };
 }
 
+// Tile-bearing formats → the content fields holding their tile arrays. Every
+// such item has the SAME per-tile shape ({id, label, image_path?, image_alt?,
+// image_required?}); only the containing field differs:
+//   * VISUAL_MATCHING                         → left[] + right[]
+//   * CLICK_IMAGE_SINGLE / _MULTI / ORDERING  → tiles[]  (#71 image formats)
+// Any format not listed has no per-tile images → empty map.
+const TILE_FIELDS_BY_FORMAT: Partial<
+  Record<Database["public"]["Enums"]["question_format"], readonly string[]>
+> = {
+  VISUAL_MATCHING: ["left", "right"],
+  CLICK_IMAGE_SINGLE: ["tiles"],
+  CLICK_IMAGE_MULTI: ["tiles"],
+  IMAGE_ORDERING: ["tiles"],
+};
+
 /**
- * Mints per-tile signed URLs for a VISUAL_MATCHING row whose left/right
- * items carry their own `image_path` (per-tile matching images — e.g. L1
- * Q13 shapes→names, Q15 3D solids→names, Q07 scene + candidate tiles).
+ * Mints per-tile signed URLs for a tile-bearing row whose tile items carry
+ * their own `image_path`. Covers VISUAL_MATCHING (left/right tiles — e.g. L1
+ * Q13 shapes→names, Q07 scene + candidates) AND the three click-image formats
+ * from #71 (CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI / IMAGE_ORDERING, whose
+ * tiles live under `content.tiles`). The minting path is identical for both —
+ * same private `question-images` bucket, same signed-URL TTL, same per-level
+ * folder convention — only the content field read differs (see
+ * TILE_FIELDS_BY_FORMAT).
  *
- * Returns a map keyed by item id → minted envelope, for every left/right
- * item that has an `image_path`. Items without `image_path` are skipped
- * (they render their text `label`). Returns an empty map for any
- * non-VISUAL_MATCHING row, so callers can always thread the result
- * through serveQuestion unconditionally.
+ * Returns a map keyed by item id → minted envelope, for every tile item that
+ * has an `image_path`. Items without `image_path` are skipped (they render
+ * their text `label`). Returns an empty map for any non-tile-bearing row (and
+ * for a tile-bearing row whose items carry no image_path), so callers can
+ * always thread the result through serveQuestion unconditionally and a row
+ * lacking tile images degrades safely (label fallback, no error).
  *
  * Each tile reuses the question-level signed-URL machinery: the item is
  * handed to mintQuestionImage as a synthetic `{ image_path, image_alt,
@@ -130,12 +151,17 @@ export async function mintQuestionImage(
  * Throws (via mintQuestionImage) on a malformed tile (empty image_path,
  * storage failure) — same content-authoring-bug → 500 posture as the
  * question-level path.
+ *
+ * This is serve-side image minting only — it does NOT activate any row or
+ * touch the answer-model / correctness path; it produces pictures whenever a
+ * row IS served.
  */
 export async function mintMatchingTileImages(
   serviceClient: SupabaseClient<Database>,
   row: PickedQuestionRow,
 ): Promise<Record<string, ClientQuestionImage>> {
-  if (row.format !== "VISUAL_MATCHING") return {};
+  const fields = TILE_FIELDS_BY_FORMAT[row.format];
+  if (!fields) return {};
 
   const content = row.content;
   if (
@@ -147,11 +173,11 @@ export async function mintMatchingTileImages(
   }
   const obj = content as Record<string, Json>;
 
-  // Collect mint jobs for every left/right item that carries an
-  // image_path; mint them concurrently (deterministic — order doesn't
-  // matter since the result is an id-keyed map).
+  // Collect mint jobs for every tile item that carries an image_path; mint
+  // them concurrently (deterministic — order doesn't matter since the result
+  // is an id-keyed map).
   const jobs: { id: string; content: Json }[] = [];
-  for (const key of ["left", "right"] as const) {
+  for (const key of fields) {
     const items = obj[key];
     if (!Array.isArray(items)) continue;
     for (const item of items) {
