@@ -19,8 +19,10 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   overlays (l0a/l0b/l0c-authoring.json) + 28 new inserts (49 total tasks). Mis-modeled
   pipeline actives SAM-L0C-Q03/Q08/Q16 deactivated. Result: 8 active (text-answerable
   arithmetic, bands 0A/0B), 3 held-A (image-essential), 31 held-C (non-wired interaction),
-  7 inactive (drawing/tracing/colouring/oral). `content.short_eligible` captured per docx
-  Summary (31/49). Verify GREEN 1074/75; tsc 0; lint 0 errors (2 known warnings); build OK.
+  7 inactive (drawing/tracing/colouring/oral). Short-test eligibility stored in the real
+  boolean column `questions.short_test_eligible` (ATLAS-authoritative name; migration
+  `20260616120050`, default false), set per docx Summary (31/49) — NOT a content key.
+  Verify GREEN 1074/75; tsc 0; lint 0 errors (2 known warnings); build OK.
   PR #74 OPEN — awaiting founder merge + `supabase db reset`.
 
 ## 2026-06-14
