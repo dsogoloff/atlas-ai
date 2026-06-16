@@ -16,6 +16,7 @@ import { initialState, reduce } from "./lib/reducer";
 import { mascotPoseFor } from "./lib/mascot";
 import { computeProgressDisplay } from "@/lib/display/progress";
 import type { Tier } from "@/lib/tier/derive";
+import type { ProctoringMode } from "@/lib/proctoring/mode";
 
 import { Mascot } from "./components/Mascot";
 import { QuestionShell } from "./components/QuestionShell";
@@ -24,6 +25,7 @@ import { CompletionScreen } from "./components/CompletionScreen";
 import { ResumeBanner } from "./components/ResumeBanner";
 import { ErrorPanel } from "./components/ErrorPanel";
 import { DevTestModeChooser } from "./components/DevTestModeChooser";
+import { ParentIntro } from "./components/ParentIntro";
 
 interface Props {
   childId: string;
@@ -35,6 +37,13 @@ interface Props {
    *  pre-start DevTestModeChooser gates the auto-start so QA can pick the test
    *  type. The server re-checks the same flag, so this is convenience UI only. */
   comprehensivePilotEnabled?: boolean;
+  /** True iff ENABLE_PARENT_INTRO is on (read server-side). When true, a
+   *  pre-start parent intro / instructions screen gates the auto-start; when
+   *  false (default) the session auto-starts unchanged. */
+  parentIntroEnabled?: boolean;
+  /** Age-dependent proctoring mode for the intro screen (derived from the
+   *  child's grade in page.tsx). Only read when parentIntroEnabled. */
+  proctoringMode?: ProctoringMode;
 }
 
 export function AssessmentClient({
@@ -42,15 +51,21 @@ export function AssessmentClient({
   childName,
   tier,
   comprehensivePilotEnabled = false,
+  parentIntroEnabled = false,
+  proctoringMode = "no-assistance",
 }: Props) {
   const [state, dispatch] = useReducer(reduce, initialState);
 
-  // Pre-start gate. Initialised `true` when the pilot flag is OFF, so the
-  // start effect fires immediately for a SHORT test (unchanged default path).
-  // When the flag is ON, it stays `false` until the operator clicks Start in
-  // the chooser, holding back the auto-start.
+  // Pre-start gate(s). `startConfirmed` initialises true only when NO pre-start
+  // screen needs to show — i.e. both the pilot chooser and the parent intro are
+  // off — so the start effect fires immediately for a SHORT test (unchanged
+  // default path). Otherwise it holds false until the parent/operator advances
+  // through the gate(s). The parent intro shows first, then the dev chooser.
   const [startConfirmed, setStartConfirmed] = useState(
-    !comprehensivePilotEnabled,
+    !comprehensivePilotEnabled && !parentIntroEnabled,
+  );
+  const [introAcknowledged, setIntroAcknowledged] = useState(
+    !parentIntroEnabled,
   );
   const [comprehensive, setComprehensive] = useState(false);
 
@@ -126,8 +141,24 @@ export function AssessmentClient({
   }
 
   if (state.kind === "starting") {
-    // DEV-ONLY: flag on and not yet started → let QA pick the test type.
-    // Never reached in production (flag off → startConfirmed true at init).
+    // Gate 1: parent intro / instructions (ENABLE_PARENT_INTRO). Shows first,
+    // before any child-facing UI. Tapping Start acknowledges it; if the dev
+    // chooser isn't also gating, that releases the auto-start directly.
+    if (parentIntroEnabled && !introAcknowledged) {
+      return (
+        <ParentIntro
+          mode={proctoringMode}
+          tier={tier}
+          onStart={() => {
+            setIntroAcknowledged(true);
+            if (!comprehensivePilotEnabled) setStartConfirmed(true);
+          }}
+        />
+      );
+    }
+    // Gate 2 (DEV-ONLY): pilot flag on and not yet started → let QA pick the
+    // test type. Never reached in production (flag off → startConfirmed true at
+    // init when the intro is also off).
     if (comprehensivePilotEnabled && !startConfirmed) {
       return (
         <DevTestModeChooser

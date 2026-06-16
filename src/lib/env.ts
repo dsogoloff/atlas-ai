@@ -116,6 +116,20 @@ export function isVisualPrimitivesGalleryEnabled(): boolean {
   );
 }
 
+/**
+ * Gate for the parent intro / instructions screen shown before the short
+ * assessment (age-dependent proctoring instructions + about-this-check).
+ * Default-off (only 'true' enables) so it can be surfaced for founder QA on a
+ * specific deploy without changing the start flow elsewhere. NOT a §12 strategy
+ * flag (it gates a presentational pre-start screen, not a milestone-gated
+ * business feature), so it stays OUT of ROLLOUT_FLAGS and the default-off
+ * invariant test — mirroring the visual-primitives gallery flag's treatment.
+ * When off, the assessment auto-starts exactly as before.
+ */
+export function isParentIntroEnabled(): boolean {
+  return process.env.ENABLE_PARENT_INTRO === "true";
+}
+
 export function isShortTestBetaEnabled(): boolean {
   return rolloutFlag("ENABLE_SHORT_TEST_BETA");
 }

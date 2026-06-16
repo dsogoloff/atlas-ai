@@ -20,7 +20,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { deriveTier } from "@/lib/tier/derive";
-import { isComprehensivePilotEnabled } from "@/lib/env";
+import { deriveProctoringMode } from "@/lib/proctoring/mode";
+import { isComprehensivePilotEnabled, isParentIntroEnabled } from "@/lib/env";
 
 import { AssessmentClient } from "./assessment-client";
 import { ErrorPanel } from "./components/ErrorPanel";
@@ -74,15 +75,27 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
     birth_year: child.birth_year,
   });
 
+  // Age-dependent proctoring mode for the parent intro screen. Routed on the
+  // child's grade (grade_level first, birth_year fallback), cutoff at grade
+  // 2/3 — see @/lib/proctoring/mode. Computed server-side; the client only
+  // renders the matching DRAFT copy.
+  const proctoringMode = deriveProctoringMode({
+    grade_level: child.grade_level,
+    birth_year: child.birth_year,
+  });
+
   // DEV-ONLY: when the comprehensive pilot flag is on, the client shows a
   // pre-start chooser so QA can pick short vs comprehensive. Off in prod, so
-  // the client auto-starts the short test unchanged.
+  // the client auto-starts the short test unchanged. The parent intro
+  // (ENABLE_PARENT_INTRO, default-off) gates a pre-start instructions screen.
   return (
     <AssessmentClient
       childId={childId}
       childName={child.name}
       tier={tier}
       comprehensivePilotEnabled={isComprehensivePilotEnabled()}
+      parentIntroEnabled={isParentIntroEnabled()}
+      proctoringMode={proctoringMode}
     />
   );
 }
