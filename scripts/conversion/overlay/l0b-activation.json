@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "level": "0B",
+    "flip_ready_ids": ["SAM-L0B-Q02"],
+    "blocked_pending_image": {
+      "SAM-L0B-Q07": "needs a single sorted-shapes stimulus image; only the two part-crops (0B-07_1 pink group, 0B-07_2 green group) exist — they must be composited into one image first. One founder image away from flip-ready."
+    }
+  },
+  "tasks": {
+    "SAM-L0B-Q02": {
+      "level": "0B",
+      "format": "CLICK_IMAGE_SINGLE",
+      "content": {
+        "stem": "Tap the object that comes next in the pattern below.",
+        "tiles": [
+          { "id": "t1", "label": "Picture 1", "image_path": "l0/sam-l0b-q02-t1.png", "image_alt": "First object choice." },
+          { "id": "t2", "label": "Picture 2", "image_path": "l0/sam-l0b-q02-t2.png", "image_alt": "Second object choice." },
+          { "id": "t3", "label": "Picture 3", "image_path": "l0/sam-l0b-q02-t3.png", "image_alt": "Third object choice." },
+          { "id": "t4", "label": "Picture 4", "image_path": "l0/sam-l0b-q02-t4.png", "image_alt": "Fourth object choice." }
+        ],
+        "_authoring": { "answer_model": { "rule": "select-one", "correct": "t4" } }
+      },
+      "guard": { "is_active": false }
+    }
+  }
+}
