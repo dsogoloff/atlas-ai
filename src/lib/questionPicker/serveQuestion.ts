@@ -37,11 +37,13 @@ import type { ClientQuestion, PickedQuestionRow } from "./types";
  * this is the canonical path (mint returns undefined fast for no-image
  * content, so the overhead is one cheap object inspection).
  *
- * For VISUAL_MATCHING rows whose left/right tiles carry their own
- * `image_path`, this also mints a per-tile signed URL map and threads it
- * into the serializer (mintMatchingTileImages returns an empty map for
- * every other format, so the extra call is a no-op there). Per-tile
- * images are display-only — grading still matches on ids.
+ * For tile-bearing rows whose tiles carry their own `image_path` —
+ * VISUAL_MATCHING (left/right) and the three click-image formats from #71
+ * (CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI / IMAGE_ORDERING, tiles[]) — this
+ * also mints a per-tile signed URL map and threads it into the serializer
+ * (mintMatchingTileImages returns an empty map for every other format, so
+ * the extra call is a no-op there). Per-tile images are display-only —
+ * grading still matches on ids.
  */
 export async function serveQuestion(
   serviceClient: SupabaseClient<Database>,

@@ -78,6 +78,50 @@ describe("serveQuestion", () => {
     expect(Object.keys(out.content).sort()).toEqual(["options", "stem"]);
   });
 
+  it("threads per-tile minted images onto content.tiles for a click-image format", async () => {
+    const client = makeServiceClient("https://example.com/tile-signed?token=t");
+    const row: PickedQuestionRow = {
+      ...baseRow,
+      format: "CLICK_IMAGE_SINGLE",
+      content: {
+        stem: "Tap the triangle",
+        tiles: [
+          {
+            id: "t1",
+            label: "triangle",
+            image_path: "l1/sam-l1-q07-triangle.png",
+            image_alt: "A three-sided shape.",
+          },
+          { id: "t2", label: "square" }, // no image_path → label fallback
+        ],
+        _authoring: {
+          answer_model: { rule: "select-one", correct: "t1" },
+        },
+      },
+    };
+    const out = await serveQuestion(client, row);
+    expect(out.content).toEqual({
+      stem: "Tap the triangle",
+      tiles: [
+        {
+          id: "t1",
+          label: "triangle",
+          image: {
+            url: "https://example.com/tile-signed?token=t",
+            alt: "A three-sided shape.",
+            required: false,
+          },
+        },
+        { id: "t2", label: "square" },
+      ],
+    });
+    // Neither the raw tile image_path nor the answer model crosses the wire.
+    const serialized = JSON.stringify(out.content);
+    expect(serialized).not.toContain("image_path");
+    expect(serialized).not.toContain("_authoring");
+    expect(serialized).not.toContain("select-one");
+  });
+
   it("never leaks image_path or image_alt onto the client payload", async () => {
     const client = makeServiceClient("https://example.com/signed");
     const row: PickedQuestionRow = {
