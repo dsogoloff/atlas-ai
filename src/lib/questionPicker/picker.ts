@@ -174,7 +174,7 @@ export async function discoverEmptyBankStrands(
   return empty;
 }
 
-function compareCandidates(target: number) {
+export function compareCandidates(target: number) {
   return (a: PickedQuestionRow, b: PickedQuestionRow): number => {
     const da = Math.abs(a.difficulty - target);
     const db = Math.abs(b.difficulty - target);
