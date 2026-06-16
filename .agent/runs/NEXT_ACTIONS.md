@@ -230,15 +230,14 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       re-authoring above (don't widen the served band while model-reconstructed rows are still
       unverified). Sequencing decision; not yet built.
 
-## 3g. Image answer-inputs (3 click-image formats) — PR #71 OPEN 2026-06-15
+## 3g. Image answer-inputs (3 click-image formats) — PR #71 MERGED 2026-06-15
 
-- [ ] **Attended merge — PR #71 (lane/image-answer-inputs).** Off ATLAS-ASSESSMENT head
-      `dfc9925`, commit `7abdf4d`, not stacked. Adds question_format values
-      CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI / IMAGE_ORDERING with full client input + server
-      grading, forward-wired. Enum-DDL-only migration `20260615120000` (applied on the next
-      `supabase db reset`; no row data, no seed mirror). NO rows touched; guardrail intact.
-      Verify GREEN 1074/75, tsc 0, lint 0 errors (2 known warnings), build OK. Merge after
-      Vercel preview review.
+- [x] **MERGED — PR #71 (lane/image-answer-inputs), merge `e3f60f1` (lane commit `7abdf4d`).**
+      Off ATLAS-ASSESSMENT head `dfc9925`, not stacked; trunk head is now `e3f60f1`. Adds
+      question_format values CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI / IMAGE_ORDERING with full
+      client input + server grading, forward-wired. Enum-DDL-only migration `20260615120000`
+      (applied on the next `supabase db reset`; no row data, no seed mirror). NO rows touched;
+      guardrail intact. Verify GREEN 1074/75, tsc 0, lint 0 errors (2 known warnings), build OK.
 
 - [ ] **★ ACTIVATION DEPENDENCY (CONVERSION-owned, MUST precede activation) — per-tile image
       minting for the 3 image formats.** `serveQuestion.ts` currently mints per-tile signed
