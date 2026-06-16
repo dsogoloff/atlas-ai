@@ -3,6 +3,26 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-15
+
+* ⚑ **`half_grade_level` enum extended with pre-K bands 0A / 0B / 0C (founder-directed,
+  2026-06-15).** 0A = age 3 / Nursery 3; 0B = age 4 / pre-K; 0C = age 5 / Kindergarten.
+  Kept DISTINCT — not collapsed into existing KA/KB — per founder instruction. Added BEFORE
+  KA in the enum DDL (`20260616120000_add_prek_grade_levels.sql`; enum-DDL-only, no seed
+  mirror). Rationale: preserves ordering semantics and avoids back-compat breakage on KA/KB
+  rows already in the bank.
+
+* **SAM-L0 verbatim re-author over the 2026-06-11 pipeline rows (PR #74, lane/l0-authoring,
+  2026-06-15).** The 2026-06-11 full-library pipeline run (migration `20260611134158`) had
+  loaded 21 SAM-L0* rows mis-banded KA/KB with model-reconstructed content (e.g. literal
+  "Option B (unknown)"). Decision: re-author all 21 verbatim-from-docx via three additive
+  overlays (l0a/l0b/l0c-authoring.json) + 28 new inserts (49 total tasks). Mis-modeled
+  pipeline actives SAM-L0C-Q03/Q08/Q16 deactivated. Result: 8 active (text-answerable
+  arithmetic, bands 0A/0B), 3 held-A (image-essential), 31 held-C (non-wired interaction),
+  7 inactive (drawing/tracing/colouring/oral). `content.short_eligible` captured per docx
+  Summary (31/49). Verify GREEN 1074/75; tsc 0; lint 0 errors (2 known warnings); build OK.
+  PR #74 OPEN — awaiting founder merge + `supabase db reset`.
+
 ## 2026-06-14
 
 * **L1 art curation — wired curated images + activated 5 image-essential L1 items

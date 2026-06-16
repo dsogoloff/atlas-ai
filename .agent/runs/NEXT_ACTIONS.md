@@ -230,6 +230,33 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       re-authoring above (don't widen the served band while model-reconstructed rows are still
       unverified). Sequencing decision; not yet built.
 
+## 3h. L0 authoring (0A/0B/0C) — PR #74 OPEN 2026-06-15
+
+- [ ] **Dimitri: merge PR #74 after Vercel preview review, then run `supabase db reset`.**
+      Applies two migrations: `20260616120000` (enum DDL — adds 0A/0B/0C to `half_grade_level`)
+      and `20260616120100` (28 inserts + 21 re-banded updates). No app-code change; no verify
+      re-run needed post-merge. Seed.sql mirror is purely additive (+426/-0).
+
+- [ ] **PARKED — taxonomy gaps (needs founder/S.A.M. decision, non-blocking).**
+      Four L0 topic areas have no taxonomy code and `content_id NULL` because no code was
+      invented (correct behavior per BUSINESS_RULES): 0A "Same or different"; 0A
+      position/direction words; 0C "Comparing and Ordering"; 0C "Odd and Even Numbers".
+      Extending the taxonomy = founder/S.A.M. decision. No build until directed.
+
+- [ ] **PARKED — 0B Task 6 answer-key conflict (SAM-L0B-Q06, held inactive).**
+      Stem asks for the number "greater than 6"; answer key says "Colour 7 and 6" — "6" is
+      not greater than 6. Row is inactive (held-C). Needs founder/S.A.M. to clarify the
+      intended correct subset before this row can be activated.
+
+- [ ] **Activation of held L0 image/format rows** (3 held-A + 31 held-C) — same dependency
+      as L1-3: per-tile image minting must be added to `serveQuestion.ts` (NEXT_ACTIONS §3g)
+      AND curated per-question images must be placed (crops from docx in
+      `input/source/0{a,b,c}/`, not committed). Non-blocking while held.
+
+- [ ] **content_id on the 21 re-banded L0 rows is unchanged** — the overlay UPDATE re-bands
+      `level` but does not re-resolve `content_id` (same limitation as L1/L2 appliers).
+      Resolve in a future taxonomy-extension pass if/when L0 codes are assigned.
+
 ## 3g. Image answer-inputs (3 click-image formats) — PR #71 MERGED 2026-06-15
 
 - [x] **MERGED — PR #71 (lane/image-answer-inputs), merge `e3f60f1` (lane commit `7abdf4d`).**
