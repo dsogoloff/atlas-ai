@@ -741,6 +741,7 @@ export type Database = {
           num_operations: number
           operation_type: Database["public"]["Enums"]["operation_type"]
           representation: Database["public"]["Enums"]["representation_kind"]
+          short_test_eligible: boolean
           strand: Database["public"]["Enums"]["strand"]
           tenant_id: string
           word_count: number
@@ -759,6 +760,7 @@ export type Database = {
           num_operations: number
           operation_type: Database["public"]["Enums"]["operation_type"]
           representation: Database["public"]["Enums"]["representation_kind"]
+          short_test_eligible?: boolean
           strand: Database["public"]["Enums"]["strand"]
           tenant_id: string
           word_count: number
@@ -777,6 +779,7 @@ export type Database = {
           num_operations?: number
           operation_type?: Database["public"]["Enums"]["operation_type"]
           representation?: Database["public"]["Enums"]["representation_kind"]
+          short_test_eligible?: boolean
           strand?: Database["public"]["Enums"]["strand"]
           tenant_id?: string
           word_count?: number

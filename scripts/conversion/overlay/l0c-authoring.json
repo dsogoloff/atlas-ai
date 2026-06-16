@@ -1,0 +1,258 @@
+{
+  "$schema_note": "L0C re-authoring overlay (lane/l0-authoring). SOURCE OF TRUTH for the interaction/answer-model/blocker/level/image metadata of all 16 Level 0C Placement Worksheet tasks. Consumed by scripts/conversion/apply-l0-overlay.ts. The 0C booklet RAMPS: tasks 1-13 are LEVEL 0B, tasks 14-16 are LEVEL 0C; banded by the Summary table LEVEL column, NOT the doc name. Existing SAM-L0C-Q<N> rows were assigned by printed task number (mapping correct) but their CONTENT was model-reconstructed and is WRONG -> re-authored from docx/crops. Held rows are authored fully but stay is_active=false (real interaction not wired). Active rows carry CLEAN content (no _authoring; the applier omits it). For updates, _authoring is auto-injected by the applier for held rows, so it is NOT placed in update.content.",
+  "meta": {
+    "lane": "lane/l0-authoring",
+    "worksheet": "Level 0C Placement Worksheet.docx",
+    "tenant_slug": "inspirea_singapore_math",
+    "generated_by": "pnpm convert:apply-l0-overlay",
+    "banding_note": "0C booklet ramps: tasks 1-13 LEVEL 0B, tasks 14-16 LEVEL 0C. The existing rows were banked at the wrong level/content; this overlay re-bands and re-authors. The applier UPDATE sets level/format/is_active/content per the founder L0 spec.",
+    "image_note": "Per-question crops live in scripts/conversion/source/0c/. image_alt is NON-revealing (must not leak the answer). image_path is NOT set here (founder uploads later); the source crop filename is recorded in authoring.image for the audit trail.",
+    "blocker_legend": {
+      "none": "active, auto-gradeable, supported format, answer derivable from stem text alone",
+      "none-manual": "no auto-grade path EVER (drawing/coloring-to-create); held inactive, placeholder MULTIPLE_CHOICE",
+      "A": "answer DEPENDS ON AN IMAGE but the format would be wired (count-the-picture -> NUMERIC). is_active=false, held=true, requires_format_swap=false, real format kept",
+      "C": "real interaction is NOT a wired format (click-image tap, ordering, matching, multi-blank, equation/fact-family, select-multiple). is_active=false, held=true, requires_format_swap=true, format=MULTIPLE_CHOICE placeholder; real interaction in authoring.target_interaction"
+    },
+    "format_enum": ["MULTIPLE_CHOICE", "NUMERIC_ENTRY", "DRAG_DROP", "TEXT_ENTRY"],
+    "strand_enum": ["number_sense", "operations_algorithms", "fractions_decimals", "measurement", "geometry", "data_statistics"],
+    "counts": {
+      "by_status": {
+        "active": 3,
+        "held_A": 1,
+        "held_C": 10,
+        "inactive_manual": 2
+      },
+      "by_action": {
+        "insert": 6,
+        "update": 10
+      },
+      "active_ids": ["SAM-L0C-Q09", "SAM-L0C-Q10", "SAM-L0C-Q13"],
+      "held_A_ids": ["SAM-L0C-Q14"],
+      "held_C_ids": ["SAM-L0C-Q01", "SAM-L0C-Q03", "SAM-L0C-Q04", "SAM-L0C-Q05", "SAM-L0C-Q06", "SAM-L0C-Q08", "SAM-L0C-Q11", "SAM-L0C-Q12", "SAM-L0C-Q15", "SAM-L0C-Q16"],
+      "inactive_manual_ids": ["SAM-L0C-Q02", "SAM-L0C-Q07"],
+      "insert_ids": ["SAM-L0C-Q01", "SAM-L0C-Q02", "SAM-L0C-Q04", "SAM-L0C-Q06", "SAM-L0C-Q07", "SAM-L0C-Q12"],
+      "update_ids": ["SAM-L0C-Q03", "SAM-L0C-Q05", "SAM-L0C-Q08", "SAM-L0C-Q09", "SAM-L0C-Q10", "SAM-L0C-Q11", "SAM-L0C-Q13", "SAM-L0C-Q14", "SAM-L0C-Q15", "SAM-L0C-Q16"]
+    },
+    "deactivated_rows": [
+      { "external_id": "SAM-L0C-Q03", "was": "active DRAG_DROP", "now": "held-C (is_active=false)", "reason": "real interaction is select-multiple over equation tiles (tap the boxes that make 10); not a wired auto-grade format. Drag-to-target is not built." },
+      { "external_id": "SAM-L0C-Q08", "was": "active NUMERIC_ENTRY", "now": "held-C (is_active=false)", "reason": "real interaction is multi-blank (4 distinct missing numbers in a skip-count sequence); a single NUMERIC_ENTRY cannot grade four blanks." },
+      { "external_id": "SAM-L0C-Q16", "was": "active NUMERIC_ENTRY", "now": "held-C (is_active=false)", "reason": "real interaction is multi-blank (two distinct blanks, tens + ones decomposition of 32); a single NUMERIC_ENTRY cannot grade two blanks." }
+    ],
+    "taxonomy_gaps": [
+      { "external_id": "SAM-L0C-Q05", "topic": "Comparing and Ordering (smallest/bigger/biggest)", "content_key": null, "note": "no clean 0B tax_content code for size-ordering" },
+      { "external_id": "SAM-L0C-Q14", "topic": "Odd and Even (count pairs of same bikes)", "content_key": null, "note": "no clean 0C tax_content code for odd/even" },
+      { "external_id": "SAM-L0C-Q15", "topic": "Odd and Even (tap odd numbers)", "content_key": null, "note": "no clean 0C tax_content code for odd/even" }
+    ],
+    "short_tally": { "Y": 9, "N": 7 }
+  },
+  "tasks": {
+    "SAM-L0C-Q01": {
+      "task_number": 1, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Match the birds to their positions.", "options": ["1st", "2nd", "3rd", "4th", "5th"], "correct_index": 0, "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 5, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0b-whole_numbers-4"
+      },
+      "authoring": {
+        "target_interaction": "visual-matching", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "visual-matching", "positions": ["1st", "2nd", "3rd", "4th", "5th"], "note": "child matches each bird to its ordinal position; correct mapping is picture-dependent" },
+        "notes": "Ordinal-position matching over picture; real interaction is visual-matching, not a wired format -> held-C. Placeholder text options stored so correct_index is valid." }
+    },
+    "SAM-L0C-Q02": {
+      "task_number": 2, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Show numbers that make 9. Color some leaves green. Color the rest red. Write the numbers in the number bond.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 19, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0b-whole_numbers-2"
+      },
+      "authoring": {
+        "target_interaction": "manual", "blocker_code": "none-manual", "held": true, "requires_format_swap": false,
+        "answer_model": { "rule": "manual-open-ended", "key": "Accept any way of coloring (some leaves green, the rest red) with corresponding numbers that make a number bond summing to 9." },
+        "notes": "Open-ended color-to-create + write number bond; no auto-grade path EVER -> INACTIVE-MANUAL. Placeholder MC options." }
+    },
+    "SAM-L0C-Q03": {
+      "task_number": 3, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q03" },
+      "update": {
+        "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Tap the boxes that make 10.", "options": ["5 + 5", "3 + 7", "2 + 8", "2 + 2", "1 + 9", "3 + 5", "9 + 2", "6 + 4"], "correct_index": 0, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "select-multiple", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "select-multiple", "tiles": ["5 + 5", "3 + 7", "2 + 8", "2 + 2", "1 + 9", "3 + 5", "9 + 2", "6 + 4"], "correct": ["5 + 5", "3 + 7", "2 + 8", "1 + 9", "6 + 4"] },
+        "notes": "DEACTIVATED: was active DRAG_DROP. Real interaction is select-multiple over equation tiles (tap all that make 10); not a wired auto-grade format -> held-C, is_active=false. Drag-to-target is not built." }
+    },
+    "SAM-L0C-Q04": {
+      "task_number": 4, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Complete the fact family.", "options": ["6", "3", "9"], "correct_index": 2, "short_test_eligible": true },
+        "misconception_tags": [], "word_count": 4, "operation_type": "ADDITION", "num_operations": 1,
+        "representation": "SYMBOLIC", "content_key": "l0b-whole_numbers-3"
+      },
+      "authoring": {
+        "target_interaction": "equation-set", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "equation-set", "given": [6, 3, 9], "fact_family": ["6 + 3 = 9", "3 + 6 = 9", "9 - 3 = 6", "9 - 6 = 3"], "answers": ["9", "9", "6", "3"] },
+        "notes": "Fact family from 6, 3, 9; real interaction is equation-set (fill the four related facts), not a wired format -> held-C. Placeholder text options carry the source numbers; answer model holds the full fact family." }
+    },
+    "SAM-L0C-Q05": {
+      "task_number": 5, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q05" },
+      "update": {
+        "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Write numbers: 1 = smallest, 2 = bigger, 3 = biggest in the correct blanks.", "options": ["smallest", "bigger", "biggest"], "correct_index": 1, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "multi-blank", "answers": ["bigger", "biggest"], "note": "image-dependent ordering by size; the smallest is given (1), child writes 2=bigger and 3=biggest into the correct blanks per the picture" },
+        "image": "scripts/conversion/source/0c/0C-05.png",
+        "image_alt": "A picture of a vegetable used for a size-ordering task.",
+        "notes": "Picture-dependent size ordering; real interaction is multi-blank (two distinct blanks), not a wired format -> held-C. content_key=null (no clean Comparing-and-Ordering code) -> FLAGGED in taxonomy_gaps." }
+    },
+    "SAM-L0C-Q06": {
+      "task_number": 6, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "number_sense", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Look at the color pattern below. Color the squares to complete the pattern.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 12, "operation_type": "PATTERN", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0b-geometry-4"
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "color-sequence-completion", "sequence": ["Yellow", "blue", "pink", "blue", "yellow"], "note": "child colors squares to continue the pattern; the completing sequence is recorded above" },
+        "notes": "Color-sequence pattern completion; real interaction is multi-blank color selection, not a wired format -> held-C. Completing sequence recorded in answer_model." }
+    },
+    "SAM-L0C-Q07": {
+      "task_number": 7, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Draw a shape in each box. Shape with 4 sides / Shape with no sides / Shape with 3 sides.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 18, "operation_type": "GEOMETRY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0b-geometry-2"
+      },
+      "authoring": {
+        "target_interaction": "manual", "blocker_code": "none-manual", "held": true, "requires_format_swap": false,
+        "answer_model": { "rule": "manual-drawing", "key": "Accept any shape with 4 sides (e.g. square/rectangle), any shape with no sides (e.g. circle), any shape with 3 sides (e.g. triangle), drawn in the correct boxes." },
+        "notes": "Drawing task; no auto-grade path EVER -> INACTIVE-MANUAL. Placeholder MC options." }
+    },
+    "SAM-L0C-Q08": {
+      "task_number": 8, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q08" },
+      "update": {
+        "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Skip count by 2s. Fill in the missing numbers.", "options": ["4", "8", "16", "20"], "correct_index": 0, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "multi-blank", "sequence": [2, null, 6, null, 10, 12, 14, null, 18, null], "answers": ["4", "8", "16", "20"] },
+        "notes": "DEACTIVATED: was active NUMERIC_ENTRY. Real interaction is multi-blank (4 distinct missing numbers in the skip-count sequence); a single NUMERIC_ENTRY cannot grade four blanks -> held-C, is_active=false." }
+    },
+    "SAM-L0C-Q09": {
+      "task_number": 9, "status": "active", "action": "update", "is_active": true,
+      "guard": { "external_id": "SAM-L0C-Q09" },
+      "update": {
+        "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
+        "content": { "stem": "There are 14 blue beads and 5 green beads on Sally's necklace. How many beads are there altogether? 14 + 5 = ___. There are ___ beads altogether.", "correct_answer": "19", "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "answer_model": { "rule": "exact-numeric", "value": 19, "derivation": "14 + 5 = 19" },
+        "image": "scripts/conversion/source/0c/0C-09.png",
+        "notes": "ACTIVE: answer derivable from stem text alone (14 + 5 = 19). Re-banded 0B, kept active. Picture (necklace of blue/green beads) is decorative; numbers are in the text. Trailing answer lines folded into the model." }
+    },
+    "SAM-L0C-Q10": {
+      "task_number": 10, "status": "active", "action": "update", "is_active": true,
+      "guard": { "external_id": "SAM-L0C-Q10" },
+      "update": {
+        "level": "0B", "format": "NUMERIC_ENTRY", "is_active": true,
+        "content": { "stem": "There are 18 birds. 6 of the birds are blue. How many birds are yellow? Fill in the blanks. 18 - 6 = ___ There are ___ yellow birds.", "correct_answer": "12", "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "numeric-single", "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "answer_model": { "rule": "exact-numeric", "value": 12, "derivation": "18 - 6 = 12" },
+        "image": "scripts/conversion/source/0c/0C-10_1.png (blue bird), scripts/conversion/source/0c/0C-10_2.png (yellow bird)",
+        "notes": "ACTIVE: answer derivable from stem text alone (18 - 6 = 12). Re-banded 0B, kept active. Bird pictures decorative; numbers in text. Trailing answer lines folded into the model." }
+    },
+    "SAM-L0C-Q11": {
+      "task_number": 11, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q11" },
+      "update": {
+        "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Look at the number line. Tap on the answers. 31 comes ___ 30. 31 is ___ than 30. 33 comes ___ 36. 33 is ___ than 36.", "options": ["after", "greater", "before", "smaller"], "correct_index": 0, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "multi-blank", "blanks": ["31 comes ___ 30", "31 is ___ than 30", "33 comes ___ 36", "33 is ___ than 36"], "answers": ["after", "greater", "before", "smaller"] },
+        "image": "scripts/conversion/source/0c/0C-11.png",
+        "image_alt": "A number line with evenly spaced tick marks.",
+        "notes": "Multi-blank with word choices (after/greater/before/smaller); real interaction is multi-blank/select, not a wired format -> held-C, stays held. Re-banded 0B." }
+    },
+    "SAM-L0C-Q12": {
+      "task_number": 12, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0B", "difficulty": -2.0, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the objects that look like a cube in the picture below.", "options": ["option 1", "option 2", "option 3", "option 4"], "correct_index": 0, "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 11, "operation_type": "GEOMETRY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0b-geometry-3"
+      },
+      "authoring": {
+        "target_interaction": "click-image-multi", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "click-image-multi", "correct": ["the Rubik's cube", "the die", "the brown box"], "note": "tap all cube-shaped objects in the picture" },
+        "image_alt": "A picture containing several everyday objects of different shapes.",
+        "notes": "Click-image multi-select over the picture; real interaction is click-image-multi, not a wired format -> held-C. image_alt non-revealing." }
+    },
+    "SAM-L0C-Q13": {
+      "task_number": 13, "status": "active", "action": "update", "is_active": true,
+      "guard": { "external_id": "SAM-L0C-Q13" },
+      "update": {
+        "level": "0B", "format": "MULTIPLE_CHOICE", "is_active": true,
+        "content": { "stem": "Read aloud the days of the week from Monday. A part of the page is torn. What is the missing day? Tap your answer.", "options": ["Friday", "Fryday", "Thursday", "Saturday"], "correct_index": 0, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "single-MC", "blocker_code": "none", "held": false, "requires_format_swap": false,
+        "answer_model": { "rule": "mc-index", "correct_index": 0, "value": "Friday", "derivation": "days listed Monday, Tuesday, Wednesday, Thursday, Saturday, Sunday -> the missing day between Thursday and Saturday is Friday" },
+        "image": "scripts/conversion/source/0c/0C-13_1.png (torn notebook), scripts/conversion/source/0c/0C-13_2.png",
+        "notes": "ACTIVE: the missing day is derivable from the days listed in the stem text (Friday), text-MC format supported. Re-banded 0B, kept active. Distractor 'Fryday' is a spelling trap." }
+    },
+    "SAM-L0C-Q14": {
+      "task_number": 14, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q14" },
+      "update": {
+        "level": "0C", "format": "NUMERIC_ENTRY", "is_active": false,
+        "content": { "stem": "How many pairs of the same bikes are there? Write the number.", "correct_answer": "4", "image_alt": "A picture showing several motorcycles in different colors.", "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "numeric-single", "blocker_code": "A", "held": true, "requires_format_swap": false,
+        "answer_model": { "rule": "exact-numeric", "value": 4, "note": "count of matching pairs depends on the picture" },
+        "image": "scripts/conversion/source/0c/0C-14.png",
+        "notes": "HELD-A: answer (count of matching bike pairs = 4) DEPENDS on the picture; NUMERIC format is wired. is_active=false, held=true, requires_format_swap=false; image_alt non-revealing (no count). content_key=null (no clean Odd-and-Even code) -> FLAGGED in taxonomy_gaps." }
+    },
+    "SAM-L0C-Q15": {
+      "task_number": 15, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q15" },
+      "update": {
+        "level": "0C", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Tap the circles with odd numbers.", "options": ["1", "10", "26", "5", "12", "24", "35", "41", "40"], "correct_index": 0, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "select-multiple", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "select-multiple", "tiles": ["1", "10", "26", "5", "12", "24", "35", "41", "40"], "correct": ["1", "5", "35", "41"] },
+        "notes": "Select-multiple over number tiles (tap all odd numbers); real interaction is select-multiple, not a wired format -> held-C. content_key=null (no clean Odd-and-Even code) -> FLAGGED in taxonomy_gaps." }
+    },
+    "SAM-L0C-Q16": {
+      "task_number": 16, "status": "held", "action": "update", "is_active": false,
+      "guard": { "external_id": "SAM-L0C-Q16" },
+      "update": {
+        "level": "0C", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Break apart 32. Fill in the boxes.", "options": ["30", "2"], "correct_index": 0, "short_test_eligible": true }
+      },
+      "authoring": {
+        "target_interaction": "multi-blank", "blocker_code": "C", "held": true, "requires_format_swap": true,
+        "answer_model": { "rule": "multi-blank", "equation": "32 = ___ + ___", "answers": ["30", "2"], "note": "tens/ones decomposition; two distinct blanks" },
+        "image": "scripts/conversion/source/0c/0C-16.png",
+        "notes": "DEACTIVATED: was active NUMERIC_ENTRY. Real interaction is multi-blank (two distinct blanks, tens + ones decomposition of 32 = 30 + 2); a single NUMERIC_ENTRY cannot grade two blanks -> held-C, is_active=false." }
+    }
+  }
+}

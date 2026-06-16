@@ -1,0 +1,274 @@
+{
+  "$schema_note": "L0A authoring overlay (lane/l0-authoring). SOURCE OF TRUTH for the interaction/answer-model/blocker/image metadata of all 18 Level 0A Placement Worksheet tasks. Consumed by scripts/conversion/apply-l0-overlay.ts (pnpm convert:apply-l0-overlay), which emits ONE additive migration (14 new SAM-L0A inserts) + UPDATEs for the 4 pre-existing pipeline rows (SAM-L0A-Q04/Q08/Q11/Q17) that were mis-banded KA/KB with model-reconstructed content, and appends a marker block to seed.sql. It NEVER rewrites any existing migration or generated block, and asserts every emitted statement references only SAM-L0A ids. The applier auto-injects the _authoring stub for held rows; update.content therefore omits _authoring. Mirrors the proven L2 pattern. ALL 18 tasks are Level 0A. Per the founder rule, NO 0A item is active: image-tap items are HELD-C (answer-input wiring blocker), count/oral/manual items are HELD-A / INACTIVE.",
+  "meta": {
+    "lane": "lane/l0-authoring",
+    "worksheet": "Level 0A Placement Worksheet.docx",
+    "answer_key": "Level 0A Placement Worksheet Answer Key (founder-confirmed in-session 2026-06-15; visual answers confirmed from per-question crops in source/0a/)",
+    "tenant_slug": "inspirea_singapore_math",
+    "generated_by": "pnpm convert:apply-l0-overlay",
+    "band_note": "Every task on this worksheet is Level 0A per the Summary table LEVEL column. The 4 pre-existing pipeline rows (Q04/Q08/Q11/Q17) were mis-banded KA/KB with model-reconstructed content; they are re-banded to 0A and their content fully replaced from the docx/crops.",
+    "numbering_note": "external_id SAM-L0A-Q<NN> maps to the printed task number (the number->task mapping is correct); only the model-reconstructed CONTENT was wrong and is re-authored here.",
+    "active_policy_note": "Founder rule: every ACTIVE item must be auto-gradeable from text alone; any item whose answer depends on an unseen picture stays inactive. On 0A the entire worksheet is picture/manual/oral, so there are 0 active items. Image-tap items are HELD-C (the binding blocker is the un-wired click-image interaction); the count-the-balloons item is HELD-A (format wired, answer depends on the picture).",
+    "image_note": "Per-question art is uploaded by the founder later to the private question-images Supabase bucket. We do NOT set image_path here. content.image_alt is required and deliberately NON-revealing (must not leak the answer). The source crop filename is recorded in authoring.image for the founder's upload step; for HELD-A the crop is also listed in authoring.image per task brief.",
+    "blocker_legend": {
+      "none": "active, auto-gradeable, supported format",
+      "A": "format is a wired question_format but the answer depends on a per-question image (held inactive until the picture is curated/uploaded)",
+      "C": "real interaction is not a wired question_format today (click-image tap, visual-matching); requires_format_swap=true; stays is_active=false under the questions_held_rows_inactive CHECK",
+      "none-manual": "drawing/coloring/tracing/maze — no auto-grade path ever; held inactive",
+      "none-oral": "say/read aloud — oral only; held inactive"
+    },
+    "format_enum_at_head": ["MULTIPLE_CHOICE", "NUMERIC_ENTRY", "DRAG_DROP", "TEXT_ENTRY"],
+    "strand_enum": ["number_sense", "operations_algorithms", "fractions_decimals", "measurement", "geometry", "data_statistics"],
+    "target_interaction_enum": ["click-image-single", "click-image-multi", "image-ordering", "visual-matching", "multi-blank", "equation-set", "select-multiple"],
+    "counts": {
+      "total": 18,
+      "insert": 14,
+      "update": 4,
+      "by_status": {
+        "active": 0,
+        "held_A": 1,
+        "held_C": 12,
+        "inactive_manual": 4,
+        "inactive_oral": 1
+      },
+      "held_A_ids": ["SAM-L0A-Q17"],
+      "held_C_ids": ["SAM-L0A-Q03", "SAM-L0A-Q05", "SAM-L0A-Q06", "SAM-L0A-Q07", "SAM-L0A-Q08", "SAM-L0A-Q09", "SAM-L0A-Q10", "SAM-L0A-Q11", "SAM-L0A-Q12", "SAM-L0A-Q13", "SAM-L0A-Q14", "SAM-L0A-Q15"],
+      "inactive_manual_ids": ["SAM-L0A-Q01", "SAM-L0A-Q02", "SAM-L0A-Q04", "SAM-L0A-Q16"],
+      "inactive_oral_ids": ["SAM-L0A-Q18"],
+      "short_eligible_Y": ["SAM-L0A-Q03", "SAM-L0A-Q05", "SAM-L0A-Q06", "SAM-L0A-Q07", "SAM-L0A-Q08", "SAM-L0A-Q10", "SAM-L0A-Q11", "SAM-L0A-Q13", "SAM-L0A-Q14", "SAM-L0A-Q15", "SAM-L0A-Q17"],
+      "short_eligible_N": ["SAM-L0A-Q01", "SAM-L0A-Q02", "SAM-L0A-Q04", "SAM-L0A-Q09", "SAM-L0A-Q12", "SAM-L0A-Q16", "SAM-L0A-Q18"]
+    },
+    "taxonomy_gaps": [
+      { "id": "SAM-L0A-Q03", "topic": "Same or different (big/small bowl)", "reason": "0A has no 'Same or different' / size-comparison taxonomy code" },
+      { "id": "SAM-L0A-Q04", "topic": "Color the shapes (color identification + manual coloring)", "reason": "no clean 0A code for coloring-to-identify" },
+      { "id": "SAM-L0A-Q05", "topic": "Same or different (thick/thin book)", "reason": "0A has no thickness-comparison code" },
+      { "id": "SAM-L0A-Q06", "topic": "Same or different (long/short branch)", "reason": "0A has no length-comparison code" },
+      { "id": "SAM-L0A-Q07", "topic": "Same or different (tall/short animal)", "reason": "0A has no height-comparison code" },
+      { "id": "SAM-L0A-Q08", "topic": "Same or different (match the object in the box)", "reason": "0A has no object-matching code" },
+      { "id": "SAM-L0A-Q09", "topic": "Same or different (long/short pencil placement)", "reason": "0A has no length-comparison code" },
+      { "id": "SAM-L0A-Q10", "topic": "Same or different (taller door)", "reason": "0A has no height-comparison code" },
+      { "id": "SAM-L0A-Q13", "topic": "Position and Direction Words (facing left)", "reason": "0A has no position sub-strand; only 0B does" },
+      { "id": "SAM-L0A-Q14", "topic": "Position and Direction Words (flying up)", "reason": "0A has no position sub-strand; only 0B does" },
+      { "id": "SAM-L0A-Q15", "topic": "Position and Direction Words (bottom shelf)", "reason": "0A has no position sub-strand; only 0B does" },
+      { "id": "SAM-L0A-Q16", "topic": "Position and Direction Words (outside the bowl) + drawing", "reason": "0A has no position sub-strand; also manual drawing" }
+    ],
+    "inactive_reasons": [
+      { "id": "SAM-L0A-Q01", "blocker": "none-manual", "reason": "trace/draw a line from the rabbit to the carrots (maze)" },
+      { "id": "SAM-L0A-Q02", "blocker": "none-manual", "reason": "trace/draw a line from the bee to the flower (maze)" },
+      { "id": "SAM-L0A-Q04", "blocker": "none-manual", "reason": "color the shapes red/blue/green (manual coloring)" },
+      { "id": "SAM-L0A-Q16", "blocker": "none-manual", "reason": "draw a sweet outside the bowl (free drawing)" },
+      { "id": "SAM-L0A-Q18", "blocker": "none-oral", "reason": "say the name of each shape (oral only)" },
+      { "id": "SAM-L0A-Q03", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q05", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q06", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q07", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q08", "blocker": "C", "reason": "click-image tap (match object); un-wired interaction" },
+      { "id": "SAM-L0A-Q09", "blocker": "C", "reason": "click-image tap (mark a box); un-wired interaction" },
+      { "id": "SAM-L0A-Q10", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q11", "blocker": "C", "reason": "click-image tap (pattern next); un-wired interaction" },
+      { "id": "SAM-L0A-Q12", "blocker": "C", "reason": "visual-matching (tails to animals); un-wired interaction" },
+      { "id": "SAM-L0A-Q13", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q14", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q15", "blocker": "C", "reason": "click-image tap; un-wired interaction" },
+      { "id": "SAM-L0A-Q17", "blocker": "A", "reason": "count-the-picture MULTIPLE_CHOICE; answer depends on the balloon image" }
+    ]
+  },
+  "tasks": {
+    "SAM-L0A-Q01": {
+      "task_number": 1, "status": "inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Help the rabbit get to the carrots. Draw a line from the rabbit to the carrots.", "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-geometry-1"
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "none-manual", "held": true, "requires_format_swap": false, "answer_model": { "rule": "manual", "value": "Accept a continuous traced line connecting the rabbit to the carrots." }, "notes": "Trace/maze. No auto-grade path. Held inactive. content_key l0a-geometry-1 (Lines and Curves)." }
+    },
+    "SAM-L0A-Q02": {
+      "task_number": 2, "status": "inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Help the bee get to the flower. Draw a line from the bee to the flower.", "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 14, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-geometry-1"
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "none-manual", "held": true, "requires_format_swap": false, "answer_model": { "rule": "manual", "value": "Accept a continuous traced line connecting the bee to the flower." }, "notes": "Trace/maze. No auto-grade path. Held inactive. content_key l0a-geometry-1 (Lines and Curves)." }
+    },
+    "SAM-L0A-Q03": {
+      "task_number": 3, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the big bowl.", "short_test_eligible": true, "image_alt": "Two bowls of different sizes shown side by side." },
+        "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the bigger of the two bowls" }, "image": "0A-03.png", "notes": "Click-image tap; un-wired interaction -> HELD-C. content_key null: 0A has no 'Same or different' (size) taxonomy code (FLAG)." }
+    },
+    "SAM-L0A-Q04": {
+      "task_number": 4, "status": "inactive", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Color the shapes red. Color the shapes blue. Color the shapes green.", "short_test_eligible": false }
+      },
+      "guard": { "external_id": "SAM-L0A-Q04" },
+      "row_meta": {
+        "was": "geometry / KA / DRAG_DROP (model-reconstructed)",
+        "strand": "geometry", "difficulty": -2.5, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null, "misconception_tags": [], "word_count": 11
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "none-manual", "held": true, "requires_format_swap": false, "answer_model": { "rule": "manual", "value": "Manual coloring: accept each named shape colored with its named color (red/blue/green)." }, "notes": "Re-banded KA->0A, content replaced. Manual coloring -> INACTIVE-MANUAL. content_key null (no clean 0A coloring code) (FLAG). Stem keeps the verbatim three color instructions; the bracketed shape names were not legible distinct nouns in the doc, transcribed verbatim as 'the shapes'." }
+    },
+    "SAM-L0A-Q05": {
+      "task_number": 5, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the thick book.", "short_test_eligible": true, "image_alt": "Two books of different thicknesses shown side by side." },
+        "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the thicker of the two books" }, "image": "0A-05_1.png, 0A-05_2.png", "notes": "Click-image tap -> HELD-C. content_key null: 0A has no thickness-comparison code (FLAG)." }
+    },
+    "SAM-L0A-Q06": {
+      "task_number": 6, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the long branch.", "short_test_eligible": true, "image_alt": "Two tree branches of different lengths shown side by side." },
+        "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the longer of the two branches" }, "image": "0A-06_1.png, 0A-06_2.png", "notes": "Click-image tap -> HELD-C. content_key null: 0A has no length-comparison code (FLAG)." }
+    },
+    "SAM-L0A-Q07": {
+      "task_number": 7, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the tall animal.", "short_test_eligible": true, "image_alt": "Two animals of different heights shown side by side." },
+        "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the taller of the two animals (the giraffe)" }, "image": "0A-07_1.png, 0A-07_2.png", "notes": "Click-image tap -> HELD-C. Crops show a donkey and a giraffe; tall = giraffe. content_key null: 0A has no height-comparison code (FLAG)." }
+    },
+    "SAM-L0A-Q08": {
+      "task_number": 8, "status": "held", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Tap the object that is the same as the one in the box.", "short_test_eligible": true, "image_alt": "An object shown inside a box, with several objects to choose from below." }
+      },
+      "guard": { "external_id": "SAM-L0A-Q08" },
+      "row_meta": {
+        "was": "geometry / KB / MULTIPLE_CHOICE (model-reconstructed)",
+        "strand": "geometry", "difficulty": -2.5, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null, "misconception_tags": [], "word_count": 12
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the car (matches the car shown in the box)", "answer_key": "Car circled" }, "image": "0A-08_1.png (box object = car), 0A-08_2.png (bear), 0A-08_3.png (beach ball), 0A-08_4.png (car = correct)", "notes": "Re-banded KB->0A, content replaced. Click-image tap (match object) -> HELD-C. Box holds a car; the matching choice is the car. content_key null (no 0A object-matching code) (FLAG)." }
+    },
+    "SAM-L0A-Q09": {
+      "task_number": 9, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Draw an X to where you should put the pencil.", "short_test_eligible": false, "image_alt": "Two boxes, one holding short pencils and one holding long pencils." },
+        "misconception_tags": [], "word_count": 10, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the box with the long pencils", "answer_key": "Arrow points to the box with long pencils" }, "image": "0A-09 (long/short pencil boxes)", "notes": "Click-image tap (mark a box) -> HELD-C. content_key null: 0A has no length-comparison code (FLAG)." }
+    },
+    "SAM-L0A-Q10": {
+      "task_number": 10, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the taller door.", "short_test_eligible": true, "image_alt": "Two doors of different heights shown side by side." },
+        "misconception_tags": [], "word_count": 4, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the taller of the two doors (the green door)" }, "image": "0A-10_1.png (green door = taller), 0A-10_2.png (brown door)", "notes": "Click-image tap -> HELD-C. content_key null: 0A has no height-comparison code (FLAG)." }
+    },
+    "SAM-L0A-Q11": {
+      "task_number": 11, "status": "held", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Look at the pattern below. Tap what comes next.", "short_test_eligible": true, "image_alt": "A repeating pattern of flowers with the last item missing, and flower choices to tap." }
+      },
+      "guard": { "external_id": "SAM-L0A-Q11" },
+      "row_meta": {
+        "was": "geometry / KB / MULTIPLE_CHOICE (model-reconstructed)",
+        "strand": "geometry", "difficulty": -2.5, "operation_type": "PATTERN", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-geometry-4", "misconception_tags": [], "word_count": 9
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the blue flower", "answer_key": "Blue flower" }, "image": "0A-11_1.png (red flower), 0A-11_2.png (blue flower = correct)", "notes": "Re-banded KB->0A, content replaced. Pattern -> tap next -> HELD-C. content_key l0a-geometry-4 (Patterns)." }
+    },
+    "SAM-L0A-Q12": {
+      "task_number": 12, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Match each tail to the correct animal.", "short_test_eligible": false, "image_alt": "A column of animals and a column of tails to be matched." },
+        "misconception_tags": [], "word_count": 7, "operation_type": "GEOMETRY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-geometry-2"
+      },
+      "authoring": { "target_interaction": "visual-matching", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "visual-matching", "value": "Each tail connects to its own animal (one-to-one)." }, "image": "0A-12 (animals + tails)", "notes": "Visual-matching -> HELD-C. content_key l0a-geometry-2 (Parts and Whole)." }
+    },
+    "SAM-L0A-Q13": {
+      "task_number": 13, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the bird facing left.", "short_test_eligible": true, "image_alt": "Two birds facing different directions." },
+        "misconception_tags": [], "word_count": 5, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the bird facing left (the blue bird)" }, "image": "0A-13_1.png (blue bird facing left = correct), 0A-13_2.png (brown bird facing right)", "notes": "Click-image tap -> HELD-C. content_key null: 0A has no position/direction sub-strand (only 0B does) (FLAG)." }
+    },
+    "SAM-L0A-Q14": {
+      "task_number": 14, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the bird that is flying up.", "short_test_eligible": true, "image_alt": "Two birds in flight in different directions." },
+        "misconception_tags": [], "word_count": 7, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the bird flying upward" }, "image": "0A-14_1.png (bird flying up = correct), 0A-14_2.png (bird flying down)", "notes": "Click-image tap -> HELD-C. content_key null: 0A has no position/direction sub-strand (only 0B does) (FLAG)." }
+    },
+    "SAM-L0A-Q15": {
+      "task_number": 15, "status": "held", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Tap the bowl on the bottom shelf.", "short_test_eligible": true, "image_alt": "A set of shelves with a bowl on each shelf." },
+        "misconception_tags": [], "word_count": 7, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "C", "held": true, "requires_format_swap": true, "answer_model": { "rule": "click-image-single", "value": "the bowl on the bottom (lowest) shelf" }, "image": "0A-15_1.png (bowl), 0A-15_2.png (shelves)", "notes": "Click-image tap -> HELD-C. content_key null: 0A has no position/direction sub-strand (only 0B does) (FLAG)." }
+    },
+    "SAM-L0A-Q16": {
+      "task_number": 16, "status": "inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Draw a sweet outside the bowl.", "short_test_eligible": false, "image_alt": "A bowl with space around it." },
+        "misconception_tags": [], "word_count": 6, "operation_type": "IDENTIFY", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": null
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "none-manual", "held": true, "requires_format_swap": false, "answer_model": { "rule": "manual", "value": "Accept a sweet drawn anywhere outside the bowl." }, "image": "0A-16 (bowl)", "notes": "Free drawing -> INACTIVE-MANUAL. content_key null: 0A has no position/direction sub-strand (outside/inside) (FLAG)." }
+    },
+    "SAM-L0A-Q17": {
+      "task_number": 17, "status": "held", "action": "update", "is_active": false,
+      "update": {
+        "level": "0A", "format": "MULTIPLE_CHOICE", "is_active": false,
+        "content": { "stem": "Count the balloons. Tap the number.", "short_test_eligible": true, "options": ["6", "5", "2"], "correct_index": 1, "image_alt": "A group of balloons." }
+      },
+      "guard": { "external_id": "SAM-L0A-Q17" },
+      "row_meta": {
+        "was": "number_sense / KB / NUMERIC_ENTRY (model-reconstructed)",
+        "strand": "number_sense", "difficulty": -2.5, "operation_type": "COUNTING", "num_operations": 1,
+        "representation": "PICTORIAL", "content_key": "l0a-whole_numbers-1", "misconception_tags": [], "word_count": 6
+      },
+      "authoring": { "target_interaction": "single-MC", "blocker_code": "A", "held": true, "requires_format_swap": false, "answer_model": { "rule": "mc-index", "correct_index": 1, "value": "5", "answer_key": "Accept a response of 'five'" }, "image": "0A-17", "notes": "Re-banded KB->0A, content replaced. HELD-A: MULTIPLE_CHOICE is a wired format (requires_format_swap=false) but the answer depends on the balloon picture, so held inactive until the image is curated/uploaded. Options 6/5/2, correct_index 1 (=5). content_key l0a-whole_numbers-1 (Numbers to 20)." }
+    },
+    "SAM-L0A-Q18": {
+      "task_number": 18, "status": "inactive", "action": "insert", "is_active": false,
+      "row": {
+        "strand": "geometry", "level": "0A", "difficulty": -2.5, "format": "MULTIPLE_CHOICE",
+        "content": { "stem": "Say the name of each shape.", "short_test_eligible": false },
+        "misconception_tags": [], "word_count": 6, "operation_type": "GEOMETRY", "num_operations": 1,
+        "representation": "SYMBOLIC", "content_key": "l0a-geometry-3"
+      },
+      "authoring": { "target_interaction": "click-image-single", "blocker_code": "none-oral", "held": true, "requires_format_swap": false, "answer_model": { "rule": "oral", "value": "Observe the student's pronunciation." }, "notes": "Oral only -> INACTIVE-ORAL. content_key l0a-geometry-3 (Plane Shapes). representation SYMBOLIC per task brief." }
+    }
+  }
+}
