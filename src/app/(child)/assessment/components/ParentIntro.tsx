@@ -86,6 +86,11 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
                   </li>
                 ))}
               </ul>
+              {m.dontNote && (
+                <p className="mt-2 text-sm font-medium italic text-sam-gray-mid">
+                  {m.dontNote}
+                </p>
+              )}
             </div>
           )}
 

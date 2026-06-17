@@ -34,6 +34,10 @@ describe("ParentIntro / read-aloud mode", () => {
     expect(html).toContain(PARENT_INTRO_COPY.modes["read-aloud"].summary);
   });
 
+  it("renders the closing note under the don't list", () => {
+    expect(html).toContain(PARENT_INTRO_COPY.modes["read-aloud"].dontNote!);
+  });
+
   it("does NOT render the no-assistance summary", () => {
     expect(html).not.toContain(
       PARENT_INTRO_COPY.modes["no-assistance"].summary,

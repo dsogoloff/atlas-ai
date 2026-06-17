@@ -28,6 +28,9 @@ export interface ModeCopy {
   /** Optional prohibition-list title + items. */
   dontTitle?: string;
   dontPoints?: readonly string[];
+  /** Optional closing note under the prohibition list (the rationale for the
+   *  whole list). */
+  dontNote?: string;
   /** Generic points list (no-assistance mode). */
   points?: readonly string[];
   /** The one-line clean takeaway. */
@@ -69,6 +72,8 @@ export const PARENT_INTRO_COPY: ParentIntroCopy = {
         "Show or tell them how to work it out",
         "Steer them toward — or away from — any answer",
       ],
+      // DRAFT (founder edit 2026-06-17) — rationale for the whole "don't" list:
+      dontNote: "Doing any of these can pollute their results.",
       // DRAFT — the clean line (NOT vague "a little help"):
       summary:
         "Reading and explaining the words is fine. Helping with the math, or pointing toward the answer, is not — the answer should be your child's own.",
@@ -95,7 +100,7 @@ export const PARENT_INTRO_COPY: ParentIntroCopy = {
       "It's short — usually about 10 to 15 minutes.",
       "It's a quick check to suggest a helpful starting point — where your child is comfortable, and where they might be ready to grow.",
       "It isn't a test to pass or fail, and it isn't a full or final evaluation.",
-      "Your child may see some questions that feel easy and some that feel tricky — that's how it finds a good place to begin.",
+      "Your child may see some questions that feel easy and some that feel tricky — that's how our model finds a good place to begin.",
       "There's nothing to study for. Just encourage them to do their best and not worry about getting everything right.",
     ],
   },
