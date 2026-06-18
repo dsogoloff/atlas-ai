@@ -4,6 +4,13 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0a. 2026-06-18 session — open PRs (all off trunk ae281dd)
+
+- [ ] **Dimitri: merge PR #82 (lane/lead-notify-test)** after Vercel preview review. Test-only; no DB change; no supabase db reset needed.
+- [ ] **Dimitri: merge PR #83 (lane/mascot-welcome)** after Vercel preview review. No DB change; no supabase db reset needed.
+- [ ] **Dimitri: LEGAL — merge PR #84 (lane/coppa-consent-of-record)** after careful Vercel preview review (PDF + /coppa + /add-child checkbox; see CURRENT_STATE founder action #14 for checklist). After merge, run `supabase db reset`. Then resolve 3 batched gate items documented in the PR.
+- [ ] **PARKED — /coppa page body reconciliation (needs Dimitri).** The on-screen `/coppa` page still has Stitch placeholder copy and does NOT yet match the counsel-reviewed disclosure PDF. This is parent-facing claims language (§2.4). Plain-English: after PR #84 merges, someone needs to update the rendered `/coppa` page text to match the PDF. Needs Dimitri direction before any copy change is written.
+
 ## 0. Setup (migration — DONE 2026-05-29)
 - [x] New repo is a real git checkout with code present; origin head `71205e5`
       (analytics merge) recorded in CURRENT_STATE.md.
@@ -416,6 +423,8 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
 - [ ] Offline (v2); multi-tenant scale-out (M5); remaining S.A.M. levels + public items.
 
 ## Parked-for-Dimitri (rollup)
+- **[NEW 2026-06-18] /coppa page body reconciliation — PARKED.** On-screen `/coppa` page body is still Stitch placeholder copy; does NOT match the counsel PDF. Parent-facing claims language (§2.4). After PR #84 merges, Dimitri to direct the copy pass. No build until directed.
+- **[NEW 2026-06-18] PR #84 batched gate items — resolve after merge.** (1) Confirm served PDF rendering acceptable; (2) /coppa copy pass (see item above); (3) confirm committing `docs/legal/Parent_Privacy_Request_Policy.docx` was intended.
 - **Placement bar / radar / sub-strand pills on the degraded branch (item 1, report fix
   pass) — PARKED.** See the PARKED entry under section 1 above for the plain-English
   question. Needs on-screen check on a real completed assessment.
