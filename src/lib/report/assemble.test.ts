@@ -61,6 +61,7 @@ const SESSION: AssembleSession = {
   completed_at: "2026-05-19T15:44:00.000Z",
   current_estimate: VALID_PLACEMENT_JSON as never,
   session_time_flag: "normal",
+  test_type: "short",
 };
 
 const CHILD = {
@@ -126,6 +127,13 @@ describe("assembleReportContent", () => {
     expect(content.strand_mastery).toEqual([]);
     expect(content.misconceptions).toEqual([]);
     expect(content.recommendations).toEqual([]);
+    // SHORT session → readiness summary present (wiring lock); no responses
+    // means 0% → not a clean pass, but a summary is still returned (drives the
+    // comprehensive CTA). The current-level label is the child's grade label.
+    expect(content.readiness).toEqual({
+      ready: false,
+      currentLevelLabel: "3rd Grade",
+    });
 
     expect(new Date(content.generated_at).toISOString()).toBe(
       content.generated_at,

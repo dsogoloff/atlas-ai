@@ -120,4 +120,5 @@ export const aidenGrade3Report: ReportContent = {
       notes: null,
     },
   ],
+  readiness: null,
 };

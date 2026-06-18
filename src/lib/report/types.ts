@@ -17,6 +17,7 @@
 import type { Strand as EngineStrand } from "@/lib/engine/types";
 import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
 import type { StrandMastery } from "@/lib/report/strand-mastery";
+import type { ReadinessSummary } from "@/lib/report/readiness";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Tier } from "@/lib/tier/derive";
 
@@ -134,6 +135,12 @@ export interface ReportContent {
   misconceptions: AggregatedMisconception[]; // 0..3, occurrence desc; empty array
   // is the ML1 positive-state signal — no separate flag
   recommendations: Recommendation[]; // band-sorted (page-owned sort), strand-keyed
+
+  // SHORT-test readiness (asymmetric, §2.4-safe — see lib/report/readiness.ts).
+  // null for comprehensive sessions. For short sessions: ready=true drives the
+  // upside-only "appears ready for…" line; ready=false surfaces NO negative
+  // framing. Either way the short report shows the comprehensive CTA.
+  readiness: ReadinessSummary | null;
 }
 
 // =============================================================================

@@ -41,6 +41,7 @@ import { CenterFollowupCta } from "./center-followup-cta";
 import { FindingsList } from "./findings-list";
 import { ParentReportFeedback } from "./parent-report-feedback";
 import { PlacementCard } from "./placement-card";
+import { ReadinessSection } from "./readiness-section";
 import { PlacementRecommendation } from "./placement-recommendation";
 import { StrandMap } from "./strand-map";
 import { StrandRadar } from "./strand-radar";
@@ -143,7 +144,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   const { data: latestSession } = await supabase
     .from("assessment_sessions")
     .select(
-      "id, tenant_id, started_at, completed_at, current_estimate, session_time_flag",
+      "id, tenant_id, started_at, completed_at, current_estimate, session_time_flag, test_type",
     )
     .eq("child_id", child.id)
     .eq("status", "COMPLETED")
@@ -315,6 +316,17 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           <span aria-hidden="true">&rarr;</span>
         </Link>
       </Hero>
+
+      {/* SHORT-test readiness + comprehensive CTA (null for comprehensive
+          sessions → not rendered). Copy is DRAFT (readiness-section.tsx). */}
+      {reportContent.readiness && (
+        <section
+          className="px-12 max-sm:px-6 py-9 border-b"
+          style={{ borderColor: "var(--color-report-border)" }}
+        >
+          <ReadinessSection readiness={reportContent.readiness} />
+        </section>
+      )}
 
       {(reportContent.time_flag === "rushed" ||
         reportContent.time_flag === "struggling") && (

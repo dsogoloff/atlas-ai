@@ -32,6 +32,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Strand as EngineStrand } from "@/lib/engine/types";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { aggregateMisconceptions } from "@/lib/report/misconception-aggregate";
+import { computeReadiness } from "@/lib/report/readiness";
 import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
 import {
   computeStrandMastery,
@@ -130,6 +131,8 @@ export interface AssembleSession {
   completed_at: string | null;
   current_estimate: Database["public"]["Tables"]["assessment_sessions"]["Row"]["current_estimate"];
   session_time_flag: SessionTimeFlag | null;
+  /** Drives the short-test readiness summary (readiness is short-only). */
+  test_type: Database["public"]["Enums"]["assessment_test_type"];
 }
 
 export interface AssembleChild {
@@ -364,6 +367,14 @@ export async function assembleReportContent(
   const tier = deriveTier(child);
   const timeFlag: SessionTimeFlag = session.session_time_flag ?? "normal";
 
+  // SHORT-test readiness: clean pass on the previous-level sample (overall %)
+  // → "appears ready for [current grade level]". Null for comprehensive.
+  const readiness = computeReadiness({
+    testType: session.test_type,
+    overallPercentage: overallPercentage,
+    currentLevelLabel: formatChildGradeLabel(child),
+  });
+
   return {
     session_id: session.id,
     tenant_id: session.tenant_id,
@@ -386,6 +397,7 @@ export async function assembleReportContent(
     strand_mastery: strandMastery,
     misconceptions,
     recommendations,
+    readiness,
   };
 }
 

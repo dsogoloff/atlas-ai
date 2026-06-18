@@ -51,7 +51,7 @@ export async function attemptNarration(
     const { data: session, error: sessionErr } = await serviceClient
       .from("assessment_sessions")
       .select(
-        "id, tenant_id, child_id, started_at, completed_at, current_estimate, session_time_flag",
+        "id, tenant_id, child_id, started_at, completed_at, current_estimate, session_time_flag, test_type",
       )
       .eq("id", sessionId)
       .maybeSingle();
