@@ -27,14 +27,17 @@ const NEGATIVE_WORDS = [
 describe("ReadinessSection — clean pass (ready)", () => {
   const html = renderToString(
     <ReadinessSection
-      readiness={{ ready: true, currentLevelLabel: "Grade 5" }}
+      readiness={{ ready: true, currentLevelLabel: "5" }}
       sessionId={SID}
       schoolFieldEnabled={false}
     />,
   );
 
-  it("renders the upside-only readiness line with the current level", () => {
-    expect(html).toContain(READINESS_COPY.readyLine("Grade 5"));
+  it("renders the upside-only readiness line with the S.A.M booklet level", () => {
+    expect(html).toContain(READINESS_COPY.readyLine("5"));
+    expect(html).toContain("S.A.M Level 5");
+    // No school-grade language reaches the parent.
+    expect(html).not.toContain("Grade");
   });
 
   it("renders the comprehensive CTA", () => {
@@ -46,14 +49,14 @@ describe("ReadinessSection — clean pass (ready)", () => {
 describe("ReadinessSection — not a clean pass (line absent, no negativity)", () => {
   const html = renderToString(
     <ReadinessSection
-      readiness={{ ready: false, currentLevelLabel: "Grade 5" }}
+      readiness={{ ready: false, currentLevelLabel: "5" }}
       sessionId={SID}
       schoolFieldEnabled={false}
     />,
   );
 
   it("does NOT render the readiness line", () => {
-    expect(html).not.toContain(READINESS_COPY.readyLine("Grade 5"));
+    expect(html).not.toContain(READINESS_COPY.readyLine("5"));
     expect(html).not.toContain("appears ready for");
   });
 

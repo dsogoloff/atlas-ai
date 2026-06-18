@@ -9,7 +9,11 @@ import { describe, expect, it } from "vitest";
 
 import type { Database } from "@/lib/supabase/database.types";
 
-import { assembleReportContent, type AssembleSession } from "./assemble";
+import {
+  assembleReportContent,
+  samLevelLabel,
+  type AssembleSession,
+} from "./assemble";
 
 // Minimal fake. Each table's .from() returns a thenable that resolves to
 // canned rows. select/eq/in are chainable no-ops that ultimately resolve
@@ -121,7 +125,8 @@ describe("assembleReportContent", () => {
     expect(content.child.grade_label).toBe("3rd Grade");
     expect(content.metadata.report_id).toBe(SESSION.id);
     expect(content.metadata.duration_display).toBe("14 minutes");
-    expect(content.placement.sam_level).toBe("S.A.M Level 3A");
+    // Booklet display — never the half-grade code (3A). Grade 3 → S.A.M Level 3.
+    expect(content.placement.sam_level).toBe("S.A.M Level 3");
     expect(content.placement.tier).toBe("K_4");
     expect(content.time_flag).toBe("normal");
     expect(content.strand_mastery).toEqual([]);
@@ -129,10 +134,11 @@ describe("assembleReportContent", () => {
     expect(content.recommendations).toEqual([]);
     // SHORT session → readiness summary present (wiring lock); no responses
     // means 0% → not a clean pass, but a summary is still returned (drives the
-    // comprehensive CTA). The current-level label is the child's grade label.
+    // comprehensive CTA). currentLevelLabel is the S.A.M booklet level (grade 3
+    // → "3"), never a school grade.
     expect(content.readiness).toEqual({
       ready: false,
-      currentLevelLabel: "3rd Grade",
+      currentLevelLabel: "3",
     });
 
     expect(new Date(content.generated_at).toISOString()).toBe(
@@ -204,5 +210,29 @@ describe("assembleReportContent", () => {
         child: CHILD,
       }),
     ).rejects.toThrow(/PlacementEstimate/);
+  });
+});
+
+describe("samLevelLabel — S.A.M booklet naming (no school grade, no half-grade code)", () => {
+  it("renders the booklet level, never the half-grade code", () => {
+    expect(samLevelLabel("3A")).toBe("S.A.M Level 3");
+    expect(samLevelLabel("3B")).toBe("S.A.M Level 3");
+    expect(samLevelLabel("0A")).toBe("S.A.M Level 0A");
+    expect(samLevelLabel("0C")).toBe("S.A.M Level 0C");
+    // 7/8 shown as-is (D2)
+    expect(samLevelLabel("7A")).toBe("S.A.M Level 7");
+    expect(samLevelLabel("8B")).toBe("S.A.M Level 8");
+  });
+
+  it("the 'no level K / Kindergarten' symptom is gone — KA/KB → S.A.M Level 0C", () => {
+    expect(samLevelLabel("KA")).toBe("S.A.M Level 0C");
+    expect(samLevelLabel("KB")).toBe("S.A.M Level 0C");
+    expect(samLevelLabel("KA")).not.toContain("Kindergarten");
+    expect(samLevelLabel("KA")).not.toContain("KA");
+  });
+
+  it("uses no trailing dot (matches the locked narration prompt) (D4)", () => {
+    expect(samLevelLabel("3A").startsWith("S.A.M Level")).toBe(true);
+    expect(samLevelLabel("3A")).not.toContain("S.A.M. Level");
   });
 });

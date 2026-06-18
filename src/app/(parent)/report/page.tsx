@@ -30,7 +30,6 @@ import { redirect } from "next/navigation";
 import { CTA_LINKS } from "@/lib/cta-links";
 import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import { firstName } from "@/lib/format/firstName";
-import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { assembleReportContent } from "@/lib/report/assemble";
 import { resolveNarrationProse } from "@/lib/report/narration/resolve";
 import { rollUpToParentStrands } from "@/lib/report/strand-mastery";
@@ -156,16 +155,12 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   // ---- Branch 5: empty state.
   if (!latestSession) {
     const childFirstName = firstName(child.name);
-    const gradeLabel = child.grade_level
-      ? formatGradeLevel(child.grade_level)
-      : null;
+    // School grade is no longer surfaced to parents (founder decision
+    // 2026-06-18, D5) — the empty state shows no meta line.
     return (
       <ReportShell>
         <Topbar reportId={null} />
-        <Hero
-          childName={childFirstName}
-          metaLine={gradeLabel}
-        />
+        <Hero childName={childFirstName} metaLine={null} />
         <section
           className="px-12 max-sm:px-6 py-13 max-sm:py-10 border-b"
           style={{ borderColor: "var(--color-report-border)" }}
@@ -222,13 +217,10 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   // ---- Branch 6: unreliable/mixed → "please re-take" banner only.
   if (timeFlag === "unreliable" || timeFlag === "mixed") {
     const childFirstName = firstName(child.name);
-    const gradeLabel = child.grade_level
-      ? formatGradeLevel(child.grade_level)
-      : null;
+    // School grade is no longer surfaced to parents (D5) — meta line is the
+    // assessed date only.
     const completed = formatDate(latestSession.completed_at);
-    const metaLine = [gradeLabel, completed ? `Assessed ${completed}` : null]
-      .filter(Boolean)
-      .join(" · ");
+    const metaLine = completed ? `Assessed ${completed}` : "";
     return (
       <ReportShell>
         <Topbar reportId={null} />
@@ -673,17 +665,14 @@ function formatDate(iso: string | null): string | null {
   });
 }
 
-/** Compose the hero meta line: "{grade} · Assessed {date} · Completed in {duration}".
+/** Compose the hero meta line: "Assessed {date} · Completed in {duration}".
  *  Each piece is optional — gracefully degrades when fields are missing.
  *  The interpunct separator matches the reference (atlas-sample-report.html). */
 function buildMetaLine(reportContent: {
-  child: { grade_label: string };
   metadata: { assessed_date_display: string; duration_display: string };
 }): string | null {
+  // School grade dropped from the parent meta line (D5).
   const parts: string[] = [];
-  if (reportContent.child.grade_label) {
-    parts.push(reportContent.child.grade_label);
-  }
   if (reportContent.metadata.assessed_date_display) {
     parts.push(`Assessed ${reportContent.metadata.assessed_date_display}`);
   }

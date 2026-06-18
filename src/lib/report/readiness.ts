@@ -46,7 +46,8 @@ export function computeReadiness(args: {
   testType: TestType;
   /** Session overall percentage, 0..100 (placement.overall_percentage). */
   overallPercentage: number;
-  /** Current grade-level label, e.g. ReportContent.child.grade_label. */
+  /** Current S.A.M booklet level display (e.g. "0C", "3") — the level the child
+   *  appears ready for. NEVER a school grade or half-grade code. */
   currentLevelLabel: string;
 }): ReadinessSummary | null {
   if (args.testType !== "short") return null;
@@ -65,9 +66,11 @@ export function computeReadiness(args: {
 // code. Voice-locked narration prompt untouched.
 // =============================================================================
 export const READINESS_COPY = {
-  /** Upside-only readiness line (shown ONLY on a clean pass). */
+  /** Upside-only readiness line (shown ONLY on a clean pass). currentLevelLabel
+   *  is the S.A.M booklet level (e.g. "0C", "3"); rendered as "S.A.M Level X"
+   *  (no dot, matching the locked narration prompt). */
   readyLine: (currentLevelLabel: string): string =>
-    `Great news — based on this quick check, your child appears ready for ${currentLevelLabel}.`,
+    `Great news — based on this quick check, your child appears ready for S.A.M Level ${currentLevelLabel}.`,
   /** Comprehensive CTA — shown to every short-test taker (pass or not). */
   comprehensiveCtaHeading: "See the full picture",
   comprehensiveCtaBody:

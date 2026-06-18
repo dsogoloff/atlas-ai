@@ -7,30 +7,26 @@
 // retained on the prop API for caller-stability but no longer drive visual
 // chrome — the editorial format is performance-blind by design.
 //
-// Report lock R2: parent-facing copy shows "S.A.M Level N" only — the
-// half-level letter is internal placement detail. stripHalfLevel mirrors
-// the narration prompt's stripper.
+// Report lock R2: parent-facing copy shows the S.A.M booklet level only. The
+// half-level letter is never present here — `samLevel` (from samLevelLabel) is
+// already the booklet display ("S.A.M Level 0C", "S.A.M Level 3").
 
 import type { Tier } from "@/lib/tier/derive";
 
 interface PlacementCardProps {
   childName: string;
-  samLevel: string; // pre-formatted, e.g. "S.A.M Level 2A"
+  samLevel: string; // pre-formatted booklet display, e.g. "S.A.M Level 3"
   overallPercentage: number;
   tier: Tier;
   /** Optional Sonnet-generated warm sentence shown below the placement box. */
   narrationLine?: string;
 }
 
-function stripHalfLevel(samLevel: string): string {
-  return samLevel.replace(/[A-Za-z]$/, "").trimEnd();
-}
-
 export function PlacementCard({
   samLevel,
   narrationLine,
 }: PlacementCardProps) {
-  const samLevelWhole = stripHalfLevel(samLevel);
+  const samLevelWhole = samLevel;
 
   return (
     <div>

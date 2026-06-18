@@ -113,8 +113,11 @@ describe("fetchRoster", () => {
     const roster = await fetchRoster(client);
 
     expect(roster[0].status).toBe("completed");
-    // Latest by completed_at wins → 3A label, not the older 2A.
-    expect(roster[0].placementLabel).toBe("S.A.M Level 3A");
+    // Latest by completed_at wins → level 3 (from 3A), not the older 2A.
+    // samLevelLabel now renders the S.A.M booklet level (no half-grade); the
+    // instructor roster shares this fn (founder decision 2026-06-18; instructor
+    // side-effect flagged in the PR).
+    expect(roster[0].placementLabel).toBe("S.A.M Level 3");
     expect(roster[0].completedAtDisplay).toBe("May 20, 2026");
   });
 

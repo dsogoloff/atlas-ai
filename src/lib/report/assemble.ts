@@ -35,6 +35,11 @@ import { aggregateMisconceptions } from "@/lib/report/misconception-aggregate";
 import { computeReadiness } from "@/lib/report/readiness";
 import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
 import {
+  BOOKLET_LEVELS,
+  anchorBookletForChild,
+  bookletOrdinalForHalfGrade,
+} from "@/lib/questionPicker/levelBand";
+import {
   computeStrandMastery,
   type ScoredResponse,
 } from "@/lib/report/strand-mastery";
@@ -53,37 +58,17 @@ import { deriveTier } from "@/lib/tier/derive";
 type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
 
-const SAM_LEVEL_BY_HALF_GRADE: Record<HalfGradeLevel, string> = {
-  "0A": "Level 0A",
-  "0B": "Level 0B",
-  "0C": "Level 0C",
-  KA: "Kindergarten A",
-  KB: "Kindergarten B",
-  "1A": "Level 1A",
-  "1B": "Level 1B",
-  "2A": "Level 2A",
-  "2B": "Level 2B",
-  "3A": "Level 3A",
-  "3B": "Level 3B",
-  "4A": "Level 4A",
-  "4B": "Level 4B",
-  "5A": "Level 5A",
-  "5B": "Level 5B",
-  "6A": "Level 6A",
-  "6B": "Level 6B",
-  "7A": "Level 7A",
-  "7B": "Level 7B",
-  "8A": "Level 8A",
-  "8B": "Level 8B",
-};
-
 // Exported for reuse by the instructor roster, which needs the canonical
 // S.A.M-level label per child without re-running the full report assembly.
 export function samLevelLabel(level: HalfGradeLevel): string {
-  // S.A.M's official brand name has no trailing dot — "S.A.M Level 3A",
-  // not "S.A.M. Level 3A". Sentence-ending punctuation in copy is added
-  // separately; this formatter produces only the mid-sentence form.
-  return `S.A.M ${SAM_LEVEL_BY_HALF_GRADE[level]}`;
+  // S.A.M-LEVEL (booklet) naming — the parent/placement axis (0A, 0B, 0C,
+  // 1, 2 … 8), derived from the row's half_grade via levelBand's booklet axis.
+  // The internal half-grade code (KA/KB/3A/3B) is NEVER surfaced — KA/KB fold
+  // into the 0C booklet, 3A/3B into "3", etc. No trailing dot ("S.A.M Level 3",
+  // not "S.A.M. Level 3"), matching the voice-locked narration prompt.
+  const ordinal = bookletOrdinalForHalfGrade(level);
+  const booklet = ordinal === null ? level : BOOKLET_LEVELS[ordinal];
+  return `S.A.M Level ${booklet}`;
 }
 
 /** Half-grade → tax_level code. Best-effort 1:1; half-grades outside
@@ -369,10 +354,16 @@ export async function assembleReportContent(
 
   // SHORT-test readiness: clean pass on the previous-level sample (overall %)
   // → "appears ready for [current grade level]". Null for comprehensive.
+  // Readiness names the S.A.M booklet level the child appears ready for — their
+  // CURRENT grade's booklet (the short test sampled the level below). Booklet
+  // display via levelBand (grade → booklet ordinal → "0C"/"1"/…); NEVER a
+  // school grade or half-grade code.
+  const readinessLevel =
+    BOOKLET_LEVELS[anchorBookletForChild(child.grade_level, child.birth_year)];
   const readiness = computeReadiness({
     testType: session.test_type,
     overallPercentage: overallPercentage,
-    currentLevelLabel: formatChildGradeLabel(child),
+    currentLevelLabel: readinessLevel,
   });
 
   return {
