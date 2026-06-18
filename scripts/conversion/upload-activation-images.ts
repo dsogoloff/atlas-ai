@@ -2,7 +2,8 @@
 // (lane/l0-l2-activation).
 //
 // Uploads every per-question / per-tile image referenced by the 19 activated rows
-// (PR #78) to the private `question-images` Supabase Storage bucket at its EXACT
+// (PR #78) plus the 5 L1 art-curation rows (migration 20260614120001) to the private
+// `question-images` Supabase Storage bucket at its EXACT
 // object path, so an activated image row serves its picture instead of 500-ing at
 // serve (the serve-time minter throws on a missing object). Deterministic +
 // idempotent (upsert) — re-runs are safe. NO Studio drag-drop.
@@ -12,7 +13,7 @@
 // 1:1 with the `image_path` values in overlay/l*-activation.json. SOURCE_DIRS are
 // the (untracked, licensed) crop locations; override via env if they move.
 //
-// TWO sections: (1) MANIFEST — the 32 images for the 19 newly-activated rows; and
+// TWO sections: (1) MANIFEST — 37 images (the 19 PR-#78-activated rows + the 5 l1-art-curation rows); and
 // (2) PREEXISTING_L2_BACKFILL — the 7 images for the ALREADY-active L2 rows whose
 // files were never uploaded to local storage (they 500 at serve until present).
 // Both upsert. The backfill bucket paths are the EXACT root-level keys those live
@@ -53,7 +54,8 @@ interface ManifestEntry {
   bucket: string; // exact object path in `question-images`
 }
 
-// 32 images for the 19 activated rows (matches overlay/l*-activation.json exactly).
+// 37 images: 32 for the 19 PR-#78 activation rows (overlay/l*-activation.json) + 5 for the
+// L1 art-curation rows activated by migration 20260614120001 (omitted from the original set).
 const MANIFEST: ManifestEntry[] = [
   // L0A-Q08 (CLICK_IMAGE_SINGLE) — 4 object tiles
   { source: `${L0_SRC}/0a/0A-08_1.png`, bucket: "l0/sam-l0a-q08-t1.png" },
@@ -94,6 +96,15 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L1_SRC}/sam-l1-q17-walking-to-school.png`, bucket: "l1/sam-l1-q17-walking-to-school.png" },
   { source: `${L1_SRC}/sam-l1-q17-studying.png`, bucket: "l1/sam-l1-q17-studying.png" },
   { source: `${L1_SRC}/sam-l1-q17-sleeping.png`, bucket: "l1/sam-l1-q17-sleeping.png" },
+  // L1-Q04/Q05/Q10/Q12/Q19 — single-image rows activated by migration
+  // 20260614120001_l1_art_wire_activate.sql (lane/l1-art-curation), NOT by the
+  // PR-#78 activation overlay above. Their images were omitted from this manifest,
+  // so the rows serve-500 (createSignedUrl "Object not found") until uploaded.
+  { source: `${L1_SRC}/sam-l1-q04.png`, bucket: "l1/sam-l1-q04.png" },
+  { source: `${L1_SRC}/sam-l1-q05.png`, bucket: "l1/sam-l1-q05.png" },
+  { source: `${L1_SRC}/sam-l1-q10.png`, bucket: "l1/sam-l1-q10.png" },
+  { source: `${L1_SRC}/sam-l1-q12.png`, bucket: "l1/sam-l1-q12.png" },
+  { source: `${L1_SRC}/sam-l1-q19.png`, bucket: "l1/sam-l1-q19.png" },
   // L2-Q06 (CLICK_IMAGE_SINGLE) — 4 base-ten option tiles
   { source: `${L2_SRC}/L2-6_1.png`, bucket: "l2/sam-l2-q06-opt1.png" },
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
@@ -103,7 +114,7 @@ const MANIFEST: ManifestEntry[] = [
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
 // never uploaded to LOCAL storage (so those rows 500 at serve locally). Distinct
-// from the 32 activation images above — these belong to rows that are already
+// from the 37 activation images above — these belong to rows that are already
 // is_active=true; this only backfills their missing pictures for local QA. The
 // bucket paths are the EXACT image_path each live row references (root-level keys
 // from overlay/l2-authoring.json, NOT the l2/ folder convention).
@@ -225,7 +236,7 @@ async function main(): Promise<void> {
   const backfill = await uploadSection(supabase, PREEXISTING_L2_BACKFILL);
 
   // --- 3) Verification tables ---------------------------------------------
-  printSection("ACTIVATION IMAGES (32 — for the 19 newly-activated rows)", activation);
+  printSection("ACTIVATION IMAGES (37 — 19 PR-#78 rows + 5 l1-art-curation rows)", activation);
   printSection("PRE-EXISTING-L2-BACKFILL (7 — already-active rows' missing files)", backfill);
 
   const results = [...activation, ...backfill];
