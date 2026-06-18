@@ -3261,3 +3261,128 @@ where q.tenant_id = t.id
   and q.is_active = false;
 
 -- END l0-l2-activation
+
+-- =============================================================================
+-- LOCAL-DEV QA SEED — DO NOT SHIP
+-- =============================================================================
+-- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
+-- 3, 4), each with an unrevoked per-child consent record, so every child is
+-- immediately assessable after a `supabase db reset` — eliminating the manual
+-- signup -> add-child -> /coppa cycle on each QA pass.
+--
+-- LOCAL-DEV ONLY, NEVER PROD. Two layers of protection:
+--   (1) STRUCTURAL: this lives ONLY in supabase/seed.sql. `supabase db reset`
+--       runs seed.sql (local/CI); production applies migrations/ and NEVER runs
+--       seed.sql. This block is intentionally NOT in any migration.
+--   (2) RUNTIME GUARD: the DO block below no-ops unless the local-dev marker
+--       user (dev@atlas.local, created earlier in THIS seed) is present, so even
+--       if seed.sql were pointed at a non-local DB the QA family is not written.
+--
+-- Mirrors the production write path exactly (src/app/(auth)/add-child/actions.ts
+-- + src/lib/consent/text.ts): children(name, birth_year, grade_level) +
+-- consent_records(consent_type, consent_text[_version], disclosure_version,
+-- disclosure_content_sha256, data_uses, sharing_permissions, revoked=false). The
+-- COPPA gate (src/lib/consent/verify.ts) checks only for an unrevoked row per
+-- child — pre-satisfied here; fail-closed semantics unchanged.
+--
+-- Login (LOCAL DEV ONLY):  qa-parent@local.test  /  qa-dev-password
+--
+-- grade_level drives the picker's +/-1 booklet anchor (src/lib/questionPicker/
+-- levelBand.ts via parseGradeNumber): Pre-K -> 0 (0C booklet), Grade N -> N.
+-- birth_year is the parse fallback, set consistent with each grade
+-- (gradeFromBirthYear, CURRENT_ACADEMIC_YEAR_START = 2025).
+--
+-- UUIDs are obvious-fake (fae*/fac*) but keep the v4 nibbles (4 @ pos 13,
+-- 8 @ pos 17) so they pass the route Zod .uuid() checks (see LANDMINE 2 at the
+-- top of this file). Idempotent: every insert no-ops on conflict.
+do $$
+declare
+  v_tenant uuid;
+  v_center uuid;
+begin
+  -- RUNTIME GUARD (layer 2): only seed the QA family on the local dev stack,
+  -- detected via the dev marker user this same seed creates near the top.
+  if not exists (select 1 from auth.users where email = 'dev@atlas.local') then
+    raise notice '[qa-seed] skipped: local-dev marker (dev@atlas.local) absent — not the local stack.';
+    return;
+  end if;
+
+  select id into v_tenant from tenants where slug = 'inspirea_singapore_math';
+  if v_tenant is null then
+    raise notice '[qa-seed] skipped: tenant inspirea_singapore_math not found.';
+    return;
+  end if;
+  -- Single day-1 ACTIVE center (nullable on the rows; powers the instructor roster).
+  select id into v_center from centers
+    where tenant_id = v_tenant and status = 'ACTIVE'
+    order by created_at limit 1;
+
+  -- 1) QA test parent — GoTrue user + identity (empty-string token traps per
+  --    LANDMINE 1 above; password 'qa-dev-password').
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    is_sso_user, is_anonymous,
+    confirmation_token, recovery_token, email_change_token_new, email_change
+  ) values (
+    'fae00000-0000-4000-8000-000000000001',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'qa-parent@local.test',
+    crypt('qa-dev-password', gen_salt('bf', 10)),
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"name":"QA Parent"}'::jsonb,
+    now(), now(), false, false,
+    '', '', '', ''
+  ) on conflict (id) do nothing;
+
+  insert into auth.identities (
+    id, user_id, provider_id, provider, identity_data,
+    last_sign_in_at, created_at, updated_at
+  ) values (
+    gen_random_uuid(),
+    'fae00000-0000-4000-8000-000000000001',
+    'fae00000-0000-4000-8000-000000000001',
+    'email',
+    '{"sub":"fae00000-0000-4000-8000-000000000001","email":"qa-parent@local.test","email_verified":true,"phone_verified":false}'::jsonb,
+    now(), now(), now()
+  ) on conflict (provider_id, provider) do nothing;
+
+  -- 2) ParentProfile (public.parents).
+  insert into parents (id, auth_user_id, tenant_id, home_center_id, email, name)
+  values (
+    'fae00000-0000-4000-8000-000000000002',
+    'fae00000-0000-4000-8000-000000000001',
+    v_tenant, v_center,
+    'qa-parent@local.test', 'QA Parent'
+  ) on conflict (id) do nothing;
+
+  -- 3) Five ChildProfiles — one per booklet level. grade_level sets the picker
+  --    anchor; name makes the level obvious in the UI.
+  insert into children (id, parent_id, tenant_id, home_center_id, name, birth_year, grade_level)
+  values
+    ('fac00000-0000-4000-8000-00000000000c', 'fae00000-0000-4000-8000-000000000002', v_tenant, v_center, 'QA Zero-C',  2020, 'Pre-K'),
+    ('fac00000-0000-4000-8000-000000000001', 'fae00000-0000-4000-8000-000000000002', v_tenant, v_center, 'QA Level 1', 2019, 'Grade 1'),
+    ('fac00000-0000-4000-8000-000000000002', 'fae00000-0000-4000-8000-000000000002', v_tenant, v_center, 'QA Level 2', 2018, 'Grade 2'),
+    ('fac00000-0000-4000-8000-000000000003', 'fae00000-0000-4000-8000-000000000002', v_tenant, v_center, 'QA Level 3', 2017, 'Grade 3'),
+    ('fac00000-0000-4000-8000-000000000004', 'fae00000-0000-4000-8000-000000000002', v_tenant, v_center, 'QA Level 4', 2016, 'Grade 4')
+  on conflict (id) do nothing;
+
+  -- 4) One unrevoked per-child consent each (mirrors add-child + consent/text.ts;
+  --    real CONSENT_TYPE / text / disclosure / data_uses / sharing values).
+  insert into consent_records (
+    id, tenant_id, parent_id, child_id, consent_type,
+    consent_text_version, consent_text, disclosure_version,
+    disclosure_content_sha256, data_uses, sharing_permissions, revoked
+  ) values
+    ('fac50000-0000-4000-8000-00000000000c', v_tenant, 'fae00000-0000-4000-8000-000000000002', 'fac00000-0000-4000-8000-00000000000c', 'coppa_vpc', '2026-06-18.v2', 'I am the parent or legal guardian and I consent to the collection and use of my child''s information as described in this Parent Notice and Consent.', 'coppa-disclosure-v1', 'a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea', '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb, '{"third_party":false,"marketing":false,"beyond_assessment":false}'::jsonb, false),
+    ('fac50000-0000-4000-8000-000000000001', v_tenant, 'fae00000-0000-4000-8000-000000000002', 'fac00000-0000-4000-8000-000000000001', 'coppa_vpc', '2026-06-18.v2', 'I am the parent or legal guardian and I consent to the collection and use of my child''s information as described in this Parent Notice and Consent.', 'coppa-disclosure-v1', 'a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea', '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb, '{"third_party":false,"marketing":false,"beyond_assessment":false}'::jsonb, false),
+    ('fac50000-0000-4000-8000-000000000002', v_tenant, 'fae00000-0000-4000-8000-000000000002', 'fac00000-0000-4000-8000-000000000002', 'coppa_vpc', '2026-06-18.v2', 'I am the parent or legal guardian and I consent to the collection and use of my child''s information as described in this Parent Notice and Consent.', 'coppa-disclosure-v1', 'a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea', '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb, '{"third_party":false,"marketing":false,"beyond_assessment":false}'::jsonb, false),
+    ('fac50000-0000-4000-8000-000000000003', v_tenant, 'fae00000-0000-4000-8000-000000000002', 'fac00000-0000-4000-8000-000000000003', 'coppa_vpc', '2026-06-18.v2', 'I am the parent or legal guardian and I consent to the collection and use of my child''s information as described in this Parent Notice and Consent.', 'coppa-disclosure-v1', 'a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea', '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb, '{"third_party":false,"marketing":false,"beyond_assessment":false}'::jsonb, false),
+    ('fac50000-0000-4000-8000-000000000004', v_tenant, 'fae00000-0000-4000-8000-000000000002', 'fac00000-0000-4000-8000-000000000004', 'coppa_vpc', '2026-06-18.v2', 'I am the parent or legal guardian and I consent to the collection and use of my child''s information as described in this Parent Notice and Consent.', 'coppa-disclosure-v1', 'a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea', '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb, '{"third_party":false,"marketing":false,"beyond_assessment":false}'::jsonb, false)
+  on conflict (id) do nothing;
+
+  raise notice '[qa-seed] QA family ready: qa-parent@local.test / qa-dev-password — 5 children (0C, 1, 2, 3, 4), each consented.';
+end $$;
+-- END LOCAL-DEV QA SEED — DO NOT SHIP
