@@ -3,10 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Database } from "@/lib/supabase/database.types";
 
-import {
-  SHORT_TEST_LEVEL_BAND,
-  pickShortTestQuestion,
-} from "./shortTestPicker";
+import { pickShortTestQuestion } from "./shortTestPicker";
 import type {
   PickedQuestionRow,
   PickerContext,
@@ -73,6 +70,7 @@ function ctx(over: Partial<PickerContext> = {}): PickerContext {
     tenantId: over.tenantId ?? TENANT,
     servedQuestionIds: over.servedQuestionIds ?? [],
     candidateLimit: over.candidateLimit,
+    levelBand: over.levelBand,
   };
 }
 
@@ -83,19 +81,6 @@ function req(over: Partial<PickerRequest> = {}): PickerRequest {
     width: over.width ?? 1,
   };
 }
-
-describe("SHORT_TEST_LEVEL_BAND (grades 3–7)", () => {
-  it("covers 3A through 7B", () => {
-    expect(SHORT_TEST_LEVEL_BAND).toEqual([
-      "3A", "3B", "4A", "4B", "5A", "5B", "6A", "6B", "7A", "7B",
-    ]);
-  });
-  it("excludes below grade 3 and above grade 7", () => {
-    expect(SHORT_TEST_LEVEL_BAND).not.toContain("2B");
-    expect(SHORT_TEST_LEVEL_BAND).not.toContain("8A");
-    expect(SHORT_TEST_LEVEL_BAND).not.toContain("KA");
-  });
-});
 
 describe("pickShortTestQuestion — short_test_eligible filter", () => {
   it("draws only from short_test_eligible = true items", async () => {
@@ -120,27 +105,41 @@ describe("pickShortTestQuestion — short_test_eligible filter", () => {
   });
 });
 
-describe("pickShortTestQuestion — grade-band scope (3–7)", () => {
-  it("includes an in-band item and excludes out-of-band items", async () => {
+describe("pickShortTestQuestion — previous-booklet level band (ctx.levelBand)", () => {
+  // The caller passes the single previous booklet's half-grades (e.g. a grade-5
+  // child samples grade 4 → ["4A","4B"]).
+  it("draws only from the passed previous-booklet levels", async () => {
     const inBand = row({ id: "33333333-3333-3333-3333-333333333333", level: "4A" });
+    const sameGrade = row({ id: "55555555-5555-5555-5555-555555555555", level: "5A" });
     const tooLow = row({ id: "44444444-4444-4444-4444-444444444444", level: "2B" });
-    const tooHigh = row({ id: "55555555-5555-5555-5555-555555555555", level: "8A" });
     const result = await pickShortTestQuestion(
-      makeClient([tooLow, tooHigh, inBand]),
+      makeClient([sameGrade, tooLow, inBand]),
       req(),
-      ctx(),
+      ctx({ levelBand: ["4A", "4B"] }),
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.question.id).toBe(inBand.id);
   });
 
-  it("returns strand-exhausted when the only eligible item is out of band", async () => {
+  it("HOLD HARD: strand-exhausted when nothing is in the previous booklet (no widening)", async () => {
     const result = await pickShortTestQuestion(
-      makeClient([row({ level: "2B", short_test_eligible: true })]),
+      makeClient([row({ level: "5A", short_test_eligible: true })]),
       req(),
-      ctx(),
+      ctx({ levelBand: ["4A", "4B"] }),
     );
     expect(result).toEqual({ ok: false, reason: "strand-exhausted" });
+  });
+
+  it("reaches below the intake floor (0C child samples 0B)", async () => {
+    const below = row({ id: "66666666-6666-6666-6666-666666666666", level: "0B" });
+    const atFloor = row({ id: "77777777-7777-7777-7777-777777777777", level: "0C" });
+    const result = await pickShortTestQuestion(
+      makeClient([atFloor, below]),
+      req(),
+      ctx({ levelBand: ["0B"] }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe(below.id);
   });
 });
 

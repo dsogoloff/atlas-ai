@@ -25,16 +25,30 @@ export function probCorrect(level: HalfGradeLevel, difficulty: number): number {
   return sigmoid(levelTheta(level) - difficulty);
 }
 
+// The pre-K young band (0A/0B/0C, added to half_grade_level in migration
+// 20260616120000) carries ZERO default prior: an unknown-grade child is K-8 by
+// the signup intake floor, so the uniform cold-start spans KA…8B exactly as it
+// did before the extension (the pre-extension midpoint is preserved). Pre-K
+// levels exist on the scale so levelIndex/levelTheta work for 0A/0B/0C ITEMS,
+// and are reached by the grade-derived picker band — not as a cold-start center.
+export const SUB_KA_LEVELS: ReadonlySet<HalfGradeLevel> = new Set<HalfGradeLevel>([
+  "0A",
+  "0B",
+  "0C",
+]);
+
 /**
- * Uniform posterior over all 18 levels — the prior used at the start of
- * a fresh assessment session for each strand.
+ * Uniform posterior over the KA…8B placement band (18 levels) — the prior used
+ * at the start of a fresh assessment session for each strand. Pre-K levels get
+ * zero mass (see SUB_KA_LEVELS).
  */
 export function uniformPosterior(): StrandPosterior {
-  const p = 1 / LEVELS.length;
+  const bandSize = LEVELS.length - SUB_KA_LEVELS.size;
+  const p = 1 / bandSize;
   // Build via reduce so the type-checker accepts the partial→full transition.
   return LEVELS.reduce(
     (acc, level) => {
-      acc[level] = p;
+      acc[level] = SUB_KA_LEVELS.has(level) ? 0 : p;
       return acc;
     },
     {} as StrandPosterior,

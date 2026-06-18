@@ -86,12 +86,25 @@ export async function pickQuestion(
   // Single string literal — Supabase's type inference is fragile against
   // concatenation (TS2339 has bitten us on questions.* before; see
   // src/lib/responseSubmit/handler.ts comment around the same select).
-  const { data, error } = await serviceClient
+  let query = serviceClient
     .from("questions")
     .select(`id, external_id, strand, level, difficulty, format, content`)
     .eq("tenant_id", ctx.tenantId)
     .eq("strand", request.strand)
     .eq("is_active", true);
+
+  // S.A.M. booklet level band (QA Issue 2 / CONVERSION decision #14). HOLD
+  // HARD: filter to the in-band levels with no widening. The band may contain
+  // sub-KA levels (0A/0B/0C) the generated HalfGradeLevel union doesn't carry
+  // yet, so the allow-list is typed as strings and cast for the .in() call.
+  if (ctx.levelBand) {
+    query = query.in(
+      "level",
+      ctx.levelBand as unknown as Database["public"]["Enums"]["half_grade_level"][],
+    );
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(`[picker] questions read failed: ${error.message}`);

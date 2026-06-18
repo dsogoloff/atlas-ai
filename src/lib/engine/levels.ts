@@ -16,8 +16,11 @@ export const STRANDS = [
   "data_statistics",
 ] as const satisfies readonly Strand[];
 
-/** All 18 half-grade levels in monotonically increasing ability order. */
+/** All 21 half-grade levels in monotonically increasing ability order. The
+ *  pre-K young band (0A/0B/0C) was added to the half_grade_level enum in
+ *  migration 20260616120000 (before KA); they sit below KA on the scale. */
 export const LEVELS = [
+  "0A", "0B", "0C",
   "KA", "KB",
   "1A", "1B",
   "2A", "2B",
@@ -43,10 +46,13 @@ export function levelAt(index: number): HalfGradeLevel {
   return LEVELS[clamped];
 }
 
-/** θ for a level — linear from KA(-3) to 8B(+3). */
+/** θ for a level — linear, ANCHORED so KA = -3 and 8B = +3 regardless of how
+ *  many sub-KA levels exist. This preserves every KA…8B θ value unchanged after
+ *  the 0A/0B/0C extension (no engine recalibration); the pre-K levels simply
+ *  extend below -3 (0C ≈ -3.35, 0A ≈ -4.06) at the same per-level step. */
 export function levelTheta(level: HalfGradeLevel): number {
-  const i = levelIndex(level);
-  // 18 levels spread over 6 units of θ: step = 6 / 17 ≈ 0.3529.
-  const step = 6 / (LEVELS.length - 1);
-  return -3 + i * step;
+  const kaIndex = levelIndex("KA");
+  // Step from the KA…8B span (17 intervals) — independent of sub-KA levels.
+  const step = 6 / (levelIndex("8B") - kaIndex);
+  return -3 + (levelIndex(level) - kaIndex) * step;
 }

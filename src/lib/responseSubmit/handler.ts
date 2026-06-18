@@ -158,11 +158,12 @@ import { hasValidConsent } from "@/lib/consent/verify";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { attemptNarration } from "@/lib/report/narration/trigger";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import {
-  discoverEmptyBankStrands,
-  pickQuestion,
-} from "@/lib/questionPicker/picker";
+import { discoverEmptyBankStrands } from "@/lib/questionPicker/picker";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
+import {
+  pickForSession,
+  type SessionPickParams,
+} from "@/lib/questionPicker/pickForSession";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -293,16 +294,28 @@ export async function submitResponseHandler({
   // already authorised this session for the caller). null for short sessions —
   // the short path keeps using shouldTerminate / nextQuestionRequest unchanged.
   // ---------------------------------------------------------------------------
+  // Child grade is needed by BOTH the comprehensive tier budget AND the
+  // level-lock band on the next pick (all sessions), so read it once here
+  // (service-role; ownership already authorised above).
+  const { data: childRow, error: childErr } = await serviceClient
+    .from("children")
+    .select("grade_level, birth_year")
+    .eq("id", session.child_id)
+    .maybeSingle();
+  if (childErr) {
+    return fail("internal", 500, `child read failed: ${childErr.message}`);
+  }
+
+  // Session pick params for the level-lock band (pickForSession derives the
+  // booklet anchor; a missing grade/birth_year degrades to no band).
+  const sessionPick: SessionPickParams = {
+    testType: session.test_type,
+    gradeLevel: childRow?.grade_level ?? null,
+    birthYear: childRow?.birth_year ?? Number.NaN,
+  };
+
   let comprehensive: ComprehensiveContext | null = null;
   if (session.test_type === "comprehensive") {
-    const { data: childRow, error: childErr } = await serviceClient
-      .from("children")
-      .select("grade_level, birth_year")
-      .eq("id", session.child_id)
-      .maybeSingle();
-    if (childErr) {
-      return fail("internal", 500, `child read failed: ${childErr.message}`);
-    }
     if (!childRow) {
       return fail("internal", 500, "child not found for comprehensive session");
     }
@@ -433,6 +446,7 @@ export async function submitResponseHandler({
         tenantId: parent.tenant_id,
         childId: session.child_id,
         ip,
+        sessionPick,
       },
       request.question_id,
       emptyBankStrands,
@@ -592,6 +606,7 @@ export async function submitResponseHandler({
           tenantId: parent.tenant_id,
           childId: session.child_id,
           ip,
+          sessionPick,
         },
         request.question_id,
         emptyBankStrands,
@@ -695,6 +710,7 @@ export async function submitResponseHandler({
       tenantId: parent.tenant_id,
       childId: session.child_id,
       ip,
+      sessionPick,
     },
     postState,
     emptyBankStrands,
@@ -1070,6 +1086,8 @@ interface PickContext {
   tenantId: string;
   childId: string;
   ip: string | null;
+  /** Drives the level-lock band + picker choice on the next pick. */
+  sessionPick: SessionPickParams;
 }
 
 type PickAndMaybeCloseResult =
@@ -1133,10 +1151,15 @@ async function pickAndMaybeClose(
 
     let pick;
     try {
-      pick = await pickQuestion(serviceClient, req, {
-        tenantId: ctx.tenantId,
-        servedQuestionIds: postState.servedQuestionIds,
-      });
+      pick = await pickForSession(
+        serviceClient,
+        req,
+        {
+          tenantId: ctx.tenantId,
+          servedQuestionIds: postState.servedQuestionIds,
+        },
+        ctx.sessionPick,
+      );
     } catch (e) {
       return { kind: "error", message: errorMessage(e) };
     }

@@ -83,8 +83,8 @@
 
 import { z } from "zod";
 
-import { uniformPosterior } from "./bayesian";
-import { LEVELS, STRANDS, levelTheta } from "./levels";
+import { SUB_KA_LEVELS, uniformPosterior } from "./bayesian";
+import { LEVELS, STRANDS, levelIndex, levelTheta } from "./levels";
 import priorsV1Spec from "./priors-v1.json";
 import type {
   EnginePriorConfig,
@@ -142,7 +142,10 @@ export const GRADES = [
 
 /** θ distance between adjacent half-grade levels — derived from levels.ts'
  *  -3 to +3 mapping over 18 levels (17 intervals). 6/17 ≈ 0.3529. */
-const STEP_THETA = 6 / (LEVELS.length - 1);
+// θ distance between adjacent half-grade levels on the KA…8B scale (17
+// intervals → 6/17 ≈ 0.3529). Anchored on the KA…8B span so it is unchanged by
+// the pre-K (0A/0B/0C) extension of LEVELS (migration 20260616120000).
+const STEP_THETA = 6 / (levelIndex("8B") - levelIndex("KA"));
 
 // ---------------------------------------------------------------------------
 // Algorithmic expansion (spec → EnginePriorConfig)
@@ -177,6 +180,13 @@ function discreteGaussianPosterior(
   const masses: StrandPosterior = {} as StrandPosterior;
   let total = 0;
   for (const level of LEVELS) {
+    // Pre-K young band (0A/0B/0C) carries zero seeded mass — same KA-floored
+    // band as uniformPosterior, so the KA…8B grade-seed masses are identical to
+    // before the LEVELS extension (no leak into the renormalization total).
+    if (SUB_KA_LEVELS.has(level)) {
+      masses[level] = 0;
+      continue;
+    }
     const z = (levelTheta(level) - muTheta) / sigmaTheta;
     const mass = Math.exp(-0.5 * z * z);
     masses[level] = mass;

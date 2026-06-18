@@ -63,6 +63,10 @@ function makePredicateFilteringClient(
     filtered = filtered.filter((r) => r[col] === val);
     return chain;
   };
+  chain.in = (col: string, vals: unknown[]) => {
+    filtered = filtered.filter((r) => vals.includes(r[col]));
+    return chain;
+  };
   chain.then = (
     onFulfilled?: ((r: QueryResult) => unknown) | null,
     onRejected?: ((e: unknown) => unknown) | null,
@@ -102,6 +106,7 @@ function ctx(over: Partial<PickerContext> = {}): PickerContext {
     tenantId: over.tenantId ?? TENANT,
     servedQuestionIds: over.servedQuestionIds ?? [],
     candidateLimit: over.candidateLimit,
+    levelBand: over.levelBand,
   };
 }
 
@@ -303,6 +308,62 @@ describe("pickQuestion / is_active filter", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.question.id).toBe("id-active");
+  });
+});
+
+describe("pickQuestion / level band (ctx.levelBand, ±1 hold-hard)", () => {
+  it("filters out off-level items, keeping only in-band levels", async () => {
+    // A 0C child's ±1 band is {0B,0C,grade-1}; a grade-6-sourced item must
+    // not be served even if its difficulty is closest to target.
+    const inBand = {
+      ...row({ id: "id-inband", external_id: "B", difficulty: 0.5, level: "0C" }),
+      is_active: true,
+      tenant_id: TENANT,
+    };
+    const offLevel = {
+      // closest to target 0, but out of band
+      ...row({ id: "id-offlevel", external_id: "A", difficulty: 0.0, level: "6A" }),
+      is_active: true,
+      tenant_id: TENANT,
+    };
+    const client = makePredicateFilteringClient([inBand, offLevel]);
+
+    const band = ["0B", "0C", "KA", "KB", "1A", "1B"];
+    const result = await pickQuestion(
+      client,
+      req({ targetDifficulty: 0 }),
+      ctx({ levelBand: band }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe("id-inband");
+  });
+
+  it("HOLD HARD: returns strand-exhausted when nothing is in band (no widening)", async () => {
+    const offLevel = {
+      ...row({ id: "id-offlevel", level: "6A" }),
+      is_active: true,
+      tenant_id: TENANT,
+    };
+    const client = makePredicateFilteringClient([offLevel]);
+    const result = await pickQuestion(
+      client,
+      req(),
+      ctx({ levelBand: ["0B", "0C", "KA", "KB", "1A", "1B"] }),
+    );
+    expect(result).toEqual({ ok: false, reason: "strand-exhausted" });
+  });
+
+  it("applies no level filter when levelBand is omitted (legacy behavior)", async () => {
+    const anyLevel = {
+      ...row({ id: "id-any", level: "6A" }),
+      is_active: true,
+      tenant_id: TENANT,
+    };
+    const client = makePredicateFilteringClient([anyLevel]);
+    const result = await pickQuestion(client, req(), ctx());
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe("id-any");
   });
 });
 

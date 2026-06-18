@@ -74,7 +74,9 @@ import type {
  */
 // 2026-06 bump: TEXT_ENTRY added to inputSecondsByFormat (QA Bucket 2
 // format reclassification). No existing-format values changed.
-export const TIME_FLAG_CONFIG_VERSION = "synthetic-v1.2026-06" as const;
+// 2026-06 bump: pre-K young band (0A/0B/0C) cells added — placeholder mirroring
+// KA (see hg() + READING_WCPM). No existing KA…8B values changed.
+export const TIME_FLAG_CONFIG_VERSION = "synthetic-v2.2026-06-prek" as const;
 
 /**
  * `null` in `secondsPerOperation` cells signals "this op is off-curriculum
@@ -127,6 +129,10 @@ export interface TimeFlagConfig {
 // ---------------------------------------------------------------------------
 
 const READING_WCPM: Record<HalfGradeLevel, number> = {
+  // Pre-K young band (0A/0B/0C) — PILOT PLACEHOLDER mirroring KA. Pre-K S.A.M
+  // items are visual/oral with near-zero word_count, so T_read is ~0 regardless
+  // of WCPM; this is a safe conservative default, not a final value (see hg()).
+  "0A": 5, "0B": 5, "0C": 5,
   KA: 5,    KB: 15,
   "1A": 25, "1B": 50,
   "2A": 65, "2B": 90,
@@ -275,11 +281,21 @@ const SECONDS_PER_OPERATION: Record<
   }),
 };
 
-/** Identity helper — constrains the literal to a complete map at compile time. */
+// The per-op tables are authored for KA…8B (the original engine band). The
+// pre-K young band (0A/0B/0C) was added to half_grade_level in migration
+// 20260616120000; this helper fills those three cells by MIRRORING the KA cell:
+//   * where KA is null (op off-curriculum at kindergarten — multi-digit ops,
+//     algebra, …), 0A/0B/0C are null too (off-curriculum; lookup fails loud);
+//   * where KA has a value, 0A/0B/0C inherit it.
+// PILOT PLACEHOLDER — NOT a pedagogically-final value. Pre-K S.A.M items are
+// largely visual/oral and not speed-sensitive, so mirroring KA is a safe,
+// conservative default for QA. Real S.A.M-grounded pre-K op norms are a later
+// founder input; replace these cells (and bump the version) when that lands.
+type SubKaLevel = "0A" | "0B" | "0C";
 function hg(
-  table: Record<HalfGradeLevel, OperationGradeCell>,
+  table: Record<Exclude<HalfGradeLevel, SubKaLevel>, OperationGradeCell>,
 ): Record<HalfGradeLevel, OperationGradeCell> {
-  return table;
+  return { "0A": table.KA, "0B": table.KA, "0C": table.KA, ...table };
 }
 
 /**
