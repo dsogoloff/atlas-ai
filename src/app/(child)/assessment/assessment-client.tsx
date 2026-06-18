@@ -26,6 +26,7 @@ import { ResumeBanner } from "./components/ResumeBanner";
 import { ErrorPanel } from "./components/ErrorPanel";
 import { DevTestModeChooser } from "./components/DevTestModeChooser";
 import { ParentIntro } from "./components/ParentIntro";
+import { Welcome } from "./components/Welcome";
 
 interface Props {
   childId: string;
@@ -56,16 +57,19 @@ export function AssessmentClient({
 }: Props) {
   const [state, dispatch] = useReducer(reduce, initialState);
 
-  // Pre-start gate(s). `startConfirmed` initialises true only when NO pre-start
-  // screen needs to show — i.e. both the pilot chooser and the parent intro are
-  // off — so the start effect fires immediately for a SHORT test (unchanged
-  // default path). Otherwise it holds false until the parent/operator advances
-  // through the gate(s). The parent intro shows first, then the dev chooser.
-  const [startConfirmed, setStartConfirmed] = useState(
-    !comprehensivePilotEnabled && !parentIntroEnabled,
-  );
+  // Pre-start gates. The start effect is held until `startConfirmed`, which is
+  // released ONLY by the child tapping the Welcome screen — so the test begins
+  // on the tap, never auto-advances. Earlier gates just unlock the screens in
+  // front of Welcome: the parent intro (ENABLE_PARENT_INTRO) shows first, then
+  // the DEV pilot chooser (ENABLE_COMPREHENSIVE_PILOT), then the child Welcome.
+  // `introAcknowledged` / `testModeChosen` default true when their gate is off,
+  // so the default short-test path goes straight to Welcome.
+  const [startConfirmed, setStartConfirmed] = useState(false);
   const [introAcknowledged, setIntroAcknowledged] = useState(
     !parentIntroEnabled,
+  );
+  const [testModeChosen, setTestModeChosen] = useState(
+    !comprehensivePilotEnabled,
   );
   const [comprehensive, setComprehensive] = useState(false);
 
@@ -142,29 +146,38 @@ export function AssessmentClient({
 
   if (state.kind === "starting") {
     // Gate 1: parent intro / instructions (ENABLE_PARENT_INTRO). Shows first,
-    // before any child-facing UI. Tapping Start acknowledges it; if the dev
-    // chooser isn't also gating, that releases the auto-start directly.
+    // before any child-facing UI. Tapping Start only acknowledges it — the
+    // child Welcome (gate 3) still releases the actual start.
     if (parentIntroEnabled && !introAcknowledged) {
       return (
         <ParentIntro
           mode={proctoringMode}
           tier={tier}
-          onStart={() => {
-            setIntroAcknowledged(true);
-            if (!comprehensivePilotEnabled) setStartConfirmed(true);
-          }}
+          onStart={() => setIntroAcknowledged(true)}
         />
       );
     }
-    // Gate 2 (DEV-ONLY): pilot flag on and not yet started → let QA pick the
-    // test type. Never reached in production (flag off → startConfirmed true at
-    // init when the intro is also off).
-    if (comprehensivePilotEnabled && !startConfirmed) {
+    // Gate 2 (DEV-ONLY): pilot flag on → let QA pick the test type. Never
+    // reached in production (flag off → testModeChosen true at init). Choosing
+    // advances to Welcome; it does not start the session.
+    if (comprehensivePilotEnabled && !testModeChosen) {
       return (
         <DevTestModeChooser
           tier={tier}
           comprehensive={comprehensive}
           onChange={setComprehensive}
+          onStart={() => setTestModeChosen(true)}
+        />
+      );
+    }
+    // Gate 3: the child Welcome — the first child-facing screen. Static; the
+    // child taps once to start. This is the sole releaser of startConfirmed, so
+    // the start effect (and the network call) only fire on the tap.
+    if (!startConfirmed) {
+      return (
+        <Welcome
+          childName={childName}
+          tier={tier}
           onStart={() => setStartConfirmed(true)}
         />
       );
