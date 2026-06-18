@@ -235,6 +235,8 @@ export type Database = {
           consent_type: string
           created_at: string
           data_uses: Json
+          disclosure_content_sha256: string | null
+          disclosure_version: string | null
           granted_at: string
           id: string
           ip_address: unknown
@@ -252,6 +254,8 @@ export type Database = {
           consent_type: string
           created_at?: string
           data_uses?: Json
+          disclosure_content_sha256?: string | null
+          disclosure_version?: string | null
           granted_at?: string
           id?: string
           ip_address?: unknown
@@ -269,6 +273,8 @@ export type Database = {
           consent_type?: string
           created_at?: string
           data_uses?: Json
+          disclosure_content_sha256?: string | null
+          disclosure_version?: string | null
           granted_at?: string
           id?: string
           ip_address?: unknown

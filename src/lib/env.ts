@@ -87,13 +87,15 @@ export function isLeadNotifyLive(): boolean {
   return process.env.LEAD_NOTIFY_LIVE === "true";
 }
 /**
- * Gate for collecting the child's SCHOOL on the follow-up form. Default OFF to
- * stay consistent with the counsel-approved COPPA disclosure (school name is
- * NOT collected). When off, the field is not rendered, not required, and
- * persists NULL. Flip to 'true' only if counsel approves collecting it.
+ * Gate for collecting the child's SCHOOL on the follow-up form. Default ON:
+ * counsel cleared collecting the school (coppa-disclosure-v1 removed the
+ * not-collected statement), so the field is rendered and persisted unless
+ * explicitly disabled with LEAD_SCHOOL_FIELD_LIVE='false'. Persistence stays
+ * server-enforced in followUp/submit.ts (the value is nulled if the gate is
+ * off), so the flag is the single switch on both ends.
  */
 export function isLeadSchoolFieldEnabled(): boolean {
-  return process.env.LEAD_SCHOOL_FIELD_LIVE === "true";
+  return process.env.LEAD_SCHOOL_FIELD_LIVE !== "false";
 }
 export function getResendApiKey(): string {
   return required("RESEND_API_KEY");

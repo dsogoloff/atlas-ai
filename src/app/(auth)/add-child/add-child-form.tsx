@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { addChildAction, type AddChildResult } from "./actions";
+import { CONSENT_TEXT } from "@/lib/consent/text";
 import {
   AddChildSchema,
   type AddChildFormInput,
@@ -215,18 +216,18 @@ export function AddChildForm({ cancelHref }: Props) {
               </span>
               Parental Consent for This Child
             </label>
+            {/* Rendered from the SINGLE source (CONSENT_TEXT) the server also
+                persists verbatim, so the shown and stored attestation can never
+                drift. The full disclosure is one tap away at /coppa. */}
             <p className="font-caption text-[12px] text-sam-gray-mid leading-relaxed">
-              I am the parent or legal guardian of this child and I consent to
-              Atlas collecting and using their diagnostic data as described in
-              the{" "}
-              <Link className="text-sam-red underline" href="/coppa">
-                COPPA disclosure
-              </Link>
-              . I understand their responses are analyzed by an automated (AI)
-              system to identify learning patterns, that my child never
-              interacts with that system directly, and that data is not shared
-              beyond the assessment except with their instructors.
+              {CONSENT_TEXT}
             </p>
+            <Link
+              className="font-caption text-[12px] text-sam-red underline"
+              href="/coppa"
+            >
+              Read the full COPPA Disclosure &amp; Parental Consent
+            </Link>
           </div>
         </div>
         {errors.consent && (

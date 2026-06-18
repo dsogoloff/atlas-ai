@@ -33,6 +33,8 @@ import {
   CONSENT_TEXT_VERSION,
   CONSENT_TYPE,
   DATA_USES,
+  DISCLOSURE_CONTENT_SHA256,
+  DISCLOSURE_VERSION,
   SHARING_PERMISSIONS,
 } from "@/lib/consent/text";
 
@@ -123,6 +125,8 @@ export async function addChildAction(
     consent_type: CONSENT_TYPE,
     consent_text_version: CONSENT_TEXT_VERSION,
     consent_text: CONSENT_TEXT,
+    disclosure_version: DISCLOSURE_VERSION,
+    disclosure_content_sha256: DISCLOSURE_CONTENT_SHA256,
     data_uses: [...DATA_USES],
     sharing_permissions: { ...SHARING_PERMISSIONS },
     ip_address: ip,
