@@ -43,7 +43,7 @@ export function proctoringModeForGrade(grade: number): ProctoringMode {
  * the cutoff, so its exact value never affects the read-aloud/no-assist line.
  */
 export function parseGradeNumber(text: string | null): number | null {
-  if (text === null) return null;
+  if (text == null) return null; // tolerate undefined as well as null
   const normalised = text
     .trim()
     .toLowerCase()

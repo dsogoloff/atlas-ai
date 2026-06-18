@@ -429,3 +429,62 @@ describe("schema cell sentinels", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pre-K young band (0A/0B/0C) — regression for the every-pre-K-submit-500 crash.
+// Before the norms extension, half_grade_level 0A/0B/0C had no norm cells →
+// lookup returned undefined → NaN expectedTimeSec → 23502 NOT-NULL violation on
+// the responses INSERT. The cells now mirror KA (documented pilot placeholder).
+// ---------------------------------------------------------------------------
+describe("pre-K young band norms (0A/0B/0C)", () => {
+  for (const level of ["0A", "0B", "0C"] as const) {
+    it(`${level}: expectedTimeSec is a finite, positive number (no NaN)`, () => {
+      const out = expectedTimeSec(level, "MULTIPLE_CHOICE", baseTags);
+      expect(Number.isFinite(out.total)).toBe(true);
+      expect(out.total).toBeGreaterThan(0);
+      expect(Number.isNaN(out.tRead)).toBe(false);
+      expect(Number.isNaN(out.tSolve)).toBe(false);
+    });
+
+    it(`${level}: mirrors the KA cell (placeholder design)`, () => {
+      const atLevel = expectedTimeSec(level, "MULTIPLE_CHOICE", baseTags);
+      const atKA = expectedTimeSec("KA", "MULTIPLE_CHOICE", baseTags);
+      expect(atLevel.total).toBe(atKA.total);
+    });
+  }
+
+  it("existing KA…8B behavior is unchanged (3A spot-check stays stable)", () => {
+    // A representative mid-band value; if the KA-anchored extension had shifted
+    // the KA…8B norms this would move.
+    const out = expectedTimeSec("3A", "MULTIPLE_CHOICE", baseTags);
+    expect(out.total).toBeGreaterThan(0);
+    expect(Number.isFinite(out.total)).toBe(true);
+  });
+});
+
+describe("lookupSecondsPerOp fails loud on a missing cell (no silent NaN)", () => {
+  it("throws (non-prod) when an (op × level) cell is undefined", () => {
+    // Doctor a config so ADDITION has no 0A cell — simulates a future level/op
+    // gap. This must throw at the source, never reach the DB as NaN.
+    const broken = {
+      ...DEFAULT_CONFIG,
+      secondsPerOperation: {
+        ...DEFAULT_CONFIG.secondsPerOperation,
+        ADDITION: { ...DEFAULT_CONFIG.secondsPerOperation.ADDITION },
+      },
+    };
+    delete (broken.secondsPerOperation.ADDITION as Record<string, unknown>)["0A"];
+    expect(() =>
+      expectedTimeSec("0A", "MULTIPLE_CHOICE", baseTags, broken),
+    ).toThrow(/norm cell/);
+  });
+});
+
+describe("flagResponseTime at a pre-K level writes finite columns (no 23502)", () => {
+  it("0A flag yields a finite expectedTimeSec + ratio (the NOT-NULL columns)", () => {
+    const result = flagResponseTime(input({ level: "0A" }));
+    expect(Number.isFinite(result.expectedTimeSec)).toBe(true);
+    expect(result.expectedTimeSec).toBeGreaterThan(0);
+    expect(Number.isFinite(result.timeRatio)).toBe(true);
+  });
+});

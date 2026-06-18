@@ -53,6 +53,9 @@ type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
 
 const SAM_LEVEL_BY_HALF_GRADE: Record<HalfGradeLevel, string> = {
+  "0A": "Level 0A",
+  "0B": "Level 0B",
+  "0C": "Level 0C",
   KA: "Kindergarten A",
   KB: "Kindergarten B",
   "1A": "Level 1A",
@@ -87,6 +90,12 @@ export function samLevelLabel(level: HalfGradeLevel): string {
  *  strand_mastery output. K maps to l0a/l0b approximately. */
 function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
   switch (level) {
+    case "0A":
+      return "l0a";
+    case "0B":
+      return "l0b";
+    case "0C":
+      return "l0c";
     case "KA":
       return "l0a";
     case "KB":

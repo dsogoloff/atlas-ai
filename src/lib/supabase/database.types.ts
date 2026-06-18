@@ -1249,6 +1249,9 @@ export type Database = {
       assessment_test_type: "short" | "comprehensive"
       center_status: "ACTIVE" | "INACTIVE"
       half_grade_level:
+        | "0A"
+        | "0B"
+        | "0C"
         | "KA"
         | "KB"
         | "1A"
@@ -1462,6 +1465,9 @@ export const Constants = {
       assessment_status: ["IN_PROGRESS", "COMPLETED"],
       center_status: ["ACTIVE", "INACTIVE"],
       half_grade_level: [
+        "0A",
+        "0B",
+        "0C",
         "KA",
         "KB",
         "1A",

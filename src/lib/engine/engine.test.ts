@@ -61,7 +61,8 @@ describe("levelAt / levelIndex round-trip", () => {
     }
   });
   it("clamps out-of-range indices", () => {
-    expect(levelAt(-5)).toBe("KA");
+    // Scale floor is now 0A (pre-K young band added in migration 20260616120000).
+    expect(levelAt(-5)).toBe("0A");
     expect(levelAt(99)).toBe("8B");
   });
 });

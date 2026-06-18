@@ -249,6 +249,13 @@ export interface PickerContext {
    *  default chooser returns the first row). Layer 2 will raise this and
    *  pass a misconception-aware chooser. */
   candidateLimit?: number;
+  /** Optional allow-list of `questions.level` values the pick may draw from —
+   *  the S.A.M. booklet level band (see levelBand.ts). HOLD HARD: when set, a
+   *  candidate whose level is outside it is excluded with NO widening fallback
+   *  (an empty in-band set yields `strand-exhausted`). When omitted, no level
+   *  filter is applied (legacy/level-blind behavior). The comprehensive picker
+   *  receives the ±1 band; the short picker receives the previous booklet. */
+  levelBand?: readonly string[];
 }
 
 /** Discriminated result. `strand-exhausted` is the only failure mode the

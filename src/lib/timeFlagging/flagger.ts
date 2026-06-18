@@ -90,11 +90,15 @@ export function expectedTimeSec(
  * will visibly flag rather than silently pass.
  */
 function lookupSecondsPerOp(
-  cell: OperationGradeCell,
+  cell: OperationGradeCell | undefined,
   op: OperationType,
   level: HalfGradeLevel,
 ): number {
-  if (cell !== null) return cell;
+  // Only a real finite number passes. `null` is off-curriculum; `undefined`
+  // is a MISSING (op × level) cell — the exact gap that previously slipped
+  // through as NaN and hit the responses INSERT as a 23502 (e.g. a 0A/0B/0C
+  // level with no norm row). Both now fail loud here at the source.
+  if (typeof cell === "number" && Number.isFinite(cell)) return cell;
 
   const message =
     `[timeFlagging] No norm cell for op=${op} at level=${level}. ` +

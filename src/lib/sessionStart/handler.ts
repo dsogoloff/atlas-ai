@@ -117,11 +117,12 @@ import type {
 } from "@/lib/engine/types";
 import { deriveTier } from "@/lib/tier/derive";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import {
-  discoverEmptyBankStrands,
-  pickQuestion,
-} from "@/lib/questionPicker/picker";
+import { discoverEmptyBankStrands } from "@/lib/questionPicker/picker";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
+import {
+  pickForSession,
+  type SessionTestType,
+} from "@/lib/questionPicker/pickForSession";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { hasValidConsent } from "@/lib/consent/verify";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
@@ -255,6 +256,9 @@ export async function sessionStartHandler({
       sessionId: existing.row.id,
       ip,
       emptyBankStrands,
+      testType: existing.row.test_type,
+      gradeLevel: child.grade_level,
+      birthYear: child.birth_year,
     });
   }
 
@@ -288,6 +292,9 @@ export async function sessionStartHandler({
           sessionId: retry.row.id,
           ip,
           emptyBankStrands,
+          testType: retry.row.test_type,
+          gradeLevel: child.grade_level,
+          birthYear: child.birth_year,
         });
       }
       // Race winner deleted the session before we re-read — treat as
@@ -366,10 +373,19 @@ export async function sessionStartHandler({
     }
     lastAttemptedStrand = req.strand;
 
-    const pick = await pickQuestion(serviceClient, req, {
-      tenantId: parent.tenant_id,
-      servedQuestionIds: state.servedQuestionIds,
-    });
+    const pick = await pickForSession(
+      serviceClient,
+      req,
+      {
+        tenantId: parent.tenant_id,
+        servedQuestionIds: state.servedQuestionIds,
+      },
+      {
+        testType,
+        gradeLevel: child.grade_level,
+        birthYear: child.birth_year,
+      },
+    );
 
     if (pick.ok) {
       pickedQuestion = pick.question;
@@ -464,6 +480,11 @@ interface ResumeArgs {
    *  tenant bank. Pre-seeded into the resume pick loop's excluded set
    *  and threaded into shouldTerminate as exhaustedStrands. */
   emptyBankStrands: ReadonlySet<Strand>;
+  /** Existing session's test type + the child's grade — drive the level-lock
+   *  band on the resume pick (same as the fresh-pick path). */
+  testType: SessionTestType;
+  gradeLevel: string | null;
+  birthYear: number;
 }
 
 async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
@@ -557,10 +578,19 @@ async function resumeExisting(args: ResumeArgs): Promise<StartHandlerResult> {
 
     let pick;
     try {
-      pick = await pickQuestion(args.serviceClient, req, {
-        tenantId: args.tenantId,
-        servedQuestionIds: state.servedQuestionIds,
-      });
+      pick = await pickForSession(
+        args.serviceClient,
+        req,
+        {
+          tenantId: args.tenantId,
+          servedQuestionIds: state.servedQuestionIds,
+        },
+        {
+          testType: args.testType,
+          gradeLevel: args.gradeLevel,
+          birthYear: args.birthYear,
+        },
+      );
     } catch (e) {
       return fail("internal", 500, errorMessage(e));
     }
@@ -689,7 +719,7 @@ async function logAndRespond(
 // ===========================================================================
 
 interface ReadSessionResult {
-  row: { id: string } | null;
+  row: { id: string; test_type: SessionTestType } | null;
   error: string | null;
 }
 
@@ -699,7 +729,7 @@ async function readInProgressSession(
 ): Promise<ReadSessionResult> {
   const { data, error } = await serviceClient
     .from("assessment_sessions")
-    .select("id")
+    .select("id, test_type")
     .eq("child_id", childId)
     .eq("status", "IN_PROGRESS")
     .maybeSingle();
