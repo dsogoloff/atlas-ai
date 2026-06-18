@@ -16,13 +16,14 @@
 // here — see src/app/(auth)/add-child/actions.ts and
 // src/lib/consent/text.ts. "Review & Continue" just advances to add the child.
 //
-// Spec gaps to address before launch (intentionally NOT fixed in this port):
-//  - The Stitch disclosure text is placeholder marketing copy. Final wording
-//    must match compliance.md §2 (including the school-operator consent
-//    extension and 30-day revocation grace) and be reviewed by counsel.
-//  - "Download PDF" button has no handler.
-//  - Email address `privacy@atlasassessment.edu` is placeholder; replace
-//    with the real S.A.M. / Inspirea Labs privacy contact before launch.
+// The "Download PDF" button serves the counsel-approved disclosure asset
+// (public/legal/coppa-disclosure-v1.pdf), and the privacy contact is
+// privacy@samnewyork.com.
+//
+// KNOWN FOLLOW-UP (not fixed here): the ON-SCREEN disclosure body below is still
+// the Stitch-derived placeholder copy and does NOT yet match the counsel text in
+// the served PDF. Reconciling the rendered page to coppa-disclosure-v1 is a
+// separate, counsel-facing copy pass (parent-facing claims language).
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -147,7 +148,7 @@ export default async function CoppaPage({ searchParams }: Props) {
                 You have the right to review your child&rsquo;s information,
                 request its deletion, and refuse further collection or use.
                 Please contact our Data Privacy Officer at
-                privacy@atlasassessment.edu for any such requests.
+                privacy@samnewyork.com for any such requests.
               </p>
             </section>
             {/* Automated (AI) processing disclosure — minor-safety safeguard
@@ -209,10 +210,16 @@ export default async function CoppaPage({ searchParams }: Props) {
             consent_records row (what the assessment gate checks) is written by
             the add-child server action. */}
         <div className="p-8 border-t border-sam-gray-light bg-surface-container-lowest rounded-b-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
-          <button className="w-full md:w-auto px-6 py-3 border-2 border-sam-navy text-sam-navy rounded-xl font-headline-adult text-sm hover:bg-sam-navy hover:text-white transition-all flex items-center justify-center gap-2 order-2 md:order-1">
+          <a
+            href="/legal/coppa-disclosure-v1.pdf"
+            download
+            target="_blank"
+            rel="noopener"
+            className="w-full md:w-auto px-6 py-3 border-2 border-sam-navy text-sam-navy rounded-xl font-headline-adult text-sm hover:bg-sam-navy hover:text-white transition-all flex items-center justify-center gap-2 order-2 md:order-1"
+          >
             <span className="material-symbols-outlined">picture_as_pdf</span>
             Download PDF
-          </button>
+          </a>
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto order-1 md:order-2">
             <Link
               href="/signup"

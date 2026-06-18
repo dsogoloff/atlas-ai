@@ -166,7 +166,8 @@ on conflict (id) do nothing;
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into consent_records (
   id, tenant_id, parent_id, child_id, consent_type,
-  consent_text_version, consent_text, data_uses, sharing_permissions
+  consent_text_version, consent_text, disclosure_version,
+  disclosure_content_sha256, data_uses, sharing_permissions
 )
 select
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
@@ -176,6 +177,8 @@ select
   'coppa_vpc',
   'dev-seed',
   'Seeded per-child parental consent for local development only.',
+  'coppa-disclosure-v1',
+  'a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea',
   '["diagnostic_assessment","progress_reporting_to_parent","progress_reporting_to_instructor","ai_misconception_classification"]'::jsonb,
   '{}'::jsonb
 from t

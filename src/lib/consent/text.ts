@@ -1,30 +1,35 @@
 // Atlas Assessment — canonical consent text + version recorded per child.
 //
-// Model B: the binding per-child consent is captured by the /add-child server
-// action (the parent has seen the disclosure at /coppa first). The string the
-// parent agrees to is persisted verbatim on each consent_records row
-// (compliance.md §12 version-on-row), so a later wording change stays provable
-// against what each parent actually saw. Bump CONSENT_TEXT_VERSION whenever
-// CONSENT_TEXT changes.
+// SINGLE SOURCE OF TRUTH for the consent attestation. The /add-child form
+// RENDERS CONSENT_TEXT (the checkbox label) and the /add-child server action
+// PERSISTS the same CONSENT_TEXT verbatim on each consent_records row
+// (compliance.md §12 version-on-row), so what each parent saw is provable
+// against what we stored — the two must never drift. Bump CONSENT_TEXT_VERSION
+// whenever CONSENT_TEXT changes.
 //
-// NOTE (pre-existing, carried over from the original /coppa port): the
-// disclosure wording is the placeholder copy from the Stitch export and MUST
-// be finalized against compliance.md §2 (school-operator consent extension +
-// 30-day revocation grace) and reviewed by counsel before launch. This file
-// only ensures whatever text is shown is the text we persist.
+// CONSENT_TEXT is the counsel-approved checkbox attestation from the COPPA
+// Disclosure and Parental Consent (docs/legal/COPPA_Disclosure.docx, §10
+// checkbox). The full disclosure the parent reviews is the served PDF asset
+// (public/legal/coppa-disclosure-v1.pdf); DISCLOSURE_VERSION + the PDF's
+// content hash are recorded on each consent row so the row is tied to the exact
+// disclosure document version in force at grant time.
 
 export const CONSENT_TYPE = "coppa_vpc" as const;
 
-export const CONSENT_TEXT_VERSION = "2026-05-28.v1" as const;
+export const CONSENT_TEXT_VERSION = "2026-06-18.v2" as const;
 
 export const CONSENT_TEXT =
-  "I verify that I am the parent/legal guardian and I give permission for " +
-  "Atlas Assessment to collect and use this child's diagnostic data as " +
-  "described in the COPPA Disclosure & Parental Consent. I understand that " +
-  "this child's responses are processed by an automated (AI) system to " +
-  "identify learning patterns, that this child never interacts with that " +
-  "system directly, and that data is not shared beyond the assessment except " +
-  "with this child's instructors.";
+  "I am the parent or legal guardian and I consent to the collection and use " +
+  "of my child's information as described in this Parent Notice and Consent.";
+
+// Identifier + content hash of the served disclosure PDF
+// (public/legal/coppa-disclosure-v1.pdf). DISCLOSURE_CONTENT_SHA256 is the
+// sha256 of the PDF bytes — regenerate via tools/legal/build_coppa_pdf.py and
+// update both if the disclosure asset ever changes (and bump the version).
+export const DISCLOSURE_VERSION = "coppa-disclosure-v1" as const;
+
+export const DISCLOSURE_CONTENT_SHA256 =
+  "a73fb63bc774b5f4221d81bd064cfd562696a214d17cad5232b95521aaf23aea" as const;
 
 // Data uses the parent authorizes by consenting. Persisted on the consent
 // record; the AI classification use is disclosed in the consent flow (the
