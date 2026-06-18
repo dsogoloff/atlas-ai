@@ -28,6 +28,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { CTA_LINKS } from "@/lib/cta-links";
+import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import { firstName } from "@/lib/format/firstName";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import { assembleReportContent } from "@/lib/report/assemble";
@@ -327,6 +328,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           <ReadinessSection
             readiness={reportContent.readiness}
             sessionId={reportContent.session_id}
+            schoolFieldEnabled={isLeadSchoolFieldEnabled()}
           />
         </section>
       )}

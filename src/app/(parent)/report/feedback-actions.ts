@@ -18,6 +18,7 @@ import {
   type SatisfactionResult,
 } from "@/lib/analytics/satisfaction";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import { notifyFollowUpLead } from "@/lib/followUp/notify";
 import {
   submitFollowUpLeadCore,
@@ -173,6 +174,7 @@ export async function submitFollowUpLead(
     rlsClient,
     serviceClient,
     notify: notifyFollowUpLead,
+    schoolFieldEnabled: isLeadSchoolFieldEnabled(),
     input,
   });
 }

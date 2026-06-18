@@ -19,7 +19,8 @@ import {
 } from "@/lib/env";
 
 export interface FollowUpLeadNotification {
-  schoolName: string;
+  /** Null when the school field is gated off (LEAD_SCHOOL_FIELD_LIVE). */
+  schoolName: string | null;
   parentName: string;
   parentEmail: string;
   parentPhone: string | null;
@@ -35,7 +36,7 @@ export async function notifyFollowUpLead(
     const lines = [
       "New short-test follow-up lead (manual triage):",
       "",
-      `Child's school: ${lead.schoolName}`,
+      `Child's school: ${lead.schoolName ?? "(not collected)"}`,
       `Parent: ${lead.parentName}`,
       `Email: ${lead.parentEmail}`,
       `Phone: ${lead.parentPhone ?? "(not provided)"}`,

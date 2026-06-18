@@ -19,9 +19,15 @@ import { FollowUpCta } from "./follow-up-cta";
 interface Props {
   readiness: ReadinessSummary | null;
   sessionId: string;
+  /** LEAD_SCHOOL_FIELD_LIVE — gates the child's-school field on the form. */
+  schoolFieldEnabled: boolean;
 }
 
-export function ReadinessSection({ readiness, sessionId }: Props) {
+export function ReadinessSection({
+  readiness,
+  sessionId,
+  schoolFieldEnabled,
+}: Props) {
   if (readiness === null) return null;
 
   return (
@@ -36,7 +42,10 @@ export function ReadinessSection({ readiness, sessionId }: Props) {
       )}
 
       <div className={readiness.ready ? "mt-4" : ""}>
-        <FollowUpCta sessionId={sessionId} />
+        <FollowUpCta
+          sessionId={sessionId}
+          schoolFieldEnabled={schoolFieldEnabled}
+        />
       </div>
     </section>
   );

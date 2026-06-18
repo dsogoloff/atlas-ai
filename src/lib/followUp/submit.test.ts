@@ -73,6 +73,7 @@ describe("submitFollowUpLeadCore", () => {
       rlsClient: makeRlsClient(ownedOk),
       serviceClient,
       notify,
+      schoolFieldEnabled: true,
       input: validInput,
     });
 
@@ -101,6 +102,7 @@ describe("submitFollowUpLeadCore", () => {
       rlsClient: makeRlsClient({ ...ownedOk, ownedChild: null }),
       serviceClient,
       notify,
+      schoolFieldEnabled: true,
       input: validInput,
     });
     expect(result).toEqual({ ok: false, error: "forbidden" });
@@ -115,6 +117,7 @@ describe("submitFollowUpLeadCore", () => {
       rlsClient: makeRlsClient(ownedOk),
       serviceClient,
       notify,
+      schoolFieldEnabled: true,
       input: { ...validInput, parentEmail: "not-an-email" },
     });
     expect(result).toEqual({ ok: false, error: "bad_email" });
@@ -128,6 +131,7 @@ describe("submitFollowUpLeadCore", () => {
       rlsClient: makeRlsClient(ownedOk),
       serviceClient,
       notify: vi.fn(),
+      schoolFieldEnabled: true,
       input: { ...validInput, schoolName: "  " },
     });
     expect(result).toEqual({ ok: false, error: "missing_fields" });
@@ -139,6 +143,7 @@ describe("submitFollowUpLeadCore", () => {
       rlsClient: makeRlsClient(ownedOk),
       serviceClient,
       notify: vi.fn().mockResolvedValue(undefined),
+      schoolFieldEnabled: true,
       input: { ...validInput, parentPhone: "", bestTimeToReach: "" },
     });
     expect(result).toEqual({ ok: true });
@@ -146,5 +151,39 @@ describe("submitFollowUpLeadCore", () => {
       parent_phone: null,
       best_time_to_reach: null,
     });
+  });
+});
+
+describe("submitFollowUpLeadCore — school field gated OFF (default)", () => {
+  it("succeeds with NO school and persists school_name null (not required)", async () => {
+    const { client: serviceClient, inserts } = makeServiceClient();
+    const notify = vi.fn().mockResolvedValue(undefined);
+    const result = await submitFollowUpLeadCore({
+      rlsClient: makeRlsClient(ownedOk),
+      serviceClient,
+      notify,
+      schoolFieldEnabled: false,
+      input: { ...validInput, schoolName: undefined },
+    });
+    expect(result).toEqual({ ok: true });
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0]).toMatchObject({ school_name: null, parent_name: "Sam Park" });
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ schoolName: null }),
+    );
+  });
+
+  it("IGNORES a client-sent school value when the flag is off (defense)", async () => {
+    const { client: serviceClient, inserts } = makeServiceClient();
+    const result = await submitFollowUpLeadCore({
+      rlsClient: makeRlsClient(ownedOk),
+      serviceClient,
+      notify: vi.fn().mockResolvedValue(undefined),
+      schoolFieldEnabled: false,
+      input: { ...validInput, schoolName: "Sneaky School" },
+    });
+    expect(result).toEqual({ ok: true });
+    expect(inserts[0]).toMatchObject({ school_name: null });
+    expect(JSON.stringify(inserts[0])).not.toContain("Sneaky School");
   });
 });

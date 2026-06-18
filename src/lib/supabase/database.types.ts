@@ -353,7 +353,7 @@ export type Database = {
           parent_email: string
           parent_name: string
           parent_phone: string | null
-          school_name: string
+          school_name: string | null
           session_id: string | null
           tenant_id: string
         }
@@ -365,7 +365,7 @@ export type Database = {
           parent_email: string
           parent_name: string
           parent_phone?: string | null
-          school_name: string
+          school_name?: string | null
           session_id?: string | null
           tenant_id: string
         }
@@ -377,7 +377,7 @@ export type Database = {
           parent_email?: string
           parent_name?: string
           parent_phone?: string | null
-          school_name?: string
+          school_name?: string | null
           session_id?: string | null
           tenant_id?: string
         }

@@ -29,6 +29,7 @@ describe("ReadinessSection — clean pass (ready)", () => {
     <ReadinessSection
       readiness={{ ready: true, currentLevelLabel: "Grade 5" }}
       sessionId={SID}
+      schoolFieldEnabled={false}
     />,
   );
 
@@ -47,6 +48,7 @@ describe("ReadinessSection — not a clean pass (line absent, no negativity)", (
     <ReadinessSection
       readiness={{ ready: false, currentLevelLabel: "Grade 5" }}
       sessionId={SID}
+      schoolFieldEnabled={false}
     />,
   );
 
@@ -71,7 +73,7 @@ describe("ReadinessSection — not a clean pass (line absent, no negativity)", (
 describe("ReadinessSection — comprehensive session (null readiness)", () => {
   it("renders nothing (no readiness UI for comprehensive)", () => {
     const html = renderToString(
-      <ReadinessSection readiness={null} sessionId={SID} />,
+      <ReadinessSection readiness={null} sessionId={SID} schoolFieldEnabled={false} />,
     );
     expect(html).toBe("");
   });

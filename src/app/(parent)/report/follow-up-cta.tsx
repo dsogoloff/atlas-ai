@@ -18,9 +18,12 @@ const C = READINESS_COPY;
 
 interface Props {
   sessionId: string;
+  /** LEAD_SCHOOL_FIELD_LIVE (default false). When false the child's-school
+   *  field is not rendered, not required, and not submitted. */
+  schoolFieldEnabled: boolean;
 }
 
-export function FollowUpCta({ sessionId }: Props) {
+export function FollowUpCta({ sessionId, schoolFieldEnabled }: Props) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -39,7 +42,9 @@ export function FollowUpCta({ sessionId }: Props) {
     setError(false);
     const result = await submitFollowUpLead({
       sessionId,
-      schoolName,
+      // Omitted when the field is gated off; the server re-checks the flag and
+      // ignores/nulls school regardless.
+      schoolName: schoolFieldEnabled ? schoolName : undefined,
       parentName,
       parentEmail,
       parentPhone,
@@ -77,27 +82,83 @@ export function FollowUpCta({ sessionId }: Props) {
           {C.comprehensiveCtaButton}
         </button>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <Field label={C.form.schoolLabel} value={schoolName} onChange={setSchoolName} required />
-          <Field label={C.form.parentNameLabel} value={parentName} onChange={setParentName} required />
-          <Field label={C.form.emailLabel} type="email" value={parentEmail} onChange={setParentEmail} required />
-          <Field label={C.form.phoneLabel} type="tel" value={parentPhone} onChange={setParentPhone} />
-          <Field label={C.form.bestTimeLabel} value={bestTimeToReach} onChange={setBestTimeToReach} />
-          {error && (
-            <p role="alert" className="text-sm font-medium text-sam-red">
-              {C.form.errorMessage}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center justify-center rounded-full bg-sam-teal px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sam-teal/90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? C.form.submittingButton : C.form.submitButton}
-          </button>
-        </form>
+        <FollowUpForm
+          schoolFieldEnabled={schoolFieldEnabled}
+          submitting={submitting}
+          error={error}
+          onSubmit={handleSubmit}
+          schoolName={schoolName}
+          setSchoolName={setSchoolName}
+          parentName={parentName}
+          setParentName={setParentName}
+          parentEmail={parentEmail}
+          setParentEmail={setParentEmail}
+          parentPhone={parentPhone}
+          setParentPhone={setParentPhone}
+          bestTimeToReach={bestTimeToReach}
+          setBestTimeToReach={setBestTimeToReach}
+        />
       )}
     </div>
+  );
+}
+
+// Presentational form. Exported so the school-field gating is renderToString-
+// testable (the parent toggles visibility via `open`, which a node render can't
+// exercise). The child's-school field renders ONLY when schoolFieldEnabled.
+export function FollowUpForm({
+  schoolFieldEnabled,
+  submitting,
+  error,
+  onSubmit,
+  schoolName,
+  setSchoolName,
+  parentName,
+  setParentName,
+  parentEmail,
+  setParentEmail,
+  parentPhone,
+  setParentPhone,
+  bestTimeToReach,
+  setBestTimeToReach,
+}: {
+  schoolFieldEnabled: boolean;
+  submitting: boolean;
+  error: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+  schoolName: string;
+  setSchoolName: (v: string) => void;
+  parentName: string;
+  setParentName: (v: string) => void;
+  parentEmail: string;
+  setParentEmail: (v: string) => void;
+  parentPhone: string;
+  setParentPhone: (v: string) => void;
+  bestTimeToReach: string;
+  setBestTimeToReach: (v: string) => void;
+}) {
+  return (
+    <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3">
+      {schoolFieldEnabled && (
+        <Field label={C.form.schoolLabel} value={schoolName} onChange={setSchoolName} required />
+      )}
+      <Field label={C.form.parentNameLabel} value={parentName} onChange={setParentName} required />
+      <Field label={C.form.emailLabel} type="email" value={parentEmail} onChange={setParentEmail} required />
+      <Field label={C.form.phoneLabel} type="tel" value={parentPhone} onChange={setParentPhone} />
+      <Field label={C.form.bestTimeLabel} value={bestTimeToReach} onChange={setBestTimeToReach} />
+      {error && (
+        <p role="alert" className="text-sm font-medium text-sam-red">
+          {C.form.errorMessage}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={submitting}
+        className="inline-flex items-center justify-center rounded-full bg-sam-teal px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sam-teal/90 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? C.form.submittingButton : C.form.submitButton}
+      </button>
+    </form>
   );
 }
 

@@ -86,6 +86,15 @@ export function isReportNarrationLive(): boolean {
 export function isLeadNotifyLive(): boolean {
   return process.env.LEAD_NOTIFY_LIVE === "true";
 }
+/**
+ * Gate for collecting the child's SCHOOL on the follow-up form. Default OFF to
+ * stay consistent with the counsel-approved COPPA disclosure (school name is
+ * NOT collected). When off, the field is not rendered, not required, and
+ * persists NULL. Flip to 'true' only if counsel approves collecting it.
+ */
+export function isLeadSchoolFieldEnabled(): boolean {
+  return process.env.LEAD_SCHOOL_FIELD_LIVE === "true";
+}
 export function getResendApiKey(): string {
   return required("RESEND_API_KEY");
 }
