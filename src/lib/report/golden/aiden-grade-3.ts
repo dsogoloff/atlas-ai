@@ -33,7 +33,7 @@ export const aidenGrade3Report: ReportContent = {
   time_flag: "normal",
 
   placement: {
-    sam_level: "S.A.M Level 3A",
+    sam_level: "S.A.M Level 3",
     overall_percentage: 70,
     tier: "K_4",
   },
@@ -120,4 +120,5 @@ export const aidenGrade3Report: ReportContent = {
       notes: null,
     },
   ],
+  readiness: null,
 };

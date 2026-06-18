@@ -70,13 +70,6 @@ const SUB_STRAND_LABELS: Record<Strand, string> = {
   data_representation: "Data Representation and Interpretation",
 };
 
-/** Strip the trailing half-level letter (e.g. "3A" → "3", "0b" → "0") from a
- *  formatted placement string. The taxonomy uses A/B at most levels and adds C
- *  at L0; the matcher accepts any trailing letter to stay forward-compatible. */
-function stripHalfLevel(samLevel: string): string {
-  return samLevel.replace(/[A-Za-z]$/, "");
-}
-
 export interface PromptBundle {
   system: string;
   prompt: string;
@@ -121,10 +114,9 @@ export function buildNarrationPrompt(content: ReportContent): PromptBundle {
   // wording — the Step-4 narration voice is untouched.
   const prompt = `CHILD
 Display name: ${firstName(child.display_name)}
-Grade: ${child.grade_label}
 
 PLACEMENT
-${stripHalfLevel(placement.sam_level)} (overall ${placement.overall_percentage}%, tier ${placement.tier})
+${placement.sam_level} (overall ${placement.overall_percentage}%, tier ${placement.tier})
 
 STRAND PERFORMANCE
 ${strandLines}

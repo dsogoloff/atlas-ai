@@ -50,7 +50,7 @@ describe("buildNarrationPrompt", () => {
     expect(system).toMatch(/patterns observed in THIS assessment/);
   });
 
-  it("passes only the child's FIRST NAME (not the full display name) and the grade label", () => {
+  it("passes only the child's FIRST NAME, and NO school grade (S.A.M-level naming)", () => {
     // Data-minimization (Lane 3): the surname must never reach the model. The
     // golden fixture's display_name is "Aiden Park"; the prompt body must
     // carry "Aiden" and must NOT carry "Aiden Park" or the surname "Park".
@@ -58,7 +58,9 @@ describe("buildNarrationPrompt", () => {
     expect(prompt).toContain("Aiden");
     expect(prompt).not.toContain("Aiden Park");
     expect(prompt).not.toMatch(/\bPark\b/);
-    expect(prompt).toContain("Grade 3");
+    // School grade is no longer fed to the narration (founder decision
+    // 2026-06-18) — the model receives S.A.M-level framing only.
+    expect(prompt).not.toContain("Grade");
   });
 
   it("uses the single-name display name as-is and trims surrounding whitespace", () => {

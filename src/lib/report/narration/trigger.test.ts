@@ -145,6 +145,7 @@ const FAKE_REPORT_CONTENT: ReportContent = {
   strand_mastery: [],
   misconceptions: [],
   recommendations: [],
+  readiness: null,
 };
 
 const FAKE_NARRATION_OK: ReportNarration = {

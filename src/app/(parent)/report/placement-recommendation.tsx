@@ -1,17 +1,15 @@
 // Section 3 body — "Placement recommendation" on the parent report.
 //
-// Composes: the placement band + the EXISTING half-level surfaced as a plain
-// entry point ("second half") + a forward CTA. Deliberately NO time-to-advance
-// estimate — none exists in the data and none is invented. The half-level is
-// read from the existing sam_level string via splitEntryPoint (no new schema).
+// Shows the S.A.M booklet level as the recommended starting point + a forward
+// CTA. The "first half / second half" entry-point framing was dropped (founder
+// decision 2026-06-18, D3): parents see the S.A.M LEVEL only, no half-level.
+// `samLevel` is already the booklet display ("S.A.M Level 3").
 //
-// PROVISIONAL copy (ENTRY_POINT lead + FORWARD_CTA): isolated as constants so
-// it is easy to reword after the S.A.M. discussion.
-
-import { splitEntryPoint } from "@/lib/report/entry-point";
+// PROVISIONAL copy (FORWARD_CTA): isolated as a constant so it is easy to
+// reword after the S.A.M. discussion.
 
 interface PlacementRecommendationProps {
-  /** Pre-formatted placement label, e.g. "S.A.M Level 2B". */
+  /** Pre-formatted booklet placement label, e.g. "S.A.M Level 3". */
   samLevel: string;
 }
 
@@ -21,8 +19,7 @@ const FORWARD_CTA =
 export function PlacementRecommendation({
   samLevel,
 }: PlacementRecommendationProps) {
-  const { band, half } = splitEntryPoint(samLevel);
-  const entryLabel = half ? `${band}, ${half}` : band;
+  const entryLabel = samLevel;
 
   return (
     <div className="max-w-[660px]">

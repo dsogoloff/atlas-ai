@@ -18,6 +18,13 @@ import {
   type SatisfactionResult,
 } from "@/lib/analytics/satisfaction";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { isLeadSchoolFieldEnabled } from "@/lib/env";
+import { notifyFollowUpLead } from "@/lib/followUp/notify";
+import {
+  submitFollowUpLeadCore,
+  type FollowUpLeadInput,
+  type FollowUpLeadResult,
+} from "@/lib/followUp/submit";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -150,4 +157,24 @@ export async function submitSatisfaction(
   const rlsClient = await createClient();
   const serviceClient = createServiceClient();
   return submitSatisfactionCore({ rlsClient, serviceClient, input });
+}
+
+/**
+ * Persist a short-test follow-up lead (parent contact + child's school) and
+ * notify the pilot center. Explicit parent opt-in; only Tier 1/2 lead data —
+ * no diagnostic result. Notification is fail-soft + flag-gated (no send until
+ * the founder configures Resend). See @/lib/followUp.
+ */
+export async function submitFollowUpLead(
+  input: FollowUpLeadInput,
+): Promise<FollowUpLeadResult> {
+  const rlsClient = await createClient();
+  const serviceClient = createServiceClient();
+  return submitFollowUpLeadCore({
+    rlsClient,
+    serviceClient,
+    notify: notifyFollowUpLead,
+    schoolFieldEnabled: isLeadSchoolFieldEnabled(),
+    input,
+  });
 }

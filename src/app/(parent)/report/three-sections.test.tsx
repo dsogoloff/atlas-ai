@@ -26,31 +26,33 @@ describe("FindingsList", () => {
 });
 
 describe("PlacementRecommendation", () => {
-  it("surfaces the band plus the half-level as a plain entry point", () => {
+  // Founder decision 2026-06-18 (D3): the "first half / second half" entry-point
+  // framing is dropped — parents see the S.A.M booklet level verbatim.
+  it("shows the S.A.M booklet level verbatim as the starting point", () => {
     const html = renderToString(
-      <PlacementRecommendation samLevel="S.A.M Level 2B" />,
+      <PlacementRecommendation samLevel="S.A.M Level 3" />,
     );
-    expect(html).toContain("S.A.M Level 2, second half");
+    expect(html).toContain("S.A.M Level 3");
   });
 
-  it("renders the forward CTA and never a pacing number", () => {
+  it("renders the forward CTA and never a pacing number or half-level phrase", () => {
     const html = renderToString(
-      <PlacementRecommendation samLevel="S.A.M Level 3A" />,
+      <PlacementRecommendation samLevel="S.A.M Level 3" />,
     );
-    expect(html).toContain("S.A.M Level 3, first half");
     expect(html).toContain(
       "estimate how quickly your child progresses once classes begin",
     );
+    expect(html).not.toContain("first half");
+    expect(html).not.toContain("second half");
     // No fabricated time-to-advance: no "week(s)" claim in the output.
     expect(html.toLowerCase()).not.toContain("week");
   });
 
-  it("omits the half phrase when the label has no trailing A/B", () => {
+  it("shows a 0-band booklet level verbatim (e.g. 0C, no half-level)", () => {
     const html = renderToString(
-      <PlacementRecommendation samLevel="S.A.M Level 2" />,
+      <PlacementRecommendation samLevel="S.A.M Level 0C" />,
     );
-    expect(html).toContain("S.A.M Level 2");
-    expect(html).not.toContain("second half");
+    expect(html).toContain("S.A.M Level 0C");
     expect(html).not.toContain("first half");
   });
 });
