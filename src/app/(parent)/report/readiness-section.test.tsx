@@ -2,10 +2,16 @@
 // node env, no jsdom.
 
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Stub the server action so importing FollowUpCta doesn't pull the server-only
+// Supabase/Resend chain into this node-env render test.
+vi.mock("./feedback-actions", () => ({ submitFollowUpLead: vi.fn() }));
 
 import { ReadinessSection } from "./readiness-section";
 import { READINESS_COPY } from "@/lib/report/readiness";
+
+const SID = "00000000-0000-4000-8000-00000a1de003";
 
 // Words that would indicate shaming / "not ready" framing — must NEVER appear.
 const NEGATIVE_WORDS = [
@@ -22,6 +28,7 @@ describe("ReadinessSection — clean pass (ready)", () => {
   const html = renderToString(
     <ReadinessSection
       readiness={{ ready: true, currentLevelLabel: "Grade 5" }}
+      sessionId={SID}
     />,
   );
 
@@ -39,6 +46,7 @@ describe("ReadinessSection — not a clean pass (line absent, no negativity)", (
   const html = renderToString(
     <ReadinessSection
       readiness={{ ready: false, currentLevelLabel: "Grade 5" }}
+      sessionId={SID}
     />,
   );
 
@@ -62,7 +70,9 @@ describe("ReadinessSection — not a clean pass (line absent, no negativity)", (
 
 describe("ReadinessSection — comprehensive session (null readiness)", () => {
   it("renders nothing (no readiness UI for comprehensive)", () => {
-    const html = renderToString(<ReadinessSection readiness={null} />);
+    const html = renderToString(
+      <ReadinessSection readiness={null} sessionId={SID} />,
+    );
     expect(html).toBe("");
   });
 });

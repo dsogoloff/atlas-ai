@@ -55,22 +55,41 @@ export function computeReadiness(args: {
 }
 
 // =============================================================================
-// DRAFT — PARENT-FACING COPY — PENDING FOUNDER APPROVAL (do NOT treat as final)
+// PARENT-FACING COPY — FOUNDER-APPROVED 2026-06-17.
 // =============================================================================
-// §2.4 discipline: directional, encouraging, non-shaming. "appears ready" (not
-// "is ready"/guaranteed). The non-pass case has NO copy here by design — its
-// absence is the framing. The comprehensive CTA names the comprehensive as the
-// next step, available in person or online. Swap approved wording in place;
-// the component renders these verbatim.
+// §2.4 discipline: directional, encouraging, non-shaming. The readiness line is
+// upside-only (clean pass); the non-pass case has NO copy by design — its
+// absence is the framing. The comprehensive CTA is UNIVERSAL (shown to every
+// short-test taker, pass or not). [current level] renders a legible label
+// (Kindergarten / Nth Grade) via the report's grade-label mapping — never a
+// code. Voice-locked narration prompt untouched.
 // =============================================================================
 export const READINESS_COPY = {
-  /** Upside-only readiness line (shown ONLY on a clean pass). DRAFT. */
+  /** Upside-only readiness line (shown ONLY on a clean pass). */
   readyLine: (currentLevelLabel: string): string =>
     `Great news — based on this quick check, your child appears ready for ${currentLevelLabel}.`,
-  /** Comprehensive CTA — shown for every short test (pass or not). DRAFT. */
-  comprehensiveCtaHeading: "See the full picture", // DRAFT
+  /** Comprehensive CTA — shown to every short-test taker (pass or not). */
+  comprehensiveCtaHeading: "See the full picture",
   comprehensiveCtaBody:
-    // DRAFT
-    "A comprehensive assessment takes a fuller look at your child's strengths and next steps. It's available in person at a S.A.M center or online.",
-  comprehensiveCtaButton: "Explore a comprehensive assessment", // DRAFT
+    "A complete S.A.M. assessment goes deeper than this quick check. We're running these at select neighborhood schools — tell us where your child goes and we'll find the right option.",
+  comprehensiveCtaButton: "Find an assessment near us",
+
+  // Capture form (explicit parent opt-in; collects contact + child's school
+  // only — NO diagnostic result). Labels are presentational.
+  form: {
+    schoolLabel: "Child's school",
+    parentNameLabel: "Your name",
+    emailLabel: "Email",
+    phoneLabel: "Phone (optional)",
+    bestTimeLabel: "Best time to reach you (optional)",
+    submitButton: "Submit",
+    submittingButton: "Submitting…",
+    errorMessage: "Something went wrong — please try again.",
+  },
+
+  // Generic confirmation (any school) — triage is manual at pilot. The online
+  // line is a capture incentive with NO date and NO promise (§2.4: no "soon").
+  confirmationHeading: "Thanks — we've got it.",
+  confirmationBody:
+    "We're adding more neighborhood schools, and an online assessment is in the works — we'll let you know what's available for your child.",
 } as const;

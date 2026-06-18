@@ -73,6 +73,31 @@ export function isReportNarrationLive(): boolean {
   return process.env.REPORT_NARRATION_LIVE === "true";
 }
 
+// ---------------------------------------------------------------------------
+// Follow-up lead notification (Resend transactional email).
+//
+// The short-test "find an assessment near us" capture form persists a lead and
+// notifies the pilot center by email. Default-OFF + fail-soft, mirroring the
+// LLM gates above: when LEAD_NOTIFY_LIVE !== 'true' the notifier no-ops, so the
+// lead still persists and NOTHING is sent / NO money is spent until the founder
+// sets RESEND_API_KEY + the addresses and flips the flag in the deploy env.
+// Server-only — never import these from a client component.
+// ---------------------------------------------------------------------------
+export function isLeadNotifyLive(): boolean {
+  return process.env.LEAD_NOTIFY_LIVE === "true";
+}
+export function getResendApiKey(): string {
+  return required("RESEND_API_KEY");
+}
+/** Where the pilot center receives lead notifications. */
+export function getLeadNotifyToEmail(): string {
+  return required("LEAD_NOTIFY_TO_EMAIL");
+}
+/** Verified Resend sender address for lead notifications. */
+export function getLeadNotifyFromEmail(): string {
+  return required("LEAD_NOTIFY_FROM_EMAIL");
+}
+
 // =============================================================================
 // §12 staged-rollout feature flags.
 //

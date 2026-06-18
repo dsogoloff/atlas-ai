@@ -324,7 +324,10 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           className="px-12 max-sm:px-6 py-9 border-b"
           style={{ borderColor: "var(--color-report-border)" }}
         >
-          <ReadinessSection readiness={reportContent.readiness} />
+          <ReadinessSection
+            readiness={reportContent.readiness}
+            sessionId={reportContent.session_id}
+          />
         </section>
       )}
 

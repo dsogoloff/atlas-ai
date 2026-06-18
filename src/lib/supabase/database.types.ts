@@ -344,6 +344,67 @@ export type Database = {
           },
         ]
       }
+      follow_up_leads: {
+        Row: {
+          best_time_to_reach: string | null
+          child_id: string | null
+          created_at: string
+          id: string
+          parent_email: string
+          parent_name: string
+          parent_phone: string | null
+          school_name: string
+          session_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          best_time_to_reach?: string | null
+          child_id?: string | null
+          created_at?: string
+          id?: string
+          parent_email: string
+          parent_name: string
+          parent_phone?: string | null
+          school_name: string
+          session_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          best_time_to_reach?: string | null
+          child_id?: string | null
+          created_at?: string
+          id?: string
+          parent_email?: string
+          parent_name?: string
+          parent_phone?: string | null
+          school_name?: string
+          session_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_leads_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_leads_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instructors: {
         Row: {
           auth_user_id: string

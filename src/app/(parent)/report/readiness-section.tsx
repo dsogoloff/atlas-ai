@@ -2,22 +2,26 @@
 //
 // Asymmetric + §2.4-safe (see @/lib/report/readiness):
 //   * readiness.ready === true  → render the upside-only "appears ready for …"
-//     line, then the comprehensive CTA.
+//     line (legible level label), then the universal comprehensive CTA.
 //   * readiness.ready === false → render NO readiness line and NO negative
 //     framing — just the SAME comprehensive CTA.
 //   * readiness === null (comprehensive session) → render nothing.
 //
-// All parent-facing strings come from READINESS_COPY (DRAFT, pending founder
-// approval) — this component only lays them out, so approved wording drops in
-// without structural change.
+// The comprehensive CTA (FollowUpCta) is UNIVERSAL — shown to every short-test
+// taker regardless of pass/no-pass. All parent-facing strings come from
+// READINESS_COPY (founder-approved); the voice-locked narration prompt is
+// untouched.
 
 import { READINESS_COPY, type ReadinessSummary } from "@/lib/report/readiness";
 
+import { FollowUpCta } from "./follow-up-cta";
+
 interface Props {
   readiness: ReadinessSummary | null;
+  sessionId: string;
 }
 
-export function ReadinessSection({ readiness }: Props) {
+export function ReadinessSection({ readiness, sessionId }: Props) {
   if (readiness === null) return null;
 
   return (
@@ -31,23 +35,9 @@ export function ReadinessSection({ readiness }: Props) {
         </p>
       )}
 
-      <h2
-        className={
-          "font-display-child text-base font-bold text-sam-navy" +
-          (readiness.ready ? " mt-4" : "")
-        }
-      >
-        {READINESS_COPY.comprehensiveCtaHeading}
-      </h2>
-      <p className="mt-1 text-sm text-sam-gray-dark">
-        {READINESS_COPY.comprehensiveCtaBody}
-      </p>
-      <a
-        href="#comprehensive"
-        className="mt-4 inline-flex items-center justify-center rounded-full bg-sam-teal px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sam-teal/90"
-      >
-        {READINESS_COPY.comprehensiveCtaButton}
-      </a>
+      <div className={readiness.ready ? "mt-4" : ""}>
+        <FollowUpCta sessionId={sessionId} />
+      </div>
     </section>
   );
 }

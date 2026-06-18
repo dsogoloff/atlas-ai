@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  READINESS_COPY,
   SHORT_TEST_CLEAN_PASS_RATIO,
   computeReadiness,
 } from "./readiness";
@@ -48,5 +49,20 @@ describe("computeReadiness", () => {
       currentLevelLabel: "Kindergarten",
     });
     expect(r).toEqual({ ready: false, currentLevelLabel: "Kindergarten" });
+  });
+});
+
+describe("READINESS_COPY confirmation (generic/fallback — no date, no promise)", () => {
+  it("mentions the online assessment as a capture incentive", () => {
+    expect(READINESS_COPY.confirmationBody.toLowerCase()).toContain("online");
+  });
+  it("uses NO 'soon' and NO firm timing (§2.4)", () => {
+    const body = READINESS_COPY.confirmationBody.toLowerCase();
+    expect(body).not.toContain("soon");
+    expect(
+      /\b(january|february|march|april|may|june|july|august|september|october|november|december|20\d\d|\d+\s*(weeks?|months?|days?))\b/.test(
+        body,
+      ),
+    ).toBe(false);
   });
 });
