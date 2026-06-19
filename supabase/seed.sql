@@ -3303,6 +3303,65 @@ where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q11';
 
 -- =============================================================================
+-- L3+ source-vs-authored audit fixes (2026-06-19, lane/audit-L3plus)
+-- MIRRORS supabase/migrations/20260619060000_audit_L3plus_fixes.sql.
+-- Source-verified against the Stage-1 page renders (Level 5/6 worksheet +
+-- answer-key page-*.png). Only CLEAR-CUT discrepancies are fixed; every UPDATE
+-- carries an idempotent guard on the old (buggy) value. BLOCKED (founder-
+-- verified rows that contradict the now-available source, flagged for review,
+-- NOT touched here): SAM-L3-Q15, SAM-L4-Q18. Full table in
+-- scripts/conversion/audit/L3plus-audit.md.
+-- =============================================================================
+
+-- 1) SAM-L5-Q09 — stem fractions disagree with source page 6 (stored
+--    "1 1/4 ... 1 1/6"; source "1 3/4 ... 1 5/6"). Stored answer "5 1/12"
+--    already matches the source key and is only correct for the source
+--    fractions, so fix the stem and keep the answer. Guarded on the old stem.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{stem}',
+      to_jsonb('Patricia used 1¹⁄₂ kg of sugar, 1³⁄₄ kg of flour and 1⁵⁄₆ kg of butter to make a cake. What was the total mass of ingredients used?'::text))
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L5-Q09'
+  and q.content ->> 'stem' = 'Patricia used 1¹⁄₂ kg of sugar, 1¹⁄₄ kg of flour and 1¹⁄₆ kg of butter to make a cake. What was the total mass of ingredients used?';
+
+-- 2) SAM-L6-Q07 — restore verbatim source option text (page 6): option[0]
+--    "4 ÷ 10" had a flipped operator (source "4 × 10"); option[2] "10/4" was
+--    reworded (source "1/4 of 10"). correct_index 0 unchanged. Guarded on the
+--    old options array.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{options}',
+      '["4 × 10","10 ÷ 4","1/4 of 10","10 × 1/4"]'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L6-Q07'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["4 ÷ 10","10 ÷ 4","10/4","10 × 1/4"]'::jsonb;
+
+-- 3) SAM-L6-Q20 — stored options ["1 2/25","1 4/50","1 8/100","1 2/25"] were
+--    garbled/duplicated and correct_index 2 pointed at the WRONG unsimplified
+--    "1 8/100". Restore verbatim source options (page 14): ["108/100","1 4/50",
+--    "1 2/25","1 4/5"]; correct_index 2 now correctly selects "1 2/25" (key (3)).
+--    Guarded on the old options array.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{options}',
+      '["108/100","1 4/50","1 2/25","1 4/5"]'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L6-Q20'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
+
+-- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
 -- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
