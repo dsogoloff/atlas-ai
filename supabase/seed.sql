@@ -3276,6 +3276,19 @@ where q.tenant_id = t.id
   and q.external_id = 'SAM-L0B-Q14';
 
 -- =============================================================================
+-- Young-band content fix C — SAM-L0C-Q13 days-of-week -> CLICK_IMAGE_SINGLE
+-- MIRRORS supabase/migrations/20260618130200_fix_l0c_q13_days_clickimage.sql.
+-- Non-destructive: targets external_id = 'SAM-L0C-Q13' only. Idempotent.
+-- =============================================================================
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Read the days of the week from Monday. One day is torn off: Monday, Tuesday, Wednesday, Thursday, ___, Saturday, Sunday. Tap the correctly spelled missing day.","tiles":[{"id":"t1","label":"Thursday","image_path":"l0/sam-l0c-q13-t1.png","image_alt":"The word Thursday."},{"id":"t2","label":"Friday","image_path":"l0/sam-l0c-q13-t2.png","image_alt":"The word Friday."},{"id":"t3","label":"Saturday","image_path":"l0/sam-l0c-q13-t3.png","image_alt":"The word Saturday."},{"id":"t4","label":"Fryday","image_path":"l0/sam-l0c-q13-t4.png","image_alt":"The word Fryday."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0C-Q13';
+
+-- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
 -- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
