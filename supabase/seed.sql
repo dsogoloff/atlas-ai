@@ -3290,10 +3290,10 @@ where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q13';
 
 -- =============================================================================
--- Young-band content fix — Item 2: SAM-L0C-Q11 held inactive pending player field
--- MIRRORS supabase/migrations/20260618130300_deactivate_l0c_q11_pending_renderer.sql.
--- No renderer supports 4 ordered two-option picks; do not serve a wrong format.
--- Non-destructive: targets external_id = 'SAM-L0C-Q11' only. Idempotent.
+-- Young-band content fix — SAM-L0C-Q11: retire original row, replaced by Q11A..D
+-- MIRRORS migrations 20260618130300 (retire) + 20260618130400 (insert Q11A..D).
+-- ATLAS-confirmed path: 4 wired CLICK_IMAGE_SINGLE single-selects share the
+-- number-line stimulus. Non-destructive: touches only SAM-L0C-Q11 lineage rows.
 -- =============================================================================
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
@@ -3301,6 +3301,43 @@ set is_active = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q11';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active, short_test_eligible, content_id)
+select t.id, v.external_id, v.strand::strand, v.level::half_grade_level,
+       v.difficulty, v.format::question_format,
+       v.content::jsonb, v.misconception_tags,
+       v.word_count, v.operation_type::operation_type, v.num_operations,
+       v.representation::representation_kind,
+       v.is_active, v.short_test_eligible,
+       (select tc.id from tax_content tc
+          where tc.tenant_id = t.id and tc.code = v.content_key)
+from t,
+  (values
+    ('SAM-L0C-Q11A', 'number_sense', '0B', -1.8, 'CLICK_IMAGE_SINGLE',
+     '{"stem":"Look at the number line. 31 comes ___ 30.","image_path":"l0/sam-l0c-q11.png","image_alt":"A number line with evenly spaced tick marks.","tiles":[{"id":"after","label":"After","image_path":"l0/sam-l0c-q11-after.png","image_alt":"The word After."},{"id":"before","label":"Before","image_path":"l0/sam-l0c-q11-before.png","image_alt":"The word Before."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"after"}}}'::jsonb,
+     array['NS_MAGNITUDE_MISJUDGE']::text[],
+     9, 'IDENTIFY', 1, 'PICTORIAL', true, true, 'l0b-whole_numbers-1'),
+    ('SAM-L0C-Q11B', 'number_sense', '0B', -1.8, 'CLICK_IMAGE_SINGLE',
+     '{"stem":"Look at the number line. 31 is ___ than 30.","image_path":"l0/sam-l0c-q11.png","image_alt":"A number line with evenly spaced tick marks.","tiles":[{"id":"greater","label":"Greater","image_path":"l0/sam-l0c-q11-greater.png","image_alt":"The word Greater."},{"id":"smaller","label":"Smaller","image_path":"l0/sam-l0c-q11-smaller.png","image_alt":"The word Smaller."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"greater"}}}'::jsonb,
+     array['NS_MAGNITUDE_MISJUDGE']::text[],
+     10, 'IDENTIFY', 1, 'PICTORIAL', true, true, 'l0b-whole_numbers-1'),
+    ('SAM-L0C-Q11C', 'number_sense', '0B', -1.8, 'CLICK_IMAGE_SINGLE',
+     '{"stem":"Look at the number line. 33 comes ___ 36.","image_path":"l0/sam-l0c-q11.png","image_alt":"A number line with evenly spaced tick marks.","tiles":[{"id":"before","label":"Before","image_path":"l0/sam-l0c-q11-before.png","image_alt":"The word Before."},{"id":"after","label":"After","image_path":"l0/sam-l0c-q11-after.png","image_alt":"The word After."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"before"}}}'::jsonb,
+     array['NS_MAGNITUDE_MISJUDGE']::text[],
+     9, 'IDENTIFY', 1, 'PICTORIAL', true, true, 'l0b-whole_numbers-1'),
+    ('SAM-L0C-Q11D', 'number_sense', '0B', -1.8, 'CLICK_IMAGE_SINGLE',
+     '{"stem":"Look at the number line. 33 is ___ than 36.","image_path":"l0/sam-l0c-q11.png","image_alt":"A number line with evenly spaced tick marks.","tiles":[{"id":"smaller","label":"Smaller","image_path":"l0/sam-l0c-q11-smaller.png","image_alt":"The word Smaller."},{"id":"greater","label":"Greater","image_path":"l0/sam-l0c-q11-greater.png","image_alt":"The word Greater."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"smaller"}}}'::jsonb,
+     array['NS_MAGNITUDE_MISJUDGE']::text[],
+     10, 'IDENTIFY', 1, 'PICTORIAL', true, true, 'l0b-whole_numbers-1')
+  ) as v(external_id, strand, level, difficulty, format, content,
+         misconception_tags, word_count, operation_type, num_operations,
+         representation, is_active, short_test_eligible, content_key)
+on conflict (tenant_id, external_id) do nothing;
 
 -- =============================================================================
 -- L3+ source-vs-authored audit fixes (2026-06-19, lane/audit-L3plus)

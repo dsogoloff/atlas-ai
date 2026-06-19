@@ -1,22 +1,17 @@
--- Atlas Assessment — Item 2: deactivate SAM-L0C-Q11 pending a player field.
+-- Atlas Assessment — retire the original single SAM-L0C-Q11 row.
 -- (lane/young-band-content-fixes)
 --
 -- Source page (Level 0C Placement Worksheet, task 11) + crop scripts/conversion/
 -- source/0c/0C-11.png: ONE number-line stimulus (endpoints + ticks, no printed
--- numerals) and four sentences, each a TWO-OPTION ORDERED pick — 31 comes
--- [before/after] 30 (after); 31 is [smaller/greater] than 30 (greater); 33 comes
--- [before/after] 36 (before); 33 is [smaller/greater] than 36 (smaller).
+-- numerals) and four sentences, each a TWO-OPTION ORDERED pick.
 --
--- No shipped renderer supports four ordered two-option picks: MULTI_BLANK/
--- EquationFill renders free-text inputs only (BlankKey has no options[]),
--- SELECT_MULTIPLE is an unordered tap-all set, and there is no single-select-
--- sequence format. Rather than serve a wrong-format (free-entry) item, hold Q11
--- inactive until ATLAS adds the capability. CONVERSION authors nothing for it
--- until then.
---
--- MISSING CAPABILITY (one line, to scope the ATLAS task): MULTI_BLANK needs an
--- optional per-blank `options: [a, b]` that renders two choice buttons instead
--- of a text input, graded by the chosen value/id.
+-- ATLAS confirmed the shipped grader has no per-slot (multi-blank options)
+-- mapping, so the wired, faithful path is FOUR independent single-selects. Those
+-- are authored as SAM-L0C-Q11A..D (CLICK_IMAGE_SINGLE) in migration
+-- 20260618130400. This migration RETIRES the original single SAM-L0C-Q11 row
+-- (is_active=false) so it does not double-serve alongside the four sub-items.
+-- (Original supersession reason was a free-entry MULTI_BLANK with no constrained-
+-- choice renderer; the 4-single-select path replaces it.)
 --
 -- Non-destructive: single targeted UPDATE WHERE external_id = 'SAM-L0C-Q11'
 -- (+ tenant); sets is_active=false only (content/level/short_test_eligible
