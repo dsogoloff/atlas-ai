@@ -3303,6 +3303,33 @@ where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q11';
 
 -- =============================================================================
+-- L2 audit fix (lane/audit-L2) — wire image_path + activate the 7 image-essential
+-- L2 rows whose curated/generated art was uploaded but never wired (the l2-overlay
+-- activation INSERT no-opped against the pre-existing inactive Stage 4 rows).
+-- MIRRORS supabase/migrations/20260619050000_audit_L2_fixes.sql.
+-- Source crops verified faithful; bucket keys are the exact root-level keys the
+-- rows' authored content references. SAM-L2-Q04 intentionally left INACTIVE
+-- (founder-directed). Non-destructive (|| merge); idempotent (guarded is_active=false).
+-- =============================================================================
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set is_active = true,
+    content = q.content || jsonb_build_object('image_path', v.image_path)
+from t,
+  (values
+    ('SAM-L2-Q02', 'q-sam-l2-q02-triangles.png'),
+    ('SAM-L2-Q03', 'q-sam-l2-q03-composite-shape.png'),
+    ('SAM-L2-Q05', 'q-sam-l2-q05-seashell-graph.png'),
+    ('SAM-L2-Q12', 'q-sam-l2-q12-toy-car-ruler.png'),
+    ('SAM-L2-Q15', 'q-sam-l2-q15-clock.png'),
+    ('SAM-L2-Q16', 'q-sam-l2-q16-coins.png'),
+    ('SAM-L2-Q18', 'q-sam-l2-q18-base-ten.png')
+  ) as v(external_id, image_path)
+where q.tenant_id = t.id
+  and q.external_id = v.external_id
+  and q.is_active = false;
+
+-- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
 -- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
