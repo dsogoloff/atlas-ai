@@ -3276,19 +3276,6 @@ where q.tenant_id = t.id
   and q.external_id = 'SAM-L0B-Q14';
 
 -- =============================================================================
--- Young-band content fix A — SAM-L0C-Q11 number line -> SELECT_MULTIPLE (true statements)
--- MIRRORS supabase/migrations/20260618130100_fix_l0c_q11_numberline_select.sql.
--- Non-destructive: targets external_id = 'SAM-L0C-Q11' only. Idempotent.
--- =============================================================================
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'SELECT_MULTIPLE'::question_format,
-    content = '{"stem":"Look at the number line. Tap the sentences that are true.","image_path":"l0/sam-l0c-q11.png","image_alt":"A number line with evenly spaced tick marks.","select_rule":"all","options":[{"id":"o1","label":"31 comes after 30"},{"id":"o2","label":"31 comes before 30"},{"id":"o3","label":"31 is greater than 30"},{"id":"o4","label":"31 is smaller than 30"},{"id":"o5","label":"33 comes before 36"},{"id":"o6","label":"33 comes after 36"},{"id":"o7","label":"33 is smaller than 36"},{"id":"o8","label":"33 is greater than 36"}],"correct":["o1","o3","o5","o7"]}'::jsonb
-from t
-where q.tenant_id = t.id
-  and q.external_id = 'SAM-L0C-Q11';
-
--- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
 -- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
