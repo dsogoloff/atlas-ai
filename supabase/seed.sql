@@ -3263,6 +3263,19 @@ where q.tenant_id = t.id
 -- END l0-l2-activation
 
 -- =============================================================================
+-- Young-band content fix B — SAM-L0B-Q14 sushi -> MULTI_BLANK (two numeric blanks)
+-- MIRRORS supabase/migrations/20260618130000_fix_l0b_q14_sushi_multiblank.sql.
+-- Non-destructive: targets external_id = 'SAM-L0B-Q14' only. Idempotent.
+-- =============================================================================
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTI_BLANK'::question_format,
+    content = '{"stem":"There are 4 pieces of sushi on a tray. There are 6 pieces of sushi in a box. How many pieces of sushi are there altogether? Fill in the blanks.","tokens":[{"t":"text","value":"4 + 6 ="},{"t":"blank","id":"b1"},{"t":"text","value":". There are"},{"t":"blank","id":"b2"},{"t":"text","value":"pieces of sushi altogether."}],"blanks":{"b1":{"value":"10","numeric":true},"b2":{"value":"10","numeric":true}}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0B-Q14';
+
+-- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
 -- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
