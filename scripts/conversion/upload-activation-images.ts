@@ -48,6 +48,8 @@ const BUCKET = "question-images";
 // Untracked licensed-crop source roots (override via env if relocated).
 const L0_SRC = process.env.L0_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source";
 const L1_SRC = process.env.L1_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l1-art/scripts/conversion/output/l1-art";
+// Raw L1 extraction crops (Q01/Q07 tiles) live in the trunk source tree (source/1/).
+const L1_RAW = process.env.L1_RAW_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/1";
 const L2_SRC = process.env.L2_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/input/l2-art";
 // The Q05 seashell picture-graph is GENERATED (gen_l2_q05_graph.py), not a raw crop.
 const L2_GEN = process.env.L2_GEN_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/output/l2-art-generated";
@@ -146,12 +148,17 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
   { source: `${L2_SRC}/L2-6_3.png`, bucket: "l2/sam-l2-q06-opt3.png" },
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
-  // L0C-Q05 (IMAGE_ORDERING) — 3 GENERATED size tiles (gen_l0c_q05_tiles.py,
-  // same-object smallest->biggest). Q14 image already in the manifest; Q15 is
-  // text-label SELECT_MULTIPLE (no image). (lane/l0c-taxonomy-activation)
-  { source: `${L0_SRC}/0c/sam-l0c-q05-t1.png`, bucket: "l0/sam-l0c-q05-t1.png" },
-  { source: `${L0_SRC}/0c/sam-l0c-q05-t2.png`, bucket: "l0/sam-l0c-q05-t2.png" },
-  { source: `${L0_SRC}/0c/sam-l0c-q05-t3.png`, bucket: "l0/sam-l0c-q05-t3.png" },
+  // L1-Q01 (CLICK_IMAGE_MULTI) — 6 same-colour tiles (correct = reds t1/t3/t5).
+  { source: `${L1_RAW}/L1-1_1.png`, bucket: "l1/sam-l1-q01-t1.png" },
+  { source: `${L1_RAW}/L1-1_2.png`, bucket: "l1/sam-l1-q01-t2.png" },
+  { source: `${L1_RAW}/L1-1_3.png`, bucket: "l1/sam-l1-q01-t3.png" },
+  { source: `${L1_RAW}/L1-1_4.png`, bucket: "l1/sam-l1-q01-t4.png" },
+  { source: `${L1_RAW}/L1-1_5.png`, bucket: "l1/sam-l1-q01-t5.png" },
+  { source: `${L1_RAW}/L1-1_6.png`, bucket: "l1/sam-l1-q01-t6.png" },
+  // L1-Q07 (CLICK_IMAGE_SINGLE) — scene-with-gap stimulus + 2 piece tiles (correct = t1 = L1-7_2).
+  { source: `${L1_RAW}/L1-7_1.png`, bucket: "l1/sam-l1-q07-stimulus.png" },
+  { source: `${L1_RAW}/L1-7_2.png`, bucket: "l1/sam-l1-q07-t1.png" },
+  { source: `${L1_RAW}/L1-7_3.png`, bucket: "l1/sam-l1-q07-t2.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
