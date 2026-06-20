@@ -3398,6 +3398,28 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
 
+-- BEGIN l2-q17-metadata-fix (lane/l2-q17-metadata-fix)
+-- MIRRORS supabase/migrations/20260619090000_fix_l2_q17_metadata.sql (dev/CI path).
+-- Corrects the single live SAM-L2-Q17 row to the source key: level 1B (Level-1
+-- band, opens the L2 booklet — membership unchanged), strand measurement,
+-- content_id l1-measurement-3 ("Money / Subtracting amounts of money in dollars").
+-- The hand-seed (2A/operations, seed.sql:441) won the ON CONFLICT; this trailing
+-- UPDATE runs after all inserts + the content-id backfill, so a reset always lands
+-- on the correct values (no re-collapse). Stem/format/answer(16)/is_active/
+-- short_test_eligible UNCHANGED; only this row, only these three columns. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set level = '1B'::half_grade_level,
+    strand = 'measurement'::strand,
+    content_id = (
+      select tc.id from tax_content tc
+       where tc.tenant_id = t.id and tc.code = 'l1-measurement-3'
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L2-Q17';
+-- END l2-q17-metadata-fix
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
