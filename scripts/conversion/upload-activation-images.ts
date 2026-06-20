@@ -134,6 +134,24 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
   { source: `${L2_SRC}/L2-6_3.png`, bucket: "l2/sam-l2-q06-opt3.png" },
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
+  // L0A "Same or Different" + "Position" CLICK_IMAGE_SINGLE tiles
+  // (lane/l0a-taxonomy-activation) — 7 rows x 2 tiles. Q03 tiles are GENERATED
+  // (gen_l0a_q03_tiles.py, same-object big/small); the rest are the two licensed
+  // crops per row.
+  { source: `${L0_SRC}/0a/sam-l0a-q03-t1.png`, bucket: "l0/sam-l0a-q03-t1.png" },
+  { source: `${L0_SRC}/0a/sam-l0a-q03-t2.png`, bucket: "l0/sam-l0a-q03-t2.png" },
+  { source: `${L0_SRC}/0a/0A-05_1.png`, bucket: "l0/sam-l0a-q05-t1.png" },
+  { source: `${L0_SRC}/0a/0A-05_2.png`, bucket: "l0/sam-l0a-q05-t2.png" },
+  { source: `${L0_SRC}/0a/0A-06_1.png`, bucket: "l0/sam-l0a-q06-t1.png" },
+  { source: `${L0_SRC}/0a/0A-06_2.png`, bucket: "l0/sam-l0a-q06-t2.png" },
+  { source: `${L0_SRC}/0a/0A-07_1.png`, bucket: "l0/sam-l0a-q07-t1.png" },
+  { source: `${L0_SRC}/0a/0A-07_2.png`, bucket: "l0/sam-l0a-q07-t2.png" },
+  { source: `${L0_SRC}/0a/0A-10_1.png`, bucket: "l0/sam-l0a-q10-t1.png" },
+  { source: `${L0_SRC}/0a/0A-10_2.png`, bucket: "l0/sam-l0a-q10-t2.png" },
+  { source: `${L0_SRC}/0a/0A-13_1.png`, bucket: "l0/sam-l0a-q13-t1.png" },
+  { source: `${L0_SRC}/0a/0A-13_2.png`, bucket: "l0/sam-l0a-q13-t2.png" },
+  { source: `${L0_SRC}/0a/0A-14_1.png`, bucket: "l0/sam-l0a-q14-t1.png" },
+  { source: `${L0_SRC}/0a/0A-14_2.png`, bucket: "l0/sam-l0a-q14-t2.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
