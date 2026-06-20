@@ -264,10 +264,15 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       - Single-scene no-discrete-tiles: SAM-L1-Q01/Q06/Q26.
       - Missing source image: SAM-L0A-Q12, SAM-L0B-Q08/Q12/Q13, SAM-L0C-Q01/Q06/Q12.
 
-- [ ] **PARKED — taxonomy-gap (content_id NULL) rows remain blocked until taxonomy
-      extended (founder/S.A.M. decision):**
-      SAM-L0A-Q03/Q05/Q06/Q07/Q09/Q10/Q13/Q14/Q15/Q16, SAM-L0B-Q01/Q04,
-      SAM-L0C-Q05/Q15.
+- [x] **INTERNAL-TAXONOMY (ours to finish) — RESOLVED, NOT a Sam/S.A.M. dependency.**
+      The `content_id` scheme is an internal Atlas scheme; Code creates the codes from
+      each worksheet's Topic column. These rows had NULL `content_id` only because the
+      internal node didn't exist yet — they were never externally gated. New internal
+      nodes created + rows tagged/activated (PRs #103–#105): l0a-geometry-5 "Same or
+      Different", l0a-geometry-6 "Positions", l0c-geometry-4 "Comparing and Ordering",
+      l0c-whole_numbers-6 "Odd and Even Numbers"; 0B position → existing l0b-geometry-1.
+      (Remaining holds among these are NON-taxonomy: SAM-L0A-Q15/Q16 inadequate-art/
+      manual, SAM-L0A-Q12 + SAM-L0B-Q01 missing/unwired — not code-gated.)
 
 - [ ] **NOTE (non-blocking, cosmetic review):** SAM-L1-Q16 crop has baked-in
       question-number/name text — flag if undesirable for parent render.
@@ -279,11 +284,13 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
       and `20260616120100` (28 inserts + 21 re-banded updates). No app-code change; no verify
       re-run needed post-merge. Seed.sql mirror is purely additive (+426/-0).
 
-- [ ] **PARKED — taxonomy gaps (needs founder/S.A.M. decision, non-blocking).**
-      Four L0 topic areas have no taxonomy code and `content_id NULL` because no code was
-      invented (correct behavior per BUSINESS_RULES): 0A "Same or different"; 0A
-      position/direction words; 0C "Comparing and Ordering"; 0C "Odd and Even Numbers".
-      Extending the taxonomy = founder/S.A.M. decision. No build until directed.
+- [x] **INTERNAL-TAXONOMY (ours to finish) — RESOLVED.** Four L0 topic areas had
+      NULL `content_id` only because our internal taxonomy lacked a node, NOT because of
+      any external dependency. The taxonomy is an internal Atlas scheme; creating codes
+      from the worksheet Topic column is our job. Nodes created + rows activated
+      (PRs #103–#105): 0A "Same or different" → l0a-geometry-5; 0A position →
+      l0a-geometry-6; 0C "Comparing and Ordering" → l0c-geometry-4; 0C "Odd and Even
+      Numbers" → l0c-whole_numbers-6. This was never a founder/S.A.M. decision.
 
 - [ ] **PARKED — 0B Task 6 answer-key conflict (SAM-L0B-Q06, held inactive).**
       Stem asks for the number "greater than 6"; answer key says "Colour 7 and 6" — "6" is

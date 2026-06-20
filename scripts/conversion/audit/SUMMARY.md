@@ -46,10 +46,10 @@ it changes the served pool.**
 
 **Answer-key / transcription conflicts:**
 - `SAM-L0B-Q06` — stem "tap numbers greater than 6" vs key "Color 7 and 6"; bare-number-line crop (no printed numerals). Intended tiles + correct subset undetermined.
-- `SAM-L0C-Q15` — option-set transcription error (docx circle set `{6,2,1,5,10,12,24,35,40,41}` vs authored `{1,10,26,5,12,24,35,41,40}` — phantom 26, missing 6/2). All correct odd answers still present, so nothing served is wrong; **durable fix lives in the overlay + a not-yet-existing Odd/Even taxonomy code**, so a one-off SQL edit would be overwritten by `apply-l0-overlay`.
+- `SAM-L0C-Q15` — option-set transcription error (docx circle set `{6,2,1,5,10,12,24,35,40,41}` vs authored `{1,10,26,5,12,24,35,41,40}` — phantom 26, missing 6/2). All correct odd answers still present, so nothing served is wrong; **durable fix lives in the overlay + an internal Odd/Even taxonomy code (ours to create — since added as `l0c-whole_numbers-6`)**, so a one-off SQL edit would be overwritten by `apply-l0-overlay`.
 
-**Taxonomy gaps (NULL content_id / no locked code) — content faithful, can't be cleanly placed:**
-- `SAM-L0A-Q03`, `SAM-L0A-Q15` (size / position comparison at 0A); `SAM-L0C-Q05` (Comparing & Ordering); `SAM-L0C-Q15` (Odd & Even). `SAM-L0B-Q08` content_id mapping nuance (docx "Number Bonds to 5" vs authored `l0a-whole_numbers-2` = "to 10").
+**INTERNAL-TAXONOMY (ours to finish) — content faithful; these had NULL `content_id` only because our INTERNAL Atlas taxonomy lacked a node, NOT an external dependency. `content_id` codes are ours to create from the worksheet's Topic. (RESOLVED in PRs #103–#105: new internal nodes created + rows tagged.)**
+- `SAM-L0A-Q03`, `SAM-L0A-Q15` (size / position comparison at 0A); `SAM-L0C-Q05` (Comparing & Ordering); `SAM-L0C-Q15` (Odd & Even). `SAM-L0B-Q08` content_id mapping nuance (docx "Number Bonds to 5" vs authored `l0a-whole_numbers-2` = "to 10"). None of these were ever a Sam/S.A.M. decision.
 
 **Missing source art / no crop (need curated images before any change):**
 - `SAM-L0A-Q09`, `SAM-L0A-Q12` (no source crop); `SAM-L0A-Q17` (no group-of-5-balloons stimulus; held-A).
@@ -80,8 +80,14 @@ it changes the served pool.**
    merging the 2nd+ PR. Merge order is the founder's call; resolve by keeping all
    blocks. The audit-`.md` files don't conflict (distinct files).
 
-## What was NOT done (by rule)
-No re-banding, no taxonomy-code invention, no illustrated-art synthesis, no
-not-yet-wired-format authoring, no merges/resets. When the faithful fix wasn't
-unambiguous → BLOCKED, not a guess. Net: **10 clear-cut fixes; ~23 items routed to
-the decision queue above; 189/213 already faithful.**
+## What was NOT done (by rule, at the time of this audit)
+No re-banding, no illustrated-art synthesis, no not-yet-wired-format authoring, no
+merges/resets. When the faithful fix wasn't unambiguous → BLOCKED, not a guess. Net:
+**10 clear-cut fixes; ~23 items routed to the decision queue above; 189/213 already
+faithful.**
+
+CORRECTION (taxonomy): the original "no taxonomy-code invention" rule was a
+misframing. The `content_id` taxonomy is an INTERNAL Atlas scheme — creating a new
+node from a worksheet's Topic is our job, not "invention" of an external code and
+never a Sam/S.A.M. decision. The taxonomy-gap items above were finished internally
+in PRs #103–#105.

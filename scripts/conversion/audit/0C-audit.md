@@ -1,5 +1,11 @@
 # 0C source-vs-authored audit (2026-06-19)
 
+> **CORRECTION (taxonomy framing).** Any "taxonomy gap / no code / blocked on a
+> code" note below is a misframing. `content_id` codes are an INTERNAL Atlas scheme,
+> created by Code from each worksheet's Topic column — never a Sam/S.A.M. decision and
+> never externally gated. These items were finished internally (PRs #103–#105). See
+> `.agent/memory/BUSINESS_RULES.md` → "NOT licensed / NOT S.A.M.-controlled".
+
 Source of truth: `scripts/conversion/source/0c/` crops + `Level 0C Placement Worksheet.docx`
 (digital-adapted; Question Summary table gives Topic / Level / Short). Authored intent:
 `scripts/conversion/overlay/l0c-authoring.json` (re-authoring) +
@@ -33,7 +39,7 @@ Booklet ramps per the Summary table LEVEL column: tasks 1-13 = band 0B, tasks 14
 (Faithful counts the 13 in-scope rows judged faithful: Q01,Q02,Q03,Q04,Q06,Q07,Q08,Q09,Q10,Q12,Q13,Q14,Q16. Q11 is out-of-scope/FIXED-elsewhere. Q05 and Q15 are blocked. Note Q15 is also a non-faithful placeholder.)
 
 **Blocked detail:**
-- **SAM-L0C-Q05 — BLOCKED-taxonomy-gap.** content_id null; no clean 0B "Comparing and Ordering" tax_content code exists (flagged in l0c-authoring.json taxonomy_gaps). Stem and option words are faithful to the docx; the row is correctly held-C (real interaction = multi-blank, not a wired format). No clear-cut SQL fix; needs a taxonomy code from the founder/curriculum before it can be authored/activated.
+- **SAM-L0C-Q05 — BLOCKED-taxonomy-gap.** content_id null; no clean 0B "Comparing and Ordering" tax_content code exists (flagged in l0c-authoring.json taxonomy_gaps). Stem and option words are faithful to the docx; the row is correctly held-C (real interaction = multi-blank, not a wired format). No clear-cut SQL fix at audit time; needs an INTERNAL Atlas taxonomy code (ours to create from the worksheet Topic — since added as `l0c-geometry-4` "Comparing and Ordering"). NOT a founder/curriculum/S.A.M. dependency.
 - **SAM-L0C-Q15 — BLOCKED-taxonomy-gap + option-set transcription error (FLAG, not auto-fixed).**
   - Taxonomy: content_id null; no clean 0C "Odd and Even Numbers" tax_content code (flagged in l0c-authoring.json taxonomy_gaps). Same gap as Q14.
   - Transcription error: the held placeholder option set in both `l0c-authoring.json` (the generator's source of truth) and the seed reads `{1,10,26,5,12,24,35,41,40}`. The docx source circle set is `{6,2,1,5,10,12,24,35,40,41}` — i.e. a phantom "26" was introduced and "6" and "2" were dropped. The correct odd answers `{1,5,35,41}` are still all present, so no served answer is wrong (the row is held/inactive anyway, and on activation the option set is supplied by `l0c-activation.json`, which currently has no Q15 entry).
