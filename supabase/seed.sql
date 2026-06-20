@@ -3484,6 +3484,17 @@ from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q16';
 
 -- END l0a-taxonomy-activation
 
+-- BEGIN l0a-q15-activation (lane/l0a-taxonomy-activation follow-up)
+-- MIRRORS supabase/migrations/20260620150000_l0a_q15_activation.sql. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the bowl on the bottom shelf.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q15-t1.png","image_alt":"A rack of shelves with a bowl on one shelf."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q15-t2.png","image_alt":"A rack of shelves with a bowl on one shelf."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0a-q15-t3.png","image_alt":"A rack of shelves with a bowl on one shelf."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t3"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q15';
+-- END l0a-q15-activation
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================

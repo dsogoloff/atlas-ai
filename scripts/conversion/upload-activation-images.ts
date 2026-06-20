@@ -152,6 +152,11 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L0_SRC}/0a/0A-13_2.png`, bucket: "l0/sam-l0a-q13-t2.png" },
   { source: `${L0_SRC}/0a/0A-14_1.png`, bucket: "l0/sam-l0a-q14-t1.png" },
   { source: `${L0_SRC}/0a/0A-14_2.png`, bucket: "l0/sam-l0a-q14-t2.png" },
+  // L0A-Q15 (CLICK_IMAGE_SINGLE) — 3 GENERATED rack+bowl tiles (gen_l0a_q15_tiles.py,
+  // bowl on top/middle/bottom shelf; correct = t3 bottom).
+  { source: `${L0_SRC}/0a/sam-l0a-q15-t1.png`, bucket: "l0/sam-l0a-q15-t1.png" },
+  { source: `${L0_SRC}/0a/sam-l0a-q15-t2.png`, bucket: "l0/sam-l0a-q15-t2.png" },
+  { source: `${L0_SRC}/0a/sam-l0a-q15-t3.png`, bucket: "l0/sam-l0a-q15-t3.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
