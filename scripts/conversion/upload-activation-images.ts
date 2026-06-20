@@ -134,6 +134,12 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
   { source: `${L2_SRC}/L2-6_3.png`, bucket: "l2/sam-l2-q06-opt3.png" },
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
+  // L0C-Q05 (IMAGE_ORDERING) — 3 GENERATED size tiles (gen_l0c_q05_tiles.py,
+  // same-object smallest->biggest). Q14 image already in the manifest; Q15 is
+  // text-label SELECT_MULTIPLE (no image). (lane/l0c-taxonomy-activation)
+  { source: `${L0_SRC}/0c/sam-l0c-q05-t1.png`, bucket: "l0/sam-l0c-q05-t1.png" },
+  { source: `${L0_SRC}/0c/sam-l0c-q05-t2.png`, bucket: "l0/sam-l0c-q05-t2.png" },
+  { source: `${L0_SRC}/0c/sam-l0c-q05-t3.png`, bucket: "l0/sam-l0c-q05-t3.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
