@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "level": "0C",
+    "note": "Internal taxonomy nodes (ours, not external). New: l0c-geometry-4 'Comparing and Ordering', l0c-whole_numbers-6 'Odd and Even Numbers'. Source-verified (doc + key + crops). Applied by migration 20260620140000.",
+    "new_codes": {
+      "l0c-geometry-4": "Comparing and Ordering (Topic) — Q05",
+      "l0c-whole_numbers-6": "Odd and Even Numbers (Topic) — Q14, Q15"
+    },
+    "wired_and_activated": ["SAM-L0C-Q05","SAM-L0C-Q15"],
+    "recoded_existing_active": ["SAM-L0C-Q14"],
+    "flags": {
+      "SAM-L0C-Q05": "source crop is a single object (carrot); modelled as IMAGE_ORDERING over 3 generated sizes (same-object size adaptation). Founder may swap to 3 distinct objects if the original differed.",
+      "SAM-L0C-Q15": "docx digit extraction has merge ambiguity; circle set authored as {1,5,10,12,24,35,40,41}, correct odds {1,5,35,41}. If the printed set has extra evens (e.g. 6,2), the answer is unchanged. QA against the page if available."
+    }
+  },
+  "tasks": {
+    "SAM-L0C-Q05": { "format": "IMAGE_ORDERING", "tiles": "3 carrot sizes (gen)", "order": ["t1","t2","t3"], "content_id": "l0c-geometry-4", "short": true },
+    "SAM-L0C-Q14": { "format": "NUMERIC_ENTRY (already active)", "answer": "4", "content_id": "l0c-whole_numbers-6 (re-homed)", "short": true },
+    "SAM-L0C-Q15": { "format": "SELECT_MULTIPLE", "options": [1,5,10,12,24,35,40,41], "correct": [1,5,35,41], "content_id": "l0c-whole_numbers-6", "short": true }
+  }
+}

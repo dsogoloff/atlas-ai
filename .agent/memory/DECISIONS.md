@@ -3,6 +3,26 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-20
+
+* **CORRECTION — the Atlas taxonomy / `content_id` codes / level design / banding are
+  an INTERNAL Atlas scheme, NOT S.A.M.-controlled.** A false belief had propagated
+  across sessions that Sam Chia / S.A.M. owns or must approve Atlas's curriculum
+  structure, and that NULL-`content_id` items were "SAM-gated / blocked on a taxonomy
+  code." This is wrong. **The truth:** (a) Sam Chia's only role is content **licensing**
+  — he supplied the S.A.M. placement worksheets and approved their use; the only
+  curriculum signal from Sam is each worksheet's last-page "Concepts and Skills" + "Topic"
+  table. (b) Sam does NOT own/define/approve Atlas taxonomy, `content_id` codes, level
+  design, or banding; there is no external "locked S.A.M. taxonomy." (c) `content_id`
+  codes are an internal scheme created by Code during conversion; a NULL `content_id` is
+  an internal tagging job we finish, never externally gated. (d) The ONLY genuine S.A.M.
+  dependencies are content-licensing (granted) and franchisor/pilot approval (granted).
+  Corrected across repo memory/instruction + audit/conversion notes in
+  lane/correct-sam-taxonomy-belief. The previously-"gated" L0 items were finished
+  internally in PRs #103–#105 (new nodes l0a-geometry-5/6, l0c-geometry-4,
+  l0c-whole_numbers-6; 0B position → existing l0b-geometry-1). Supersedes any earlier
+  "needs founder/S.A.M. taxonomy decision" wording.
+
 ## 2026-06-18
 
 * **Tasks 1 & 3 verified already-implemented on trunk; no fabricated changes shipped.** The 2026-06-18 session brief asserted "wire the short picker live" (Task 1) and "lead-notification email send path" (Task 3) were outstanding. Both were verify-confirmed done as of trunk `ae281dd` (trunk had advanced past PR #81, lane/short-test-readiness-report, merged, which itself followed commits f877285 + a23097c). Task 1: the short path already routes through `src/lib/questionPicker/pickForSession.ts:67` with `short_test_eligible` filter + previous-booklet band; both live handlers call pickForSession; `test_type` defaults to "short" at sessionStart handler:238; dispatch + filter covered by existing tests. Task 3: `src/lib/followUp/submit.ts` already calls `src/lib/followUp/notify.ts` (Resend/fetch, `LEAD_NOTIFY_LIVE`-gated, fail-soft). Both shipped confirm-only (Task 1) or test-only PR #82 (Task 3) rather than fabricating redundant changes.

@@ -1,5 +1,11 @@
 # 0B source-vs-authored audit (2026-06-19)
 
+> **CORRECTION (taxonomy framing).** Any "taxonomy gap / no code / blocked on a
+> code" note below is a misframing. `content_id` codes are an INTERNAL Atlas scheme,
+> created by Code from each worksheet's Topic column — never a Sam/S.A.M. decision and
+> never externally gated. These items were finished internally (PRs #103–#105). See
+> `.agent/memory/BUSINESS_RULES.md` → "NOT licensed / NOT S.A.M.-controlled".
+
 Source of truth: `Level 0B Placement Worksheet.docx` (verbatim stems + Question Summary
 table) and the per-task crops in `scripts/conversion/source/0b/`. Every row was judged
 against the opened source crop image(s) and/or the docx stem text. The booklet ramps:

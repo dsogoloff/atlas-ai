@@ -20,7 +20,7 @@
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the object that is the same as the one in the box.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q08-t1.png","image_alt":"First object choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q08-t2.png","image_alt":"Second object choice."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0a-q08-t3.png","image_alt":"Third object choice."},{"id":"t4","label":"Picture 4","image_path":"l0/sam-l0a-q08-t4.png","image_alt":"Fourth object choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t4"}}}'::jsonb,
+    content = '{"stem":"Tap the object that is the same as the one in the box.","image_path":"l0/sam-l0a-q08-stimulus.png","image_alt":"The object shown inside the box.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q08-t1.png","image_alt":"First object choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q08-t2.png","image_alt":"Second object choice."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0a-q08-t3.png","image_alt":"Third object choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t3"}}}'::jsonb,
     is_active = true
 from t
 where q.tenant_id = t.id
@@ -47,6 +47,17 @@ set format = 'CLICK_IMAGE_SINGLE'::question_format,
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0B-Q02'
+  and q.is_active = false;
+
+-- SAM-L0B-Q07 → MULTIPLE_CHOICE (level 0A)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTIPLE_CHOICE'::question_format,
+    content = '{"stem":"How are the shapes sorted?","options":["color","size"],"correct_index":0,"image_path":"l0/sam-l0b-q07.png","image_alt":"Two boxes, each holding a group of shapes."}'::jsonb,
+    is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0B-Q07'
   and q.is_active = false;
 
 -- SAM-L0C-Q03 → SELECT_MULTIPLE (level 0C)

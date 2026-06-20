@@ -69,15 +69,21 @@ mis-modeled the interaction; they are now correctly held until the real input is
 wired. Net active-bank change for L0: was 6 mis-modeled actives → now 8 genuinely
 auto-gradeable actives.
 
-## NEEDS FOUNDER — taxonomy gaps (no clean V2026 code; codes NOT invented)
-These items have `content_id = NULL` (radar won't attribute them) because the
-locked taxonomy has no matching sub-strand at that level:
+## INTERNAL-TAXONOMY (ours to finish) — codes to be created during conversion
+These items had `content_id = NULL` (radar won't attribute them) only because our
+INTERNAL Atlas taxonomy did not yet have a node for that Topic at that level. The
+`content_id` scheme is OURS — Code creates the codes from the worksheet's own Topic
+column; this is NOT a Sam/S.A.M. decision and was never externally gated.
 - **0A "Same or different"** (big/small, thick/thin, long/short, tall/short,
   similar objects) and **0A position/direction words** (left/right, up/down,
-  top/bottom, inside/outside) — 0A has no position sub-strand (only 0B does).
+  top/bottom, inside/outside).
 - **0C "Comparing and Ordering"** (`L0C-Q05`), **0C "Odd and Even Numbers"**
   (`L0C-Q14`, `L0C-Q15`).
-Extending the taxonomy is a founder / S.A.M. decision.
+RESOLVED: these internal nodes were created during conversion (l0a-geometry-5
+"Same or Different", l0a-geometry-6 "Positions", l0c-geometry-4 "Comparing and
+Ordering", l0c-whole_numbers-6 "Odd and Even Numbers"; 0B position → existing
+l0b-geometry-1) and the rows tagged + activated. Creating taxonomy nodes is an
+internal Atlas task — not a founder/S.A.M. dependency.
 
 ## NEEDS FOUNDER — content question
 - **0B Task 6** ("Tap the numbers greater than 6"): the answer key reads
