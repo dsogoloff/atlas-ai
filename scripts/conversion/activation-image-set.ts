@@ -37,10 +37,12 @@ export interface Entry {
 // references a key missing from this map.
 export const SOURCE_MAP: Record<string, string> = {
   // L0A
-  "l0/sam-l0a-q08-t1.png": `${L0_SRC}/0a/0A-08_1.png`,
-  "l0/sam-l0a-q08-t2.png": `${L0_SRC}/0a/0A-08_2.png`,
-  "l0/sam-l0a-q08-t3.png": `${L0_SRC}/0a/0A-08_3.png`,
-  "l0/sam-l0a-q08-t4.png": `${L0_SRC}/0a/0A-08_4.png`,
+  // Q08 — #97 re-author (stimulus = boxed reference car; 3 choice tiles bear/ball/car,
+  // correct = t3 plain car). This is what the live l0-l2-activation seed block references.
+  "l0/sam-l0a-q08-stimulus.png": `${L0_SRC}/0a/0A-08_1.png`,
+  "l0/sam-l0a-q08-t1.png": `${L0_SRC}/0a/0A-08_2.png`,
+  "l0/sam-l0a-q08-t2.png": `${L0_SRC}/0a/0A-08_3.png`,
+  "l0/sam-l0a-q08-t3.png": `${L0_SRC}/0a/0A-08_4.png`,
   "l0/sam-l0a-q11-t1.png": `${L0_SRC}/0a/0A-11_1.png`,
   "l0/sam-l0a-q11-t2.png": `${L0_SRC}/0a/0A-11_2.png`,
   "l0/sam-l0a-q03-t1.png": `${L0_SRC}/0a/sam-l0a-q03-t1.png`,
@@ -68,6 +70,7 @@ export const SOURCE_MAP: Record<string, string> = {
   "l0/sam-l0b-q02-t4.png": `${L0_SRC}/0b/0B-02_4.png`,
   "l0/sam-l0b-q14.png": `${L0_SRC}/0b/0B-14.png`,
   "l0/sam-l0b-q04.png": `${L0_SRC}/0b/0B-04_1.png`,
+  "l0/sam-l0b-q07.png": `${L0_SRC}/0b/sam-l0b-q07.png`, // #97 composited sorted-shapes stimulus (generated)
   "l0/sam-l0b-q03-stimulus.png": `${L0_SRC}/0b/0B-03_1.png`,
   "l0/sam-l0b-q03-t1.png": `${L0_SRC}/0b/0B-03_2.png`,
   "l0/sam-l0b-q03-t2.png": `${L0_SRC}/0b/0B-03_3.png`,

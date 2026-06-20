@@ -3429,6 +3429,784 @@ from t where q.tenant_id = t.id and q.external_id = 'SAM-L1-Q07';
 -- END l1-q01-q07-activation
 
 -- =============================================================================
+-- RESTORED ACTIVATION SEED-MIRRORS  (lane/restore-seed-mirrors)
+-- The dev DB builds ENTIRELY from seed.sql: every tenant-scoped migration no-ops
+-- during `supabase db reset` (migrations run before seed.sql creates the tenant).
+-- The #97-#108 merges dropped most activation seed-mirrors; these blocks restore
+-- them, mirroring each migration body VERBATIM. ORDER: taxonomy NODES -> row
+-- activations/corrections -> short_test_eligible flips. ADDITIVE — surviving blocks
+-- (l0-l2-activation, l1-q01-q07-activation, overlays) untouched.
+-- MANIFEST (next merge: verify none of these BEGIN markers go missing):
+--   l0a-taxonomy-activation        <- 20260620120000_l0a_taxonomy_activation.sql   [#103 NODES l0a-geometry-5/6 + 7 activations + Q15/Q16 content_id]
+--   l0c-taxonomy-activation        <- 20260620140000_l0c_taxonomy_activation.sql   [#105 NODES l0c-geometry-4 + l0c-whole_numbers-6 + Q05/Q14/Q15]
+--   l0b-position-activation        <- 20260620130000_l0b_position_activation.sql   [#104 Q04 -> existing l0b-geometry-1]
+--   l3-image-activation            <- 20260619100000_l3_image_activation.sql   [#100 9 image rows + Q04/Q23 load + Q17 ans=25]
+--   l4-image-activation            <- 20260619110000_l4_image_activation.sql   [#101 6 image rows incl Q21]
+--   l0a-q15-activation             <- 20260620150000_l0a_q15_activation.sql   [#103 follow-up (needs l0a-geometry-6 above)]
+--   l0b-q03-q06-activation         <- 20260620150000_l0b_q03_q06_activation.sql   [#104 follow-up (body; PR #109 renames file to 150001)]
+--   l0a-q17-activation             <- 20260620160000_l0a_q17_activation.sql   [#103 follow-up (5-balloon)]
+--   l2-q17-metadata-fix            <- 20260619090000_fix_l2_q17_metadata.sql   [#99 L2-Q17 band/strand/content_id]
+--   audit-l2-fixes                 <- 20260619050000_audit_L2_fixes.sql   [#94 L2 audit activations]
+--   audit-l3plus-fixes             <- 20260619060000_audit_L3plus_fixes.sql   [#95 L3+ verbatim corrections]
+--   l1-l4-short-eligible-backfill  <- 20260619080000_l1_l4_short_eligible_backfill.sql   [#98 short_test_eligible flips (LAST)]
+--   l1-q01-q07-activation          (already present from #107 — not re-added)
+-- =============================================================================
+
+-- BEGIN l0a-taxonomy-activation (seed mirror of supabase/migrations/20260620120000_l0a_taxonomy_activation.sql)
+-- Atlas Assessment — 0A "Same or Different" + "Position" taxonomy + activation
+-- (lane/l0a-taxonomy-activation).
+--
+-- The content_id codes are OUR internal organizing scheme (NOT external/S.A.M.).
+-- These 0A items were previously parked "needs taxonomy code"; we own the codes,
+-- so we create two new internal nodes under the geometry sub-strand (the only
+-- non-number sub-strand that applies at l0a) derived from the worksheet's own
+-- Topic column, then wire + activate the auto-gradeable image-tap rows.
+--
+-- New tax_content nodes:
+--   l0a-geometry-5  "Same or Different"  (Topic: Same or different)
+--   l0a-geometry-6  "Positions"          (Topic: Position and Direction Words)
+--
+-- Source-verified: 0A doc page + last-page key + each PNG crop opened/viewed.
+-- Activations rebuild content to CLICK_IMAGE_SINGLE (two image tiles, select-one);
+-- the new content carries no _authoring.requires_format_swap, so is_active=true is
+-- valid atomically. short_test_eligible from the key's Short column (all Y here).
+-- Non-destructive (only the listed ids), idempotent, mirrored in seed.sql.
+--
+-- HELD (non-taxonomy blocker) — content_id assigned for organization, left inactive:
+--   Q15 (tap bowl on bottom shelf) — source art inadequate: only a single bowl +
+--        an EMPTY 3-shelf rack exist, not a bowl on each shelf. Needs curated art.
+--   Q16 (draw a sweet outside the bowl) — manual drawing, no auto-grade path; Short=N.
+
+-- ── new taxonomy nodes ───────────────────────────────────────────────────────
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into tax_content (tenant_id, sub_strand_id, level_id, code, name, display_order, mvp)
+select t.id,
+  (select ss.id from tax_sub_strands ss where ss.tenant_id = t.id and ss.code = v.sub_strand_code),
+  (select l.id  from tax_levels       l  where l.tenant_id  = t.id and l.code  = v.level_code),
+  v.code, v.name, v.display_order, v.mvp
+from t, (values
+  ('l0a-geometry-5', 'geometry', 'l0a', 'Same or Different', 5, false),
+  ('l0a-geometry-6', 'geometry', 'l0a', 'Positions',         6, false)
+) as v(code, sub_strand_code, level_code, name, display_order, mvp)
+on conflict (tenant_id, code) do nothing;
+
+-- ── activations: CLICK_IMAGE_SINGLE, two tiles, select-one ────────────────────
+
+-- Q03 "Tap the big bowl" — same-object size comparison (resize tiles). correct=t2 (big).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the big bowl.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q03-t1.png","image_alt":"First bowl choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q03-t2.png","image_alt":"Second bowl choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q03';
+
+-- Q05 "Tap the thick book" — t1 thin (0A-05_1), t2 thick (0A-05_2). correct=t2.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the thick book.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q05-t1.png","image_alt":"First book choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q05-t2.png","image_alt":"Second book choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q05';
+
+-- Q06 "Tap the long branch" — t1 long (0A-06_1), t2 short (0A-06_2). correct=t1.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the long branch.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q06-t1.png","image_alt":"First branch choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q06-t2.png","image_alt":"Second branch choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q06';
+
+-- Q07 "Tap the tall animal" — t1 donkey (0A-07_1), t2 giraffe (0A-07_2). correct=t2.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the tall animal.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q07-t1.png","image_alt":"First animal choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q07-t2.png","image_alt":"Second animal choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q07';
+
+-- Q10 "Tap the taller door" — t1 green/taller (0A-10_1), t2 brown (0A-10_2). correct=t1.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the taller door.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q10-t1.png","image_alt":"First door choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q10-t2.png","image_alt":"Second door choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q10';
+
+-- Q13 "Tap the bird facing left" — t1 left (0A-13_1), t2 right (0A-13_2). correct=t1.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the bird facing left.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q13-t1.png","image_alt":"First bird choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q13-t2.png","image_alt":"Second bird choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q13';
+
+-- Q14 "Tap the bird that is flying up" — t1 up (0A-14_1), t2 down (0A-14_2). correct=t1.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the bird that is flying up.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q14-t1.png","image_alt":"First bird choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q14-t2.png","image_alt":"Second bird choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q14';
+
+-- ── held rows: assign content_id only (organization), stay inactive ───────────
+
+-- Q15 — inadequate source art (single bowl + empty shelves). Position node.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q15';
+
+-- Q16 — manual drawing (no auto-grade), Short=N. Position node.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q16';
+-- END l0a-taxonomy-activation
+
+-- BEGIN l0c-taxonomy-activation (seed mirror of supabase/migrations/20260620140000_l0c_taxonomy_activation.sql)
+-- Atlas Assessment — 0C "Comparing & Ordering" + "Odd & Even" taxonomy + activation
+-- (lane/l0c-taxonomy-activation).
+--
+-- content_id codes are OUR internal scheme. Two new internal nodes derived from
+-- the worksheet Topic column:
+--   l0c-geometry-4       "Comparing and Ordering"  (Topic: Comparing and Ordering)
+--   l0c-whole_numbers-6  "Odd and Even Numbers"    (Topic: Odd and Even Numbers)
+--
+-- Source-verified (0C doc + key + crops). Non-destructive, idempotent, mirrored.
+--
+-- Q05 — order by size. Source crop is a SINGLE object (carrot, 0C-05); modelled as
+--   IMAGE_ORDERING over 3 generated sizes (smallest->biggest) — same-object size
+--   adaptation, skill preserved + auto-gradeable. (gen_l0c_q05_tiles.py)
+-- Q14 — count pairs (already active NUMERIC); re-home content_id to Odd/Even node.
+-- Q15 — tap circles with odd numbers -> SELECT_MULTIPLE over the docx circle set
+--   {1,5,10,12,24,35,40,41}; correct = odds {1,5,35,41}. (No crop; text labels.)
+--   NOTE: the docx digits extract with some merge ambiguity; if the printed set
+--   actually includes more even circles (e.g. 6,2 per an earlier read) the answer
+--   is unchanged — only the displayed evens would differ. Flagged for QA.
+
+-- ── new taxonomy nodes ───────────────────────────────────────────────────────
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into tax_content (tenant_id, sub_strand_id, level_id, code, name, display_order, mvp)
+select t.id,
+  (select ss.id from tax_sub_strands ss where ss.tenant_id = t.id and ss.code = v.sub_strand_code),
+  (select l.id  from tax_levels       l  where l.tenant_id  = t.id and l.code  = v.level_code),
+  v.code, v.name, v.display_order, v.mvp
+from t, (values
+  ('l0c-geometry-4',      'geometry',      'l0c', 'Comparing and Ordering', 4, false),
+  ('l0c-whole_numbers-6', 'whole_numbers', 'l0c', 'Odd and Even Numbers',   6, false)
+) as v(code, sub_strand_code, level_code, name, display_order, mvp)
+on conflict (tenant_id, code) do nothing;
+
+-- Q05 — IMAGE_ORDERING, 3 carrot sizes smallest->biggest.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'IMAGE_ORDERING'::question_format,
+    content = '{"stem":"Put the pictures in order by size, from smallest to biggest.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0c-q05-t1.png","image_alt":"First picture."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0c-q05-t2.png","image_alt":"Second picture."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0c-q05-t3.png","image_alt":"Third picture."}],"_authoring":{"answer_model":{"rule":"order-equality","order":["t1","t2","t3"]}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0c-geometry-4')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q05';
+
+-- Q14 — re-home content_id to Odd/Even (already active NUMERIC).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0c-whole_numbers-6'),
+    short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q14';
+
+-- Q15 — SELECT_MULTIPLE odd numbers.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'SELECT_MULTIPLE'::question_format,
+    content = '{"stem":"Tap the circles with odd numbers.","select_rule":"all","options":[{"id":"o1","label":"1"},{"id":"o2","label":"5"},{"id":"o3","label":"10"},{"id":"o4","label":"12"},{"id":"o5","label":"24"},{"id":"o6","label":"35"},{"id":"o7","label":"40"},{"id":"o8","label":"41"}],"correct":["o1","o2","o6","o8"]}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0c-whole_numbers-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q15';
+-- END l0c-taxonomy-activation
+
+-- BEGIN l0b-position-activation (seed mirror of supabase/migrations/20260620130000_l0b_position_activation.sql)
+-- Atlas Assessment — 0B Position activation (lane/l0b-taxonomy-activation).
+--
+-- SAM-L0B-Q04 ("Start at X. Go right, up, left and down...") was parked
+-- "needs taxonomy code". The existing internal node l0b-geometry-1 "Positions"
+-- already covers it (no new code needed) — map Q04 to it and activate.
+--
+-- Source-verified: 0B doc page + key + the map crop 0B-04_1.png (Bakery, School,
+-- Playground, Home + starting point X). The route resolves to Bakery (idx1).
+-- MULTIPLE_CHOICE (text options) + map stimulus image; rebuilt content has no
+-- _authoring.requires_format_swap so is_active=true is atomic. short_test_eligible
+-- from the key (Short=Y). Non-destructive (only this id), idempotent, seed-mirrored.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Start at X. Go right, up, left and down. Where are you? Tap the correct box below.","options":["School","Bakery","Playground","Home"],"correct_index":1,"image_path":"l0/sam-l0b-q04.png","image_alt":"A street map showing Bakery, School, Playground and Home, with a starting point marked X."}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0b-geometry-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q04';
+-- END l0b-position-activation
+
+-- BEGIN l3-image-activation (seed mirror of supabase/migrations/20260619100000_l3_image_activation.sql)
+-- Atlas Assessment — L3 image-question wiring + activation (lane/l3-image-activation).
+--
+-- Wires concrete image_path into 9 held SAM-L3 image rows and activates them, plus
+-- loads 2 unloaded stragglers (Q04, Q23). Source-verified: each L3 doc page, its
+-- last-page answer key (Task|Skills|Topic|Level|Short), and the actual PNG crop in
+-- scripts/conversion/source/3/ were opened and viewed before authoring.
+--
+-- Pattern: trailing authoritative UPDATEs (content || image_path merge — preserves
+-- the audit-verified stem/options/correct_index/image_alt verbatim, only ADDS
+-- image_path) + is_active=true + short_test_eligible from the key's Short column.
+-- These rows carry no _authoring.requires_format_swap, so the
+-- questions_held_rows_inactive guardrail permits is_active=true atomically.
+--
+-- Image rows MUST have their crop uploaded to the private question-images bucket
+-- (l3/ folder) — see scripts/conversion/upload-activation-images.ts (manifest +
+-- L3_SRC root added in this lane). An active image row with no uploaded file 500s
+-- at serve.
+--
+-- Non-destruction: only the 9 activation ids + the 2 inserted straggler ids are
+-- referenced. Idempotent (merge + guarded inserts). Mirrored verbatim in seed.sql
+-- before the LOCAL-DEV QA SEED marker.
+--
+-- HELD (not in this migration, logged in PR): Q16 (match-volume-to-tank: no source
+-- crop, Short=N), Q19 (rotating-semicircle pattern: founder directs a typed "___"
+-- blank, but no auto-gradeable answer string is defined yet), Q17's sibling none.
+
+-- ── 9 image rows: wire image_path + activate ──────────────────────────────────
+
+-- Q01 — base-ten figure = 1 ten + 2 hundreds = 210 (MC idx2). [key Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q01.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q01';
+
+-- Q06 — thumb drive on ruler spans 1→5 cm = 4 cm (MC idx3). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q06.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q06';
+
+-- Q08 — scale dial needle at 250 g (NUMERIC 250). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q08.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q08';
+
+-- Q09 — clock: hour ~7, minute at 5 = 7:25; dinner → pm (MC idx3). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q09.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q09';
+
+-- Q10 — bar model (1) shows three parts, whole unknown (MC idx0). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q10.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q10';
+
+-- Q12 — notes $69 + coins $1.85 = $70.85 (MC idx1). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q12.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q12';
+
+-- Q13 — figure: 4 shaded of 9 squares = 4/9 (NUMERIC, exact-match path). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q13.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q13';
+
+-- Q17 — picture graph: pears 9, oranges 4 → (9-4)*5 = 25 students (founder-confirmed).
+--   ALSO corrects the stored answer 3 → 25 (the loaded value was wrong). NUMERIC. [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q17.png","correct_answer":"25"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q17';
+
+-- Q20 — base-ten: 2 thousand-cubes + 4 hundred-flats + 3 units = 2403 (MC idx2). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q20.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q20';
+
+-- ── 2 unloaded stragglers: load + activate (no image; text/numeric) ───────────
+
+-- Q04 — "Arrange the numbers in order. Begin with the greatest." 1000/909/100/999.
+--   DRAG_DROP, correct_order greatest-first. Crops L3-4_* extracted blank but the
+--   numbers are in the stem, so no image needed. Key: Comparing/ordering within
+--   1000, Level 2, Short=Y → content_id l2-whole_numbers-1, band 2B.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags, word_count, operation_type, num_operations,
+   representation, is_active, short_test_eligible, content_id)
+select t.id, 'SAM-L3-Q04', 'number_sense', '2B'::half_grade_level, -0.8,
+       'DRAG_DROP'::question_format,
+       '{"stem":"Arrange the numbers in order. Begin with the greatest. 1000   909   100   999","items":["1000","909","100","999"],"correct_order":["1000","999","909","100"]}'::jsonb,
+       array['NS_MAGNITUDE_MISJUDGE','NS_PLACE_VALUE_CONFUSION']::text[],
+       9, 'IDENTIFY'::operation_type, 1, 'SYMBOLIC'::representation_kind,
+       true, true,
+       (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l2-whole_numbers-1')
+from t
+on conflict (tenant_id, external_id) do nothing;
+
+-- Q23 — "What is the missing number in the pattern below? ___, 1230, 1430, 1630, 1830"
+--   step +200, so the term before 1230 is 1030. NUMERIC. Key: number-sequence
+--   patterns within 10 000, Level 3, Short=Y → content_id l3-whole_numbers-1, band 3B.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags, word_count, operation_type, num_operations,
+   representation, is_active, short_test_eligible, content_id)
+select t.id, 'SAM-L3-Q23', 'number_sense', '3B'::half_grade_level, 0.2,
+       'NUMERIC_ENTRY'::question_format,
+       '{"stem":"What is the missing number in the pattern below? ___, 1230, 1430, 1630, 1830","correct_answer":"1030"}'::jsonb,
+       array[]::text[],
+       10, 'IDENTIFY'::operation_type, 1, 'SYMBOLIC'::representation_kind,
+       true, true,
+       (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l3-whole_numbers-1')
+from t
+on conflict (tenant_id, external_id) do nothing;
+-- END l3-image-activation
+
+-- BEGIN l4-image-activation (seed mirror of supabase/migrations/20260619110000_l4_image_activation.sql)
+-- Atlas Assessment — L4 image-question wiring + activation (lane/l4-image-activation).
+--
+-- Wires concrete image_path into held SAM-L4 image rows and activates them.
+-- Source-verified: each L4 doc page, its last-page answer key
+-- (Task|Skills|Topic|Level|Short test), and the actual PNG crop in
+-- scripts/conversion/source/4/ were opened and viewed before authoring.
+-- (L4 doc carries symbol-font glyphs; read under PYTHONIOENCODING=utf-8.)
+--
+-- Pattern: trailing authoritative UPDATEs. Image-only rows use `content ||
+-- image_path` merge (preserves audit-verified content). Q20 is a format
+-- correction (NUMERIC single field -> MULTI_BLANK two blanks) because the source
+-- is a genuine two-part (a/b) question; the single-field "a) 150 b) 900" was not
+-- auto-gradeable. Q21 folds the figure's side-length labels (doc text "25 m",
+-- "50 m" around the rectangle, NOT inside the crop) into the stem so the item is
+-- answerable. is_active=true + short_test_eligible from the key's Short column.
+-- These rows carry no _authoring.requires_format_swap, so activation is atomic.
+--
+-- Image rows MUST have their crop uploaded to the private question-images bucket
+-- (l4/ folder) — manifest + L4_SRC root added in this lane. Mirrored in seed.sql.
+--
+-- Non-destruction: only the 6 referenced ids change. Idempotent.
+--
+-- HELD (not here, logged in PR): Q21? no — Q21 IS activated. Held: Q17 (name a
+-- pair of perpendicular lines — free-text line-naming not reliably auto-gradeable
+-- and the ⊥ pair is not determinable from the crop), Q19 (key Short=N, unloaded,
+-- symbol-font fraction item — not cleanly gradeable from source).
+
+-- Q01 — figure shows 9999; "1 more" = 10000 (MC idx3). [key Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q01.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q01';
+
+-- Q13 — jug: liquid at the 4th mark (each = 200 mL) = 800 mL (MC idx2). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q13.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q13';
+
+-- Q16 — angle a is the only acute angle (< right angle) (MC idx0). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q16.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q16';
+
+-- Q21 — rectangle 50 m x 25 m = 1250 m^2 (MC idx3). Side labels are doc text
+--   around the figure (not in the crop), so they are folded into the stem.
+--   [key Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"stem":"What is the area of the rectangle below? The rectangle is 50 m long and 25 m wide.","image_path":"l4/sam-l4-q21.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q21';
+
+-- Q23 — place-value discs: 3x10000 + 2x1000 + 1 = 32001 (NUMERIC). [Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q23.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q23';
+
+-- Q20 — two-part bar-graph question -> MULTI_BLANK (NUMERIC single field was not
+--   auto-gradeable). a) B-C = 225-75 = 150; b) total A..E = 150+225+75+200+250 = 900.
+--   [key Short=Y]
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTI_BLANK'::question_format,
+    content = '{"stem":"The bar graph below shows the scores of five basketball teams in a tournament.","tokens":[{"t":"text","value":"a) How many more points did Team B score than Team C? "},{"t":"blank","id":"b1"},{"t":"text","value":" b) How many points did the five teams score altogether? "},{"t":"blank","id":"b2"}],"blanks":{"b1":{"value":"150","numeric":true},"b2":{"value":"900","numeric":true}},"image_path":"l4/sam-l4-q20.png","image_alt":"A bar graph showing the scores of five basketball teams (Team A through Team E) in a tournament, with a vertical axis representing points scored."}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q20';
+-- END l4-image-activation
+
+-- BEGIN l0a-q15-activation (seed mirror of supabase/migrations/20260620150000_l0a_q15_activation.sql)
+-- Atlas Assessment — 0A-Q15 activation (lane/l0a-taxonomy-activation, follow-up).
+--
+-- Founder supplied the compositing decision: place the single bowl crop (0A-15_1)
+-- onto each shelf of the empty 3-shelf rack (0A-15_2) to make 3 CLICK_IMAGE_SINGLE
+-- tiles (bowl on top / middle / bottom shelf); the child taps the BOTTOM one (t3).
+-- Generated by gen_l0a_q15_tiles.py. Source-verified vs the doc page ("Tap the bowl
+-- on the bottom shelf"). Uses the internal node l0a-geometry-6 "Positions" (created
+-- in 20260620120000). Rebuilt content has no _authoring.requires_format_swap, so
+-- is_active=true is atomic. short_test_eligible=true (key Short=Y). Idempotent;
+-- mirrored in seed.sql. Non-destructive (only this id).
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the bowl on the bottom shelf.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q15-t1.png","image_alt":"A rack of shelves with a bowl on one shelf."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q15-t2.png","image_alt":"A rack of shelves with a bowl on one shelf."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0a-q15-t3.png","image_alt":"A rack of shelves with a bowl on one shelf."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t3"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q15';
+-- END l0a-q15-activation
+
+-- BEGIN l0b-q03-q06-activation (seed mirror of supabase/migrations/20260620150000_l0b_q03_q06_activation.sql)
+-- Atlas Assessment — 0B-Q03 + 0B-Q06 activation (lane/l0b-taxonomy-activation, follow-up).
+--
+-- Founder unblocked two previously-held 0B rows:
+--   Q03 — the cake art shows a VISIBLE missing piece; tap the piece that fills it.
+--         Stimulus = 0B-03_1 (cake), tiles = 0B-03_2/_3/_4, correct = 0B-03_2 (t1).
+--         CLICK_IMAGE_SINGLE + stimulus. content_id l0a-geometry-2 "Parts and Whole".
+--   Q06 — FOUNDER DECISION overrides the worksheet key's contradictory "color 7 and 6":
+--         authoritative stem "tap the numbers greater than 6" -> correct = {7,8}.
+--         SELECT_MULTIPLE over text tiles 4/5/6/7/8 (the number line has no usable
+--         printed tiles, so numbers are text labels), set-equality grading.
+--         content_id l0a-whole_numbers-1.
+--
+-- Source-verified (doc + key + crops). Rebuilt content carries no
+-- _authoring.requires_format_swap, so is_active=true is atomic. short_test_eligible
+-- from the key (both Short=Y). Idempotent; mirrored in seed.sql; non-destructive.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the part that is missing from the cake.","image_path":"l0/sam-l0b-q03-stimulus.png","image_alt":"A tiered cake with a piece missing.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0b-q03-t1.png","image_alt":"First piece choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0b-q03-t2.png","image_alt":"Second piece choice."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0b-q03-t3.png","image_alt":"Third piece choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-2')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q03';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'SELECT_MULTIPLE'::question_format,
+    content = '{"stem":"Tap the numbers greater than 6.","select_rule":"all","options":[{"id":"o1","label":"4"},{"id":"o2","label":"5"},{"id":"o3","label":"6"},{"id":"o4","label":"7"},{"id":"o5","label":"8"}],"correct":["o4","o5"]}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-whole_numbers-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q06';
+-- END l0b-q03-q06-activation
+
+-- BEGIN l0a-q17-activation (seed mirror of supabase/migrations/20260620160000_l0a_q17_activation.sql)
+-- Atlas Assessment — 0A-Q17 activation (lane/l0a-taxonomy-activation, follow-up).
+--
+-- Founder replaced the balloon crop with the corrected 5-balloon image (source/0a/
+-- 0A-17.png; previously 6, which contradicted the "Count within 5" skill and was
+-- held+flagged). Source-verified: crop now shows 5 balloons (3 blue, 2 green); doc
+-- stem "Count the balloons. Tap the number." with options [6,5,2] -> correct = 5
+-- (correct_index 1). MULTIPLE_CHOICE + balloon stimulus. Rebuilt content drops the
+-- held _authoring block (no requires_format_swap), so is_active=true is atomic.
+-- short_test_eligible=true (key Short=Y). content_id l0a-whole_numbers-1. Idempotent;
+-- mirrored in seed.sql; non-destructive (only this id).
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTIPLE_CHOICE'::question_format,
+    content = '{"stem":"Count the balloons. Tap the number.","options":["6","5","2"],"correct_index":1,"image_path":"l0/sam-l0a-q17.png","image_alt":"A group of balloons."}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-whole_numbers-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q17';
+-- END l0a-q17-activation
+
+-- BEGIN l2-q17-metadata-fix (seed mirror of supabase/migrations/20260619090000_fix_l2_q17_metadata.sql)
+-- Atlas Assessment — SAM-L2-Q17 metadata correction (lane/l2-q17-metadata-fix).
+--
+-- SAM-L2-Q17 has ONE live row (unique (tenant_id, external_id)), but two
+-- conflicting INSERT definitions seeded it and the WRONG one won via
+-- ON CONFLICT DO NOTHING:
+--   * hand-seeded SAM-L2 block (seed.sql:441) — level 2A, strand
+--     operations_algorithms — inserts FIRST, so it wins; the sam-l2-content-id
+--     backfill (seed.sql:893) then maps it to l1-whole_numbers-9.
+--   * stage4 block (seed.sql:1263) — level 1B, strand measurement,
+--     content_id l1-measurement-3 — no-ops against the existing row.
+--
+-- The source key (Level 2 doc, task 17) says: "Subtracting amounts of money in
+-- dollars", Level 1 — i.e. a Level-1-difficulty (band 1B) MONEY item that opens
+-- the L2 booklet (the standard ramp). The key matches the stage4 definition, not
+-- the live one. This corrects the live row to the key.
+--
+-- BANDING NOTE: level=1B is the CONTENT/DIFFICULTY band, NOT test membership.
+-- The item stays in the L2 booklet — membership is governed by external_id
+-- SAM-L2-Q17 + the picker, never the level column.
+--
+-- Metadata-only: level, strand, content_id (skill/topic "Money/Subtracting
+-- amounts of money in dollars" is carried by content_id = l1-measurement-3).
+-- Stem, format (NUMERIC_ENTRY), correct answer (16), is_active, difficulty,
+-- operation_type, and short_test_eligible are UNCHANGED. Only this one row,
+-- only these three columns, change. Idempotent.
+--
+-- RECONCILIATION: this UPDATE runs after every insert + the content-id backfill,
+-- so on `supabase db reset` the row always lands at 1B/measurement/l1-measurement-3
+-- — the stale 2A/operations definition cannot re-collapse (last write wins). The
+-- historical insert/backfill blocks are left intact (append-only migration history,
+-- mirrored byte-for-byte and asserted by content-id-backfill.test.ts); the trailing
+-- authoritative UPDATE is the repo's established correction mechanism.
+--
+-- AGENTS.md §11 parity: mirrored into supabase/seed.sql before the LOCAL-DEV QA SEED marker.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set level = '1B'::half_grade_level,
+    strand = 'measurement'::strand,
+    content_id = (
+      select tc.id from tax_content tc
+       where tc.tenant_id = t.id and tc.code = 'l1-measurement-3'
+    )
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L2-Q17';
+-- END l2-q17-metadata-fix
+
+-- BEGIN audit-l2-fixes (seed mirror of supabase/migrations/20260619050000_audit_L2_fixes.sql)
+-- Atlas Assessment — L2 source-vs-authored audit fixes (lane/audit-L2, 2026-06-19).
+--
+-- ONE clear-cut fix: wire the curated/generated per-question images onto the 7
+-- image-essential L2 rows and activate them. These rows were INSERTED INACTIVE by
+-- the Stage 4 loader (20260610151306) carrying image_alt + image_required=true but
+-- NO image_path; the later l2-overlay load (20260614130000) re-INSERTs the same
+-- ids with the real image_path + is_active=true but uses
+-- `on conflict (tenant_id, external_id) do nothing`, so against the pre-existing
+-- Stage 4 rows it is a NO-OP — the image_path never lands and the rows stay held.
+-- The images already exist at source and are wired into the local uploader
+-- (scripts/conversion/upload-activation-images.ts PREEXISTING_L2_BACKFILL, using
+-- the exact root-level object keys below). This is the same fix shape as the L1
+-- art activation (20260614120001): image-essential rows held only for lack of a
+-- wired image, now wired + activated.
+--
+-- Bucket keys are the EXACT root-level keys each row's authored content references
+-- (overlay/l2-authoring.json; root convention, NOT the l2/ folder). Q05's graph is
+-- GENERATED (gen_l2_q05_graph.py -> q-sam-l2-q05-seashell-graph.png); the rest are
+-- the L2-*.png crops re-keyed. Source crops verified faithful in the audit table
+-- (scripts/conversion/audit/L2-audit.md):
+--   Q02 q-sam-l2-q02-triangles.png      (tangram figure; founder-confirmed = 5)
+--   Q03 q-sam-l2-q03-composite-shape.png (green half-circle + orange triangle)
+--   Q05 q-sam-l2-q05-seashell-graph.png  (Jimmy 9/Adam 6/Tom 11/Mark 15; 15-6=9)
+--   Q12 q-sam-l2-q12-toy-car-ruler.png   (car spans 2->9 cm = 7 cm)
+--   Q15 q-sam-l2-q15-clock.png           (hands at 2:55; lunch -> pm)
+--   Q16 q-sam-l2-q16-coins.png           (5+10+20+50 = 85 cents)
+--   Q18 q-sam-l2-q18-base-ten.png        (2 hundred-flats + 4 ones = 204)
+--
+-- These rows carry NO content._authoring key, so the questions_held_rows_inactive
+-- guardrail (20260613120000) coalesces requires_format_swap to false and permits
+-- activation. Format/options/answer/stem are unchanged; only image_path is added
+-- (via `||` merge) and is_active flips to true. SAM-L2-Q04 stays INACTIVE
+-- (founder-directed deactivation, 20260611014520) — intentionally NOT touched.
+--
+-- AGENTS.md §11 parity: prod path. On a dev `supabase db reset` this is a no-op
+-- (migrations run before seed.sql creates the inspirea_singapore_math tenant); the
+-- identical statement is mirrored into supabase/seed.sql. Idempotent: guarded on
+-- is_active = false, so either path (or both) yields the same final state.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set is_active = true,
+    content = q.content || jsonb_build_object('image_path', v.image_path)
+from t,
+  (values
+    ('SAM-L2-Q02', 'q-sam-l2-q02-triangles.png'),
+    ('SAM-L2-Q03', 'q-sam-l2-q03-composite-shape.png'),
+    ('SAM-L2-Q05', 'q-sam-l2-q05-seashell-graph.png'),
+    ('SAM-L2-Q12', 'q-sam-l2-q12-toy-car-ruler.png'),
+    ('SAM-L2-Q15', 'q-sam-l2-q15-clock.png'),
+    ('SAM-L2-Q16', 'q-sam-l2-q16-coins.png'),
+    ('SAM-L2-Q18', 'q-sam-l2-q18-base-ten.png')
+  ) as v(external_id, image_path)
+where q.tenant_id = t.id
+  and q.external_id = v.external_id
+  and q.is_active = false;
+-- END audit-l2-fixes
+
+-- BEGIN audit-l3plus-fixes (seed mirror of supabase/migrations/20260619060000_audit_L3plus_fixes.sql)
+-- Atlas Assessment — L3+ source-vs-authored audit fixes (2026-06-19).
+-- (lane/audit-L3plus)
+--
+-- Source-verified against the Stage-1 page renders:
+--   Level 5/6: scripts/conversion/output/Level {5,6} Placement Worksheet{,  Answer Key}/page-*.png
+--   (Level 3/4 renders were also reviewed; their authored rows either already
+--    match the source or were previously founder-touched — see the audit table
+--    scripts/conversion/audit/L3plus-audit.md and the BLOCKED notes there.)
+--
+-- Only CLEAR-CUT discrepancies with an actually-viewed source page are fixed
+-- here. Every UPDATE carries an idempotent guard on the old (buggy) value, so a
+-- re-run is a no-op, and so the fix only fires on the exact drifted content.
+-- Non-destructive: targeted UPDATEs WHERE external_id = ... (+ tenant). Mirrored
+-- verbatim into supabase/seed.sql. AGENTS.md Section 11 parity: this migration is
+-- a no-op on dev `supabase db reset` (the tenant is created later by seed.sql);
+-- the seed.sql mirror applies it on the dev path, on prod the tenant exists.
+--
+-- BLOCKED / not touched here (founder-verified rows that contradict the now-
+-- available source page — do NOT auto-override a founder decision; flagged for
+-- founder review in the audit table):
+--   * SAM-L3-Q15 — stored "1/6 + 3/6" → "4/6"; source page 10 is "3/5 + 1/5" → 4/5.
+--   * SAM-L4-Q18 — stored options [1/2,3/4,5/3,1/12] ans 5/3; source page 10 is
+--     [3/8,2/5,1/2,5/12] ans 1/2.
+
+-- 1) SAM-L5-Q09 — stem fractions disagree with source page 6. Stored stem says
+--    "1 1/4 kg of flour and 1 1/6 kg of butter"; the source is "1 3/4 kg of
+--    flour and 1 5/6 kg of butter". The stored answer ("5 1/12") already matches
+--    the source key and is only correct for the SOURCE fractions (3/2+7/4+11/6 =
+--    61/12 = 5 1/12), so we fix the stem to the source and keep the answer.
+--    Guarded on the old (buggy) stem fractions.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{stem}',
+      to_jsonb('Patricia used 1¹⁄₂ kg of sugar, 1³⁄₄ kg of flour and 1⁵⁄₆ kg of butter to make a cake. What was the total mass of ingredients used?'::text))
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L5-Q09'
+  and q.content ->> 'stem' = 'Patricia used 1¹⁄₂ kg of sugar, 1¹⁄₄ kg of flour and 1¹⁄₆ kg of butter to make a cake. What was the total mass of ingredients used?';
+
+-- 2) SAM-L6-Q07 — "which is NOT the correct answer?" Source page 6 options are
+--    (1) 4 × 10  (2) 10 ÷ 4  (3) 1/4 of 10  (4) 10 × 1/4 ; answer key (1).
+--    The stored row had option[0] "4 ÷ 10" (operator flipped from the source's
+--    "4 × 10") and option[2] "10/4" (reworded from "1/4 of 10"). correct_index 0
+--    still points at the printed "not-correct" option; restore verbatim source
+--    option text. Guarded on the old options array.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{options}',
+      '["4 × 10","10 ÷ 4","1/4 of 10","10 × 1/4"]'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L6-Q07'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["4 ÷ 10","10 ÷ 4","10/4","10 × 1/4"]'::jsonb;
+
+-- 3) SAM-L6-Q20 — "1.08 as a fraction in its simplest form". Source page 14
+--    options are (1) 108/100 (2) 1 4/50 (3) 1 2/25 (4) 1 4/5 ; answer key (3) =
+--    "1 2/25". The stored row had garbled, partly-duplicated options
+--    ["1 2/25","1 4/50","1 8/100","1 2/25"] with correct_index 2 pointing at the
+--    WRONG, unsimplified value "1 8/100". Restore verbatim source options; with
+--    them, correct_index 2 correctly selects "1 2/25". Guarded on the old options.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = jsonb_set(
+      q.content,
+      '{options}',
+      '["108/100","1 4/50","1 2/25","1 4/5"]'::jsonb)
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L6-Q20'
+  and q.format = 'MULTIPLE_CHOICE'
+  and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
+-- END audit-l3plus-fixes
+
+-- BEGIN l1-l4-short-eligible-backfill (seed mirror of supabase/migrations/20260619080000_l1_l4_short_eligible_backfill.sql)
+-- Atlas Assessment — L1–L4 short_test_eligible backfill (lane/l1-l4-short-eligible-backfill).
+--
+-- The stage4 loader (20260610151306_load_sam_questions.sql) and the full-library
+-- delta (20260611134158) both predate the questions.short_test_eligible column
+-- (added 20260616120050_add_short_test_eligible_column.sql for the L0 work), so
+-- every SAM-L1/L2/L3/L4 row defaults to short_test_eligible=false. The short /
+-- readiness picker filters `short_test_eligible = true`, so NO L1–L4 item can be
+-- drawn into the short test today.
+--
+-- This sets short_test_eligible from each level doc's last-page QUESTION SUMMARY
+-- "Short (Y/N)" column (the founder-authored key), keyed by external_id. Only
+-- rows whose Short=Y are flipped to true; Short=N rows are left at the default
+-- false. TARGETED + NON-DESTRUCTIVE: only short_test_eligible is written, and only
+-- on the enumerated external_ids — no stem / format / answer / level / strand /
+-- content_id is touched (the L2-Q17 banding duplicate is reported separately, NOT
+-- fixed here). Idempotent: re-running sets the same booleans.
+--
+-- AGENTS.md §11 parity: prod path here; the identical UPDATEs are mirrored into
+-- supabase/seed.sql (dev/CI path) before the LOCAL-DEV QA SEED marker.
+--
+-- Only existing rows are listed. Key Short=Y tasks with NO loaded row (skipped by
+-- the converter) are intentionally omitted and recorded in the PR:
+--   L3-Q04, L3-Q23 (key Y, no DB row); L4-Q17 (key Y, no DB row).
+-- L4 doc carries symbol-font glyphs; its Short column was read cleanly under
+-- PYTHONIOENCODING=utf-8 (no L4 rows skipped on glyph grounds).
+
+-- L1 — Short=Y (17 of 28 tasks)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set short_test_eligible = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L1-Q01','SAM-L1-Q02','SAM-L1-Q03','SAM-L1-Q04','SAM-L1-Q05',
+    'SAM-L1-Q06','SAM-L1-Q07','SAM-L1-Q08','SAM-L1-Q10','SAM-L1-Q12',
+    'SAM-L1-Q17','SAM-L1-Q18','SAM-L1-Q21','SAM-L1-Q22','SAM-L1-Q23',
+    'SAM-L1-Q24','SAM-L1-Q28'
+  );
+
+-- L2 — Short=Y (21 of 22 tasks; only Q08 is N)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set short_test_eligible = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L2-Q01','SAM-L2-Q02','SAM-L2-Q03','SAM-L2-Q04','SAM-L2-Q05',
+    'SAM-L2-Q06','SAM-L2-Q07','SAM-L2-Q09','SAM-L2-Q10','SAM-L2-Q11',
+    'SAM-L2-Q12','SAM-L2-Q13','SAM-L2-Q14','SAM-L2-Q15','SAM-L2-Q16',
+    'SAM-L2-Q17','SAM-L2-Q18','SAM-L2-Q19','SAM-L2-Q20','SAM-L2-Q21',
+    'SAM-L2-Q22'
+  );
+
+-- L3 — Short=Y, existing rows (18; key Y for Q04/Q23 too but those have no DB row)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set short_test_eligible = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L3-Q01','SAM-L3-Q03','SAM-L3-Q05','SAM-L3-Q06','SAM-L3-Q07',
+    'SAM-L3-Q08','SAM-L3-Q09','SAM-L3-Q10','SAM-L3-Q11','SAM-L3-Q12',
+    'SAM-L3-Q13','SAM-L3-Q14','SAM-L3-Q17','SAM-L3-Q18','SAM-L3-Q19',
+    'SAM-L3-Q20','SAM-L3-Q21','SAM-L3-Q22'
+  );
+
+-- L4 — Short=Y, existing rows (24; key Y for Q17 too but it has no DB row)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set short_test_eligible = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L4-Q01','SAM-L4-Q02','SAM-L4-Q03','SAM-L4-Q04','SAM-L4-Q05',
+    'SAM-L4-Q06','SAM-L4-Q07','SAM-L4-Q08','SAM-L4-Q09','SAM-L4-Q10',
+    'SAM-L4-Q11','SAM-L4-Q12','SAM-L4-Q13','SAM-L4-Q14','SAM-L4-Q15',
+    'SAM-L4-Q16','SAM-L4-Q20','SAM-L4-Q21','SAM-L4-Q22','SAM-L4-Q23',
+    'SAM-L4-Q24','SAM-L4-Q25','SAM-L4-Q26','SAM-L4-Q27'
+  );
+-- END l1-l4-short-eligible-backfill
+
+
+-- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
 -- One QA test parent + five children (one per S.A.M. booklet level: 0C, 1, 2,
