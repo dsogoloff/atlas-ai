@@ -3398,6 +3398,25 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
 
+-- BEGIN l1-q01-q07-activation (lane/l1-q01-q07-activation)
+-- MIRRORS supabase/migrations/20260620170000_l1_q01_q07_activation.sql. Idempotent.
+-- Q01 CLICK_IMAGE_MULTI (6 tiles, reds {t1,t3,t5}); Q07 CLICK_IMAGE_SINGLE
+-- (scene stimulus + 2 piece tiles, correct t1 = L1-7_2).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_MULTI'::question_format,
+    content = '{"stem":"Tap the things that have the same color.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l1/sam-l1-q01-t1.png","image_alt":"First object."},{"id":"t2","label":"Picture 2","image_path":"l1/sam-l1-q01-t2.png","image_alt":"Second object."},{"id":"t3","label":"Picture 3","image_path":"l1/sam-l1-q01-t3.png","image_alt":"Third object."},{"id":"t4","label":"Picture 4","image_path":"l1/sam-l1-q01-t4.png","image_alt":"Fourth object."},{"id":"t5","label":"Picture 5","image_path":"l1/sam-l1-q01-t5.png","image_alt":"Fifth object."},{"id":"t6","label":"Picture 6","image_path":"l1/sam-l1-q01-t6.png","image_alt":"Sixth object."}],"_authoring":{"answer_model":{"rule":"select-all","correct":["t1","t3","t5"]}}}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L1-Q01';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Match to complete the picture.","image_path":"l1/sam-l1-q07-stimulus.png","image_alt":"A picture with a missing piece.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l1/sam-l1-q07-t1.png","image_alt":"First piece choice."},{"id":"t2","label":"Picture 2","image_path":"l1/sam-l1-q07-t2.png","image_alt":"Second piece choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L1-Q07';
+-- END l1-q01-q07-activation
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
