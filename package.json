@@ -20,7 +20,8 @@
     "convert:apply-l2-overlay": "tsx scripts/conversion/apply-l2-overlay.ts",
     "convert:apply-l0-overlay": "tsx scripts/conversion/apply-l0-overlay.ts",
     "convert:apply-activation": "tsx scripts/conversion/apply-activation.ts",
-    "convert:upload-activation-images": "tsx scripts/conversion/upload-activation-images.ts"
+    "convert:upload-activation-images": "tsx scripts/conversion/upload-activation-images.ts",
+    "convert:verify-images": "tsx scripts/conversion/verify-images.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.80",
