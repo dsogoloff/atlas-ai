@@ -1,12 +1,22 @@
 {
   "meta": {
     "level": "0B",
-    "flip_ready_ids": ["SAM-L0B-Q02"],
-    "blocked_pending_image": {
-      "SAM-L0B-Q07": "needs a single sorted-shapes stimulus image; only the two part-crops (0B-07_1 pink group, 0B-07_2 green group) exist — they must be composited into one image first. One founder image away from flip-ready."
-    }
+    "flip_ready_ids": ["SAM-L0B-Q02", "SAM-L0B-Q07"],
+    "blocked_pending_image": {}
   },
   "tasks": {
+    "SAM-L0B-Q07": {
+      "level": "0A",
+      "format": "MULTIPLE_CHOICE",
+      "content": {
+        "stem": "How are the shapes sorted?",
+        "options": ["color", "size"],
+        "correct_index": 0,
+        "image_path": "l0/sam-l0b-q07.png",
+        "image_alt": "Two boxes, each holding a group of shapes."
+      },
+      "guard": { "is_active": false }
+    },
     "SAM-L0B-Q02": {
       "level": "0B",
       "format": "CLICK_IMAGE_SINGLE",
