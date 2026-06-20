@@ -80,3 +80,11 @@ whether it routes through Sam or the franchisor — needs Dimitri confirmation.*
 * **G4** — Anthropic serving under-13 users: RESOLVED (product is the Anthropic customer;
 child never interacts with the model directly; safeguards implemented).
 
+**Scope of Sam Chia / S.A.M. (do not over-extend):** the ONLY genuine S.A.M.
+dependencies are content **licensing** (G1, granted — the worksheets + approval to use
+them; the curriculum signal is each worksheet's last-page "Concepts and Skills" + "Topic"
+table) and **franchisor/pilot approval** (G2). Sam does **NOT** own, define, or approve
+Atlas's taxonomy, `content_id` codes, level design, or banding — those are an INTERNAL
+Atlas scheme created by Code during conversion. A NULL `content_id` is an internal
+tagging job we finish, never a "SAM-gated" item.
+

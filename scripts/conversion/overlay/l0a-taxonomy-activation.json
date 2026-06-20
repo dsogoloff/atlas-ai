@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "level": "0A",
+    "note": "Internal taxonomy nodes created (codes are OUR organizing scheme, not external/S.A.M.). New: l0a-geometry-5 'Same or Different', l0a-geometry-6 'Positions' (geometry is the only non-number sub-strand applying at l0a). Source-verified (doc + key + each PNG). Applied by migration 20260620120000.",
+    "new_codes": {
+      "l0a-geometry-5": "Same or Different (Topic: Same or different) — Q03,Q05,Q06,Q07,Q10",
+      "l0a-geometry-6": "Positions (Topic: Position and Direction Words) — Q13,Q14,Q15,Q16"
+    },
+    "wired_and_activated": ["SAM-L0A-Q03","SAM-L0A-Q05","SAM-L0A-Q06","SAM-L0A-Q07","SAM-L0A-Q10","SAM-L0A-Q13","SAM-L0A-Q14"],
+    "held_with_code": {
+      "SAM-L0A-Q15": "inadequate source art (single bowl + empty 3-shelf rack, not a bowl per shelf) — non-taxonomy blocker; code l0a-geometry-6 assigned, inactive",
+      "SAM-L0A-Q16": "manual drawing (no auto-grade), Short=N — code l0a-geometry-6 assigned, inactive"
+    }
+  },
+  "tasks": {
+    "SAM-L0A-Q03": { "format": "CLICK_IMAGE_SINGLE", "tiles": "q03-t1 small / q03-t2 big (resized 0A-03)", "correct": "t2", "content_id": "l0a-geometry-5", "short": true },
+    "SAM-L0A-Q05": { "format": "CLICK_IMAGE_SINGLE", "tiles": "0A-05_1 thin / 0A-05_2 thick", "correct": "t2", "content_id": "l0a-geometry-5", "short": true },
+    "SAM-L0A-Q06": { "format": "CLICK_IMAGE_SINGLE", "tiles": "0A-06_1 long / 0A-06_2 short", "correct": "t1", "content_id": "l0a-geometry-5", "short": true },
+    "SAM-L0A-Q07": { "format": "CLICK_IMAGE_SINGLE", "tiles": "0A-07_1 donkey / 0A-07_2 giraffe", "correct": "t2", "content_id": "l0a-geometry-5", "short": true },
+    "SAM-L0A-Q10": { "format": "CLICK_IMAGE_SINGLE", "tiles": "0A-10_1 green taller / 0A-10_2 brown", "correct": "t1", "content_id": "l0a-geometry-5", "short": true },
+    "SAM-L0A-Q13": { "format": "CLICK_IMAGE_SINGLE", "tiles": "0A-13_1 left / 0A-13_2 right", "correct": "t1", "content_id": "l0a-geometry-6", "short": true },
+    "SAM-L0A-Q14": { "format": "CLICK_IMAGE_SINGLE", "tiles": "0A-14_1 up / 0A-14_2 down", "correct": "t1", "content_id": "l0a-geometry-6", "short": true }
+  }
+}

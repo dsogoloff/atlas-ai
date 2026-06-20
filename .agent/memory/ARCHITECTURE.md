@@ -89,7 +89,14 @@
 9. Auth-user-ID indirection (no direct FKs to `auth.users`).
 10. No raw question content client-side; served one at a time; audit-logged.
 
-## Taxonomy (locked)
+## Taxonomy (locked) — INTERNAL Atlas scheme, NOT S.A.M.-controlled
+- This taxonomy is an **internal Atlas** model (the `tax_*` shape is locked as an
+  engineering contract). It is **not licensed from, owned by, or approved by S.A.M./
+  Sam Chia.** Sam's only curriculum signal is each worksheet's last-page table
+  ("Concepts and Skills" + "Topic"); Code maps those onto these internal codes.
+  Creating a new `content_id` / sub-strand node is an **internal job we finish**, never
+  a "SAM-gated" decision. A NULL `content_id` = an unfinished internal tag, not an
+  external dependency.
 - `tax_strands` / `tax_sub_strands` / `tax_levels` / `tax_content` (`tax_` prefix LOCKED).
   3 strands / 12 sub-strands / 9 levels. `questions.content_id` = nullable FK into
   `tax_content`. `tax_levels.mvp` + `tax_content.mvp` carry the L1–4 MVP cut (read-time

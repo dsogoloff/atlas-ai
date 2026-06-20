@@ -23,11 +23,23 @@ into the product without Dimitri.
 
 ## Licensed assets
 
-* S.A.M questions, marks, taxonomy, brand claims, and center data are **licensed
+* S.A.M questions, marks, worksheets, brand claims, and center data are **licensed
 assets**, tied to current license/pilot status — not permanent or broad. Do not
 display, digitize, tag, or generate-from S.A.M. content beyond approved scope.
 * Non-parent surfaces (instructor, etc.) must NOT expose raw question content
 (stems/options/answers) — response-derived signals only.
+
+### NOT licensed / NOT S.A.M.-controlled — Atlas-internal (do not re-conflate)
+* Sam Chia's ONLY role is content **licensing**: he supplied the S.A.M. placement
+worksheets and approved their use. The only curriculum signal from Sam is each
+worksheet's last-page table ("Concepts and Skills" + "Topic").
+* Atlas's **taxonomy, `content_id` codes, level design, and banding are an INTERNAL
+Atlas scheme**, created by Code during conversion. Sam does NOT own, define, or
+approve them. There is no external "locked S.A.M. taxonomy."
+* A NULL `content_id` is an **internal tagging job WE finish** (create the code under
+the right existing strand from the worksheet's Topic) — never a "SAM-gated" item.
+* The ONLY genuine S.A.M. dependencies are content-licensing (granted) and
+franchisor/pilot approval (granted). Nothing about internal curriculum structure.
 
 ## Privacy / data-sharing (COPPA)
 
