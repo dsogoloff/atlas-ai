@@ -146,14 +146,12 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
   { source: `${L2_SRC}/L2-6_3.png`, bucket: "l2/sam-l2-q06-opt3.png" },
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
-  // L0B-Q04 (MULTIPLE_CHOICE) — street-map stimulus (lane/l0b-taxonomy-activation).
-  { source: `${L0_SRC}/0b/0B-04_1.png`, bucket: "l0/sam-l0b-q04.png" },
-  // L0B-Q03 (CLICK_IMAGE_SINGLE) — cake-with-missing-piece stimulus + 3 piece tiles
-  // (correct = t1 = 0B-03_2). (lane/l0b-taxonomy-activation follow-up)
-  { source: `${L0_SRC}/0b/0B-03_1.png`, bucket: "l0/sam-l0b-q03-stimulus.png" },
-  { source: `${L0_SRC}/0b/0B-03_2.png`, bucket: "l0/sam-l0b-q03-t1.png" },
-  { source: `${L0_SRC}/0b/0B-03_3.png`, bucket: "l0/sam-l0b-q03-t2.png" },
-  { source: `${L0_SRC}/0b/0B-03_4.png`, bucket: "l0/sam-l0b-q03-t3.png" },
+  // L0C-Q05 (IMAGE_ORDERING) — 3 GENERATED size tiles (gen_l0c_q05_tiles.py,
+  // same-object smallest->biggest). Q14 image already in the manifest; Q15 is
+  // text-label SELECT_MULTIPLE (no image). (lane/l0c-taxonomy-activation)
+  { source: `${L0_SRC}/0c/sam-l0c-q05-t1.png`, bucket: "l0/sam-l0c-q05-t1.png" },
+  { source: `${L0_SRC}/0c/sam-l0c-q05-t2.png`, bucket: "l0/sam-l0c-q05-t2.png" },
+  { source: `${L0_SRC}/0c/sam-l0c-q05-t3.png`, bucket: "l0/sam-l0c-q05-t3.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
