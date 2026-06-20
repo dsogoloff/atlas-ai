@@ -3398,6 +3398,18 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
 
+-- BEGIN l0b-position-activation (lane/l0b-taxonomy-activation)
+-- MIRRORS supabase/migrations/20260620130000_l0b_position_activation.sql (dev/CI).
+-- Activate SAM-L0B-Q04 (map route) as MULTIPLE_CHOICE + map stimulus, content_id
+-- l0b-geometry-1 "Positions" (existing node). Source-verified. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Start at X. Go right, up, left and down. Where are you? Tap the correct box below.","options":["School","Bakery","Playground","Home"],"correct_index":1,"image_path":"l0/sam-l0b-q04.png","image_alt":"A street map showing Bakery, School, Playground and Home, with a starting point marked X."}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0b-geometry-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q04';
+-- END l0b-position-activation
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
