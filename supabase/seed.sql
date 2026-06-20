@@ -3410,6 +3410,25 @@ set content = '{"stem":"Start at X. Go right, up, left and down. Where are you? 
 from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q04';
 -- END l0b-position-activation
 
+-- BEGIN l0b-q03-q06-activation (lane/l0b-taxonomy-activation follow-up)
+-- MIRRORS supabase/migrations/20260620150000_l0b_q03_q06_activation.sql. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Tap the part that is missing from the cake.","image_path":"l0/sam-l0b-q03-stimulus.png","image_alt":"A tiered cake with a piece missing.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0b-q03-t1.png","image_alt":"First piece choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0b-q03-t2.png","image_alt":"Second piece choice."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0b-q03-t3.png","image_alt":"Third piece choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-2')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q03';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'SELECT_MULTIPLE'::question_format,
+    content = '{"stem":"Tap the numbers greater than 6.","select_rule":"all","options":[{"id":"o1","label":"4"},{"id":"o2","label":"5"},{"id":"o3","label":"6"},{"id":"o4","label":"7"},{"id":"o5","label":"8"}],"correct":["o4","o5"]}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-whole_numbers-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q06';
+-- END l0b-q03-q06-activation
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
