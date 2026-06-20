@@ -3409,27 +3409,97 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
 
--- BEGIN l2-q17-metadata-fix (lane/l2-q17-metadata-fix)
--- MIRRORS supabase/migrations/20260619090000_fix_l2_q17_metadata.sql (dev/CI path).
--- Corrects the single live SAM-L2-Q17 row to the source key: level 1B (Level-1
--- band, opens the L2 booklet — membership unchanged), strand measurement,
--- content_id l1-measurement-3 ("Money / Subtracting amounts of money in dollars").
--- The hand-seed (2A/operations, seed.sql:441) won the ON CONFLICT; this trailing
--- UPDATE runs after all inserts + the content-id backfill, so a reset always lands
--- on the correct values (no re-collapse). Stem/format/answer(16)/is_active/
--- short_test_eligible UNCHANGED; only this row, only these three columns. Idempotent.
+-- BEGIN l3-image-activation (lane/l3-image-activation)
+-- MIRRORS supabase/migrations/20260619100000_l3_image_activation.sql (dev/CI path).
+-- Wires image_path into 9 held L3 image rows + activates; loads stragglers Q04/Q23.
+-- Source-verified (doc + key + PNG). Only image_path added (content || merge);
+-- Q17 also corrects answer 3 → 25 (founder-confirmed pears 9). Idempotent.
+
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
-set level = '1B'::half_grade_level,
-    strand = 'measurement'::strand,
-    content_id = (
-      select tc.id from tax_content tc
-       where tc.tenant_id = t.id and tc.code = 'l1-measurement-3'
-    )
+set content = content || '{"image_path":"l3/sam-l3-q01.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q01';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q06.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q06';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q08.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q08';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q09.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q09';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q10.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q10';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q12.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q12';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q13.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q13';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q17.png","correct_answer":"25"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q17';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l3/sam-l3-q20.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L3-Q20';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags, word_count, operation_type, num_operations,
+   representation, is_active, short_test_eligible, content_id)
+select t.id, 'SAM-L3-Q04', 'number_sense', '2B'::half_grade_level, -0.8,
+       'DRAG_DROP'::question_format,
+       '{"stem":"Arrange the numbers in order. Begin with the greatest. 1000   909   100   999","items":["1000","909","100","999"],"correct_order":["1000","999","909","100"]}'::jsonb,
+       array['NS_MAGNITUDE_MISJUDGE','NS_PLACE_VALUE_CONFUSION']::text[],
+       9, 'IDENTIFY'::operation_type, 1, 'SYMBOLIC'::representation_kind,
+       true, true,
+       (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l2-whole_numbers-1')
 from t
-where q.tenant_id = t.id
-  and q.external_id = 'SAM-L2-Q17';
--- END l2-q17-metadata-fix
+on conflict (tenant_id, external_id) do nothing;
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags, word_count, operation_type, num_operations,
+   representation, is_active, short_test_eligible, content_id)
+select t.id, 'SAM-L3-Q23', 'number_sense', '3B'::half_grade_level, 0.2,
+       'NUMERIC_ENTRY'::question_format,
+       '{"stem":"What is the missing number in the pattern below? ___, 1230, 1430, 1630, 1830","correct_answer":"1030"}'::jsonb,
+       array[]::text[],
+       10, 'IDENTIFY'::operation_type, 1, 'SYMBOLIC'::representation_kind,
+       true, true,
+       (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l3-whole_numbers-1')
+from t
+on conflict (tenant_id, external_id) do nothing;
+
+-- END l3-image-activation
 
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
