@@ -3398,6 +3398,51 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
 
+-- BEGIN l4-image-activation (lane/l4-image-activation)
+-- MIRRORS supabase/migrations/20260619110000_l4_image_activation.sql (dev/CI path).
+-- Wires image_path into 6 held L4 image rows + activates. Source-verified
+-- (doc + key + PNG). Q20 NUMERIC->MULTI_BLANK (two-part a/b); Q21 folds the doc
+-- side-labels (25 m x 50 m) into the stem. Idempotent.
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q01.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q01';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q13.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q13';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q16.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q16';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"stem":"What is the area of the rectangle below? The rectangle is 50 m long and 25 m wide.","image_path":"l4/sam-l4-q21.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q21';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = content || '{"image_path":"l4/sam-l4-q23.png"}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q23';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTI_BLANK'::question_format,
+    content = '{"stem":"The bar graph below shows the scores of five basketball teams in a tournament.","tokens":[{"t":"text","value":"a) How many more points did Team B score than Team C? "},{"t":"blank","id":"b1"},{"t":"text","value":" b) How many points did the five teams score altogether? "},{"t":"blank","id":"b2"}],"blanks":{"b1":{"value":"150","numeric":true},"b2":{"value":"900","numeric":true}},"image_path":"l4/sam-l4-q20.png","image_alt":"A bar graph showing the scores of five basketball teams (Team A through Team E) in a tournament, with a vertical axis representing points scored."}'::jsonb,
+    is_active = true, short_test_eligible = true
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L4-Q20';
+
+-- END l4-image-activation
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================

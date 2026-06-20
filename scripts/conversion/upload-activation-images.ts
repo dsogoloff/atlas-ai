@@ -51,6 +51,8 @@ const L1_SRC = process.env.L1_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l1-art
 const L2_SRC = process.env.L2_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/input/l2-art";
 // The Q05 seashell picture-graph is GENERATED (gen_l2_q05_graph.py), not a raw crop.
 const L2_GEN = process.env.L2_GEN_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/output/l2-art-generated";
+// L4 licensed crops live in the trunk source tree (source/4/).
+const L4_SRC = process.env.L4_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/4";
 
 interface ManifestEntry {
   source: string; // absolute path to the source PNG
@@ -134,6 +136,14 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
   { source: `${L2_SRC}/L2-6_3.png`, bucket: "l2/sam-l2-q06-opt3.png" },
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
+  // L4 image-question stimuli (lane/l4-image-activation) — 6 single-stimulus crops,
+  // each wired into its row's content.image_path and activated.
+  { source: `${L4_SRC}/L4-1.png`, bucket: "l4/sam-l4-q01.png" },
+  { source: `${L4_SRC}/L4-13.png`, bucket: "l4/sam-l4-q13.png" },
+  { source: `${L4_SRC}/L4-16.png`, bucket: "l4/sam-l4-q16.png" },
+  { source: `${L4_SRC}/L4-20.png`, bucket: "l4/sam-l4-q20.png" },
+  { source: `${L4_SRC}/L4-21.png`, bucket: "l4/sam-l4-q21.png" },
+  { source: `${L4_SRC}/L4-23.png`, bucket: "l4/sam-l4-q23.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
