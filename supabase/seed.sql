@@ -3495,6 +3495,18 @@ set format = 'CLICK_IMAGE_SINGLE'::question_format,
 from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q15';
 -- END l0a-q15-activation
 
+-- BEGIN l0a-q17-activation (lane/l0a-taxonomy-activation follow-up)
+-- MIRRORS supabase/migrations/20260620160000_l0a_q17_activation.sql. Idempotent.
+-- Corrected 5-balloon crop; "Count the balloons. Tap the number." -> 5 (idx1).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTIPLE_CHOICE'::question_format,
+    content = '{"stem":"Count the balloons. Tap the number.","options":["6","5","2"],"correct_index":1,"image_path":"l0/sam-l0a-q17.png","image_alt":"A group of balloons."}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-whole_numbers-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q17';
+-- END l0a-q17-activation
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================

@@ -157,6 +157,8 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L0_SRC}/0a/sam-l0a-q15-t1.png`, bucket: "l0/sam-l0a-q15-t1.png" },
   { source: `${L0_SRC}/0a/sam-l0a-q15-t2.png`, bucket: "l0/sam-l0a-q15-t2.png" },
   { source: `${L0_SRC}/0a/sam-l0a-q15-t3.png`, bucket: "l0/sam-l0a-q15-t3.png" },
+  // L0A-Q17 (MULTIPLE_CHOICE) — corrected 5-balloon count stimulus.
+  { source: `${L0_SRC}/0a/0A-17.png`, bucket: "l0/sam-l0a-q17.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were
