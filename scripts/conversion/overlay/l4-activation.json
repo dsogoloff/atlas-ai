@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "level": "L4",
+    "note": "Source-verified (Level 4 doc page + last-page answer key + PNG crop in source/4/; doc read under PYTHONIOENCODING=utf-8 due to symbol-font glyphs). Applied by migration 20260619110000_l4_image_activation.sql (hand-authored trailing UPDATEs). short_test_eligible set from the key's Short column.",
+    "wired_and_activated": ["SAM-L4-Q01","SAM-L4-Q13","SAM-L4-Q16","SAM-L4-Q20","SAM-L4-Q21","SAM-L4-Q23"],
+    "held": {
+      "SAM-L4-Q17": "name a pair of perpendicular lines (figure AF/BE/GC/HD). Free-text line-naming is not reliably auto-gradeable (order + 2-letter direction variants), and the perpendicular pair is not determinable from the crop. Held pending the founder's intended pair + accepted naming forms.",
+      "SAM-L4-Q19": "key Short=N; unloaded; source is a symbol-font fraction item (L4 doc glyph corruption). Not cleanly gradeable from source. Held pending a clean transcription."
+    }
+  },
+  "tasks": {
+    "SAM-L4-Q01": { "level": "2A", "format": "MULTIPLE_CHOICE", "image_path": "l4/sam-l4-q01.png", "answer": "10000 (idx3) — figure 9999, +1", "short": true },
+    "SAM-L4-Q13": { "level": "3A", "format": "MULTIPLE_CHOICE", "image_path": "l4/sam-l4-q13.png", "answer": "800 mL (idx2)", "short": true },
+    "SAM-L4-Q16": { "level": "2A", "format": "MULTIPLE_CHOICE", "image_path": "l4/sam-l4-q16.png", "answer": "angle a (idx0)", "short": true },
+    "SAM-L4-Q20": { "level": "3A", "format": "MULTI_BLANK", "image_path": "l4/sam-l4-q20.png", "answer": "b1=150, b2=900 (was NUMERIC compound; converted to two blanks)", "short": true },
+    "SAM-L4-Q21": { "level": "2A", "format": "MULTIPLE_CHOICE", "image_path": "l4/sam-l4-q21.png", "answer": "1250 m^2 (idx3) — 50 m x 25 m; side labels folded into stem (doc text, not in crop)", "short": true },
+    "SAM-L4-Q23": { "level": "4A", "format": "NUMERIC_ENTRY", "image_path": "l4/sam-l4-q23.png", "answer": "32001", "short": true }
+  }
+}
