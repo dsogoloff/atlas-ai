@@ -124,8 +124,10 @@ function sqlTextArray(items: string[]): string {
   return `array[${items.map((i) => sqlString(i)).join(", ")}]`;
 }
 
-/** content_key may be null (no clean taxonomy code, e.g. "Same or different",
- *  position/direction words) — emit SQL NULL so content_id resolves to NULL. */
+/** content_key may be null when our INTERNAL Atlas taxonomy has no node yet for a
+ *  Topic (e.g. "Same or different", position/direction words) — emit SQL NULL so
+ *  content_id resolves to NULL. A NULL here is an internal tagging job to finish
+ *  (create the code from the worksheet Topic), NOT an external/S.A.M. dependency. */
 function sqlContentKey(code: string | null): string {
   return code === null || code === "" ? "null" : sqlString(code);
 }
