@@ -27,3 +27,7 @@ reference (commit, item number, or section anchor).
   the perpendicular pair must be confirmed from the figure). Needs the MC option
   set + correct index from the founder. Crop: `source/4/L4-17.png`. Context:
   lane/l4-image-activation (PR #101), held list.
+- **SAM-L1-Q18 — "count aloud from 1 to 10."** Held inactive (founder: keep blocked
+  for now). Oral/observational task with no auto-grade path as written; no crop.
+  Revisit if/when an oral or alternate-format capability lands. Key Short=Y. Context:
+  L1 audit (PR #93) held list.
