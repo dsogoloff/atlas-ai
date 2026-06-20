@@ -3409,114 +3409,36 @@ where q.tenant_id = t.id
   and q.format = 'MULTIPLE_CHOICE'
   and q.content -> 'options' = '["1 2/25","1 4/50","1 8/100","1 2/25"]'::jsonb;
 
--- BEGIN l0a-taxonomy-activation (lane/l0a-taxonomy-activation)
--- MIRRORS supabase/migrations/20260620120000_l0a_taxonomy_activation.sql (dev/CI path).
--- New internal tax_content nodes l0a-geometry-5 "Same or Different" + l0a-geometry-6
--- "Positions"; activate 7 image-tap rows (CLICK_IMAGE_SINGLE, source-verified);
--- assign codes to held Q15 (inadequate art) + Q16 (manual). Idempotent.
-
+-- BEGIN l0b-position-activation (lane/l0b-taxonomy-activation)
+-- MIRRORS supabase/migrations/20260620130000_l0b_position_activation.sql (dev/CI).
+-- Activate SAM-L0B-Q04 (map route) as MULTIPLE_CHOICE + map stimulus, content_id
+-- l0b-geometry-1 "Positions" (existing node). Source-verified. Idempotent.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
-insert into tax_content (tenant_id, sub_strand_id, level_id, code, name, display_order, mvp)
-select t.id,
-  (select ss.id from tax_sub_strands ss where ss.tenant_id = t.id and ss.code = v.sub_strand_code),
-  (select l.id  from tax_levels       l  where l.tenant_id  = t.id and l.code  = v.level_code),
-  v.code, v.name, v.display_order, v.mvp
-from t, (values
-  ('l0a-geometry-5', 'geometry', 'l0a', 'Same or Different', 5, false),
-  ('l0a-geometry-6', 'geometry', 'l0a', 'Positions',         6, false)
-) as v(code, sub_strand_code, level_code, name, display_order, mvp)
-on conflict (tenant_id, code) do nothing;
+update questions q
+set content = '{"stem":"Start at X. Go right, up, left and down. Where are you? Tap the correct box below.","options":["School","Bakery","Playground","Home"],"correct_index":1,"image_path":"l0/sam-l0b-q04.png","image_alt":"A street map showing Bakery, School, Playground and Home, with a starting point marked X."}'::jsonb,
+    is_active = true, short_test_eligible = true,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0b-geometry-1')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q04';
+-- END l0b-position-activation
 
+-- BEGIN l0b-q03-q06-activation (lane/l0b-taxonomy-activation follow-up)
+-- MIRRORS supabase/migrations/20260620150000_l0b_q03_q06_activation.sql. Idempotent.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the big bowl.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q03-t1.png","image_alt":"First bowl choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q03-t2.png","image_alt":"Second bowl choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb,
+    content = '{"stem":"Tap the part that is missing from the cake.","image_path":"l0/sam-l0b-q03-stimulus.png","image_alt":"A tiered cake with a piece missing.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0b-q03-t1.png","image_alt":"First piece choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0b-q03-t2.png","image_alt":"Second piece choice."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0b-q03-t3.png","image_alt":"Third piece choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
     is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q03';
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-2')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q03';
 
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the thick book.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q05-t1.png","image_alt":"First book choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q05-t2.png","image_alt":"Second book choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q05';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the long branch.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q06-t1.png","image_alt":"First branch choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q06-t2.png","image_alt":"Second branch choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q06';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the tall animal.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q07-t1.png","image_alt":"First animal choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q07-t2.png","image_alt":"Second animal choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q07';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the taller door.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q10-t1.png","image_alt":"First door choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q10-t2.png","image_alt":"Second door choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-5')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q10';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the bird facing left.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q13-t1.png","image_alt":"First bird choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q13-t2.png","image_alt":"Second bird choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q13';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the bird that is flying up.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q14-t1.png","image_alt":"First bird choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q14-t2.png","image_alt":"Second bird choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q14';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q15';
-
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q16';
-
--- END l0a-taxonomy-activation
-
--- BEGIN l0a-q15-activation (lane/l0a-taxonomy-activation follow-up)
--- MIRRORS supabase/migrations/20260620150000_l0a_q15_activation.sql. Idempotent.
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'CLICK_IMAGE_SINGLE'::question_format,
-    content = '{"stem":"Tap the bowl on the bottom shelf.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q15-t1.png","image_alt":"A rack of shelves with a bowl on one shelf."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q15-t2.png","image_alt":"A rack of shelves with a bowl on one shelf."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0a-q15-t3.png","image_alt":"A rack of shelves with a bowl on one shelf."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t3"}}}'::jsonb,
-    is_active = true, short_test_eligible = true,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-geometry-6')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q15';
--- END l0a-q15-activation
-
--- BEGIN l0a-q17-activation (lane/l0a-taxonomy-activation follow-up)
--- MIRRORS supabase/migrations/20260620160000_l0a_q17_activation.sql. Idempotent.
--- Corrected 5-balloon crop; "Count the balloons. Tap the number." -> 5 (idx1).
-with t as (select id from tenants where slug = 'inspirea_singapore_math')
-update questions q
-set format = 'MULTIPLE_CHOICE'::question_format,
-    content = '{"stem":"Count the balloons. Tap the number.","options":["6","5","2"],"correct_index":1,"image_path":"l0/sam-l0a-q17.png","image_alt":"A group of balloons."}'::jsonb,
+set format = 'SELECT_MULTIPLE'::question_format,
+    content = '{"stem":"Tap the numbers greater than 6.","select_rule":"all","options":[{"id":"o1","label":"4"},{"id":"o2","label":"5"},{"id":"o3","label":"6"},{"id":"o4","label":"7"},{"id":"o5","label":"8"}],"correct":["o4","o5"]}'::jsonb,
     is_active = true, short_test_eligible = true,
     content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0a-whole_numbers-1')
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q17';
--- END l0a-q17-activation
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q06';
+-- END l0b-q03-q06-activation
 
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP

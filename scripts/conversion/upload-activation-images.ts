@@ -146,31 +146,14 @@ const MANIFEST: ManifestEntry[] = [
   { source: `${L2_SRC}/L2-6_2.png`, bucket: "l2/sam-l2-q06-opt2.png" },
   { source: `${L2_SRC}/L2-6_3.png`, bucket: "l2/sam-l2-q06-opt3.png" },
   { source: `${L2_SRC}/L2-6_4.png`, bucket: "l2/sam-l2-q06-opt4.png" },
-  // L0A "Same or Different" + "Position" CLICK_IMAGE_SINGLE tiles
-  // (lane/l0a-taxonomy-activation) — 7 rows x 2 tiles. Q03 tiles are GENERATED
-  // (gen_l0a_q03_tiles.py, same-object big/small); the rest are the two licensed
-  // crops per row.
-  { source: `${L0_SRC}/0a/sam-l0a-q03-t1.png`, bucket: "l0/sam-l0a-q03-t1.png" },
-  { source: `${L0_SRC}/0a/sam-l0a-q03-t2.png`, bucket: "l0/sam-l0a-q03-t2.png" },
-  { source: `${L0_SRC}/0a/0A-05_1.png`, bucket: "l0/sam-l0a-q05-t1.png" },
-  { source: `${L0_SRC}/0a/0A-05_2.png`, bucket: "l0/sam-l0a-q05-t2.png" },
-  { source: `${L0_SRC}/0a/0A-06_1.png`, bucket: "l0/sam-l0a-q06-t1.png" },
-  { source: `${L0_SRC}/0a/0A-06_2.png`, bucket: "l0/sam-l0a-q06-t2.png" },
-  { source: `${L0_SRC}/0a/0A-07_1.png`, bucket: "l0/sam-l0a-q07-t1.png" },
-  { source: `${L0_SRC}/0a/0A-07_2.png`, bucket: "l0/sam-l0a-q07-t2.png" },
-  { source: `${L0_SRC}/0a/0A-10_1.png`, bucket: "l0/sam-l0a-q10-t1.png" },
-  { source: `${L0_SRC}/0a/0A-10_2.png`, bucket: "l0/sam-l0a-q10-t2.png" },
-  { source: `${L0_SRC}/0a/0A-13_1.png`, bucket: "l0/sam-l0a-q13-t1.png" },
-  { source: `${L0_SRC}/0a/0A-13_2.png`, bucket: "l0/sam-l0a-q13-t2.png" },
-  { source: `${L0_SRC}/0a/0A-14_1.png`, bucket: "l0/sam-l0a-q14-t1.png" },
-  { source: `${L0_SRC}/0a/0A-14_2.png`, bucket: "l0/sam-l0a-q14-t2.png" },
-  // L0A-Q15 (CLICK_IMAGE_SINGLE) — 3 GENERATED rack+bowl tiles (gen_l0a_q15_tiles.py,
-  // bowl on top/middle/bottom shelf; correct = t3 bottom).
-  { source: `${L0_SRC}/0a/sam-l0a-q15-t1.png`, bucket: "l0/sam-l0a-q15-t1.png" },
-  { source: `${L0_SRC}/0a/sam-l0a-q15-t2.png`, bucket: "l0/sam-l0a-q15-t2.png" },
-  { source: `${L0_SRC}/0a/sam-l0a-q15-t3.png`, bucket: "l0/sam-l0a-q15-t3.png" },
-  // L0A-Q17 (MULTIPLE_CHOICE) — corrected 5-balloon count stimulus.
-  { source: `${L0_SRC}/0a/0A-17.png`, bucket: "l0/sam-l0a-q17.png" },
+  // L0B-Q04 (MULTIPLE_CHOICE) — street-map stimulus (lane/l0b-taxonomy-activation).
+  { source: `${L0_SRC}/0b/0B-04_1.png`, bucket: "l0/sam-l0b-q04.png" },
+  // L0B-Q03 (CLICK_IMAGE_SINGLE) — cake-with-missing-piece stimulus + 3 piece tiles
+  // (correct = t1 = 0B-03_2). (lane/l0b-taxonomy-activation follow-up)
+  { source: `${L0_SRC}/0b/0B-03_1.png`, bucket: "l0/sam-l0b-q03-stimulus.png" },
+  { source: `${L0_SRC}/0b/0B-03_2.png`, bucket: "l0/sam-l0b-q03-t1.png" },
+  { source: `${L0_SRC}/0b/0B-03_3.png`, bucket: "l0/sam-l0b-q03-t2.png" },
+  { source: `${L0_SRC}/0b/0B-03_4.png`, bucket: "l0/sam-l0b-q03-t3.png" },
 ];
 
 // Pre-existing-L2-backfill: the 7 already-ACTIVE L2 image rows whose files were

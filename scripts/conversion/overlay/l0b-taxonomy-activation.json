@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "level": "0B",
+    "note": "0B Position item mapped to the EXISTING internal node l0b-geometry-1 'Positions' (no new code needed). Source-verified (doc + key + map crop 0B-04_1). Applied by migration 20260620130000.",
+    "wired_and_activated": ["SAM-L0B-Q04"]
+  },
+  "tasks": {
+    "SAM-L0B-Q04": { "format": "MULTIPLE_CHOICE", "image": "l0/sam-l0b-q04.png (0B-04_1 street map)", "options": ["School","Bakery","Playground","Home"], "correct_index": 1, "content_id": "l0b-geometry-1", "short": true }
+  }
+}
