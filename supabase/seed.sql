@@ -3428,29 +3428,26 @@ set format = 'CLICK_IMAGE_SINGLE'::question_format,
 from t where q.tenant_id = t.id and q.external_id = 'SAM-L1-Q07';
 -- END l1-q01-q07-activation
 
--- =============================================================================
--- RESTORED ACTIVATION SEED-MIRRORS  (lane/restore-seed-mirrors)
--- The dev DB builds ENTIRELY from seed.sql: every tenant-scoped migration no-ops
--- during `supabase db reset` (migrations run before seed.sql creates the tenant).
--- The #97-#108 merges dropped most activation seed-mirrors; these blocks restore
--- them, mirroring each migration body VERBATIM. ORDER: taxonomy NODES -> row
--- activations/corrections -> short_test_eligible flips. ADDITIVE — surviving blocks
--- (l0-l2-activation, l1-q01-q07-activation, overlays) untouched.
--- MANIFEST (next merge: verify none of these BEGIN markers go missing):
---   l0a-taxonomy-activation        <- 20260620120000_l0a_taxonomy_activation.sql   [#103 NODES l0a-geometry-5/6 + 7 activations + Q15/Q16 content_id]
---   l0c-taxonomy-activation        <- 20260620140000_l0c_taxonomy_activation.sql   [#105 NODES l0c-geometry-4 + l0c-whole_numbers-6 + Q05/Q14/Q15]
---   l0b-position-activation        <- 20260620130000_l0b_position_activation.sql   [#104 Q04 -> existing l0b-geometry-1]
---   l3-image-activation            <- 20260619100000_l3_image_activation.sql   [#100 9 image rows + Q04/Q23 load + Q17 ans=25]
---   l4-image-activation            <- 20260619110000_l4_image_activation.sql   [#101 6 image rows incl Q21]
---   l0a-q15-activation             <- 20260620150000_l0a_q15_activation.sql   [#103 follow-up (needs l0a-geometry-6 above)]
---   l0b-q03-q06-activation         <- 20260620150000_l0b_q03_q06_activation.sql   [#104 follow-up (body; PR #109 renames file to 150001)]
---   l0a-q17-activation             <- 20260620160000_l0a_q17_activation.sql   [#103 follow-up (5-balloon)]
---   l2-q17-metadata-fix            <- 20260619090000_fix_l2_q17_metadata.sql   [#99 L2-Q17 band/strand/content_id]
---   audit-l2-fixes                 <- 20260619050000_audit_L2_fixes.sql   [#94 L2 audit activations]
---   audit-l3plus-fixes             <- 20260619060000_audit_L3plus_fixes.sql   [#95 L3+ verbatim corrections]
---   l1-l4-short-eligible-backfill  <- 20260619080000_l1_l4_short_eligible_backfill.sql   [#98 short_test_eligible flips (LAST)]
---   l1-q01-q07-activation          (already present from #107 — not re-added)
--- =============================================================================
+-- BEGIN GENERATED activation-mirrors (pnpm seed:regen-activations — DO NOT HAND-EDIT)
+-- The dev DB builds ENTIRELY from seed.sql (tenant-scoped migrations no-op on
+-- reset, before seed creates the tenant). This region MIRRORS the per-row
+-- activation/correction migration bodies VERBATIM, in dependency order
+-- (taxonomy NODES -> activations/corrections -> short flips). Regenerate with
+-- `pnpm seed:regen-activations`; verified by the seed-activation-parity guard.
+-- MIRRORED (each = the identically-named migration body):
+--   l0a-taxonomy-activation  <-  20260620120000_l0a_taxonomy_activation.sql
+--   l0c-taxonomy-activation  <-  20260620140000_l0c_taxonomy_activation.sql
+--   l0b-position-activation  <-  20260620130000_l0b_position_activation.sql
+--   l3-image-activation  <-  20260619100000_l3_image_activation.sql
+--   l4-image-activation  <-  20260619110000_l4_image_activation.sql
+--   l0a-q15-activation  <-  20260620150000_l0a_q15_activation.sql
+--   l0b-q03-q06-activation  <-  20260620150000_l0b_q03_q06_activation.sql
+--   l0a-q17-activation  <-  20260620160000_l0a_q17_activation.sql
+--   l2-q17-metadata-fix  <-  20260619090000_fix_l2_q17_metadata.sql
+--   audit-l2-fixes  <-  20260619050000_audit_L2_fixes.sql
+--   audit-l3plus-fixes  <-  20260619060000_audit_L3plus_fixes.sql
+--   l1-l4-short-eligible-backfill  <-  20260619080000_l1_l4_short_eligible_backfill.sql
+--   (applier-managed blocks — l0-l2-activation, overlays, l1-q01-q07 — are NOT here; their tools own them.)
 
 -- BEGIN l0a-taxonomy-activation (seed mirror of supabase/migrations/20260620120000_l0a_taxonomy_activation.sql)
 -- Atlas Assessment — 0A "Same or Different" + "Position" taxonomy + activation
@@ -4204,6 +4201,9 @@ where q.tenant_id = t.id
     'SAM-L4-Q24','SAM-L4-Q25','SAM-L4-Q26','SAM-L4-Q27'
   );
 -- END l1-l4-short-eligible-backfill
+
+-- END GENERATED activation-mirrors
+
 
 
 -- =============================================================================
