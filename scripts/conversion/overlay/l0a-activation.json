@@ -12,13 +12,14 @@
       "format": "CLICK_IMAGE_SINGLE",
       "content": {
         "stem": "Tap the object that is the same as the one in the box.",
+        "image_path": "l0/sam-l0a-q08-stimulus.png",
+        "image_alt": "The object shown inside the box.",
         "tiles": [
           { "id": "t1", "label": "Picture 1", "image_path": "l0/sam-l0a-q08-t1.png", "image_alt": "First object choice." },
           { "id": "t2", "label": "Picture 2", "image_path": "l0/sam-l0a-q08-t2.png", "image_alt": "Second object choice." },
-          { "id": "t3", "label": "Picture 3", "image_path": "l0/sam-l0a-q08-t3.png", "image_alt": "Third object choice." },
-          { "id": "t4", "label": "Picture 4", "image_path": "l0/sam-l0a-q08-t4.png", "image_alt": "Fourth object choice." }
+          { "id": "t3", "label": "Picture 3", "image_path": "l0/sam-l0a-q08-t3.png", "image_alt": "Third object choice." }
         ],
-        "_authoring": { "answer_model": { "rule": "select-one", "correct": "t4" } }
+        "_authoring": { "answer_model": { "rule": "select-one", "correct": "t3" } }
       },
       "guard": { "is_active": false }
     },

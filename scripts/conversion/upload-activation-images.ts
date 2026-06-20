@@ -16,7 +16,7 @@
 // 1:1 with the `image_path` values in overlay/l*-activation.json. SOURCE_DIRS are
 // the (untracked, licensed) crop locations; override via env if they move.
 //
-// TWO sections: (1) MANIFEST — 46 images (the 19 PR-#78-activated rows + the 5 l1-art-curation rows + the 4 SAM-L0C-Q13 day tiles + the SAM-L0B-Q14 sushi stimulus + the 4 SAM-L0C-Q11 comparison-word tiles); and
+// TWO sections: (1) MANIFEST — 47 images (the 19 PR-#78-activated rows + the 5 l1-art-curation rows + the 4 SAM-L0C-Q13 day tiles + the SAM-L0B-Q14 sushi stimulus + the 4 SAM-L0C-Q11 comparison-word tiles + the SAM-L0B-Q07 sorted-shapes stimulus); and
 // (2) PREEXISTING_L2_BACKFILL — the 7 images for the ALREADY-active L2 rows whose
 // files were never uploaded to local storage (they 500 at serve until present).
 // Both upsert. The backfill bucket paths are the EXACT root-level keys those live
@@ -59,18 +59,23 @@ interface ManifestEntry {
   bucket: string; // exact object path in `question-images`
 }
 
-// 46 images: 32 for the 19 PR-#78 activation rows (overlay/l*-activation.json) + 5 for the
+// 47 images: 32 for the 19 PR-#78 activation rows (overlay/l*-activation.json; note
+// SAM-L0A-Q08 is now a STIMULUS + 3 tiles, re-authored — same 4 source files, remapped) + 5 for the
 // L1 art-curation rows activated by migration 20260614120001 + 4 day-word tiles for
 // SAM-L0C-Q13 (migration 20260618130200; gen_l0c_q13_tiles.py) + 1 sushi stimulus for
 // SAM-L0B-Q14 (migration 20260618130000) + 4 comparison-word tiles for SAM-L0C-Q11A..D
-// (migration 20260618130400; gen_l0c_q11_tiles.py). The Q11 number-line stimulus
-// (l0/sam-l0c-q11.png) was already in the manifest and is reused by the sub-items.
+// (migration 20260618130400; gen_l0c_q11_tiles.py) + 1 sorted-shapes stimulus for
+// SAM-L0B-Q07 (lane/young-band-activation-delta; gen_l0b_q07_stimulus.py). The Q11
+// number-line stimulus (l0/sam-l0c-q11.png) was already in the manifest and is reused by the sub-items.
 const MANIFEST: ManifestEntry[] = [
-  // L0A-Q08 (CLICK_IMAGE_SINGLE) — 4 object tiles
-  { source: `${L0_SRC}/0a/0A-08_1.png`, bucket: "l0/sam-l0a-q08-t1.png" },
-  { source: `${L0_SRC}/0a/0A-08_2.png`, bucket: "l0/sam-l0a-q08-t2.png" },
-  { source: `${L0_SRC}/0a/0A-08_3.png`, bucket: "l0/sam-l0a-q08-t3.png" },
-  { source: `${L0_SRC}/0a/0A-08_4.png`, bucket: "l0/sam-l0a-q08-t4.png" },
+  // L0A-Q08 (CLICK_IMAGE_SINGLE) — boxed-car STIMULUS + 3 object choice tiles.
+  // 0A-08_1 is the reference object inside the box (the stimulus, NOT a choice);
+  // the 3 real choices are bear/ball/car (0A-08_2/_3/_4), correct = plain car (t3).
+  // (Re-author: previously 0A-08_1 was wrongly served as tappable tile t1.)
+  { source: `${L0_SRC}/0a/0A-08_1.png`, bucket: "l0/sam-l0a-q08-stimulus.png" },
+  { source: `${L0_SRC}/0a/0A-08_2.png`, bucket: "l0/sam-l0a-q08-t1.png" },
+  { source: `${L0_SRC}/0a/0A-08_3.png`, bucket: "l0/sam-l0a-q08-t2.png" },
+  { source: `${L0_SRC}/0a/0A-08_4.png`, bucket: "l0/sam-l0a-q08-t3.png" },
   // L0A-Q11 (CLICK_IMAGE_SINGLE) — 2 flower tiles
   { source: `${L0_SRC}/0a/0A-11_1.png`, bucket: "l0/sam-l0a-q11-t1.png" },
   { source: `${L0_SRC}/0a/0A-11_2.png`, bucket: "l0/sam-l0a-q11-t2.png" },
@@ -82,6 +87,11 @@ const MANIFEST: ManifestEntry[] = [
   // L0B-Q14 (NUMERIC_ENTRY) — sushi tray-of-4 + box-of-6 composite stimulus
   // (Item 1, migration 20260618130000; source crop 0B-14.png).
   { source: `${L0_SRC}/0b/0B-14.png`, bucket: "l0/sam-l0b-q14.png" },
+  // L0B-Q07 (MULTIPLE_CHOICE) — sorted-shapes stimulus. The two sort groups
+  // (0B-07_1 pink group, 0B-07_2 green group) composited side by side by
+  // gen_l0b_q07_stimulus.py; answer is text ("color"), the image only shows the
+  // sort. (lane/young-band-activation-delta — flips the held_A row to active.)
+  { source: `${L0_SRC}/0b/sam-l0b-q07.png`, bucket: "l0/sam-l0b-q07.png" },
   // L0C-Q11A..D (CLICK_IMAGE_SINGLE) — shared number-line stimulus (reused by all 4 sub-items)
   { source: `${L0_SRC}/0c/0C-11.png`, bucket: "l0/sam-l0c-q11.png" },
   // L0C-Q14 (NUMERIC_ENTRY) — count-pairs stimulus
@@ -270,7 +280,7 @@ async function main(): Promise<void> {
   const backfill = await uploadSection(supabase, PREEXISTING_L2_BACKFILL);
 
   // --- 3) Verification tables ---------------------------------------------
-  printSection("ACTIVATION IMAGES (46 — 19 PR-#78 + 5 l1-art + 4 L0C-Q13 + 1 L0B-Q14 + 4 L0C-Q11)", activation);
+  printSection("ACTIVATION IMAGES (47 — 19 PR-#78 + 5 l1-art + 4 L0C-Q13 + 1 L0B-Q14 + 4 L0C-Q11 + 1 L0B-Q07)", activation);
   printSection("PRE-EXISTING-L2-BACKFILL (7 — already-active rows' missing files)", backfill);
 
   const results = [...activation, ...backfill];
