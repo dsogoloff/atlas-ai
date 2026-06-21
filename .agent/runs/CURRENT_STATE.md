@@ -4,8 +4,43 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-21 (session 2) — trunk head is **`ce9a676`** (#115 merged; the
-`7f2a737` cited below is one merge stale).
+**As of:** 2026-06-21 (session 3) — trunk head is **`a2c0b28`** (advanced from `ce9a676`; local memory was stale — `a2c0b28` is confirmed as trunk head for this lane).
+
+**OPEN PR #123 — lane/short-eligible-overset-audit** (docs/helpers only — no migration,
+no seed, no flag change). Off trunk `a2c0b28`. Commit `a084d0e`. Verify GREEN: pnpm test
+1196/89, tsc clean, lint 2 known warnings, seed↔migration parity PASS. Codex
+manual/skipped (relay unauth).
+
+Deliverables committed:
+- `scripts/conversion/audit/short-eligible-overset-audit.md` — full L0A–L4 strand×booklet
+  STE analysis + structural findings.
+- `scripts/conversion/audit/overset-state.mts` — reusable helper: computes FINAL DB state
+  from `seed.sql` (parses inserts first-wins + applies all 213 updates in single-`=`,
+  `IN(...)`, and `from t,(values...) v` JOIN forms).
+- `scripts/conversion/audit/_extract_short_keys.py` — extracts "Short Test Y/N" key from
+  worksheet docx last page.
+- `scripts/conversion/audit/build-overset-matrix.mjs` — builds the strand×booklet matrix.
+- `scripts/conversion/audit/bank-final-state.json` — ids+flags only; no licensed content.
+- `scripts/conversion/source/` tree and `source-short-keys.json` gitignored to prevent
+  accidental licensed-content commits.
+
+Key findings:
+- Task 2 (key parity): ZERO gaps. Every active, source-Short=Y row is already
+  `short_test_eligible=true`. Zero over-flags. The `l1-l4-short-eligible-backfill`
+  migration (20260619080000) + young-band L0 authoring already honor the key. No UPDATE
+  applied.
+- Task 3 (over-set ceiling): SOURCE-KEY CAPPED, not under-flagged. No strand×booklet cell
+  reaches the ~15–18 target (max = booklet-2 number_sense = 13). Per-booklet active&STE
+  pools: 0A=18, 0B=13, 0C=8, booklet-1=27 (over cap), booklet-2=25 (over cap),
+  booklet-3=13, booklet-4=5 (critically under). STRUCTURAL: each worksheet's questions
+  difficulty-band across MULTIPLE booklets (L1→0C+1, L2→1+2, L3→1+2+3, L4→2+3+4).
+- VALIDATION: source Short=Y docx counts exactly match backfill IN-lists (L1 17/L2 21/L3
+  20/L4 25); per-booklet active&STE pools reproduce the prior served-crosswalk exactly.
+- Three Short=Y rows have NO DB row at all (converter-skipped):
+  `SAM-L3-Q04`, `SAM-L3-Q23`, `SAM-L4-Q17` — recoverable only by re-authoring.
+
+Two items PARKED for Dimitri (see NEXT_ACTIONS §0aab). No change to young-band
+exclusions or prior PRs (#120 etc.) — independent lane.
 
 **OPEN PR #120 (this session) — lane/young-band-image-activation-audit** (docs/memory
 only, off trunk `ce9a676`). **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO
@@ -134,6 +169,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Short-eligible overset audit (PR #123) | OPEN PR #123 | lane/short-eligible-overset-audit, off trunk `a2c0b28`. Docs/helpers only. Commit `a084d0e`. Verify GREEN 1196/89. Two items PARKED for Dimitri (thin booklets; ATLAS comprehensive-picker question). Awaiting Dimitri merge at leisure. |
 | Lead-notify tests (PR #82) | OPEN PR #82 | lane/lead-notify-test, off trunk `ae281dd`. Test-only: `src/lib/followUp/notify.test.ts`. Verify GREEN 1172/84. Awaiting Dimitri merge. |
 | Mascot welcome screen (PR #83) | OPEN PR #83 | lane/mascot-welcome, off trunk `ae281dd`. `src/app/(child)/assessment/components/Welcome.tsx` (tap-to-start). `assessment-client.tsx` start gating refactored. Verify GREEN 1170/84. Awaiting Dimitri merge. |
 | COPPA consent-of-record (PR #84) | OPEN PR #84 — LEGAL | lane/coppa-consent-of-record, off trunk `ae281dd`. Consent text canonical source, disclosure asset + served PDF, `consent_records` new columns, add-child action wired. Migration `20260618120000`. Verify GREEN 1170/84. Requires `supabase db reset` after merge. Batched gate items in PR for Dimitri. |
