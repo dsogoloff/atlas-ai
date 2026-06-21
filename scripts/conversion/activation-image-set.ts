@@ -97,6 +97,13 @@ export const SOURCE_MAP: Record<string, string> = {
   // L1
   "l1/sam-l1-q02.png": `${L1_SRC}/sam-l1-q02.png`,
   "l1/sam-l1-q03.png": `${L1_SRC}/sam-l1-q03.png`,
+  // QA-fix#2: Q02/Q04 re-authored to CLICK_IMAGE_SINGLE — per-figure tiles on a
+  // shared canvas at true relative scale (gen_l1_q02_q04_tiles.py). The old
+  // combined stimuli (q02.png/q04.png) are no longer referenced by active rows.
+  "l1/sam-l1-q02-t1.png": `${L1_RAW}/sam-l1-q02-t1.png`,
+  "l1/sam-l1-q02-t2.png": `${L1_RAW}/sam-l1-q02-t2.png`,
+  "l1/sam-l1-q04-t1.png": `${L1_RAW}/sam-l1-q04-t1.png`,
+  "l1/sam-l1-q04-t2.png": `${L1_RAW}/sam-l1-q04-t2.png`,
   "l1/sam-l1-q13-circle.png": `${L1_SRC}/sam-l1-q13-circle.png`,
   "l1/sam-l1-q13-rectangle.png": `${L1_SRC}/sam-l1-q13-rectangle.png`,
   "l1/sam-l1-q13-square.png": `${L1_SRC}/sam-l1-q13-square.png`,
