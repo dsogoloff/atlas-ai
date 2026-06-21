@@ -52,7 +52,7 @@ export interface ParentIntroCopy {
 /** DRAFT strings. See file banner. */
 export const PARENT_INTRO_COPY: ParentIntroCopy = {
   screenTitle: "Before you begin", // DRAFT
-  startButton: "Start the check", // DRAFT
+  startButton: "Start the Assessment", // DRAFT
   modes: {
     "read-aloud": {
       badge: "Grade 2 and under", // DRAFT
@@ -73,7 +73,7 @@ export const PARENT_INTRO_COPY: ParentIntroCopy = {
         "Steer them toward — or away from — any answer",
       ],
       // DRAFT (founder edit 2026-06-17) — rationale for the whole "don't" list:
-      dontNote: "Doing any of these can pollute their results.",
+      dontNote: "Doing any of these makes the results less useful.",
       // DRAFT — the clean line (NOT vague "a little help"):
       summary:
         "Reading and explaining the words is fine. Helping with the math, or pointing toward the answer, is not — the answer should be your child's own.",
@@ -84,9 +84,12 @@ export const PARENT_INTRO_COPY: ParentIntroCopy = {
       points: [
         // DRAFT
         "Let your child read and work through the questions by themselves.",
+        "Your child can use pen and paper to work out the answers.",
         "Please don't read the questions aloud, explain them, or help with the answers.",
         "It's completely fine if some questions feel hard — working independently is what makes the result useful.",
+        "If your child doesn't know an answer, don't force it — it's expected. Encourage them to move forward rather than get stuck.",
         "You're welcome to stay nearby for comfort; just let the work be theirs.",
+        "There's nothing to study for. Just encourage them to do their best and not worry about getting everything right.",
       ],
       // DRAFT — the clean line:
       summary:
@@ -94,14 +97,13 @@ export const PARENT_INTRO_COPY: ParentIntroCopy = {
     },
   },
   about: {
-    heading: "About this quick check", // DRAFT
+    heading: "About this test", // DRAFT
     points: [
       // DRAFT — §2.4-safe: directional, not diagnostic/precise/firm.
-      "It's short — usually about 10 to 15 minutes.",
-      "It's a quick check to suggest a helpful starting point — where your child is comfortable, and where they might be ready to grow.",
+      "This is a short test designed to provide our instructors with a high-level assessment of your child's comfort with certain mathematical concepts. The results feed into the comprehensive assessment, which begins at enrollment and runs regularly to track progress.",
+      "This short test should take around 10–15 minutes, but if your child needs more time — that's perfectly fine.",
       "It isn't a test to pass or fail, and it isn't a full or final evaluation.",
       "Your child may see some questions that feel easy and some that feel tricky — that's how our model finds a good place to begin.",
-      "There's nothing to study for. Just encourage them to do their best and not worry about getting everything right.",
     ],
   },
 };
