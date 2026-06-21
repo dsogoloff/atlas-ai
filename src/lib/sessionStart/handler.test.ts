@@ -72,6 +72,7 @@ function makeServiceClient(
 
   const client = {
     from(table: string) {
+      let selectCols = "";
       // Item #10 Phase 3: replay's new SELECT queries (assessment_sessions
       // for engine_prior_version + child_id; children for grade_level) need
       // defaults when tests don't stage anything explicitly. Defaults preserve
@@ -85,6 +86,15 @@ function makeServiceClient(
             data: STRANDS.map((s) => ({ strand: s })),
             error: null,
           };
+        }
+        // Picker Calibration: readLatestShortOutcome (comprehensive first pick)
+        // selects ONLY "short_test_outcome". Default to "no prior outcome" so the
+        // neutral grade-anchored split is used and no staged entry is consumed.
+        if (
+          table === "assessment_sessions" &&
+          selectCols.replace(/\s/g, "") === "short_test_outcome"
+        ) {
+          return { data: null, error: null };
         }
         const staged = scripts[table]?.shift();
         if (staged !== undefined) return staged;
@@ -110,13 +120,18 @@ function makeServiceClient(
       let pendingDelete = false;
       const builder: Record<string, unknown> = {};
 
-      builder.select = () => builder;
+      builder.select = (cols?: unknown) => {
+        if (typeof cols === "string") selectCols = cols;
+        return builder;
+      };
       builder.eq = (col: string, val: unknown) => {
         eqCalls.push({ table, col, val });
         return builder;
       };
       builder.in = () => builder;
       builder.order = () => builder;
+      builder.limit = () => builder;
+      builder.not = () => builder;
 
       builder.update = (patch: unknown) => {
         pendingUpdate = patch;

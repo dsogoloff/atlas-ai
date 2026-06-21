@@ -130,6 +130,11 @@ export interface NextQuestionRequest {
   /** IRT difficulty target. Layer 2 picks among items in [target ± width]. */
   targetDifficulty: number;
   width: number;
+  /** Picker Calibration: an explicit per-pick booklet-level allow-list set by the
+   *  comprehensive level-split router (the single booklet at the planned offset
+   *  from the measured anchor). When present it OVERRIDES the session's default
+   *  grade band in pickForSession; absent on the short / legacy paths. */
+  levelBand?: readonly string[];
   /** For diagnostics / test assertions.
    *
    * "comprehensive-floor" / "comprehensive-adapt" (comprehensive-engine lane)

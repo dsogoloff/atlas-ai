@@ -178,6 +178,11 @@ import {
   type SessionPickParams,
 } from "@/lib/questionPicker/pickForSession";
 import {
+  loadComprehensiveOutcomeContext,
+  planComprehensiveLevel,
+  type ComprehensiveOutcomeContext,
+} from "@/lib/questionPicker/comprehensiveLevelPlan";
+import {
   deriveShortTestOutcome,
   type OutcomeResponse,
 } from "@/lib/shortTest/outcome";
@@ -193,7 +198,11 @@ import {
 } from "@/lib/timeFlagging";
 
 import { judgeAnswer } from "./correctness";
-import { replayEngineState, replayStrandCounts } from "./replay";
+import {
+  replayEngineState,
+  replayStrandCounts,
+  replayStrandOffsetCounts,
+} from "./replay";
 import {
   toNextRequestJson,
   toPlacementEstimateJson,
@@ -212,6 +221,12 @@ import {
 interface ComprehensiveContext {
   inScopeStrands: Set<Strand>;
   budget: ComprehensiveBudget;
+  /** Picker Calibration: measured anchor + pass_band + strand_map for the level
+   *  split (read from the child's latest ShortTestOutcome; neutral grade anchor
+   *  when there's none). */
+  outcome: ComprehensiveOutcomeContext;
+  /** Items the short test already served — subtracted from every draw. */
+  seenItemIds: string[];
 }
 
 /**
@@ -226,6 +241,9 @@ interface ComprehensiveContext {
 interface ShortContext {
   availableByStrand: Map<Strand, number>;
 }
+
+/** Shared empty per-offset count map for strands with nothing served yet. */
+const EMPTY_OFFSET_COUNTS: ReadonlyMap<number, number> = new Map();
 
 interface HandlerInput {
   request: SubmitRequest;
@@ -358,7 +376,28 @@ export async function submitResponseHandler({
         birth_year: childRow.birth_year,
       }),
     );
-    comprehensive = { inScopeStrands, budget };
+    // Picker Calibration: anchor on the child's MEASURED level (latest short
+    // outcome) and weight the draw by pass_band + strand_map; neutral grade
+    // anchor when there's no outcome. Grade anchor is the fallback ordinal.
+    const gradeAnchor = anchorBookletForChild(
+      childRow.grade_level,
+      childRow.birth_year,
+    );
+    const gradeAnchorOrdinal = Number.isFinite(gradeAnchor) ? gradeAnchor : 2;
+    let outcome: ComprehensiveOutcomeContext;
+    let seenItemIds: string[];
+    try {
+      const loaded = await loadComprehensiveOutcomeContext({
+        serviceClient,
+        childId: session.child_id,
+        gradeAnchorOrdinal,
+      });
+      outcome = loaded.ctx;
+      seenItemIds = loaded.seenItemIds;
+    } catch (e) {
+      return fail("internal", 500, errorMessage(e));
+    }
+    comprehensive = { inScopeStrands, budget, outcome, seenItemIds };
   }
 
   // SHORT-test stratification context (Picker Calibration): per-strand count of
@@ -503,6 +542,7 @@ export async function submitResponseHandler({
         childId: session.child_id,
         ip,
         sessionPick,
+        extraExcludedIds: comprehensive?.seenItemIds,
       },
       request.question_id,
       emptyBankStrands,
@@ -664,6 +704,7 @@ export async function submitResponseHandler({
           childId: session.child_id,
           ip,
           sessionPick,
+          extraExcludedIds: comprehensive?.seenItemIds,
         },
         request.question_id,
         emptyBankStrands,
@@ -771,6 +812,7 @@ export async function submitResponseHandler({
       childId: session.child_id,
       ip,
       sessionPick,
+      extraExcludedIds: comprehensive?.seenItemIds,
     },
     postState,
     emptyBankStrands,
@@ -1089,15 +1131,39 @@ async function buildRouter(
   (state: EngineState, excluded: ReadonlySet<Strand>) => NextQuestionRequest | null
 > {
   if (comprehensive) {
+    const ctx = comprehensive;
     const strandCounts = await replayStrandCounts(serviceClient, sessionId);
-    return (state, excluded) =>
-      comprehensiveNextQuestionRequest({
+    // Picker Calibration: per-(strand, offset) served counts feed the level-split
+    // planner. Stable across the pick loop (the loop only excludes strands).
+    const servedByOffset = await replayStrandOffsetCounts(
+      serviceClient,
+      sessionId,
+      ctx.outcome.anchorOrdinal,
+    );
+    return (state, excluded) => {
+      const req = comprehensiveNextQuestionRequest({
         state,
         strandCounts,
-        inScopeStrands: comprehensive.inScopeStrands,
+        inScopeStrands: ctx.inScopeStrands,
         excludedStrands: excluded,
-        perStrandFloorN: comprehensive.budget.perStrandFloorN,
+        perStrandFloorN: ctx.budget.perStrandFloorN,
       });
+      if (req === null) return null;
+      // Overlay the level-split target (booklet band + difficulty) onto the
+      // engine's strand choice. Null plan → keep the default grade band.
+      const plan = planComprehensiveLevel({
+        strand: req.strand,
+        ctx: ctx.outcome,
+        servedByOffset: servedByOffset.get(req.strand) ?? EMPTY_OFFSET_COUNTS,
+        budget: ctx.budget.target,
+      });
+      if (plan === null) return req;
+      return {
+        ...req,
+        targetDifficulty: plan.targetDifficulty,
+        levelBand: plan.levelBand,
+      };
+    };
   }
   if (short) {
     const strandCounts = await replayStrandCounts(serviceClient, sessionId);
@@ -1293,6 +1359,10 @@ interface PickContext {
   ip: string | null;
   /** Drives the level-lock band + picker choice on the next pick. */
   sessionPick: SessionPickParams;
+  /** Picker Calibration: extra question ids excluded from every draw on top of
+   *  the session's own served items — the comprehensive picker passes the short
+   *  test's seen_item_ids here so they're never re-served. */
+  extraExcludedIds?: readonly string[];
 }
 
 type PickAndMaybeCloseResult =
@@ -1361,7 +1431,9 @@ async function pickAndMaybeClose(
         req,
         {
           tenantId: ctx.tenantId,
-          servedQuestionIds: postState.servedQuestionIds,
+          servedQuestionIds: ctx.extraExcludedIds
+            ? [...postState.servedQuestionIds, ...ctx.extraExcludedIds]
+            : postState.servedQuestionIds,
         },
         ctx.sessionPick,
       );
