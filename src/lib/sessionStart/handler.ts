@@ -118,6 +118,12 @@ import type {
 import { deriveTier } from "@/lib/tier/derive";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import { discoverEmptyBankStrands } from "@/lib/questionPicker/picker";
+import { anchorBookletForChild } from "@/lib/questionPicker/levelBand";
+import {
+  loadComprehensiveOutcomeContext,
+  planComprehensiveLevel,
+  type ComprehensiveOutcomeContext,
+} from "@/lib/questionPicker/comprehensiveLevelPlan";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import {
   pickForSession,
@@ -341,15 +347,42 @@ export async function sessionStartHandler({
     testType === "comprehensive"
       ? new Set<Strand>(STRANDS.filter((s) => !emptyBankStrands.has(s)))
       : null;
-  const comprehensivePerStrandFloorN =
+  const comprehensiveBudgetForChild =
     testType === "comprehensive"
       ? comprehensiveBudget(
           deriveTier({
             grade_level: child.grade_level,
             birth_year: child.birth_year,
           }),
-        ).perStrandFloorN
-      : 0;
+        )
+      : null;
+  const comprehensivePerStrandFloorN =
+    comprehensiveBudgetForChild?.perStrandFloorN ?? 0;
+
+  // Picker Calibration: resolve the measured anchor + pass_band + strand_map (+
+  // seen ids) for the comprehensive level split. Neutral grade anchor when the
+  // child has no short outcome. servedByOffset is empty on the first pick.
+  let comprehensiveOutcome: ComprehensiveOutcomeContext | null = null;
+  let comprehensiveSeenIds: readonly string[] = [];
+  if (testType === "comprehensive") {
+    const gradeAnchor = anchorBookletForChild(
+      child.grade_level,
+      child.birth_year,
+    );
+    const gradeAnchorOrdinal = Number.isFinite(gradeAnchor) ? gradeAnchor : 2;
+    try {
+      const loaded = await loadComprehensiveOutcomeContext({
+        serviceClient,
+        childId: child.id,
+        gradeAnchorOrdinal,
+      });
+      comprehensiveOutcome = loaded.ctx;
+      comprehensiveSeenIds = loaded.seenItemIds;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      return fail("internal", 500, msg);
+    }
+  }
 
   const excludedStrands = new Set<Strand>(emptyBankStrands);
   let pickedQuestion: PickedQuestionRow | null = null;
@@ -357,7 +390,7 @@ export async function sessionStartHandler({
   let lastAttemptedStrand: Strand | null = null;
 
   while (true) {
-    const req =
+    let req =
       testType === "comprehensive" && inScopeStrands !== null
         ? comprehensiveNextQuestionRequest({
             state,
@@ -371,6 +404,26 @@ export async function sessionStartHandler({
       // No strand can serve. Roll back and surface 422.
       break;
     }
+    // Picker Calibration: overlay the level-split target on the first pick.
+    if (
+      req !== null &&
+      comprehensiveOutcome !== null &&
+      comprehensiveBudgetForChild !== null
+    ) {
+      const plan = planComprehensiveLevel({
+        strand: req.strand,
+        ctx: comprehensiveOutcome,
+        servedByOffset: new Map(), // first pick — nothing served yet
+        budget: comprehensiveBudgetForChild.target,
+      });
+      if (plan !== null) {
+        req = {
+          ...req,
+          targetDifficulty: plan.targetDifficulty,
+          levelBand: plan.levelBand,
+        };
+      }
+    }
     lastAttemptedStrand = req.strand;
 
     const pick = await pickForSession(
@@ -378,7 +431,9 @@ export async function sessionStartHandler({
       req,
       {
         tenantId: parent.tenant_id,
-        servedQuestionIds: state.servedQuestionIds,
+        servedQuestionIds: comprehensiveSeenIds.length
+          ? [...state.servedQuestionIds, ...comprehensiveSeenIds]
+          : state.servedQuestionIds,
       },
       {
         testType,

@@ -6,7 +6,7 @@ import { LEVELS, STRANDS } from "@/lib/engine/levels";
 import { PRIORS_V1, seedPosteriors } from "@/lib/engine/priors";
 import type { Database, Enums } from "@/lib/supabase/database.types";
 
-import { replayEngineState } from "./replay";
+import { replayEngineState, replayStrandOffsetCounts } from "./replay";
 
 // ---------------------------------------------------------------------------
 // Minimal Supabase mock — only the builders replay.ts actually calls.
@@ -375,5 +375,66 @@ describe("replayEngineState — new error paths (Item #10 Phase 3)", () => {
         "session-uuid",
       ),
     ).rejects.toThrow(/kidboom/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// replayStrandOffsetCounts (Picker Calibration)
+// ---------------------------------------------------------------------------
+
+function makeOffsetClient(
+  responses: Array<{ question_id: string }>,
+  questions: Array<{ id: string; strand: string; level: string }>,
+): SupabaseClient<Database> {
+  const responsesBuilder = {
+    select: () => responsesBuilder,
+    eq: () => Promise.resolve({ data: responses, error: null }),
+  };
+  const questionsBuilder = {
+    select: () => questionsBuilder,
+    in: () => Promise.resolve({ data: questions, error: null }),
+  };
+  return {
+    from: (table: string) => {
+      if (table === "responses") return responsesBuilder;
+      if (table === "questions") return questionsBuilder;
+      throw new Error(`[fake] unexpected table ${table}`);
+    },
+  } as unknown as SupabaseClient<Database>;
+}
+
+describe("replayStrandOffsetCounts", () => {
+  it("counts served items per (strand, offset) relative to the anchor", async () => {
+    // anchor booklet ordinal 6 ("4"). 3A/3B → booklet 5 (offset -1); 4A → booklet
+    // 6 (offset 0); 5A → booklet 7 (offset +1).
+    const client = makeOffsetClient(
+      [
+        { question_id: "q1" },
+        { question_id: "q2" },
+        { question_id: "q3" },
+        { question_id: "q4" },
+      ],
+      [
+        { id: "q1", strand: "number_sense", level: "3A" }, // offset -1
+        { id: "q2", strand: "number_sense", level: "4A" }, // offset 0
+        { id: "q3", strand: "number_sense", level: "5A" }, // offset +1
+        { id: "q4", strand: "geometry", level: "4B" }, // offset 0
+      ],
+    );
+    const counts = await replayStrandOffsetCounts(client, "s1", 6);
+    expect(counts.get("number_sense")).toEqual(
+      new Map([
+        [-1, 1],
+        [0, 1],
+        [1, 1],
+      ]),
+    );
+    expect(counts.get("geometry")).toEqual(new Map([[0, 1]]));
+  });
+
+  it("returns an empty map for an empty session", async () => {
+    const client = makeOffsetClient([], []);
+    const counts = await replayStrandOffsetCounts(client, "s1", 6);
+    expect(counts.size).toBe(0);
   });
 });

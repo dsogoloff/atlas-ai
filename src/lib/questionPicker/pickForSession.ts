@@ -75,10 +75,21 @@ export async function pickForSession(
     );
   }
 
+  // Comprehensive. Picker Calibration: when the engine request carries an
+  // explicit per-pick booklet band (the level-split target around the measured
+  // anchor), use it; otherwise fall back to the ±1 grade band (no outcome / first
+  // wiring). The split-driven band already encodes the M-1/M/Reach offset, so it
+  // OVERRIDES the grade lock for that pick.
+  const comprehensiveBand = request.levelBand
+    ? request.levelBand
+    : hasAnchor
+      ? levelLockHalfGrades(anchor)
+      : undefined;
+
   return pickQuestion(
     serviceClient,
     request,
-    hasAnchor ? { ...base, levelBand: levelLockHalfGrades(anchor) } : base,
+    comprehensiveBand ? { ...base, levelBand: comprehensiveBand } : base,
     chooser,
   );
 }

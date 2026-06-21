@@ -113,16 +113,28 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
       // pre-Phase-3 behavior — engine_prior_version='v1' resolves cleanly via
       // getPriorConfigByVersion; grade_level=null triggers seedPosteriors'
       // R3 fall-back to uniform priors.
+      const cols = () => selectCols.replace(/\s/g, "");
       const next = (): MockResult => {
-        if (
-          table === "questions" &&
-          selectCols.replace(/\s/g, "") === "strand"
-        ) {
+        if (table === "questions" && cols() === "strand") {
           // Default: all strands populated / all in short scope.
           return {
             data: STRANDS.map((s) => ({ strand: s })),
             error: null,
           };
+        }
+        // Picker Calibration: the per-(strand[,offset]) count replays both select
+        // ONLY "question_id" from responses (replayStrandCounts /
+        // replayStrandOffsetCounts). Default them to "nothing served yet" so they
+        // never steal a staged response-row entry; tests asserting coverage drive
+        // those functions in their own unit tests.
+        if (table === "responses" && cols() === "question_id") {
+          return { data: [], error: null };
+        }
+        // Picker Calibration: readLatestShortOutcome selects ONLY
+        // "short_test_outcome". Default to "no prior outcome" (neutral split) so
+        // comprehensive scripts don't have to stage it.
+        if (table === "assessment_sessions" && cols() === "short_test_outcome") {
+          return { data: null, error: null };
         }
         const staged = scripts[table]?.shift();
         if (staged !== undefined) return staged;
@@ -184,7 +196,10 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
         return Promise.resolve(r);
       };
       builder.single = () => Promise.resolve(next());
-      builder.order = () => Promise.resolve(next());
+      // Chainable so `.order(...).limit(1).maybeSingle()` (readLatestShortOutcome)
+      // works; `await ...order(...)` (replay) still resolves via builder.then.
+      builder.order = () => builder;
+      builder.not = () => builder;
 
       builder.insert = (row: unknown) => {
         inserts.push({ table, row });
@@ -492,7 +507,6 @@ describe("submitResponseHandler — happy path terminating", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replay responses
         { data: null, error: null }, // insert
-        { data: [], error: null }, // replayStrandCounts (short decideTermination)
         { data: aggRows(25, 0), error: null }, // aggregation re-read
       ],
       questions: [
@@ -1052,7 +1066,6 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replay
         { data: null, error: null }, // insert
-        { data: [], error: null }, // replayStrandCounts (short decideTermination)
         { data: aggRows(24, 1), error: null }, // aggregation: 24 NORMAL + 1 INVALID
       ],
       questions: [
@@ -1104,8 +1117,6 @@ describe("submitResponseHandler — bank exhausted mid-session", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay (empty)
         { data: null, error: null }, // insert response
-        { data: [], error: null }, // replayStrandCounts (short decideTermination)
-        { data: [], error: null }, // replayStrandCounts (short buildRouter)
         { data: aggRows(1, 0), error: null }, // close summary aggregation
       ],
       questions: [
@@ -1213,8 +1224,6 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay
         { data: null, error: null }, // insert response
-        { data: [], error: null }, // replayStrandCounts (short decideTermination)
-        { data: [], error: null }, // replayStrandCounts (short buildRouter)
         { data: aggRows(1, 0), error: null }, // close summary aggregation
       ],
       questions: [
@@ -1519,7 +1528,6 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
         { data: null, error: null },
         { data: p.responses, error: null },
         { data: null, error: null },
-        { data: [], error: null }, // replayStrandCounts (short decideTermination)
         { data: aggRows(25, 0), error: null },
       ],
       questions: [

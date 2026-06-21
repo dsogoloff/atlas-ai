@@ -68,6 +68,7 @@ import type {
   GradeKey,
   Strand,
 } from "@/lib/engine/types";
+import { bookletOrdinalForHalfGrade } from "@/lib/questionPicker/levelBand";
 import type { Database } from "@/lib/supabase/database.types";
 
 export async function replayEngineState(
@@ -250,4 +251,63 @@ export async function replayStrandCounts(
     counts[strand] = (counts[strand] ?? 0) + 1;
   }
   return counts;
+}
+
+/**
+ * Picker Calibration — per-(strand, booklet-offset) served counts for a session,
+ * relative to the comprehensive anchor. Feeds the level-split planner
+ * (comprehensiveSplit.planNextOffset), which steers the next pick toward the
+ * offset most under its target share so far. Offset = item's booklet ordinal
+ * minus `anchorOrdinal`; items whose level doesn't map to a booklet are skipped
+ * (can't be attributed to an offset). Same service-role / no-is_active-filter
+ * rationale as replayStrandCounts. Returns an empty map for an empty session.
+ */
+export async function replayStrandOffsetCounts(
+  supabase: SupabaseClient<Database>,
+  sessionId: string,
+  anchorOrdinal: number,
+): Promise<Map<Strand, Map<number, number>>> {
+  const result = new Map<Strand, Map<number, number>>();
+
+  const { data: responseRows, error: respErr } = await supabase
+    .from("responses")
+    .select("question_id")
+    .eq("session_id", sessionId);
+  if (respErr) {
+    throw new Error(
+      `[replay] strand-offset responses read failed: ${respErr.message}`,
+    );
+  }
+  const responses = responseRows ?? [];
+  if (responses.length === 0) return result;
+
+  const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
+  const { data: questionRows, error: qErr } = await supabase
+    .from("questions")
+    .select("id, strand, level")
+    .in("id", questionIds);
+  if (qErr) {
+    throw new Error(
+      `[replay] strand-offset questions read failed: ${qErr.message}`,
+    );
+  }
+  const byId = new Map(
+    (questionRows ?? []).map((q) => [q.id, q] as const),
+  );
+
+  for (const row of responses) {
+    const q = byId.get(row.question_id);
+    if (!q) {
+      throw new Error(
+        `[replay] response references missing question ${row.question_id}`,
+      );
+    }
+    const ord = bookletOrdinalForHalfGrade(q.level);
+    if (ord === null) continue; // unmappable level — not attributable to an offset
+    const offset = ord - anchorOrdinal;
+    const perStrand = result.get(q.strand) ?? new Map<number, number>();
+    perStrand.set(offset, (perStrand.get(offset) ?? 0) + 1);
+    result.set(q.strand, perStrand);
+  }
+  return result;
 }

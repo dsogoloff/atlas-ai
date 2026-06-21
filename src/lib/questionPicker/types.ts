@@ -237,6 +237,11 @@ export interface PickerRequest {
    *  see picker.ts for the strand-exhaustion rationale. */
   targetDifficulty: number;
   width: number;
+  /** Picker Calibration: per-pick booklet-level allow-list (the comprehensive
+   *  level-split target). When present, pickForSession uses it instead of the
+   *  session's default grade band. Mirrors NextQuestionRequest.levelBand so the
+   *  handler can pass the engine request straight through. */
+  levelBand?: readonly string[];
 }
 
 /** Side-data the picker needs that doesn't come from the engine state. */

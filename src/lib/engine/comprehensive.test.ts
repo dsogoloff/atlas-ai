@@ -311,7 +311,7 @@ describe("comprehensiveBudget — per-tier numbers", () => {
     expect(comprehensiveBudget("G5_8")).toEqual({
       target: 30,
       softFloor: 24,
-      hardCap: 36,
+      hardCap: 30,
       perStrandFloorN: 3,
     });
   });

@@ -45,10 +45,14 @@ import type {
 
 export const COMPREHENSIVE_CONFIG = {
   // Per-tier item budget. softFloor = minimum items before we may stop;
-  // hardCap = absolute max (always terminates). target = design aim (informational).
+  // hardCap = absolute max (always terminates). target = design aim, also the
+  // proportion base for the level split (comprehensiveSplit.ts).
   // perStrandFloorN = phase-1 minimum items per in-scope strand before adaptive deepening.
+  // Picker Calibration: comprehensive length 20–30, hard cap 30 (was G5_8 36 —
+  // now within the cap). K_4 stays shorter (target 20, cap 26 ≤ 30) — "variable
+  // by level thickness" keeps younger tests from running long.
   budgets: {
-    G5_8: { target: 30, softFloor: 24, hardCap: 36, perStrandFloorN: 3 },
+    G5_8: { target: 30, softFloor: 24, hardCap: 30, perStrandFloorN: 3 },
     K_4: { target: 20, softFloor: 16, hardCap: 26, perStrandFloorN: 2 },
   },
   // Placement confident when SE (sqrt of variance of the level ordinal under the
