@@ -4,6 +4,32 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0aab. 2026-06-21 (session 3) — short-eligible / comprehensive over-set audit L0A–L4 (PR #123, lane/short-eligible-overset-audit)
+
+**Finding: key-parity is COMPLETE (zero gaps, zero over-flags). Over-set ceiling is source-key capped, not under-flagged.** No migration, no seed change, no flag change in this PR — docs and reusable helpers only.
+
+- [ ] **Dimitri: merge PR #123 (lane/short-eligible-overset-audit) at leisure** (docs/helpers
+      only). No DB change, no migration, no seed change, no `supabase db reset`. Verify GREEN
+      1196/89; tsc clean; lint 2 known warnings; seed↔migration parity PASS.
+      Deliverables: `scripts/conversion/audit/short-eligible-overset-audit.md`,
+      `overset-state.mts`, `_extract_short_keys.py`, `build-overset-matrix.mjs`,
+      `bank-final-state.json`.
+
+- [ ] **PARKED — thin booklets (needs Dimitri / product decision).** Per-booklet active&STE
+      pools: booklet-4=5 rows (critically under), booklet-0C=8 (thin). Plain-English: do we
+      accept thinner per-strand coverage in these booklets, or commission more converted
+      Short=Y content to fill them? Also: `SAM-L3-Q04`, `SAM-L3-Q23`, `SAM-L4-Q17` are
+      Short=Y in the source key but have NO DB row (converter-skipped) — these are recoverable
+      only by re-authoring. No build until directed.
+
+- [ ] **PARKED — ATLAS comprehensive-picker open question (flag to ATLAS architecture, not a
+      founder business decision).** The full active previous-booklet bank is far larger than
+      the STE subset (e.g. booklet-4: 37 active vs 5 STE). If the COMPREHENSIVE picker fills
+      previous-level items from the full active bank (`is_active` only), reserving
+      `short_test_eligible` for the SHORT test only, the over-set concern is largely moot.
+      This is an open architecture question for the ATLAS engine design — note it and raise
+      when the comprehensive picker is implemented. Do not resolve now.
+
 ## 0aaa. 2026-06-21 (session 2) — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
 
 **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content gate.**
