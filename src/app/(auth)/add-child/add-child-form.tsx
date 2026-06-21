@@ -157,6 +157,12 @@ export function AddChildForm({ cancelHref }: Props) {
               {...register("gradeLevel")}
             >
               <option value="">Optional — select if you know</option>
+              {/* Young band — Pre-K is age-qualified (age disambiguates 0A/0B);
+                  from Kindergarten up, grade disambiguates. Each value maps to
+                  exactly one S.A.M. booklet via parseGradeNumber +
+                  anchorBookletForChild. Floor = Pre-K (age 4) → L0A. */}
+              <option value="Pre-K (age 4)">Pre-K (age 4)</option>
+              <option value="Pre-K (age 5)">Pre-K (age 5)</option>
               <option value="K">Kindergarten</option>
               {Array.from({ length: 8 }, (_, i) => i + 1).map((g) => (
                 <option key={g} value={String(g)}>

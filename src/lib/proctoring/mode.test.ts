@@ -53,6 +53,15 @@ describe("parseGradeNumber", () => {
   it("parses pre-k variants as below kindergarten (read-aloud band)", () => {
     expect(parseGradeNumber("pre-k")).toBeLessThanOrEqual(READ_ALOUD_MAX_GRADE);
   });
+  it("parses the age-qualified intake Pre-K choices below kindergarten (0A/0B)", () => {
+    // Below K (grade 0): age 4 → -2 (→ 0A), age 5 → -1 (→ 0B).
+    expect(parseGradeNumber("Pre-K (age 4)")).toBe(-2);
+    expect(parseGradeNumber("Pre-K (age 5)")).toBe(-1);
+    // Still read-aloud.
+    expect(parseGradeNumber("Pre-K (age 4)")).toBeLessThanOrEqual(
+      READ_ALOUD_MAX_GRADE,
+    );
+  });
   it("parses ordinals and word forms", () => {
     expect(parseGradeNumber("2nd")).toBe(2);
     expect(parseGradeNumber("third")).toBe(3);

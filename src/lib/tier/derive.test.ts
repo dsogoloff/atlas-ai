@@ -41,8 +41,10 @@ describe("parseGradeLevel", () => {
     }
   });
 
-  it("recognises Pre-K variants", () => {
+  it("recognises Pre-K variants (incl. the age-qualified intake choices)", () => {
     for (const v of [
+      "Pre-K (age 4)",
+      "Pre-K (age 5)",
       "Pre-K",
       "pre-k",
       "PRE K",

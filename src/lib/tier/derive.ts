@@ -76,7 +76,9 @@ export function tierFromBirthYear(birthYear: number): Tier {
 // -----------------------------------------------------------------------------
 
 const K_4_PATTERNS = new Set<string>([
-  // Pre-K
+  // Pre-K (incl. the age-qualified intake-ladder choices)
+  "pre-k (age 4)",
+  "pre-k (age 5)",
   "pre-k",
   "prek",
   "pre k",

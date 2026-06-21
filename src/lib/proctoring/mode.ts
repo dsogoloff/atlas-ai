@@ -39,8 +39,10 @@ export function proctoringModeForGrade(grade: number): ProctoringMode {
  * digits, half-grade enum values (KA/1B/…), ordinals (1st/5th), word forms
  * (first/fifth), Pre-K — but returns the grade NUMBER (the proctoring cutoff
  * is at grade 2/3, finer than the K_4/G5_8 tier split). Anything unrecognised
- * → null (caller falls back to birth_year). Pre-K maps to 0: it is well below
- * the cutoff, so its exact value never affects the read-aloud/no-assist line.
+ * → null (caller falls back to birth_year). Bare Pre-K maps to 0; the
+ * age-qualified intake choices "Pre-K (age 4)"/"(age 5)" map to -2/-1 (below
+ * kindergarten, for the 0A/0B young-band anchor). All are well below the
+ * read-aloud cutoff, so their exact value never affects the proctoring line.
  */
 export function parseGradeNumber(text: string | null): number | null {
   if (text == null) return null; // tolerate undefined as well as null
@@ -75,7 +77,13 @@ export function deriveProctoringMode(child: DeriveProctoringInput): ProctoringMo
 // -----------------------------------------------------------------------------
 
 const GRADE_NUMBER_BY_TEXT = new Map<string, number>([
-  // Pre-K → treated as 0 (kindergarten-and-below; read-aloud regardless).
+  // Age-qualified Pre-K (the intake ladder's young-band entries): age 4 → 0A,
+  // age 5 → 0B. Below kindergarten (grade 0), so grades -2/-1 — anchorBookletFor-
+  // Child maps these to booklet ordinals 0/1. Read-aloud regardless (≤ cutoff).
+  ["pre-k (age 4)", -2],
+  ["pre-k (age 5)", -1],
+  // Bare Pre-K (operator/CSV free text, no age) → treated as 0
+  // (kindergarten-and-below; read-aloud regardless).
   ["pre-k", 0],
   ["prek", 0],
   ["pre k", 0],

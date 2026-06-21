@@ -80,17 +80,18 @@ export function levelLockHalfGrades(
 }
 
 /** Child's anchor booklet ordinal from grade_level text (birth_year fallback).
- *  Kindergarten (grade 0) anchors at the 0C booklet (ordinal 2); grade N
- *  anchors at booklet N (ordinal 2 + N). Sub-K never anchors below 0C — 0A/0B
- *  are reachable only via the band (a 0C child reaches 0B), matching the rule
- *  that 0A/0B aren't selectable signup grades but are servable below the floor. */
+ *  ordinal = 2 + grade (Kindergarten = grade 0 → 0C; grade N → booklet N).
+ *  The intake ladder now offers the young band directly: Pre-K (age 4) = grade
+ *  -2 → 0A, Pre-K (age 5) = grade -1 → 0B (parseGradeNumber maps the
+ *  age-qualified Pre-K choices below K). Clamped to the axis — FLOOR is 0A
+ *  (ordinal 0), so nothing anchors below Pre-K (age 4). */
 export function anchorBookletForChild(
   gradeLevel: string | null,
   birthYear: number,
 ): number {
   const grade = parseGradeNumber(gradeLevel) ?? gradeFromBirthYear(birthYear);
-  const ordinal = 2 + Math.max(0, grade);
-  return Math.min(BOOKLET_LEVELS.length - 1, ordinal);
+  const ordinal = 2 + grade;
+  return Math.max(0, Math.min(BOOKLET_LEVELS.length - 1, ordinal));
 }
 
 /** The booklet ordinal one level BELOW the anchor (short test samples the
