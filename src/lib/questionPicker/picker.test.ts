@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import type { Database } from "@/lib/supabase/database.types";
 
-import { discoverShortEligibleCounts, pickQuestion } from "./picker";
+import {
+  discoverAvailableBooklets,
+  discoverShortEligibleCounts,
+  pickQuestion,
+} from "./picker";
 import type {
   Chooser,
   PickedQuestionRow,
@@ -475,5 +479,55 @@ describe("discoverShortEligibleCounts", () => {
     await expect(
       discoverShortEligibleCounts(client, "tenant-1", ["0B"]),
     ).rejects.toThrow(/discoverShortEligibleCounts failed: boom/);
+  });
+});
+
+describe("discoverAvailableBooklets", () => {
+  function makeLevelClient(
+    levels: ReadonlyArray<{ level: string }>,
+  ): SupabaseClient<Database> {
+    const chain: Record<string, unknown> = {};
+    chain.select = () => chain;
+    chain.eq = () => chain;
+    chain.then = (
+      onFulfilled?: ((r: QueryResult) => unknown) | null,
+      onRejected?: ((e: unknown) => unknown) | null,
+    ) =>
+      Promise.resolve({
+        data: levels as unknown as PickedQuestionRow[],
+        error: null,
+      } as QueryResult).then(onFulfilled, onRejected);
+    return { from: () => chain } as unknown as SupabaseClient<Database>;
+  }
+
+  it("maps active levels to their booklet ordinals (deduped)", async () => {
+    // 0C/KA/KB → booklet 2; 1A/1B → 3; 4A → 6.
+    const client = makeLevelClient([
+      { level: "0C" },
+      { level: "KA" },
+      { level: "1A" },
+      { level: "1B" },
+      { level: "4A" },
+    ]);
+    const ords = await discoverAvailableBooklets(client, "tenant-1");
+    expect([...ords].sort((a, b) => a - b)).toEqual([2, 3, 6]);
+  });
+
+  it("throws on a DB error", async () => {
+    const chain: Record<string, unknown> = {};
+    chain.select = () => chain;
+    chain.eq = () => chain;
+    chain.then = (
+      onFulfilled?: ((r: QueryResult) => unknown) | null,
+      onRejected?: ((e: unknown) => unknown) | null,
+    ) =>
+      Promise.resolve({
+        data: null,
+        error: { message: "kaboom" },
+      } as QueryResult).then(onFulfilled, onRejected);
+    const client = { from: () => chain } as unknown as SupabaseClient<Database>;
+    await expect(
+      discoverAvailableBooklets(client, "tenant-1"),
+    ).rejects.toThrow(/discoverAvailableBooklets failed: kaboom/);
   });
 });

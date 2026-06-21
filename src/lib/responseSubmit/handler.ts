@@ -163,6 +163,7 @@ import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { attemptNarration } from "@/lib/report/narration/trigger";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import {
+  discoverAvailableBooklets,
   discoverEmptyBankStrands,
   discoverShortEligibleCounts,
 } from "@/lib/questionPicker/picker";
@@ -178,7 +179,10 @@ import {
   type SessionPickParams,
 } from "@/lib/questionPicker/pickForSession";
 import {
+  evaluateFloorFind,
+  floorFindBand,
   loadComprehensiveOutcomeContext,
+  lowestAvailableOrdinal,
   planComprehensiveLevel,
   type ComprehensiveOutcomeContext,
 } from "@/lib/questionPicker/comprehensiveLevelPlan";
@@ -227,6 +231,9 @@ interface ComprehensiveContext {
   outcome: ComprehensiveOutcomeContext;
   /** Items the short test already served — subtracted from every draw. */
   seenItemIds: string[];
+  /** PR3: booklet ordinals the active bank can serve — bank-aware floor-find
+   *  walk-down + ceiling clamp for the level split. */
+  availableOrdinals: Set<number>;
 }
 
 /**
@@ -397,7 +404,22 @@ export async function submitResponseHandler({
     } catch (e) {
       return fail("internal", 500, errorMessage(e));
     }
-    comprehensive = { inScopeStrands, budget, outcome, seenItemIds };
+    let availableOrdinals: Set<number>;
+    try {
+      availableOrdinals = await discoverAvailableBooklets(
+        serviceClient,
+        parent.tenant_id,
+      );
+    } catch (e) {
+      return fail("internal", 500, errorMessage(e));
+    }
+    comprehensive = {
+      inScopeStrands,
+      budget,
+      outcome,
+      seenItemIds,
+      availableOrdinals,
+    };
   }
 
   // SHORT-test stratification context (Picker Calibration): per-strand count of
@@ -1021,6 +1043,83 @@ async function persistShortTestOutcome(
   return null;
 }
 
+/** Overall correct/graded ratio for a session (0 when empty). */
+async function readOverallCorrectRatio(
+  supabase: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("responses")
+    .select("is_correct")
+    .eq("session_id", sessionId);
+  if (error) {
+    throw new Error(`[comp-placement] responses read failed: ${error.message}`);
+  }
+  const rows = data ?? [];
+  if (rows.length === 0) return 0;
+  const correct = rows.filter((r) => r.is_correct).length;
+  return correct / rows.length;
+}
+
+/**
+ * Picker Calibration PR3 — evaluate the floor-find at comprehensive completion
+ * and persist manual_placement_needed. No-op for short sessions (gates on
+ * test_type). manual placement is set when the engine settled at/below the
+ * lowest available booklet AND the child is still not solid there — the
+ * walk-down fell past the bottom of the loaded library. Self-contained; returns
+ * null on success, an error string on failure (caller maps to 500).
+ */
+async function persistComprehensivePlacement(
+  supabase: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<string | null> {
+  const { data: sessionRow, error: sErr } = await supabase
+    .from("assessment_sessions")
+    .select("test_type, tenant_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (sErr) return `comp-placement session read failed: ${sErr.message}`;
+  if (!sessionRow || sessionRow.test_type !== "comprehensive") return null;
+
+  let state: EngineState;
+  try {
+    state = await replayEngineState(supabase, sessionId);
+  } catch (e) {
+    return errorMessage(e);
+  }
+  const placementOrd = bookletOrdinalForHalfGrade(
+    placementEstimate(state).overallLevel,
+  );
+
+  let available: Set<number>;
+  let ratio: number;
+  try {
+    available = await discoverAvailableBooklets(supabase, sessionRow.tenant_id);
+    ratio = await readOverallCorrectRatio(supabase, sessionId);
+  } catch (e) {
+    return errorMessage(e);
+  }
+  const lowest = lowestAvailableOrdinal(available);
+
+  // Default false when ordinals can't be resolved (no auto manual placement
+  // without evidence the walk-down fell off the bottom).
+  let manualPlacementNeeded = false;
+  if (placementOrd !== null && lowest !== null) {
+    manualPlacementNeeded = evaluateFloorFind({
+      placementOrdinal: placementOrd,
+      lowestAvailableOrdinal: lowest,
+      overallRatio: ratio,
+    }).manualPlacementNeeded;
+  }
+
+  const { error: upErr } = await supabase
+    .from("assessment_sessions")
+    .update({ manual_placement_needed: manualPlacementNeeded })
+    .eq("id", sessionId);
+  if (upErr) return `manual-placement update failed: ${upErr.message}`;
+  return null;
+}
+
 /**
  * Funnel: emit the test-completed event off the response path. Comprehensive
  * vs short is keyed off the session's test_type. Called only from the two
@@ -1140,6 +1239,13 @@ async function buildRouter(
       sessionId,
       ctx.outcome.anchorOrdinal,
     );
+    // PR3 floor-find: a WEAK child walks DOWN. Hand the level to the adaptive
+    // engine (keep its posterior-mean difficulty) over the available
+    // at-and-below band so it settles where the child is solid.
+    const floorBand =
+      ctx.outcome.passBand === "weak"
+        ? floorFindBand(ctx.outcome.anchorOrdinal, ctx.availableOrdinals)
+        : null;
     return (state, excluded) => {
       const req = comprehensiveNextQuestionRequest({
         state,
@@ -1149,6 +1255,9 @@ async function buildRouter(
         perStrandFloorN: ctx.budget.perStrandFloorN,
       });
       if (req === null) return null;
+      if (floorBand !== null) {
+        return floorBand.length ? { ...req, levelBand: floorBand } : req;
+      }
       // Overlay the level-split target (booklet band + difficulty) onto the
       // engine's strand choice. Null plan → keep the default grade band.
       const plan = planComprehensiveLevel({
@@ -1156,6 +1265,7 @@ async function buildRouter(
         ctx: ctx.outcome,
         servedByOffset: servedByOffset.get(req.strand) ?? EMPTY_OFFSET_COUNTS,
         budget: ctx.budget.target,
+        availableOrdinals: ctx.availableOrdinals,
       });
       if (plan === null) return req;
       return {
@@ -1507,6 +1617,14 @@ async function closeSession(
   // picker can read it as soon as the session is COMPLETED.
   const outcomeErr = await persistShortTestOutcome(serviceClient, sessionId);
   if (outcomeErr) return outcomeErr;
+
+  // PR3 floor-find: evaluate + persist manual_placement_needed for comprehensive
+  // sessions (no-op for short).
+  const placementErr = await persistComprehensivePlacement(
+    serviceClient,
+    sessionId,
+  );
+  if (placementErr) return placementErr;
 
   // (c3) Narration — fire-and-forget. The `after()` callback runs after
   // the response is sent; the runtime keeps the function alive until it

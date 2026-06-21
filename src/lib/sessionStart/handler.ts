@@ -117,9 +117,13 @@ import type {
 } from "@/lib/engine/types";
 import { deriveTier } from "@/lib/tier/derive";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import { discoverEmptyBankStrands } from "@/lib/questionPicker/picker";
+import {
+  discoverAvailableBooklets,
+  discoverEmptyBankStrands,
+} from "@/lib/questionPicker/picker";
 import { anchorBookletForChild } from "@/lib/questionPicker/levelBand";
 import {
+  floorFindBand,
   loadComprehensiveOutcomeContext,
   planComprehensiveLevel,
   type ComprehensiveOutcomeContext,
@@ -364,6 +368,7 @@ export async function sessionStartHandler({
   // child has no short outcome. servedByOffset is empty on the first pick.
   let comprehensiveOutcome: ComprehensiveOutcomeContext | null = null;
   let comprehensiveSeenIds: readonly string[] = [];
+  let comprehensiveAvailable: Set<number> = new Set();
   if (testType === "comprehensive") {
     const gradeAnchor = anchorBookletForChild(
       child.grade_level,
@@ -378,6 +383,10 @@ export async function sessionStartHandler({
       });
       comprehensiveOutcome = loaded.ctx;
       comprehensiveSeenIds = loaded.seenItemIds;
+      comprehensiveAvailable = await discoverAvailableBooklets(
+        serviceClient,
+        parent.tenant_id,
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       return fail("internal", 500, msg);
@@ -404,24 +413,35 @@ export async function sessionStartHandler({
       // No strand can serve. Roll back and surface 422.
       break;
     }
-    // Picker Calibration: overlay the level-split target on the first pick.
+    // Picker Calibration: overlay the level target on the first pick. A WEAK
+    // child floor-finds — hand the level to the adaptive engine over the
+    // available at-and-below band (PR3); otherwise apply the pass_band split.
     if (
       req !== null &&
       comprehensiveOutcome !== null &&
       comprehensiveBudgetForChild !== null
     ) {
-      const plan = planComprehensiveLevel({
-        strand: req.strand,
-        ctx: comprehensiveOutcome,
-        servedByOffset: new Map(), // first pick — nothing served yet
-        budget: comprehensiveBudgetForChild.target,
-      });
-      if (plan !== null) {
-        req = {
-          ...req,
-          targetDifficulty: plan.targetDifficulty,
-          levelBand: plan.levelBand,
-        };
+      if (comprehensiveOutcome.passBand === "weak") {
+        const band = floorFindBand(
+          comprehensiveOutcome.anchorOrdinal,
+          comprehensiveAvailable,
+        );
+        if (band.length) req = { ...req, levelBand: band };
+      } else {
+        const plan = planComprehensiveLevel({
+          strand: req.strand,
+          ctx: comprehensiveOutcome,
+          servedByOffset: new Map(), // first pick — nothing served yet
+          budget: comprehensiveBudgetForChild.target,
+          availableOrdinals: comprehensiveAvailable,
+        });
+        if (plan !== null) {
+          req = {
+            ...req,
+            targetDifficulty: plan.targetDifficulty,
+            levelBand: plan.levelBand,
+          };
+        }
       }
     }
     lastAttemptedStrand = req.strand;

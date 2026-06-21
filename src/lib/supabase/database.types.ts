@@ -69,6 +69,7 @@ export type Database = {
           current_estimate: Json | null
           engine_prior_version: string
           id: string
+          manual_placement_needed: boolean | null
           session_time_flag:
             | Database["public"]["Enums"]["session_time_flag"]
             | null
@@ -86,6 +87,7 @@ export type Database = {
           current_estimate?: Json | null
           engine_prior_version?: string
           id?: string
+          manual_placement_needed?: boolean | null
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
             | null
@@ -103,6 +105,7 @@ export type Database = {
           current_estimate?: Json | null
           engine_prior_version?: string
           id?: string
+          manual_placement_needed?: boolean | null
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
             | null
