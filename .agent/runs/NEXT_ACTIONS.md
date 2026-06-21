@@ -4,6 +4,30 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0aaa. 2026-06-21 (session 2) — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
+
+**Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content gate.**
+The short-test-eligible image set is fully active on trunk `ce9a676`. The 9 inactive
+image rows are FOUNDER-ADJUDICATED EXCLUDED from the short test — **not a content gap,
+not a beta gate.** Docs/memory-only PR records + reconciles this.
+
+- [ ] **Dimitri: merge PR #120 (lane/young-band-image-activation-audit) at leisure**
+      (docs/memory only — findings doc + this record + CURRENT_STATE). No DB change, no
+      migration, no seed change, no image upload, no `supabase db reset`. Verify GREEN
+      1196/89; seed↔migration parity PASS.
+- **Result:** 53 young-band rows = 36 active / 17 inactive. 26 active IMAGE rows (0A=11,
+  0B=6, 0C=9). The 9 excluded image rows (SAM-L0A-Q09/Q12, L0B-Q01/Q08/Q12/Q13,
+  L0C-Q01/Q06/Q12) carry `short_test_eligible=false` + `is_active=false`, picker-enforced
+  (`shortTestPicker.ts:50-51`) — inert to the short test regardless of art. Exclusion is
+  machine-readable; no new flag needed. (Earlier note that mislabelled these as
+  "blocked on missing art" is corrected in this PR.)
+- **COMPREHENSIVE-ONLY / future (NOT a short-test or beta concern):** if any of the 9
+  excluded rows are ever pulled into the comprehensive bank, they would need curated
+  per-question crops + deliberate re-adjudication. Also carried: SAM-L0B-Q05 count-back
+  blank-layout ambiguity. Full audit:
+  `scripts/conversion/audit/young-band-image-activation-status.md`. **Do NOT re-surface
+  these as short-test blockers.**
+
 ## 0aa. 2026-06-21 session — QA merges + crosswalk re-pin (lane/qa-crosswalk-l1l2)
 
 **Trunk merges since the 2026-06-18 snapshot (all MERGED to ATLAS-ASSESSMENT):**
