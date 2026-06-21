@@ -69,6 +69,7 @@ export const SOURCE_MAP: Record<string, string> = {
   "l0/sam-l0b-q02-t3.png": `${L0_SRC}/0b/0B-02_3.png`,
   "l0/sam-l0b-q02-t4.png": `${L0_SRC}/0b/0B-02_4.png`,
   "l0/sam-l0b-q14.png": `${L0_SRC}/0b/0B-14.png`,
+  "l0/sam-l0b-q15.png": `${L0_SRC}/0b/0B-15.png`, // QA-fix#2: cookies word-problem stimulus
   "l0/sam-l0b-q04.png": `${L0_SRC}/0b/0B-04_1.png`,
   "l0/sam-l0b-q07.png": `${L0_SRC}/0b/sam-l0b-q07.png`, // #97 composited sorted-shapes stimulus (generated)
   "l0/sam-l0b-q03-stimulus.png": `${L0_SRC}/0b/0B-03_1.png`,
@@ -76,8 +77,12 @@ export const SOURCE_MAP: Record<string, string> = {
   "l0/sam-l0b-q03-t2.png": `${L0_SRC}/0b/0B-03_3.png`,
   "l0/sam-l0b-q03-t3.png": `${L0_SRC}/0b/0B-03_4.png`,
   // L0C
-  "l0/sam-l0c-q11.png": `${L0_SRC}/0c/0C-11.png`,
+  // QA-fix#2: number-line stimulus re-pointed to the 30-36-labelled regen
+  // (gen_l0c_q11_stimulus.py); the raw 0C-11.png crop has no printed numerals.
+  "l0/sam-l0c-q11.png": `${L0_SRC}/0c/sam-l0c-q11.png`,
   "l0/sam-l0c-q14.png": `${L0_SRC}/0c/0C-14.png`,
+  "l0/sam-l0c-q09.png": `${L0_SRC}/0c/0C-09.png`, // QA-fix#2: necklace word-problem stimulus
+  "l0/sam-l0c-q10.png": `${L0_SRC}/0c/sam-l0c-q10.png`, // QA-fix#2: birds composite (gen_l0c_q10_birds.py)
   "l0/sam-l0c-q13-t1.png": `${L0_SRC}/0c/sam-l0c-q13-t1.png`,
   "l0/sam-l0c-q13-t2.png": `${L0_SRC}/0c/sam-l0c-q13-t2.png`,
   "l0/sam-l0c-q13-t3.png": `${L0_SRC}/0c/sam-l0c-q13-t3.png`,
