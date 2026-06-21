@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { mascotIsLively, mascotPoseFor } from "./mascot";
+import {
+  MASCOT_SRC,
+  footerMascotPose,
+  mascotIsLively,
+  mascotPoseFor,
+} from "./mascot";
 
 describe("mascotPoseFor", () => {
   it("waves while the session is starting (greeting beat)", () => {
@@ -37,5 +42,23 @@ describe("mascotIsLively", () => {
   it("treats a null reduced-motion reading (SSR) as motion allowed for K_4", () => {
     // framer-motion's useReducedMotion returns null before hydration.
     expect(mascotIsLively("K_4", null)).toBe(true);
+  });
+});
+
+describe("MASCOT_SRC", () => {
+  it("points every pose at a transparent public/mascot asset", () => {
+    expect(MASCOT_SRC.waving).toBe("/mascot/waving.png");
+    expect(MASCOT_SRC.thinking).toBe("/mascot/thinking.png");
+    expect(MASCOT_SRC.celebrating).toBe("/mascot/celebrating.png");
+  });
+});
+
+describe("footerMascotPose", () => {
+  it("idles on the thinking pose between submits", () => {
+    expect(footerMascotPose(false)).toBe("thinking");
+  });
+
+  it("swaps to celebrating during the submit beat", () => {
+    expect(footerMascotPose(true)).toBe("celebrating");
   });
 });

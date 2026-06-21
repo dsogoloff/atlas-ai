@@ -72,6 +72,9 @@ export function AssessmentClient({
     !comprehensivePilotEnabled,
   );
   const [comprehensive, setComprehensive] = useState(false);
+  // Bumped once per accepted answer submit; drives the K-4 footer mascot's
+  // celebrate beat in QuestionShell (the only per-question mascot mount).
+  const [celebrateTick, setCelebrateTick] = useState(0);
 
   // Effect: startSession on every entry into 'starting' (once confirmed).
   const isStarting = state.kind === "starting";
@@ -138,6 +141,9 @@ export function AssessmentClient({
   function handleSubmit(answerGiven: string, timeMs: number) {
     if (state.kind !== "running" || state.submitting) return;
     dispatch({ type: "SUBMIT", answerGiven, timeMs });
+    // Fire the footer celebrate beat immediately on the child's submit (once
+    // per accepted answer, every format) — independent of the server result.
+    setCelebrateTick((t) => t + 1);
   }
 
   function handleRetry() {
@@ -215,6 +221,7 @@ export function AssessmentClient({
         tier={tier}
         progress={progress}
         image={question.content.image}
+        celebrateTick={celebrateTick}
       >
         {/* key={question.id} remounts QuestionTimer per question, capturing
             a fresh start time and resetting any internal input state. */}
