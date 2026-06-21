@@ -1,7 +1,7 @@
 {
   "meta": {
     "level": "0A",
-    "note": "Internal taxonomy nodes created (codes are OUR organizing scheme, not external/S.A.M.). New: l0a-geometry-5 'Same or Different', l0a-geometry-6 'Positions' (geometry is the only non-number sub-strand applying at l0a). Source-verified (doc + key + each PNG). Applied by migration 20260620120000.",
+    "note": "Internal taxonomy nodes created (codes are OUR organizing scheme, not external/S.A.M.). New: l0a-geometry-5 'Same or Different', l0a-geometry-6 'Positions' (geometry is the only non-number sub-strand applying at l0a). Source-verified (doc + key + each PNG). Applied by migration 20260620120001.",
     "new_codes": {
       "l0a-geometry-5": "Same or Different (Topic: Same or different) — Q03,Q05,Q06,Q07,Q10",
       "l0a-geometry-6": "Positions (Topic: Position and Direction Words) — Q13,Q14,Q15,Q16"
