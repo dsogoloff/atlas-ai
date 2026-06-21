@@ -59,6 +59,14 @@ tools/relay/.reviews/
 # from scripts/conversion/l1_*.py against the source .docx.
 scripts/conversion/output/l1-art/
 
+# Licensed S.A.M. source — placement-worksheet docx + per-question crops live
+# ONLY here, untracked (licensed assets; never commit). Derived audit artifacts
+# that carry the worksheet skill/topic text are excluded for the same reason.
+scripts/conversion/source/
+scripts/conversion/audit/source-short-keys.json
+scripts/conversion/audit/_short_err.txt
+scripts/conversion/audit/_matrix.md
+
 # Claude Code config: shared governance (agents, hooks, settings.json) is
 # committed; everything else under .claude/ stays per-developer.
 .claude/*

@@ -45,7 +45,30 @@ Merge order #119 → #121 → #122.
       the placement guidance in the parent report and surface the flag + floor-find data
       in the instructor view.
 
-## 0aab. 2026-06-21 — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
+## 0aab. 2026-06-21 — short-eligible / comprehensive over-set audit L0A–L4 (PR #123, lane/short-eligible-overset-audit)
+
+**Finding: key-parity is COMPLETE (zero gaps, zero over-flags). Over-set ceiling is source-key capped, not under-flagged.** No migration, no seed change, no flag change — docs and reusable helpers only.
+
+- [x] **PR #123 (lane/short-eligible-overset-audit) MERGED** (`c4a67e8`, docs/helpers only).
+      Deliverables: `scripts/conversion/audit/short-eligible-overset-audit.md`,
+      `overset-state.mts`, `_extract_short_keys.py`, `build-overset-matrix.mjs`,
+      `bank-final-state.json`.
+
+- [ ] **PARKED — thin booklets (needs Dimitri / product decision).** Per-booklet active&STE
+      pools: booklet-4=5 rows (critically under), booklet-0C=8 (thin). Plain-English: do we
+      accept thinner per-strand coverage in these booklets, or commission more converted
+      Short=Y content to fill them? Also: `SAM-L3-Q04`, `SAM-L3-Q23`, `SAM-L4-Q17` are
+      Short=Y in the source key but have NO DB row (converter-skipped) — these are recoverable
+      only by re-authoring. No build until directed.
+
+- [ ] **PARKED — ATLAS comprehensive-picker open question (architecture).** The full active
+      previous-booklet bank is far larger than the STE subset (e.g. booklet-4: 37 active vs 5
+      STE). NOTE: the Picker Calibration comprehensive picker (PR #121) draws previous/at/reach
+      items from the FULL active bank (`is_active`, via `pickQuestion`), reserving
+      `short_test_eligible` for the SHORT test only — so the over-set concern is largely moot
+      under that design. Confirm when #121 lands.
+
+## 0aac. 2026-06-21 — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
 
 **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content gate.**
 The short-test-eligible image set is fully active on trunk `ce9a676`. The 9 inactive

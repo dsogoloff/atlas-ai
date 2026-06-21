@@ -1,0 +1,1666 @@
+[
+  {
+    "external_id": "SAM-L0A-Q01",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-geometry-1"
+  },
+  {
+    "external_id": "SAM-L0A-Q02",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-geometry-1"
+  },
+  {
+    "external_id": "SAM-L0A-Q03",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-5"
+  },
+  {
+    "external_id": "SAM-L0A-Q04",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-geometry-1"
+  },
+  {
+    "external_id": "SAM-L0A-Q05",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-5"
+  },
+  {
+    "external_id": "SAM-L0A-Q06",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-5"
+  },
+  {
+    "external_id": "SAM-L0A-Q07",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-5"
+  },
+  {
+    "external_id": "SAM-L0A-Q08",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-3"
+  },
+  {
+    "external_id": "SAM-L0A-Q09",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L0A-Q10",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-5"
+  },
+  {
+    "external_id": "SAM-L0A-Q11",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-4"
+  },
+  {
+    "external_id": "SAM-L0A-Q12",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-geometry-2"
+  },
+  {
+    "external_id": "SAM-L0A-Q13",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-6"
+  },
+  {
+    "external_id": "SAM-L0A-Q14",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-6"
+  },
+  {
+    "external_id": "SAM-L0A-Q15",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-6"
+  },
+  {
+    "external_id": "SAM-L0A-Q16",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-geometry-6"
+  },
+  {
+    "external_id": "SAM-L0A-Q17",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0A-Q18",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-geometry-3"
+  },
+  {
+    "external_id": "SAM-L0B-Q01",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L0B-Q02",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-4"
+  },
+  {
+    "external_id": "SAM-L0B-Q03",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-2"
+  },
+  {
+    "external_id": "SAM-L0B-Q04",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-geometry-1"
+  },
+  {
+    "external_id": "SAM-L0B-Q05",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0B-Q06",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0B-Q07",
+    "strand": "geometry",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-geometry-3"
+  },
+  {
+    "external_id": "SAM-L0B-Q08",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L0B-Q09",
+    "strand": "operations_algorithms",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l0a-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L0B-Q10",
+    "strand": "operations_algorithms",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0B-Q11",
+    "strand": "operations_algorithms",
+    "level": "0A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0a-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0B-Q12",
+    "strand": "number_sense",
+    "level": "0A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0a-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0B-Q13",
+    "strand": "geometry",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0b-geometry-1"
+  },
+  {
+    "external_id": "SAM-L0B-Q14",
+    "strand": "operations_algorithms",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0B-Q15",
+    "strand": "operations_algorithms",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0C-Q01",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0b-whole_numbers-4"
+  },
+  {
+    "external_id": "SAM-L0C-Q02",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0b-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L0C-Q03",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L0C-Q04",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0C-Q05",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0c-geometry-4"
+  },
+  {
+    "external_id": "SAM-L0C-Q06",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0b-geometry-4"
+  },
+  {
+    "external_id": "SAM-L0C-Q07",
+    "strand": "geometry",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0b-geometry-2"
+  },
+  {
+    "external_id": "SAM-L0C-Q08",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q09",
+    "strand": "operations_algorithms",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0C-Q10",
+    "strand": "operations_algorithms",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L0C-Q11",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q11A",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q11B",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q11C",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q11D",
+    "strand": "number_sense",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q12",
+    "strand": "geometry",
+    "level": "0B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l0b-geometry-3"
+  },
+  {
+    "external_id": "SAM-L0C-Q13",
+    "strand": "measurement",
+    "level": "0B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0b-measurement-1"
+  },
+  {
+    "external_id": "SAM-L0C-Q14",
+    "strand": "number_sense",
+    "level": "0C",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0c-whole_numbers-6"
+  },
+  {
+    "external_id": "SAM-L0C-Q15",
+    "strand": "number_sense",
+    "level": "0C",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0c-whole_numbers-6"
+  },
+  {
+    "external_id": "SAM-L0C-Q16",
+    "strand": "number_sense",
+    "level": "0C",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l0c-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L1-Q01",
+    "strand": "geometry",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q02",
+    "strand": "measurement",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-1"
+  },
+  {
+    "external_id": "SAM-L1-Q03",
+    "strand": "measurement",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-1"
+  },
+  {
+    "external_id": "SAM-L1-Q04",
+    "strand": "measurement",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-1"
+  },
+  {
+    "external_id": "SAM-L1-Q05",
+    "strand": "geometry",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q06",
+    "strand": "geometry",
+    "level": "KA",
+    "is_active": false,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q07",
+    "strand": "geometry",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q08",
+    "strand": "geometry",
+    "level": "KA",
+    "is_active": false,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q09",
+    "strand": "number_sense",
+    "level": "KA",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q10",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q11",
+    "strand": "number_sense",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q12",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q13",
+    "strand": "geometry",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q14",
+    "strand": "operations_algorithms",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L1-Q15",
+    "strand": "geometry",
+    "level": "KA",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q16",
+    "strand": "geometry",
+    "level": "KB",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L1-Q17",
+    "strand": "number_sense",
+    "level": "KB",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q18",
+    "strand": "number_sense",
+    "level": "KB",
+    "is_active": false,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q19",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q20",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q21",
+    "strand": "operations_algorithms",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L1-Q22",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L1-Q23",
+    "strand": "operations_algorithms",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L1-Q24",
+    "strand": "operations_algorithms",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-4"
+  },
+  {
+    "external_id": "SAM-L1-Q25",
+    "strand": "number_sense",
+    "level": "1B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-4"
+  },
+  {
+    "external_id": "SAM-L1-Q26",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-8"
+  },
+  {
+    "external_id": "SAM-L1-Q27",
+    "strand": "number_sense",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-8"
+  },
+  {
+    "external_id": "SAM-L1-Q28",
+    "strand": "number_sense",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-6"
+  },
+  {
+    "external_id": "SAM-L2-Q01",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q02",
+    "strand": "geometry",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L2-Q03",
+    "strand": "geometry",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-geometry-1"
+  },
+  {
+    "external_id": "SAM-L2-Q04",
+    "strand": "number_sense",
+    "level": "1B",
+    "is_active": false,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-5"
+  },
+  {
+    "external_id": "SAM-L2-Q05",
+    "strand": "data_statistics",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-data_representation-1"
+  },
+  {
+    "external_id": "SAM-L2-Q06",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-8"
+  },
+  {
+    "external_id": "SAM-L2-Q07",
+    "strand": "number_sense",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q08",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l1-whole_numbers-8"
+  },
+  {
+    "external_id": "SAM-L2-Q09",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q10",
+    "strand": "number_sense",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q11",
+    "strand": "operations_algorithms",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q12",
+    "strand": "measurement",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-1"
+  },
+  {
+    "external_id": "SAM-L2-Q13",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-whole_numbers-10"
+  },
+  {
+    "external_id": "SAM-L2-Q14",
+    "strand": "operations_algorithms",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q15",
+    "strand": "measurement",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-2"
+  },
+  {
+    "external_id": "SAM-L2-Q16",
+    "strand": "measurement",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-3"
+  },
+  {
+    "external_id": "SAM-L2-Q17",
+    "strand": "measurement",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l1-measurement-3"
+  },
+  {
+    "external_id": "SAM-L2-Q18",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L2-Q19",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q20",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q21",
+    "strand": "number_sense",
+    "level": "2B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L2-Q22",
+    "strand": "number_sense",
+    "level": "2B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": null
+  },
+  {
+    "external_id": "SAM-L3-Q01",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L3-Q02",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l2-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L3-Q03",
+    "strand": "number_sense",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L3-Q05",
+    "strand": "operations_algorithms",
+    "level": "2B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L3-Q06",
+    "strand": "measurement",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-measurement-1"
+  },
+  {
+    "external_id": "SAM-L3-Q07",
+    "strand": "operations_algorithms",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L3-Q08",
+    "strand": "measurement",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-measurement-2"
+  },
+  {
+    "external_id": "SAM-L3-Q09",
+    "strand": "measurement",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-measurement-3"
+  },
+  {
+    "external_id": "SAM-L3-Q10",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-4"
+  },
+  {
+    "external_id": "SAM-L3-Q11",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L3-Q12",
+    "strand": "measurement",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-measurement-4"
+  },
+  {
+    "external_id": "SAM-L3-Q13",
+    "strand": "fractions_decimals",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-fractions-1"
+  },
+  {
+    "external_id": "SAM-L3-Q14",
+    "strand": "fractions_decimals",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-fractions-1"
+  },
+  {
+    "external_id": "SAM-L3-Q15",
+    "strand": "fractions_decimals",
+    "level": "1B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l2-fractions-2"
+  },
+  {
+    "external_id": "SAM-L3-Q17",
+    "strand": "data_statistics",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-data_representation-1"
+  },
+  {
+    "external_id": "SAM-L3-Q18",
+    "strand": "geometry",
+    "level": "1A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l2-geometry-2"
+  },
+  {
+    "external_id": "SAM-L3-Q19",
+    "strand": "geometry",
+    "level": "1B",
+    "is_active": false,
+    "short_test_eligible": true,
+    "content_key": "l2-geometry-1"
+  },
+  {
+    "external_id": "SAM-L3-Q20",
+    "strand": "number_sense",
+    "level": "2B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L3-Q21",
+    "strand": "number_sense",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L3-Q22",
+    "strand": "number_sense",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q01",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q02",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q03",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q04",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q05",
+    "strand": "number_sense",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L4-Q06",
+    "strand": "number_sense",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L4-Q07",
+    "strand": "operations_algorithms",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-6"
+  },
+  {
+    "external_id": "SAM-L4-Q08",
+    "strand": "operations_algorithms",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-money-2"
+  },
+  {
+    "external_id": "SAM-L4-Q09",
+    "strand": "operations_algorithms",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-4"
+  },
+  {
+    "external_id": "SAM-L4-Q10",
+    "strand": "number_sense",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-5"
+  },
+  {
+    "external_id": "SAM-L4-Q11",
+    "strand": "number_sense",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-5"
+  },
+  {
+    "external_id": "SAM-L4-Q12",
+    "strand": "operations_algorithms",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-whole_numbers-6"
+  },
+  {
+    "external_id": "SAM-L4-Q13",
+    "strand": "measurement",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-measurement-1"
+  },
+  {
+    "external_id": "SAM-L4-Q14",
+    "strand": "measurement",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-measurement-1"
+  },
+  {
+    "external_id": "SAM-L4-Q15",
+    "strand": "measurement",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-measurement-3"
+  },
+  {
+    "external_id": "SAM-L4-Q16",
+    "strand": "geometry",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-geometry-1"
+  },
+  {
+    "external_id": "SAM-L4-Q18",
+    "strand": "fractions_decimals",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l3-fractions-1"
+  },
+  {
+    "external_id": "SAM-L4-Q20",
+    "strand": "data_statistics",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-data_representation-1"
+  },
+  {
+    "external_id": "SAM-L4-Q21",
+    "strand": "geometry",
+    "level": "2A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-area_volume-3"
+  },
+  {
+    "external_id": "SAM-L4-Q22",
+    "strand": "measurement",
+    "level": "3B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l3-measurement-2"
+  },
+  {
+    "external_id": "SAM-L4-Q23",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l4-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q24",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l4-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q25",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l4-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q26",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l4-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L4-Q27",
+    "strand": "operations_algorithms",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": true,
+    "content_key": "l4-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L5-Q02",
+    "strand": "number_sense",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L5-Q03",
+    "strand": "number_sense",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L5-Q04",
+    "strand": "number_sense",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L5-Q05",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L5-Q06",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L5-Q07",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L5-Q08",
+    "strand": "data_statistics",
+    "level": "4A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l4-data_representation-2"
+  },
+  {
+    "external_id": "SAM-L5-Q09",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-fractions-3"
+  },
+  {
+    "external_id": "SAM-L5-Q11",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-fractions-3"
+  },
+  {
+    "external_id": "SAM-L5-Q12",
+    "strand": "geometry",
+    "level": "4B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l4-geometry-1"
+  },
+  {
+    "external_id": "SAM-L5-Q13",
+    "strand": "geometry",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-geometry-1"
+  },
+  {
+    "external_id": "SAM-L5-Q14",
+    "strand": "geometry",
+    "level": "4B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l4-geometry-2"
+  },
+  {
+    "external_id": "SAM-L5-Q15",
+    "strand": "fractions_decimals",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-1"
+  },
+  {
+    "external_id": "SAM-L5-Q17",
+    "strand": "fractions_decimals",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-2"
+  },
+  {
+    "external_id": "SAM-L5-Q19",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-2"
+  },
+  {
+    "external_id": "SAM-L5-Q20",
+    "strand": "fractions_decimals",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-4"
+  },
+  {
+    "external_id": "SAM-L5-Q21",
+    "strand": "fractions_decimals",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-4"
+  },
+  {
+    "external_id": "SAM-L5-Q22",
+    "strand": "fractions_decimals",
+    "level": "3A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-1"
+  },
+  {
+    "external_id": "SAM-L5-Q23",
+    "strand": "fractions_decimals",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-decimals-4"
+  },
+  {
+    "external_id": "SAM-L5-Q24",
+    "strand": "geometry",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l4-area_volume-1"
+  },
+  {
+    "external_id": "SAM-L5-Q25",
+    "strand": "geometry",
+    "level": "4B",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l4-area_volume-1"
+  },
+  {
+    "external_id": "SAM-L5-Q26",
+    "strand": "geometry",
+    "level": "4A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l4-geometry-3"
+  },
+  {
+    "external_id": "SAM-L5-Q27",
+    "strand": "geometry",
+    "level": "4A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l4-geometry-3"
+  },
+  {
+    "external_id": "SAM-L5-Q28",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L5-Q29",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L5-Q30",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L6-Q01",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L6-Q02",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L6-Q03",
+    "strand": "operations_algorithms",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-1"
+  },
+  {
+    "external_id": "SAM-L6-Q04",
+    "strand": "operations_algorithms",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L6-Q05",
+    "strand": "number_sense",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-2"
+  },
+  {
+    "external_id": "SAM-L6-Q06",
+    "strand": "operations_algorithms",
+    "level": "5A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-whole_numbers-3"
+  },
+  {
+    "external_id": "SAM-L6-Q07",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-1"
+  },
+  {
+    "external_id": "SAM-L6-Q08",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-2"
+  },
+  {
+    "external_id": "SAM-L6-Q09",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-3"
+  },
+  {
+    "external_id": "SAM-L6-Q10",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-3"
+  },
+  {
+    "external_id": "SAM-L6-Q11",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-4"
+  },
+  {
+    "external_id": "SAM-L6-Q12",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-4"
+  },
+  {
+    "external_id": "SAM-L6-Q13",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-5"
+  },
+  {
+    "external_id": "SAM-L6-Q14",
+    "strand": "geometry",
+    "level": "4A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l5-area_volume-1"
+  },
+  {
+    "external_id": "SAM-L6-Q15",
+    "strand": "geometry",
+    "level": "4A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l5-area_volume-1"
+  },
+  {
+    "external_id": "SAM-L6-Q16",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l5-area_volume-1"
+  },
+  {
+    "external_id": "SAM-L6-Q18",
+    "strand": "geometry",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-area_volume-3"
+  },
+  {
+    "external_id": "SAM-L6-Q19",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l5-area_volume-4"
+  },
+  {
+    "external_id": "SAM-L6-Q20",
+    "strand": "fractions_decimals",
+    "level": "4B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-fractions-2"
+  },
+  {
+    "external_id": "SAM-L6-Q21",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-decimals-1"
+  },
+  {
+    "external_id": "SAM-L6-Q23",
+    "strand": "operations_algorithms",
+    "level": "4A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-rate-2"
+  },
+  {
+    "external_id": "SAM-L6-Q24",
+    "strand": "operations_algorithms",
+    "level": "5B",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l5-rate-2"
+  },
+  {
+    "external_id": "SAM-L6-Q25",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l5-area_volume-4"
+  },
+  {
+    "external_id": "SAM-L6-Q26",
+    "strand": "fractions_decimals",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l6-percentage-1"
+  },
+  {
+    "external_id": "SAM-L6-Q28",
+    "strand": "fractions_decimals",
+    "level": "5A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l6-percentage-1"
+  },
+  {
+    "external_id": "SAM-L6-Q29",
+    "strand": "fractions_decimals",
+    "level": "5A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l6-percentage-3"
+  },
+  {
+    "external_id": "SAM-L6-Q30",
+    "strand": "fractions_decimals",
+    "level": "4A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l5-percentage-3"
+  },
+  {
+    "external_id": "SAM-L6-Q31",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l6-geometry-1"
+  },
+  {
+    "external_id": "SAM-L6-Q32",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l6-geometry-1"
+  },
+  {
+    "external_id": "SAM-L6-Q33",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l6-geometry-1"
+  },
+  {
+    "external_id": "SAM-L6-Q34",
+    "strand": "geometry",
+    "level": "5A",
+    "is_active": false,
+    "short_test_eligible": false,
+    "content_key": "l6-geometry-1"
+  },
+  {
+    "external_id": "SAM-L6-Q36",
+    "strand": "operations_algorithms",
+    "level": "5A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l6-algebra-2"
+  },
+  {
+    "external_id": "SAM-L6-Q37",
+    "strand": "operations_algorithms",
+    "level": "5A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l6-algebra-2"
+  },
+  {
+    "external_id": "SAM-L6-Q38",
+    "strand": "operations_algorithms",
+    "level": "5A",
+    "is_active": true,
+    "short_test_eligible": false,
+    "content_key": "l6-algebra-3"
+  }
+]

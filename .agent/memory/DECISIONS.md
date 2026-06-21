@@ -3,7 +3,7 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
-## 2026-06-21 (Picker Calibration)
+## 2026-06-21
 
 * **Short-test outcome persisted as structured jsonb on session close (PR #119,
   lane/picker-short-outcome, 2026-06-21).** New `ShortTestOutcome` type in
@@ -70,6 +70,29 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   the question bank. They must not render until Dimitri approves the exact wording. Batched
   in PR #122 body as gate item (1). Follow-up lane (render + instructor surface) is also
   blocked on this decision — gate item (2) in PR #122.
+* **Short-eligible / comprehensive over-set audit (L0A–L4) — key parity VERIFIED
+  COMPLETE; over-set ceiling is source-key capped (PR #123, lane/short-eligible-overset-audit,
+  commit `a084d0e`, off trunk `a2c0b28`).** Task 2 result: ZERO key-parity gaps — every
+  active, source-Short=Y row is already `short_test_eligible=true` (the
+  `l1-l4-short-eligible-backfill` migration 20260619080000 + young-band L0 authoring both
+  honor the key exactly). Zero over-flags (no row is STE while source `Short≠Y`). No UPDATE
+  applied. Task 3 result: no strand×booklet cell reaches the ~15–18 target (max = booklet-2
+  number_sense = 13). Per-booklet active&STE pools: 0A=18, 0B=13, 0C=8, booklet-1=27,
+  booklet-2=25, booklet-3=13, booklet-4=5. Ceiling is set by source Short=Y counts, not by
+  mis-flagging. Structural finding: each worksheet's questions band across MULTIPLE booklets
+  (L1→0C+1, L2→1+2, L3→1+2+3, L4→2+3+4), so per-worksheet Short=Y totals overstate
+  per-booklet reserve. Validation: source Short=Y docx counts exactly match backfill IN-lists
+  (L1 17/L2 21/L3 20/L4 25); per-booklet pools reproduce the prior served-crosswalk exactly.
+  Three source-Short=Y rows (`SAM-L3-Q04`, `SAM-L3-Q23`, `SAM-L4-Q17`) have no DB row
+  (converter-skipped) — recoverable only by re-authoring. Reusable helpers committed:
+  `overset-state.mts`, `_extract_short_keys.py`, `build-overset-matrix.mjs`,
+  `bank-final-state.json`. Licensed source tree + `source-short-keys.json` gitignored.
+  Verify GREEN 1196/89, tsc clean, lint 2 known warnings. Two items PARKED for Dimitri:
+  thin-booklet content decision + ATLAS comprehensive-picker architecture question.
+
+* **Trunk head advanced past `ce9a676`.** Local memory cited a stale head; trunk reached
+  `a2c0b28` during the over-set audit work, then `c4a67e8` once PR #123 merged — the current
+  ATLAS-ASSESSMENT head (PR #119 Picker Calibration PR1 is also merged, at `c3ad839`).
 
 ## 2026-06-20
 
