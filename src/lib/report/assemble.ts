@@ -363,6 +363,7 @@ export async function assembleReportContent(
   const readiness = computeReadiness({
     testType: session.test_type,
     overallPercentage: overallPercentage,
+    gradedCount: overallTotal,
     currentLevelLabel: readinessLevel,
   });
 

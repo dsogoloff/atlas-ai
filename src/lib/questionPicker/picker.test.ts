@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Database } from "@/lib/supabase/database.types";
 
-import { pickQuestion } from "./picker";
+import { discoverShortEligibleCounts, pickQuestion } from "./picker";
 import type {
   Chooser,
   PickedQuestionRow,
@@ -407,5 +407,73 @@ describe("pickQuestion / chooser callback (Layer 2 plug-in point)", () => {
 
     const result = await pickQuestion(client, req(), ctx(), () => null);
     expect(result).toEqual({ ok: false, reason: "strand-exhausted" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// discoverShortEligibleCounts (Picker Calibration)
+// ---------------------------------------------------------------------------
+
+function makeStrandCountClient(
+  strands: ReadonlyArray<{ strand: string }>,
+): SupabaseClient<Database> {
+  const chain: Record<string, unknown> = {};
+  chain.select = () => chain;
+  chain.eq = () => chain;
+  chain.in = () => chain;
+  chain.then = (
+    onFulfilled?: ((r: QueryResult) => unknown) | null,
+    onRejected?: ((e: unknown) => unknown) | null,
+  ) =>
+    Promise.resolve({
+      data: strands as unknown as PickedQuestionRow[],
+      error: null,
+    } as QueryResult).then(onFulfilled, onRejected);
+  return { from: () => chain } as unknown as SupabaseClient<Database>;
+}
+
+describe("discoverShortEligibleCounts", () => {
+  it("counts eligible items per strand", async () => {
+    const client = makeStrandCountClient([
+      { strand: "number_sense" },
+      { strand: "number_sense" },
+      { strand: "geometry" },
+    ]);
+    const counts = await discoverShortEligibleCounts(client, "tenant-1", ["0B"]);
+    expect(counts.get("number_sense")).toBe(2);
+    expect(counts.get("geometry")).toBe(1);
+    expect(counts.has("measurement")).toBe(false);
+  });
+
+  it("short-circuits to an empty map for an empty band (no query)", async () => {
+    let queried = false;
+    const client = {
+      from: () => {
+        queried = true;
+        return {};
+      },
+    } as unknown as SupabaseClient<Database>;
+    const counts = await discoverShortEligibleCounts(client, "tenant-1", []);
+    expect(counts.size).toBe(0);
+    expect(queried).toBe(false);
+  });
+
+  it("throws on a DB error", async () => {
+    const chain: Record<string, unknown> = {};
+    chain.select = () => chain;
+    chain.eq = () => chain;
+    chain.in = () => chain;
+    chain.then = (
+      onFulfilled?: ((r: QueryResult) => unknown) | null,
+      onRejected?: ((e: unknown) => unknown) | null,
+    ) =>
+      Promise.resolve({
+        data: null,
+        error: { message: "boom" },
+      } as QueryResult).then(onFulfilled, onRejected);
+    const client = { from: () => chain } as unknown as SupabaseClient<Database>;
+    await expect(
+      discoverShortEligibleCounts(client, "tenant-1", ["0B"]),
+    ).rejects.toThrow(/discoverShortEligibleCounts failed: boom/);
   });
 });

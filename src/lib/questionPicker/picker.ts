@@ -187,6 +187,50 @@ export async function discoverEmptyBankStrands(
   return empty;
 }
 
+/**
+ * Picker Calibration — per-strand count of ACTIVE short_test_eligible items in
+ * the previous-booklet band, for a tenant. Drives the short test's stratified
+ * coverage routing + stopping (src/lib/engine/shortTest.ts): a strand is "in
+ * scope" iff it has ≥1 such item, and its coverage floor is clamped to the count
+ * here so the test terminates in range even on a thin pool.
+ *
+ * Mirrors the short picker's own filter (tenant + is_active +
+ * short_test_eligible + level ∈ band) so in-scope-ness here matches what
+ * pickShortTestQuestion can actually serve. levelBand may carry sub-KA levels
+ * (0A/0B/0C) the generated half_grade_level union doesn't list yet, so it is
+ * cast for the `.in()` call (same pattern as the pickers).
+ */
+export async function discoverShortEligibleCounts(
+  serviceClient: SupabaseClient<Database>,
+  tenantId: string,
+  levelBand: readonly string[],
+): Promise<Map<Strand, number>> {
+  const counts = new Map<Strand, number>();
+  if (levelBand.length === 0) return counts;
+
+  const { data, error } = await serviceClient
+    .from("questions")
+    .select("strand")
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true)
+    .eq("short_test_eligible", true)
+    .in(
+      "level",
+      levelBand as unknown as Database["public"]["Enums"]["half_grade_level"][],
+    );
+
+  if (error) {
+    throw new Error(
+      `[picker] discoverShortEligibleCounts failed: ${error.message}`,
+    );
+  }
+
+  for (const row of data ?? []) {
+    counts.set(row.strand, (counts.get(row.strand) ?? 0) + 1);
+  }
+  return counts;
+}
+
 export function compareCandidates(target: number) {
   return (a: PickedQuestionRow, b: PickedQuestionRow): number => {
     const da = Math.abs(a.difficulty - target);

@@ -72,6 +72,7 @@ export type Database = {
           session_time_flag:
             | Database["public"]["Enums"]["session_time_flag"]
             | null
+          short_test_outcome: Json | null
           started_at: string
           status: Database["public"]["Enums"]["assessment_status"]
           tenant_id: string
@@ -88,6 +89,7 @@ export type Database = {
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
             | null
+          short_test_outcome?: Json | null
           started_at?: string
           status?: Database["public"]["Enums"]["assessment_status"]
           tenant_id: string
@@ -104,6 +106,7 @@ export type Database = {
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
             | null
+          short_test_outcome?: Json | null
           started_at?: string
           status?: Database["public"]["Enums"]["assessment_status"]
           tenant_id?: string
