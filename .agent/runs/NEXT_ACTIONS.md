@@ -4,6 +4,37 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0aa. 2026-06-21 session — QA merges + crosswalk re-pin (lane/qa-crosswalk-l1l2)
+
+**Trunk merges since the 2026-06-18 snapshot (all MERGED to ATLAS-ASSESSMENT):**
+PR #109 (fix-dup-migration-version, `e489312`) · #110 (restore-seed-mirrors, `8d3d09c`)
+· #111 (seed-parity-guard, `20127b0`) · #112 (l0c-qa-fix-batch, `3c5dfc0`) · #113
+(qa-fixes-l1-l4 — L1 Q1/Q2/Q4/Q8 + L4-Q06, `f5fdbc9`) · #114 (short-test-followup-form,
+`7f2a737`). **Trunk head = `7f2a737`.**
+
+- [ ] **Dimitri: merge the crosswalk re-pin PR (lane/qa-crosswalk-l1l2)** after Vercel
+      preview review, then run `supabase db reset` (applies migration
+      `20260621120000_l1_q28_stem_rework.sql` — one stem correction; seed mirror also
+      carries it on the dev path). No image upload, no new asset. Verify GREEN 1181/87,
+      tsc 0, lint 0 errors (2 known warnings).
+      - Crosswalk integrity confirmed: the "MISMATCH" was a stale manual estimate, not a
+        served≠eligible gap. Per-child served counts are all correct (0B/L1/L4 =
+        bank-exhaustion; L2/L3 = 25-question cap). No picker-stops-short defect.
+      - L2-Q1 (served order) = SAM-L1-Q28: stem reworded to "Arrange the numbers in order,
+        from smallest to largest." (was duplicating the 17/20/10 tiles); stays DRAG_DROP,
+        served shuffled, grading unchanged. FIXED.
+      - L2-Q2 = SAM-L1-Q23 (ribbon word problem): no image defect — text-complete (7+3=10),
+        not triangle-counting. REPORTED, no fix. See decision queue below.
+      - L1-Q3 = SAM-L1-Q01 (same-color): already source-correct — reds interleaved at
+        tiles 1/3/5 matching the worksheet; id-keyed grading. REPORTED, no fix.
+      - Artifacts committed: `scripts/conversion/audit/build-served-crosswalk.ts`,
+        `served-crosswalk.{md,json}`, `repin-findings.md`.
+
+- [ ] **DECISION QUEUE — SAM-L1-Q23 (L2-Q2) ribbon art (needs Dimitri).** The ribbon word
+      problem is fully answerable as text; the worksheet shows 7 blue + 3 red ribbon
+      figures (crops L1-23_1/_2). Add illustrative art (crop+upload, image_required:false)
+      for visual parity, or keep text-only? No bug either way — content/product call.
+
 ## 0a. 2026-06-18 session — open PRs (all off trunk ae281dd)
 
 - [ ] **Dimitri: merge PR #82 (lane/lead-notify-test)** after Vercel preview review. Test-only; no DB change; no supabase db reset needed.

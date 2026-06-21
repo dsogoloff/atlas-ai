@@ -4,6 +4,40 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-21 session — trunk advanced to **`7f2a737`** via six merges since the
+2026-06-18 snapshot below: PR #109 (fix-dup-migration-version, `e489312`), #110
+(restore-seed-mirrors, `8d3d09c`), #111 (seed↔migration activation **parity guard** +
+generated mirror region, `20127b0`), #112 (L0C young-band QA fix batch #2, `3c5dfc0`),
+#113 (L1 QA batch — Q1/Q2/Q4/Q8 + L4-Q06 missing-digit, `f5fdbc9`), #114
+(short-test follow-up form, `7f2a737`). PRs #82/#83/#84 below are now superseded/older —
+verify their GitHub status before acting; the 2026-06-18 block is retained for history.
+
+**OPEN PR (this session) — lane/qa-crosswalk-l1l2** (off trunk `f5fdbc9` / #113 head; #114
+is a sibling not in this branch's history — re-pin touches only bank content so no
+conflict). Short-test served-order→external_id crosswalk + three QA re-pins:
+- **Crosswalk** (`scripts/conversion/audit/build-served-crosswalk.ts` + `served-crosswalk.{md,json}`):
+  replays the real adaptive engine over `seed.sql` per QA-seed child. The prior "MISMATCH"
+  banner was a **stale hardcoded estimate**, not a served≠eligible gap — reframed as a
+  non-blocking cross-check. Per-child served-vs-eligible: 0B 13/13, L1 8/8, L4 13/13 (all
+  genuine bank-exhaustion); L2 25/27, L3 25/25 (both the 25-question MAX cap). **No
+  picker-stops-short defect.**
+- **L2-Q1 = SAM-L1-Q28** (served pos 1; NOT external SAM-L2-Q01) — FIXED. Stem reworded to
+  "Arrange the numbers in order, from smallest to largest." (was carrying the original
+  NUMERIC_ENTRY stem with the literal 17/20/10 that duplicated the tiles). Stays DRAG_DROP;
+  items [17,20,10] (≠ answer order → served shuffled); correct_order [10,17,20]; grading
+  unchanged. Migration `20260621120000_l1_q28_stem_rework.sql` + seed mirror (parity guard PASS).
+- **L2-Q2 = SAM-L1-Q23** (ribbon word problem; NOT triangle-counting SAM-L2-Q02) — REPORTED,
+  no fix. Text-complete (7+3=10), no serve-time image defect; source ribbon figures are
+  illustrative/redundant. Decision-queued (add art vs keep text-only).
+- **L1-Q3 = SAM-L1-Q01** (same-color) — REPORTED, already source-correct. Reds interleaved at
+  tiles 1/3/5 matching the worksheet crops; serializer preserves authored order; id-keyed
+  select-all grading (shuffle-safe). No change.
+- Findings doc: `scripts/conversion/audit/repin-findings.md`. Verify GREEN **1181 tests /
+  87 files**, tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped (relay unauth).
+  After merge: `supabase db reset` (applies `20260621120000`). No image upload.
+
+---
+
 **As of:** 2026-06-18 session — trunk advanced to **`ae281dd`** (PR #81, lane/short-test-readiness-report, merged). Three new open PRs (all off trunk `ae281dd`, NOT stacked, Dimitri merges attended after Vercel preview review):
 
 - **PR #82 (lane/lead-notify-test)** — test-only: `src/lib/followUp/notify.test.ts` (flag-gated no-op, live POST shape, fail-soft coverage). Implementation already on trunk (Task 3 was verify-confirmed-done; see below). Verify GREEN 1172 tests / 84 files, tsc 0, lint 0 errors (2 known warnings), build GREEN. Codex manual/skipped (relay unauth).
