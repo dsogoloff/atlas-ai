@@ -17,19 +17,18 @@
 // the brand red bar; G5-8 uses a muted neutral, matching the existing
 // tier-aware chrome distinction (cheerful for K-4, measured for G5-8).
 //
-// Pure presentational; no state, no fetch. The K-4 footer hosts the
-// thinking-pose mascot (slowest/smallest idle motion — it sits beside live
-// questions and must stay decorative; all motion lives inside Mascot).
-// G5-8 renders no mascot during questions — measured chrome, per the
-// tier-aware restraint above. Imported into a "use client" boundary by
-// assessment-client.
+// Presentational + a single passthrough prop (celebrateTick). The K-4 footer
+// hosts <QuestionMascot> — the thinking-pose idle (slowest/smallest motion,
+// stays decorative beside live questions) plus a brief celebrate hop on each
+// submit; all motion lives inside that component. G5-8 renders no mascot during
+// questions — measured chrome, per the tier-aware restraint above. Imported
+// into a "use client" boundary by assessment-client.
 
 import type { Tier } from "@/lib/tier/derive";
 import type { ProgressDisplay } from "@/lib/display/progress";
 import type { ClientQuestionImage } from "@/lib/questionPicker/types";
 
-import { mascotPoseFor } from "../lib/mascot";
-import { Mascot } from "./Mascot";
+import { QuestionMascot } from "./QuestionMascot";
 import { QuestionImage } from "./QuestionImage";
 
 interface Props {
@@ -47,6 +46,9 @@ interface Props {
   image?: ClientQuestionImage;
   /** Input component for this question's format. */
   children: React.ReactNode;
+  /** Bumped once per answer submit (K-4 footer celebrate beat). Mounted here
+   *  so it fires once per question across ALL formats, never per-format. */
+  celebrateTick: number;
 }
 
 export function QuestionShell({
@@ -55,6 +57,7 @@ export function QuestionShell({
   progress,
   image,
   children,
+  celebrateTick,
 }: Props) {
   if (tier === "G5_8") {
     return (
@@ -141,10 +144,10 @@ export function QuestionShell({
           Read carefully!
         </span>
         {/* In-flow at the footer's right edge — can never overlap the
-            answer UI, on any viewport. */}
-        <Mascot
-          pose={mascotPoseFor("running")}
-          tier="K_4"
+            answer UI, on any viewport. Idles on the thinking pose and plays a
+            brief celebrate hop on each submit (celebrateTick). */}
+        <QuestionMascot
+          celebrateTick={celebrateTick}
           size={44}
           className="ml-auto"
         />

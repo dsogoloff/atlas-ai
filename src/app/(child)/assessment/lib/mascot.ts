@@ -16,6 +16,22 @@ import type { ViewState } from "./reducer";
 
 export type MascotPose = "waving" | "thinking" | "celebrating";
 
+/** Wired pose art — transparent (RGBA) cutouts under public/mascot/. Referenced
+ *  by URL (not static import) since they live in public/. Square-ish source;
+ *  the renderer uses object-contain so any aspect ratio stays graceful. */
+export const MASCOT_SRC: Record<MascotPose, string> = {
+  waving: "/mascot/waving.png",
+  thinking: "/mascot/thinking.png",
+  celebrating: "/mascot/celebrating.png",
+};
+
+/** Footer (per-question) mascot pose: the calm thinking idle, or the brief
+ *  celebrating swap fired on each answer submit. Pure mapping — the transient
+ *  flag is owned by the footer component. */
+export function footerMascotPose(isCelebrating: boolean): MascotPose {
+  return isCelebrating ? "celebrating" : "thinking";
+}
+
 const POSE_BY_PHASE = {
   starting: "waving",
   running: "thinking",
