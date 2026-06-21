@@ -4,6 +4,23 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0aaa. 2026-06-21 (session 2) — young-band image-activation audit (lane/young-band-image-activation-audit)
+
+**Finding: young-band (0A/0B/0C) image-row activation is ALREADY COMPLETE on trunk
+`ce9a676`. Nothing to activate.** Docs/memory-only PR records the audit.
+
+- [ ] **Dimitri: merge lane/young-band-image-activation-audit at leisure** (docs/memory
+      only — findings doc + this record + CURRENT_STATE). No DB change, no migration, no
+      seed change, no image upload, no `supabase db reset`. Verify bar unaffected (no code
+      touched); seed↔migration parity PASS.
+- **Result:** 53 young-band rows = 36 active / 17 inactive. 26 active IMAGE rows (0A=11,
+  0B=6, 0C=9). The 9 still-held image rows (SAM-L0A-Q09/Q12, L0B-Q01/Q08/Q12/Q13,
+  L0C-Q01/Q06/Q12) are ALL blocked on **missing source crop / single-scene art**, not on
+  any ATLAS capability (all formats wired via #71+#77). No ATLAS render/grader seam.
+- **CONVERSION/founder (carried, not new):** curate per-question crops for those 9 rows
+  before any flip; resolve SAM-L0B-Q05 count-back blank-layout ambiguity. Full audit:
+  `scripts/conversion/audit/young-band-image-activation-status.md`.
+
 ## 0aa. 2026-06-21 session — QA merges + crosswalk re-pin (lane/qa-crosswalk-l1l2)
 
 **Trunk merges since the 2026-06-18 snapshot (all MERGED to ATLAS-ASSESSMENT):**
