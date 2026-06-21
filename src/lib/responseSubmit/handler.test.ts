@@ -96,15 +96,17 @@ interface ServiceMock {
 function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
   const inserts: Array<{ table: string; row: unknown }> = [];
   const updates: Array<{ table: string; patch: unknown }> = [];
-  // Item #12 Phase 7.5: the handler's first `questions` SELECT is the
-  // discoverEmptyBankStrands call. Tests don't script it; inject a
-  // synthetic "bank populates every strand" default so emptyBankStrands
-  // is empty and the legacy test scripts (picker reads, etc.) keep
-  // consuming their scripted entries in order. Tests that need to assert
-  // empty-bank behaviour can prepend an explicit entry to scripts.questions.
-  let questionsDiscoverConsumed = false;
+  // Strand-discovery `questions` SELECTs — discoverEmptyBankStrands AND (Picker
+  // Calibration) discoverShortEligibleCounts — both select EXACTLY "strand".
+  // Tests don't script them; inject a synthetic "bank populates every strand"
+  // default keyed off the select columns so emptyBankStrands stays empty, the
+  // short test sees every strand in scope, and the legacy picker/replay scripts
+  // (which select multiple columns) keep consuming their staged entries in
+  // order. Routing by select columns (not call position) means the two
+  // discovery reads never steal a staged picker entry.
   const client = {
     from(table: string) {
+      let selectCols = "";
       // Item #10 Phase 3: replay's new SELECT queries (assessment_sessions
       // for engine_prior_version + child_id; children for grade_level) need
       // defaults when tests don't stage anything explicitly. Defaults preserve
@@ -112,9 +114,11 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
       // getPriorConfigByVersion; grade_level=null triggers seedPosteriors'
       // R3 fall-back to uniform priors.
       const next = (): MockResult => {
-        if (table === "questions" && !questionsDiscoverConsumed) {
-          questionsDiscoverConsumed = true;
-          // Default: all strands populated (no empty-bank strands).
+        if (
+          table === "questions" &&
+          selectCols.replace(/\s/g, "") === "strand"
+        ) {
+          // Default: all strands populated / all in short scope.
           return {
             data: STRANDS.map((s) => ({ strand: s })),
             error: null,
@@ -147,7 +151,10 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
       let pendingUpdate: unknown = undefined;
       const builder: Record<string, unknown> = {};
 
-      builder.select = () => builder;
+      builder.select = (cols?: unknown) => {
+        if (typeof cols === "string") selectCols = cols;
+        return builder;
+      };
       builder.eq = () => builder;
       builder.in = () => builder;
 
@@ -485,6 +492,7 @@ describe("submitResponseHandler — happy path terminating", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replay responses
         { data: null, error: null }, // insert
+        { data: [], error: null }, // replayStrandCounts (short decideTermination)
         { data: aggRows(25, 0), error: null }, // aggregation re-read
       ],
       questions: [
@@ -1044,6 +1052,7 @@ describe("submitResponseHandler — INVALID time_ms (test 11)", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: p.responses, error: null }, // replay
         { data: null, error: null }, // insert
+        { data: [], error: null }, // replayStrandCounts (short decideTermination)
         { data: aggRows(24, 1), error: null }, // aggregation: 24 NORMAL + 1 INVALID
       ],
       questions: [
@@ -1095,6 +1104,8 @@ describe("submitResponseHandler — bank exhausted mid-session", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay (empty)
         { data: null, error: null }, // insert response
+        { data: [], error: null }, // replayStrandCounts (short decideTermination)
+        { data: [], error: null }, // replayStrandCounts (short buildRouter)
         { data: aggRows(1, 0), error: null }, // close summary aggregation
       ],
       questions: [
@@ -1202,6 +1213,8 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
         { data: null, error: null }, // already-answered check (no row)
         { data: [], error: null }, // replay
         { data: null, error: null }, // insert response
+        { data: [], error: null }, // replayStrandCounts (short decideTermination)
+        { data: [], error: null }, // replayStrandCounts (short buildRouter)
         { data: aggRows(1, 0), error: null }, // close summary aggregation
       ],
       questions: [
@@ -1506,6 +1519,7 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
         { data: null, error: null },
         { data: p.responses, error: null },
         { data: null, error: null },
+        { data: [], error: null }, // replayStrandCounts (short decideTermination)
         { data: aggRows(25, 0), error: null },
       ],
       questions: [
