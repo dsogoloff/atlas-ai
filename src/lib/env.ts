@@ -166,6 +166,20 @@ export function isParentIntroEnabled(): boolean {
   return process.env.ENABLE_PARENT_INTRO === "true";
 }
 
+/**
+ * Gate for the beta welcome screen shown at the very start of the assessment
+ * flow (before the parent intro), every session. Default-ON for the pilot:
+ * only the literal string 'false' turns it OFF — so it renders by default and
+ * is removed at v1.0 with NO code change by setting BETA_WELCOME_LIVE='false'
+ * in the deploy env (the screen then never renders). Default-on + 'false'-to-
+ * disable mirrors LEAD_SCHOOL_FIELD_LIVE; like the parent intro it is a
+ * presentational pre-start screen, so it stays OUT of ROLLOUT_FLAGS and the
+ * §12 default-off invariant test.
+ */
+export function isBetaWelcomeEnabled(): boolean {
+  return process.env.BETA_WELCOME_LIVE !== "false";
+}
+
 export function isShortTestBetaEnabled(): boolean {
   return rolloutFlag("ENABLE_SHORT_TEST_BETA");
 }
