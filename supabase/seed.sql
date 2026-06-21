@@ -4206,6 +4206,47 @@ where q.tenant_id = t.id
 
 
 
+-- BEGIN l0-qa-content-fixes (seed mirror of supabase/migrations/20260620180000_l0_qa_content_fixes.sql)
+-- Young-band QA fix batch #2: trailing-scaffold trim (L0B-Q14/Q15, L0C-Q09/Q10),
+-- missing stimulus pictures wired (L0B-Q15, L0C-Q09/Q10), and carrots (L0C-Q05)
+-- IMAGE_ORDERING tiles presented shuffled (correct order unchanged). Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"There are 4 pieces of sushi on a tray. There are 6 pieces of sushi in a box. How many pieces of sushi are there altogether?","correct_answer":"10","image_path":"l0/sam-l0b-q14.png","image_alt":"A tray of sushi and a box of sushi.","image_required":true}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0B-Q14';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left?","correct_answer":"3","image_path":"l0/sam-l0b-q15.png","image_alt":"A tray of cookies.","image_required":true}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0B-Q15';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"There are 14 blue beads and 5 green beads on Sally''s necklace. How many beads are there altogether?","correct_answer":"19","image_path":"l0/sam-l0c-q09.png","image_alt":"A necklace with blue and green beads.","image_required":true}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0C-Q09';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"There are 18 birds. 6 of the birds are blue. How many birds are yellow?","correct_answer":"12","image_path":"l0/sam-l0c-q10.png","image_alt":"A group of birds, some blue and some yellow.","image_required":true}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0C-Q10';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Put the pictures in order by size, from smallest to biggest.","tiles":[{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0c-q05-t2.png","image_alt":"Second picture."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0c-q05-t3.png","image_alt":"Third picture."},{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0c-q05-t1.png","image_alt":"First picture."}],"_authoring":{"answer_model":{"rule":"order-equality","order":["t1","t2","t3"]}}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0C-Q05';
+-- END l0-qa-content-fixes
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
