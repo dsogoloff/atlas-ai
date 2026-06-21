@@ -4,13 +4,52 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0aab. 2026-06-21 (session 3) — short-eligible / comprehensive over-set audit L0A–L4 (PR #123, lane/short-eligible-overset-audit)
+## 0aaa. 2026-06-21 — Picker Calibration (PRs #119 / #121 / #122, stacked)
 
-**Finding: key-parity is COMPLETE (zero gaps, zero over-flags). Over-set ceiling is source-key capped, not under-flagged.** No migration, no seed change, no flag change in this PR — docs and reusable helpers only.
+**Trunk head entering this work: `ce9a676` (PR #115). PR #119 now MERGED → current trunk
+head `c3ad839`.** All three PRs verify-bar GREEN; Codex manual/skipped (relay unauth).
+Merge order #119 → #121 → #122.
 
-- [ ] **Dimitri: merge PR #123 (lane/short-eligible-overset-audit) at leisure** (docs/helpers
-      only). No DB change, no migration, no seed change, no `supabase db reset`. Verify GREEN
-      1196/89; tsc clean; lint 2 known warnings; seed↔migration parity PASS.
+- [x] **PR #119 (lane/picker-short-outcome) MERGED** (`c3ad839`). **Dimitri: run
+      `supabase db reset`** if not already done after the merge — adds nullable
+      `assessment_sessions.short_test_outcome` column (migration `20260621130000`). No image
+      upload.
+- [ ] **Dimitri: check PR #121's base now that #119 merged** —
+      `gh pr view 121 --json baseRefName`; if still `lane/picker-short-outcome`, run
+      `gh pr edit 121 --base ATLAS-ASSESSMENT`.
+- [ ] **Dimitri: merge PR #121 (lane/picker-comprehensive)** after Vercel preview review.
+      No new migration; no `supabase db reset` needed after this PR alone. After merge:
+      retarget PR #122's base to ATLAS-ASSESSMENT if needed.
+
+- [ ] **Dimitri: merge PR #122 (lane/picker-floor-ceiling)** (after #121 merged +
+      retargeted), then run `supabase db reset` (adds nullable
+      `assessment_sessions.manual_placement_needed` column, migration `20260621140000`).
+      Then resolve the 3 batched gate items in PR #122:
+      (1) Confirm (or edit) the §2.4 draft parent copy lines `floorFoundLine` and
+          `ceilingLine` in `src/lib/report/manualPlacement.ts`.
+      (2) Decide: render floor-found/manual/ceiling copy in the parent report + surface
+          `manual_placement_needed` in the instructor view. Not yet built; needs copy
+          decision first.
+      (3) Thin-pool coverage: parametric item generation is out of scope; readiness min-N
+          floor + comprehensive confidence intervals are the current mitigations. Confirm
+          acceptable.
+
+- [ ] **PARKED — §2.4 draft copy in `manualPlacement.ts` (needs Dimitri).** The
+      `floorFoundLine` and `ceilingLine` strings are parent-facing outcome claims (§2.4).
+      Plain-English: these are the sentences that tell a parent what it means when the
+      assessment hit the bottom or top of the question bank. They are drafted but founder
+      must confirm the exact wording before they render. No build until confirmed.
+
+- [ ] **PARKED — instructor view for `manual_placement_needed` (needs Dimitri copy
+      decision above first).** Once §2.4 copy is approved, a follow-up lane will render
+      the placement guidance in the parent report and surface the flag + floor-find data
+      in the instructor view.
+
+## 0aab. 2026-06-21 — short-eligible / comprehensive over-set audit L0A–L4 (PR #123, lane/short-eligible-overset-audit)
+
+**Finding: key-parity is COMPLETE (zero gaps, zero over-flags). Over-set ceiling is source-key capped, not under-flagged.** No migration, no seed change, no flag change — docs and reusable helpers only.
+
+- [x] **PR #123 (lane/short-eligible-overset-audit) MERGED** (`c4a67e8`, docs/helpers only).
       Deliverables: `scripts/conversion/audit/short-eligible-overset-audit.md`,
       `overset-state.mts`, `_extract_short_keys.py`, `build-overset-matrix.mjs`,
       `bank-final-state.json`.
@@ -22,15 +61,14 @@
       Short=Y in the source key but have NO DB row (converter-skipped) — these are recoverable
       only by re-authoring. No build until directed.
 
-- [ ] **PARKED — ATLAS comprehensive-picker open question (flag to ATLAS architecture, not a
-      founder business decision).** The full active previous-booklet bank is far larger than
-      the STE subset (e.g. booklet-4: 37 active vs 5 STE). If the COMPREHENSIVE picker fills
-      previous-level items from the full active bank (`is_active` only), reserving
-      `short_test_eligible` for the SHORT test only, the over-set concern is largely moot.
-      This is an open architecture question for the ATLAS engine design — note it and raise
-      when the comprehensive picker is implemented. Do not resolve now.
+- [ ] **PARKED — ATLAS comprehensive-picker open question (architecture).** The full active
+      previous-booklet bank is far larger than the STE subset (e.g. booklet-4: 37 active vs 5
+      STE). NOTE: the Picker Calibration comprehensive picker (PR #121) draws previous/at/reach
+      items from the FULL active bank (`is_active`, via `pickQuestion`), reserving
+      `short_test_eligible` for the SHORT test only — so the over-set concern is largely moot
+      under that design. Confirm when #121 lands.
 
-## 0aaa. 2026-06-21 (session 2) — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
+## 0aac. 2026-06-21 — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
 
 **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content gate.**
 The short-test-eligible image set is fully active on trunk `ce9a676`. The 9 inactive
@@ -511,6 +549,11 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
 - [ ] Offline (v2); multi-tenant scale-out (M5); remaining S.A.M. levels + public items.
 
 ## Parked-for-Dimitri (rollup)
+- **[NEW 2026-06-21] §2.4 draft parent copy in `manualPlacement.ts` — PARKED.** `floorFoundLine`
+  and `ceilingLine` are parent-facing outcome claims drafted in PR #122 pending Dimitri
+  confirmation. No render until confirmed.
+- **[NEW 2026-06-21] Instructor view + parent report render for `manual_placement_needed` —
+  PARKED.** Follow-up lane not built; blocked on copy decision above.
 - **[NEW 2026-06-18] /coppa page body reconciliation — PARKED.** On-screen `/coppa` page body is still Stitch placeholder copy; does NOT match the counsel PDF. Parent-facing claims language (§2.4). After PR #84 merges, Dimitri to direct the copy pass. No build until directed.
 - **[NEW 2026-06-18] PR #84 batched gate items — resolve after merge.** (1) Confirm served PDF rendering acceptable; (2) /coppa copy pass (see item above); (3) confirm committing `docs/legal/Parent_Privacy_Request_Policy.docx` was intended.
 - **Placement bar / radar / sub-strand pills on the degraded branch (item 1, report fix

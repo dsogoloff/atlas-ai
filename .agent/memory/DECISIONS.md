@@ -3,8 +3,73 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
-## 2026-06-21 (session 3)
+## 2026-06-21
 
+* **Short-test outcome persisted as structured jsonb on session close (PR #119,
+  lane/picker-short-outcome, 2026-06-21).** New `ShortTestOutcome` type in
+  `src/lib/shortTest/outcome.ts` captures `measured_level`, `intake_level`,
+  `pass_band` (clean/mixed/weak/insufficient — 8-graded-item floor; clean ≥0.8 /
+  mixed 0.5–0.8 / weak <0.5 / insufficient <8 graded), `clean_pass_ratio`,
+  `strand_map{correct,seen,ratio}`, and `seen_item_ids`. Persisted to new nullable
+  jsonb column `assessment_sessions.short_test_outcome` (migration `20260621130000`; no
+  seed mirror) on session close via `persistShortTestOutcome` in `responseSubmit/handler.ts`
+  (gated to short sessions). Readiness line in `report/readiness.ts` requires ≥8 graded
+  AND clean ratio; 0A current level suppressed. Pass-band thresholds are canonical in
+  `outcome.ts`. Verify GREEN 1220 tests / 91 files; tsc 0; lint 0 errors (2 known warnings);
+  build OK. Codex manual/skipped (relay unauth).
+
+* **Short picker replaced with stratified coverage-first draw (PR #119).** New
+  `src/lib/engine/shortTest.ts` implements a coverage-first router (~2 questions per strand,
+  fewest-served then max-variance fill) with a coverage+count stop condition (10–15
+  questions; no SE gate). In-scope strands are those with ≥1 active `short_test_eligible`
+  item in the previous-booklet band (new `picker.discoverShortEligibleCounts`). Floor clamps
+  to pool availability so thin pools still terminate in range. Wired into
+  `responseSubmit` decideTermination/buildRouter for the short path; short picker filter +
+  previous-booklet band unchanged.
+
+* **Comprehensive picker anchors on measured short-test level with pass_band global split
+  (PR #121, lane/picker-comprehensive, 2026-06-21).** `loadComprehensiveOutcomeContext`
+  reads the child's latest completed short session's `ShortTestOutcome`; derives the
+  BOOKLET_LEVELS index of `measured_level` as the anchor (neutral grade when no outcome).
+  Global split by pass_band in new `src/lib/engine/comprehensiveSplit.ts`: clean 30/50/20
+  over M-1/M/M+1; mixed 50/30/20 over M-1/M/M-2; weak below-weighted (floor-find seed);
+  insufficient/none neutral 50/30/20. `planNextOffset` steers each pick to the
+  largest-deficit offset. Per-strand override `strandAdjustedSplit` redistributes each
+  strand's offsets by its `strand_map` ratio. Per-pick plan in new
+  `src/lib/questionPicker/comprehensiveLevelPlan.ts` maps offset to target±1 booklet band
+  + difficulty centred on the planned booklet (thin pool falls through to a neighbour; no
+  starvation). `replay.replayStrandOffsetCounts` attributes actual served level back to an
+  offset so the split self-corrects. `seen_item_ids` always excluded
+  (`PickContext.extraExcludedIds`, merged in both handlers). Comprehensive length 20–30,
+  cap 30; G5_8 `hardCap` 36→30 (K_4 stays target 20 / cap 26). `NextQuestionRequest` /
+  `PickerRequest` gain optional per-pick `levelBand`; `pickForSession` honours it for
+  comprehensive; short + legacy paths untouched. No new migration (uses PR #119 column).
+  Verify GREEN 1250 / 94 files; tsc 0; lint 0 errors (2 known warnings); build OK.
+
+* **Bank-aware ceiling/floor and floor-find walk-down added (PR #122,
+  lane/picker-floor-ceiling, 2026-06-21).** New `picker.discoverAvailableBooklets` →
+  `availableOrdinals` limits the split to booklets the active bank actually serves
+  (CEILING = no reach above highest available; FLOOR = walk-down stops at lowest loaded
+  booklet). Floor-find for `weak` pass_band: hands level to adaptive engine over
+  `floorFindBand` (at-and-below available band) so it walks down M-1→M-2→… until solid.
+  Wired in `responseSubmit` router + sessionStart first pick. `evaluateFloorFind` sets
+  `manual_placement_needed = true` when engine settled at/below the lowest loaded booklet
+  AND child is still not solid (< `FLOOR_FIND_SOLID_RATIO` 0.5). New nullable boolean
+  column `assessment_sessions.manual_placement_needed` (migration `20260621140000`; no seed
+  mirror), persisted on comprehensive completion (`persistComprehensivePlacement`; no-op for
+  short). `src/lib/report/manualPlacement.ts` carries the manual-placement copy line
+  (founder-locked verbatim) and §2.4 DRAFT lines (`floorFoundLine`, `ceilingLine`) pending
+  Dimitri confirmation. Verify GREEN 1260 / 94 files; tsc 0; lint 0 errors (2 known
+  warnings); build OK. Codex manual/skipped (relay unauth). Post-merge requires
+  `supabase db reset`.
+
+* ⚑ **Open / unconfirmed (needs Dimitri) — §2.4 draft parent copy in
+  `src/lib/report/manualPlacement.ts` (PR #122).** `floorFoundLine` and `ceilingLine` are
+  parent-facing outcome claims drafted this session but NOT confirmed by Dimitri. These
+  sentences explain to a parent what it means when the assessment hit the bottom or top of
+  the question bank. They must not render until Dimitri approves the exact wording. Batched
+  in PR #122 body as gate item (1). Follow-up lane (render + instructor surface) is also
+  blocked on this decision — gate item (2) in PR #122.
 * **Short-eligible / comprehensive over-set audit (L0A–L4) — key parity VERIFIED
   COMPLETE; over-set ceiling is source-key capped (PR #123, lane/short-eligible-overset-audit,
   commit `a084d0e`, off trunk `a2c0b28`).** Task 2 result: ZERO key-parity gaps — every
@@ -25,8 +90,9 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   Verify GREEN 1196/89, tsc clean, lint 2 known warnings. Two items PARKED for Dimitri:
   thin-booklet content decision + ATLAS comprehensive-picker architecture question.
 
-* **Trunk head corrected — `a2c0b28` (not `ce9a676`).** Local memory had a stale trunk
-  head. The trunk advanced beyond `ce9a676` before this session; confirmed at lane creation.
+* **Trunk head advanced past `ce9a676`.** Local memory cited a stale head; trunk reached
+  `a2c0b28` during the over-set audit work, then `c4a67e8` once PR #123 merged — the current
+  ATLAS-ASSESSMENT head (PR #119 Picker Calibration PR1 is also merged, at `c3ad839`).
 
 ## 2026-06-20
 

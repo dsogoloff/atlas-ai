@@ -4,76 +4,124 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-21 (session 3) — trunk head is **`a2c0b28`** (advanced from `ce9a676`; local memory was stale — `a2c0b28` is confirmed as trunk head for this lane).
+**As of:** 2026-06-21 — trunk head is **`c4a67e8`** (PR #123 merged; PR #119
+`lane/picker-short-outcome` merged at `c3ad839`; advanced from `ce9a676`/#115). Several
+docs/memory records landed this day — the **Picker Calibration** build (3 stacked code PRs),
+the **young-band image-activation audit** (#120), and the **short-eligible / comprehensive
+over-set audit** (#123) — plus the first Picker Calibration code merge (#119).
 
-**OPEN PR #123 — lane/short-eligible-overset-audit** (docs/helpers only — no migration,
-no seed, no flag change). Off trunk `a2c0b28`. Commit `a084d0e`. Verify GREEN: pnpm test
-1196/89, tsc clean, lint 2 known warnings, seed↔migration parity PASS. Codex
-manual/skipped (relay unauth).
+**PR #123 — lane/short-eligible-overset-audit — MERGED (`c4a67e8`)** (docs/helpers only — no
+migration, no seed, no flag change; commit `a084d0e`). Verify GREEN pnpm test 1196/89, tsc
+clean, lint 2 known warnings, seed↔migration parity PASS. Deliverables:
+`short-eligible-overset-audit.md`; `overset-state.mts` (computes FINAL DB state from `seed.sql`
+— inserts first-wins + all 213 updates in single-`=`, `IN(...)`, JOIN forms);
+`_extract_short_keys.py`; `build-overset-matrix.mjs`; `bank-final-state.json` (ids+flags only;
+licensed source tree gitignored). Findings: Task 2 (key parity) ZERO gaps / ZERO over-flags —
+every active source-Short=Y row already `short_test_eligible=true` (`l1-l4-short-eligible-backfill`
+migration `20260619080000` + young-band L0 authoring honor the key; no UPDATE applied). Task 3
+(over-set ceiling) SOURCE-KEY CAPPED, not under-flagged — no strand×booklet cell reaches the
+~15–18 target (max booklet-2 number_sense = 13); per-booklet active&STE pools 0A=18 / 0B=13 /
+0C=8 / booklet-1=27 / booklet-2=25 / booklet-3=13 / booklet-4=5 (critically under); each
+worksheet bands across MULTIPLE booklets (L1→0C+1, L2→1+2, L3→1+2+3, L4→2+3+4). Source Short=Y
+docx counts match backfill IN-lists (L1 17/L2 21/L3 20/L4 25). Three Short=Y rows have NO DB row
+(converter-skipped): `SAM-L3-Q04`, `SAM-L3-Q23`, `SAM-L4-Q17` — recoverable only by
+re-authoring. Two items PARKED for Dimitri (see NEXT_ACTIONS). Independent lane; no change to
+young-band exclusions or prior PRs.
 
-Deliverables committed:
-- `scripts/conversion/audit/short-eligible-overset-audit.md` — full L0A–L4 strand×booklet
-  STE analysis + structural findings.
-- `scripts/conversion/audit/overset-state.mts` — reusable helper: computes FINAL DB state
-  from `seed.sql` (parses inserts first-wins + applies all 213 updates in single-`=`,
-  `IN(...)`, and `from t,(values...) v` JOIN forms).
-- `scripts/conversion/audit/_extract_short_keys.py` — extracts "Short Test Y/N" key from
-  worksheet docx last page.
-- `scripts/conversion/audit/build-overset-matrix.mjs` — builds the strand×booklet matrix.
-- `scripts/conversion/audit/bank-final-state.json` — ids+flags only; no licensed content.
-- `scripts/conversion/source/` tree and `source-short-keys.json` gitignored to prevent
-  accidental licensed-content commits.
+**Picker Calibration — 3 stacked PRs (2026-06-21).** All verify-bar GREEN; Codex
+manual/skipped (relay unauth). **PR #119 (PR1) MERGED (`c3ad839`).** Remaining stacked and
+open, in order: **#121 → #122** (Dimitri merges attended after Vercel preview; stacked-PR
+retarget note: when a parent PR merges GitHub may not auto-retarget the child — manually
+re-point #121's base to ATLAS-ASSESSMENT if needed, same for #122 after #121).
 
-Key findings:
-- Task 2 (key parity): ZERO gaps. Every active, source-Short=Y row is already
-  `short_test_eligible=true`. Zero over-flags. The `l1-l4-short-eligible-backfill`
-  migration (20260619080000) + young-band L0 authoring already honor the key. No UPDATE
-  applied.
-- Task 3 (over-set ceiling): SOURCE-KEY CAPPED, not under-flagged. No strand×booklet cell
-  reaches the ~15–18 target (max = booklet-2 number_sense = 13). Per-booklet active&STE
-  pools: 0A=18, 0B=13, 0C=8, booklet-1=27 (over cap), booklet-2=25 (over cap),
-  booklet-3=13, booklet-4=5 (critically under). STRUCTURAL: each worksheet's questions
-  difficulty-band across MULTIPLE booklets (L1→0C+1, L2→1+2, L3→1+2+3, L4→2+3+4).
-- VALIDATION: source Short=Y docx counts exactly match backfill IN-lists (L1 17/L2 21/L3
-  20/L4 25); per-booklet active&STE pools reproduce the prior served-crosswalk exactly.
-- Three Short=Y rows have NO DB row at all (converter-skipped):
-  `SAM-L3-Q04`, `SAM-L3-Q23`, `SAM-L4-Q17` — recoverable only by re-authoring.
-
-Two items PARKED for Dimitri (see NEXT_ACTIONS §0aab). No change to young-band
-exclusions or prior PRs (#120 etc.) — independent lane.
-
-**OPEN PR #120 (this session) — lane/young-band-image-activation-audit** (docs/memory
-only, off trunk `ce9a676`). **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO
-remaining content gate.** The short-test-eligible young-band image set is fully active on
-trunk (PR #78 + the 2026-06-20 wave: l0a/l0b/l0c-taxonomy-activation, l0b-position,
-l0a-q15, l0a-q17, l0b-q03-q06, l0-qa-content-fixes; named defect patterns fixed).
-Triple-verified against `seed.sql`: **53 young-band rows = 36 active / 17 inactive**, 26
-active IMAGE rows (0A=11, 0B=6, 0C=9). **The 9 inactive image rows (SAM-L0A-Q09/Q12,
-L0B-Q01/Q08/Q12/Q13, L0C-Q01/Q06/Q12) are FOUNDER-ADJUDICATED EXCLUDED FROM THE SHORT
-TEST — not a content gap, not a beta gate.** Exclusion is durably encoded
-(`short_test_eligible=false` AND `is_active=false`) and picker-enforced
-(`shortTestPicker.ts:50-51` selects only `is_active=true AND short_test_eligible=true`;
-test `shortTestPicker.test.ts:88`) — they are inert to the short test regardless of art.
-No new flag needed; only the exclusion REASON was prose (now relabelled in the doc). Any
-per-row art note is COMPREHENSIVE-only/future, NOT a short-test blocker. Other 8 inactive:
-manual/oral/drawing/text-ambiguous or retired L0C-Q11 (replaced by active Q11A–D). Named
-defect patterns verified clean (L0C-Q05 shuffled IMAGE_ORDERING + id-keyed grading; L0A-Q08
-box-reference is a separate stimulus). Seed↔migration parity **PASS** (69 migrations).
-Verify GREEN 1196/89, tsc 0, lint 2 known warnings. No migration/seed/image change.
-Findings doc: `scripts/conversion/audit/young-band-image-activation-status.md`. PR is
-docs/memory only; merge at leisure to land the record.
+**OPEN PR #120 — lane/young-band-image-activation-audit** (docs/memory only, off trunk
+`ce9a676`). **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content
+gate.** The short-test-eligible young-band image set is fully active on trunk (PR #78 + the
+2026-06-20 wave: l0a/l0b/l0c-taxonomy-activation, l0b-position, l0a-q15, l0a-q17,
+l0b-q03-q06, l0-qa-content-fixes; named defect patterns fixed). Triple-verified against
+`seed.sql`: **53 young-band rows = 36 active / 17 inactive**, 26 active IMAGE rows (0A=11,
+0B=6, 0C=9). **The 9 inactive image rows (SAM-L0A-Q09/Q12, L0B-Q01/Q08/Q12/Q13,
+L0C-Q01/Q06/Q12) are FOUNDER-ADJUDICATED EXCLUDED FROM THE SHORT TEST — not a content gap,
+not a beta gate.** Exclusion is durably encoded (`short_test_eligible=false` AND
+`is_active=false`) and picker-enforced (`shortTestPicker.ts:50-51` selects only
+`is_active=true AND short_test_eligible=true`; test `shortTestPicker.test.ts:88`) — they are
+inert to the short test regardless of art. No new flag needed; only the exclusion REASON was
+prose (now relabelled in the doc). Any per-row art note is COMPREHENSIVE-only/future, NOT a
+short-test blocker. Other 8 inactive: manual/oral/drawing/text-ambiguous or retired L0C-Q11
+(replaced by active Q11A–D). Named defect patterns verified clean (L0C-Q05 shuffled
+IMAGE_ORDERING + id-keyed grading; L0A-Q08 box-reference is a separate stimulus).
+Seed↔migration parity **PASS** (69 migrations). Verify GREEN 1196/89, tsc 0, lint 2 known
+warnings. No migration/seed/image change. Findings doc:
+`scripts/conversion/audit/young-band-image-activation-status.md`. PR is docs/memory only;
+merge at leisure to land the record.
 
 ---
 
-**As of:** 2026-06-21 session — trunk advanced to **`7f2a737`** via six merges since the
+**History (pre-#119 trunk).** Trunk reached **`7f2a737`** via six merges since the
 2026-06-18 snapshot below: PR #109 (fix-dup-migration-version, `e489312`), #110
 (restore-seed-mirrors, `8d3d09c`), #111 (seed↔migration activation **parity guard** +
 generated mirror region, `20127b0`), #112 (L0C young-band QA fix batch #2, `3c5dfc0`),
-#113 (L1 QA batch — Q1/Q2/Q4/Q8 + L4-Q06 missing-digit, `f5fdbc9`), #114
-(short-test follow-up form, `7f2a737`). PRs #82/#83/#84 below are now superseded/older —
-verify their GitHub status before acting; the 2026-06-18 block is retained for history.
+#113 (L1 QA batch — Q1/Q2/Q4/Q8 + L4-Q06 missing-digit, `f5fdbc9`), #114 (short-test
+follow-up form, `7f2a737`); then #115 (`ce9a676`), #119 (`c3ad839`), #123 (`c4a67e8`). PRs
+#82/#83/#84 below are now superseded/older — verify their GitHub status before acting; the
+2026-06-18 block is retained for history.
 
-**OPEN PR (this session) — lane/qa-crosswalk-l1l2** (off trunk `f5fdbc9` / #113 head; #114
+**Picker Calibration PRs (3 stacked, 2026-06-21) — #119 MERGED (`c3ad839`); #121/#122 open:**
+
+- **PR #119 — lane/picker-short-outcome** (base ATLAS-ASSESSMENT, off `ce9a676`):
+  New `src/lib/shortTest/outcome.ts` — `ShortTestOutcome` type with `measured_level`,
+  `intake_level`, `pass_band` (clean/mixed/weak/insufficient, 8-graded-item floor;
+  clean ≥0.8 / mixed 0.5–0.8 / weak <0.5 / insufficient <8 graded), `clean_pass_ratio`,
+  `strand_map{correct,seen,ratio}`, `seen_item_ids`. Persisted to new nullable jsonb column
+  `assessment_sessions.short_test_outcome` (migration `20260621130000`, column DDL, NO seed
+  mirror) on session close via `persistShortTestOutcome` in `responseSubmit/handler.ts`
+  `closeSession` (gated to short). Readiness floor: needs ≥8 graded AND clean ratio;
+  0A current level suppressed. New `src/lib/engine/shortTest.ts` — stratified short draw:
+  coverage-first router (~2/strand, fewest-served then max-variance fill) + coverage+count
+  stop (10–15, no SE gate). In-scope = strands with ≥1 active short_test_eligible item in
+  previous-booklet band (new `picker.discoverShortEligibleCounts`); floor clamps to
+  availability. Wired into `responseSubmit` decideTermination/buildRouter for short.
+  Verify: **1220 tests / 91 files GREEN**, tsc 0, lint 0 err (2 known warnings), build OK.
+  Post-merge: `supabase db reset` (adds nullable `short_test_outcome` column).
+
+- **PR #121 — lane/picker-comprehensive** (base lane/picker-short-outcome):
+  Comprehensive anchors on MEASURED level (reads child's latest completed short session's
+  `ShortTestOutcome` → booklet band; neutral grade when no outcome). Global split by
+  `pass_band` (`src/lib/engine/comprehensiveSplit.ts`): clean 30/50/20 over M-1/M/M+1;
+  mixed 50/30/20 over M-1/M/M-2; weak below-weighted (floor-find seed); insufficient/none
+  neutral 50/30/20. `planNextOffset` steers each pick to the largest-deficit offset.
+  Per-strand override `strandAdjustedSplit` redistributes by `strand_map` ratio.
+  Per-pick plan (`src/lib/questionPicker/comprehensiveLevelPlan.ts`): chosen offset →
+  target±1 booklet band + difficulty centred on planned booklet (thin pool falls through to
+  neighbour). `replay.replayStrandOffsetCounts` attributes actual served level back to an
+  offset so the split self-corrects. ALWAYS subtracts `seen_item_ids`
+  (`PickContext.extraExcludedIds`, merged in both handlers). Length 20–30, cap 30:
+  G5_8 `hardCap` 36→30; K_4 stays target 20 / cap 26. `NextQuestionRequest`/`PickerRequest`
+  gain optional per-pick `levelBand`; `pickForSession` honours it for comprehensive.
+  Verify: **1250 / 94 GREEN**, tsc 0, lint 0 err (2 known), build OK. No new migration.
+
+- **PR #122 — lane/picker-floor-ceiling** (base lane/picker-comprehensive):
+  Bank-aware offsets (`picker.discoverAvailableBooklets` → `availableOrdinals`): split only
+  targets booklets the active bank serves. CEILING = no reach above highest available.
+  FLOOR = walk-down stops at lowest loaded booklet. Floor-find (`weak` pass_band): hands
+  level to adaptive engine over `floorFindBand` (at-and-below) so it walks down until solid.
+  Wired in `responseSubmit` router + sessionStart first pick. `manual_placement_needed`:
+  `evaluateFloorFind` sets it true when engine settled at/below lowest loaded booklet AND
+  child still not solid (< `FLOOR_FIND_SOLID_RATIO` 0.5). New nullable column
+  `assessment_sessions.manual_placement_needed` (migration `20260621140000`, column DDL,
+  NO seed mirror), persisted on comprehensive completion (`persistComprehensivePlacement`,
+  no-op for short). Copy `src/lib/report/manualPlacement.ts`: manual line founder-locked
+  verbatim; `floorFoundLine` + `ceilingLine` are §2.4 DRAFTS pending Dimitri.
+  Verify: **1260 / 94 GREEN**, tsc 0, lint 0 err (2 known), build OK.
+  Post-merge: `supabase db reset` (adds nullable `manual_placement_needed` column).
+  BATCHED GATE ITEMS for Dimitri (in PR #122 body):
+  (1) Confirm §2.4 draft parent copy (`floorFoundLine`, `ceilingLine`) in `manualPlacement.ts`.
+  (2) Render floor-found/manual/ceiling copy in parent report + surface `manual_placement_needed`
+      to instructor view — HELD pending copy decision (not built).
+  (3) Thin-pool structural fix = parametric item generation — out of scope; readiness min-N
+      floor (PR #119) + comprehensive confidence already cover under-N.
+
+**Previous session open PR — lane/qa-crosswalk-l1l2** (off trunk `f5fdbc9` / #113 head; #114
 is a sibling not in this branch's history — re-pin touches only bank content so no
 conflict). Short-test served-order→external_id crosswalk + three QA re-pins:
 - **Crosswalk** (`scripts/conversion/audit/build-served-crosswalk.ts` + `served-crosswalk.{md,json}`):
@@ -169,7 +217,10 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
-| Short-eligible overset audit (PR #123) | OPEN PR #123 | lane/short-eligible-overset-audit, off trunk `a2c0b28`. Docs/helpers only. Commit `a084d0e`. Verify GREEN 1196/89. Two items PARKED for Dimitri (thin booklets; ATLAS comprehensive-picker question). Awaiting Dimitri merge at leisure. |
+| Picker short outcome (PR #119) | MERGED (`c3ad839`) | lane/picker-short-outcome, base ATLAS-ASSESSMENT off `ce9a676`. `ShortTestOutcome` type + persistence + stratified short draw. Migration `20260621130000` (nullable `short_test_outcome`). Verify GREEN 1220/91. `supabase db reset` after. |
+| Picker comprehensive split (PR #121) | OPEN PR #121 | lane/picker-comprehensive, stacked on #119. pass_band global split + per-strand override + per-pick plan + seen_item_ids exclusion + G5_8 cap 36→30. No new migration. Verify GREEN 1250/94. Merge next; retarget base to ATLAS-ASSESSMENT now that #119 is merged. |
+| Picker floor/ceiling (PR #122) | OPEN PR #122 — FOUNDER GATE ITEMS | lane/picker-floor-ceiling, stacked on #121. Bank-aware offsets, floor-find, `manual_placement_needed` column. Migration `20260621140000`. `manualPlacement.ts` copy with §2.4 drafts PARKED for Dimitri. Verify GREEN 1260/94. Merge third; retarget base after #121 merges; `supabase db reset` after. |
+| Short-eligible overset audit (PR #123) | MERGED (`c4a67e8`) | lane/short-eligible-overset-audit, off trunk `a2c0b28`. Docs/helpers only. Commit `a084d0e`. Verify GREEN 1196/89. Two items PARKED for Dimitri (thin booklets; ATLAS comprehensive-picker question). |
 | Lead-notify tests (PR #82) | OPEN PR #82 | lane/lead-notify-test, off trunk `ae281dd`. Test-only: `src/lib/followUp/notify.test.ts`. Verify GREEN 1172/84. Awaiting Dimitri merge. |
 | Mascot welcome screen (PR #83) | OPEN PR #83 | lane/mascot-welcome, off trunk `ae281dd`. `src/app/(child)/assessment/components/Welcome.tsx` (tap-to-start). `assessment-client.tsx` start gating refactored. Verify GREEN 1170/84. Awaiting Dimitri merge. |
 | COPPA consent-of-record (PR #84) | OPEN PR #84 — LEGAL | lane/coppa-consent-of-record, off trunk `ae281dd`. Consent text canonical source, disclosure asset + served PDF, `consent_records` new columns, add-child action wired. Migration `20260618120000`. Verify GREEN 1170/84. Requires `supabase db reset` after merge. Batched gate items in PR for Dimitri. |
@@ -229,7 +280,14 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 See `NEXT_ACTIONS.md`.
 
 Founder actions (current):
-1. [DONE] Merged PR #50 (served-question-gate, ea53da5).
+1. **NEW (2026-06-21) — Picker Calibration:** Merge PRs in order #119 → #121 → #122 (each
+   stacked on the prior; attended, after Vercel preview review). After #119 merges: run
+   `supabase db reset` (adds `short_test_outcome` column). After #122 merges: run
+   `supabase db reset` (adds `manual_placement_needed` column). Stacked-PR note: after
+   #119 merges, manually re-point #121's base to ATLAS-ASSESSMENT if GitHub did not
+   auto-retarget; same for #122 after #121. Then resolve the 3 batched gate items in
+   PR #122 (§2.4 copy + render + thin-pool scope).
+2. [DONE] Merged PR #50 (served-question-gate, ea53da5).
 2. [DONE] Merged PR #55 (duplicate-response-constraint, 4b31baa) — superseded PR #51 (closed).
 3. [DONE] Merged PR #52 (ai-data-minimization, 57e5f93).
 4. [DONE] Merged PR #53 (next-upgrade-ci, 1997b3d).
