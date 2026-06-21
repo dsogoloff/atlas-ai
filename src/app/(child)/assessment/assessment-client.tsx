@@ -25,6 +25,7 @@ import { CompletionScreen } from "./components/CompletionScreen";
 import { ResumeBanner } from "./components/ResumeBanner";
 import { ErrorPanel } from "./components/ErrorPanel";
 import { DevTestModeChooser } from "./components/DevTestModeChooser";
+import { BetaWelcome } from "./components/BetaWelcome";
 import { ParentIntro } from "./components/ParentIntro";
 import { Welcome } from "./components/Welcome";
 
@@ -38,6 +39,11 @@ interface Props {
    *  pre-start DevTestModeChooser gates the auto-start so QA can pick the test
    *  type. The server re-checks the same flag, so this is convenience UI only. */
   comprehensivePilotEnabled?: boolean;
+  /** True iff BETA_WELCOME_LIVE is on (read server-side; default-ON for the
+   *  pilot). When true, a beta welcome screen shows first — before the parent
+   *  intro — on every session. When false (v1.0) the screen never renders and
+   *  the flow is unchanged. */
+  betaWelcomeEnabled?: boolean;
   /** True iff ENABLE_PARENT_INTRO is on (read server-side). When true, a
    *  pre-start parent intro / instructions screen gates the auto-start; when
    *  false (default) the session auto-starts unchanged. */
@@ -52,6 +58,7 @@ export function AssessmentClient({
   childName,
   tier,
   comprehensivePilotEnabled = false,
+  betaWelcomeEnabled = false,
   parentIntroEnabled = false,
   proctoringMode = "no-assistance",
 }: Props) {
@@ -60,11 +67,14 @@ export function AssessmentClient({
   // Pre-start gates. The start effect is held until `startConfirmed`, which is
   // released ONLY by the child tapping the Welcome screen — so the test begins
   // on the tap, never auto-advances. Earlier gates just unlock the screens in
-  // front of Welcome: the parent intro (ENABLE_PARENT_INTRO) shows first, then
-  // the DEV pilot chooser (ENABLE_COMPREHENSIVE_PILOT), then the child Welcome.
+  // front of Welcome: the beta welcome (BETA_WELCOME_LIVE) shows first, then the
+  // parent intro (ENABLE_PARENT_INTRO), then the DEV pilot chooser
+  // (ENABLE_COMPREHENSIVE_PILOT), then the child Welcome. `betaAcknowledged` /
   // `introAcknowledged` / `testModeChosen` default true when their gate is off,
-  // so the default short-test path goes straight to Welcome.
+  // so the default short-test path goes straight to Welcome. All gate state is
+  // per-mount, so each gate re-shows on every session (not once-per-family).
   const [startConfirmed, setStartConfirmed] = useState(false);
+  const [betaAcknowledged, setBetaAcknowledged] = useState(!betaWelcomeEnabled);
   const [introAcknowledged, setIntroAcknowledged] = useState(
     !parentIntroEnabled,
   );
@@ -145,9 +155,18 @@ export function AssessmentClient({
   }
 
   if (state.kind === "starting") {
-    // Gate 1: parent intro / instructions (ENABLE_PARENT_INTRO). Shows first,
-    // before any child-facing UI. Tapping Start only acknowledges it — the
-    // child Welcome (gate 3) still releases the actual start.
+    // Gate 0: beta welcome (BETA_WELCOME_LIVE, default-ON for the pilot). The
+    // very first screen, shown every session. Tapping Continue only
+    // acknowledges it — later gates still run and the child Welcome releases
+    // the actual start.
+    if (betaWelcomeEnabled && !betaAcknowledged) {
+      return (
+        <BetaWelcome tier={tier} onContinue={() => setBetaAcknowledged(true)} />
+      );
+    }
+    // Gate 1: parent intro / instructions (ENABLE_PARENT_INTRO). Shows before
+    // any child-facing UI. Tapping Start only acknowledges it — the child
+    // Welcome (gate 3) still releases the actual start.
     if (parentIntroEnabled && !introAcknowledged) {
       return (
         <ParentIntro
