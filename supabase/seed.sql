@@ -4296,6 +4296,22 @@ where q.tenant_id = t.id
 -- END l4-q06-missing-digit-fix
 
 
+-- BEGIN l1-q28-stem-rework (seed mirror of supabase/migrations/20260621120000_l1_q28_stem_rework.sql)
+-- L2-Q1 (served order) = SAM-L1-Q28. Already DRAG_DROP tile-ordering; reword the
+-- stem to the source-faithful "Arrange the numbers in order, from smallest to
+-- largest." (drops the literal 17/20/10 that duplicated the tiles). items[] stay
+-- in worksheet presentation order (≠ answer order, so served shuffled);
+-- correct_order = parsed key. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'DRAG_DROP',
+    content = '{"stem":"Arrange the numbers in order, from smallest to largest.","items":["17","20","10"],"correct_order":["10","17","20"]}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q28';
+-- END l1-q28-stem-rework
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================

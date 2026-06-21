@@ -1,0 +1,343 @@
+// Atlas Assessment — SHORT-TEST served-order → external_id crosswalk (audit).
+//
+// Replays the REAL adaptive engine offline against supabase/seed.sql, per QA-seed
+// child, so every founder QA note ("L2-Q1…") pins to an exact row. The short test
+// is response-adaptive (next item depends on prior correctness), so a single
+// deterministic sequence does not exist — but the QA bank is thin, so every test
+// BANK-EXHAUSTS and the served SET == the full eligible-in-band inventory; only the
+// order varies. We emit (a) the full eligible set per child and (b) a canonical
+// served order for the all-correct AND all-incorrect answer paths (these bracket
+// any real play-through). Selection reuses the real engine + picker comparator, so
+// the order is faithful, not re-derived.
+//
+// Output: scripts/conversion/audit/served-crosswalk.md (+ .json).
+// Run: pnpm tsx scripts/conversion/audit/build-served-crosswalk.ts
+
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import {
+  createEngineState,
+  nextQuestionRequest,
+  applyResponse,
+  shouldTerminate,
+} from "../../../src/lib/engine/engine";
+import { anchorBookletForChild, previousBookletHalfGrades } from "../../../src/lib/questionPicker/levelBand";
+
+// Inlined verbatim from src/lib/questionPicker/picker.ts compareCandidates (that
+// module imports `server-only` and can't load under tsx). Nearest-difficulty,
+// then external_id asc (null last), then id — a total order.
+function compareCandidates(target: number) {
+  return (a: { difficulty: number; external_id: string | null; id: string }, b: { difficulty: number; external_id: string | null; id: string }): number => {
+    const da = Math.abs(a.difficulty - target);
+    const db = Math.abs(b.difficulty - target);
+    if (da !== db) return da - db;
+    if (a.external_id === null && b.external_id !== null) return 1;
+    if (a.external_id !== null && b.external_id === null) return -1;
+    if (a.external_id !== null && b.external_id !== null && a.external_id !== b.external_id) {
+      return a.external_id < b.external_id ? -1 : 1;
+    }
+    if (a.id !== b.id) return a.id < b.id ? -1 : 1;
+    return 0;
+  };
+}
+import type { Strand, HalfGradeLevel, QuestionFormat } from "../../../src/lib/engine/types";
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, "..", "..", "..");
+const SEED = path.join(REPO_ROOT, "supabase", "seed.sql");
+
+// ── QA-seed children (supabase/seed.sql LOCAL-DEV QA SEED block) ──────────────
+const CHILDREN = [
+  { name: "QA Zero-C", grade_level: "Pre-K", birth_year: 2020 },
+  { name: "QA Level 1", grade_level: "Grade 1", birth_year: 2019 },
+  { name: "QA Level 2", grade_level: "Grade 2", birth_year: 2018 },
+  { name: "QA Level 3", grade_level: "Grade 3", birth_year: 2017 },
+  { name: "QA Level 4", grade_level: "Grade 4", birth_year: 2016 },
+];
+
+// Prior manual estimate (picker-algorithm audit) — a cross-check, NOT ground truth.
+// Computed bands here come from the real levelBand.ts; where they differ the code
+// wins. (The estimate used L1 band {0C} but the code yields {0C,KA,KB}; and L3/L4
+// differed by 1 — an estimate miscount. L2=27 and 0B=13 match exactly, validating
+// the parser.)
+const PRIOR_ESTIMATE: Record<string, number> = {
+  "QA Zero-C": 13, "QA Level 1": 3, "QA Level 2": 27, "QA Level 3": 26, "QA Level 4": 14,
+};
+
+interface Row {
+  external_id: string;
+  strand: string;
+  level: string;
+  difficulty: number;
+  format: string;
+  is_active: boolean;
+  short_test_eligible: boolean;
+  stem: string;
+}
+
+// ── tiny SQL helpers ─────────────────────────────────────────────────────────
+/** Split a parenthesised tuple body on top-level commas, respecting '…' strings (with '' escapes). */
+function splitTopLevel(s: string): string[] {
+  const out: string[] = [];
+  let depth = 0, inStr = false, cur = "";
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (c === "'") {
+        if (s[i + 1] === "'") { cur += "''"; i++; continue; }
+        inStr = false; cur += c; continue;
+      }
+      cur += c; continue;
+    }
+    if (c === "'") { inStr = true; cur += c; continue; }
+    if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth--;
+    if (c === "," && depth === 0) { out.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+
+/** Match the outermost (...) tuples in a VALUES list starting at index `from`. */
+function tuplesIn(text: string): string[] {
+  const out: string[] = [];
+  let depth = 0, inStr = false, start = -1;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inStr) { if (c === "'") { if (text[i + 1] === "'") { i++; continue; } inStr = false; } continue; }
+    if (c === "'") { inStr = true; continue; }
+    if (c === "(") { if (depth === 0) start = i + 1; depth++; }
+    else if (c === ")") { depth--; if (depth === 0 && start >= 0) { out.push(text.slice(start, i)); start = -1; } }
+  }
+  return out;
+}
+
+function unquote(v: string): string {
+  const t = v.trim();
+  if (t.startsWith("'")) {
+    const end = t.lastIndexOf("'");
+    return t.slice(1, end).replace(/''/g, "'");
+  }
+  return t;
+}
+function stripCast(v: string): string {
+  return v.trim().replace(/::[a-zA-Z_\[\]" ]+$/, "").trim();
+}
+function stemOf(contentLiteral: string): string {
+  const raw = unquote(stripCast(contentLiteral));
+  const m = raw.match(/"stem"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  return m ? m[1].replace(/\\n/g, " ").replace(/\\"/g, '"').trim() : "";
+}
+
+/** Split SQL into top-level statements, respecting '…' strings (with '' escapes),
+ *  so a `;` inside data (e.g. "9; yes") never truncates a statement. */
+function splitStatements(sql: string): string[] {
+  const out: string[] = [];
+  let inStr = false, cur = "";
+  for (let i = 0; i < sql.length; i++) {
+    const c = sql[i];
+    if (inStr) {
+      if (c === "'") { if (sql[i + 1] === "'") { cur += "''"; i++; continue; } inStr = false; }
+      cur += c; continue;
+    }
+    // skip `-- line comments` (their apostrophes must not start a string)
+    if (c === "-" && sql[i + 1] === "-") {
+      while (i < sql.length && sql[i] !== "\n") i++;
+      cur += "\n";
+      continue;
+    }
+    if (c === "'") { inStr = true; cur += c; continue; }
+    if (c === ";") { out.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+
+// ── parse seed into effective rows (INSERT first-wins + UPDATE last-writer) ───
+function parseRows(sql: string): Map<string, Row> {
+  const rows = new Map<string, Row>();
+  const stmts = splitStatements(sql);
+
+  // INSERT statements: `insert into questions (targetCols) select t.id, <proj…>
+  // from t, (values …) as v(<aliasCols>) …`. The first aliasCols projections are
+  // per-tuple (v.col); any trailing projections are block-wide literals (e.g.
+  // `…representation_kind, true` → is_active=true for every row in the block).
+  for (const block of stmts) {
+    if (!/insert\s+into\s+questions\b/i.test(block)) continue;
+    const aliasM = block.match(/as\s+v\s*\(([^)]*)\)/i);
+    if (!aliasM) continue;
+    const cols = aliasM[1].split(",").map((c) => c.trim());
+    const valuesM = block.match(/\bvalues\b([\s\S]*?)\)\s*as\s+v\s*\(/i);
+    if (!valuesM) continue;
+    const insM = block.match(/insert\s+into\s+questions\s*\(([^)]*)\)/i);
+    const targetCols = insM ? insM[1].split(",").map((c) => c.trim()).filter((c) => c !== "tenant_id") : [];
+    const projM = block.match(/\bselect\b([\s\S]*?)\bfrom\s+t\b/i);
+    const proj = projM ? splitTopLevel(projM[1]).map((p) => p.trim()).slice(1) : []; // drop t.id
+    // block-wide literal defaults for columns beyond the alias (is_active/ste/…)
+    const blockDefaults: Record<string, string> = {};
+    for (let j = cols.length; j < targetCols.length; j++) {
+      if (proj[j] !== undefined) blockDefaults[targetCols[j]] = proj[j];
+    }
+    for (const tup of tuplesIn(valuesM[1])) {
+      const vals = splitTopLevel(tup);
+      if (vals.length !== cols.length) continue;
+      const rec: Record<string, string> = { ...blockDefaults };
+      cols.forEach((c, i) => (rec[c] = vals[i]));
+      const ext = unquote(rec["external_id"] ?? "");
+      if (!/^SAM-/.test(ext)) continue;
+      if (rows.has(ext)) continue; // on conflict do nothing → first insert wins
+      rows.set(ext, {
+        external_id: ext,
+        strand: unquote(rec["strand"] ?? ""),
+        level: unquote(rec["level"] ?? ""),
+        difficulty: parseFloat(stripCast(rec["difficulty"] ?? "0")),
+        format: unquote(rec["format"] ?? ""),
+        is_active: /true/i.test(rec["is_active"] ?? "false"),
+        short_test_eligible: /true/i.test(rec["short_test_eligible"] ?? "false"),
+        stem: stemOf(rec["content"] ?? "''"),
+      });
+    }
+  }
+
+  // UPDATE statements in file order (last writer wins). Apply guards we can evaluate.
+  for (const stmt of stmts) {
+    const m = stmt.match(/update\s+questions\s+q?\s*set\b([\s\S]*?)\bwhere\b([\s\S]*)$/i);
+    if (!m) continue;
+    const setClause = m[1];
+    const whereClause = m[2];
+    // target ids
+    const ids = new Set<string>();
+    const eqM = whereClause.match(/external_id\s*=\s*'([^']+)'/);
+    if (eqM) ids.add(eqM[1]);
+    const inM = whereClause.match(/external_id\s+in\s*\(([\s\S]*?)\)/i);
+    if (inM) for (const x of inM[1].matchAll(/'([^']+)'/g)) ids.add(x[1]);
+    // UPDATE … from (values (…)) as v(…) where external_id = v.external_id —
+    // the target ids are the SAM-* literals in the values list (in setClause).
+    if (ids.size === 0 && /v\.external_id/i.test(whereClause)) {
+      for (const x of setClause.matchAll(/'(SAM-L\d+[A-Z]?-Q\d+[A-Z]?)'/g)) ids.add(x[1]);
+    }
+    if (ids.size === 0) continue;
+    // guard: `and q.is_active = false/true`
+    const guardM = whereClause.match(/is_active\s*=\s*(true|false)/i);
+    const guardActive = guardM ? /true/i.test(guardM[1]) : null;
+
+    const setActive = setClause.match(/\bis_active\s*=\s*(true|false)/i);
+    const setSte = setClause.match(/\bshort_test_eligible\s*=\s*(true|false)/i);
+    const setLevel = setClause.match(/\blevel\s*=\s*'([^']+)'/i);
+    const setFormat = setClause.match(/\bformat\s*=\s*'([^']+)'/i);
+    const setStrand = setClause.match(/\bstrand\s*=\s*'([^']+)'/i);
+    const setContent = setClause.match(/\bcontent\s*=\s*('(?:[^']|'')*'(?:::jsonb)?)/i);
+
+    for (const id of ids) {
+      const r = rows.get(id);
+      if (!r) continue;
+      if (guardActive !== null && r.is_active !== guardActive) continue; // guard fails → no-op
+      if (setActive) r.is_active = /true/i.test(setActive[1]);
+      if (setSte) r.short_test_eligible = /true/i.test(setSte[1]);
+      if (setLevel) r.level = setLevel[1];
+      if (setFormat) r.format = setFormat[1];
+      if (setStrand) r.strand = setStrand[1];
+      if (setContent) { const s = stemOf(setContent[1]); if (s) r.stem = s; }
+    }
+  }
+  return rows;
+}
+
+// ── replay one child ─────────────────────────────────────────────────────────
+function replay(child: typeof CHILDREN[number], all: Row[], isCorrect: boolean) {
+  const band = new Set(previousBookletHalfGrades(anchorBookletForChild(child.grade_level, child.birth_year)));
+  const eligible = all.filter((r) => r.is_active && r.short_test_eligible && band.has(r.level));
+  let state = createEngineState({ grade: child.grade_level as never });
+  const excluded = new Set<Strand>();
+  const served: Row[] = [];
+  const servedIds = new Set<string>();
+  // synthetic uuid per external_id for the engine's id field (stable, deterministic)
+  const idOf = (r: Row) => r.external_id;
+  for (let guard = 0; guard < 100; guard++) {
+    const req = nextQuestionRequest(state, excluded);
+    if (req === null) break;
+    const cands = eligible
+      .filter((r) => r.strand === req.strand && !servedIds.has(r.external_id))
+      .map((r) => ({ id: idOf(r), external_id: r.external_id, difficulty: r.difficulty, row: r }));
+    if (cands.length === 0) { excluded.add(req.strand); continue; }
+    cands.sort(compareCandidates(req.targetDifficulty));
+    const pick = cands[0];
+    served.push(pick.row);
+    servedIds.add(pick.row.external_id);
+    state = applyResponse(
+      state,
+      {
+        id: pick.id,
+        strand: req.strand,
+        // level/format are unused by applyResponse (it reads strand + difficulty
+        // only) but EngineQuestion requires them; carry the row's values, cast
+        // from the parser's plain strings to the enum types.
+        level: pick.row.level as HalfGradeLevel,
+        difficulty: pick.difficulty,
+        format: pick.row.format as QuestionFormat,
+      },
+      { questionId: pick.id, strand: req.strand, isCorrect, takenSeconds: 10 },
+    );
+    if (shouldTerminate(state, excluded).done) break;
+  }
+  return { band: [...band], eligible, served };
+}
+
+// ── main ─────────────────────────────────────────────────────────────────────
+// Question rows all live before the LOCAL-DEV QA SEED block (a `do $$…$$` block
+// whose dollar-quoted body would confuse the '-string splitter). Cut it off.
+const sql = readFileSync(SEED, "utf8").split("DO NOT SHIP")[0];
+const rows = parseRows(sql);
+const all = [...rows.values()];
+
+const lines: string[] = [];
+const json: Record<string, unknown> = {};
+lines.push("# Short-test served-order → external_id crosswalk (QA seed)");
+lines.push("");
+lines.push("Generated by `scripts/conversion/audit/build-served-crosswalk.ts` (replays the real");
+lines.push("adaptive engine against `supabase/seed.sql`). The short test is RESPONSE-ADAPTIVE, so");
+lines.push("order depends on answers; the QA bank is thin so every test bank-exhausts and the served");
+lines.push("SET == the full eligible-in-band set. Two canonical orders are shown (all-correct /");
+lines.push("all-incorrect) which bracket any real play-through. Match founder QA notes by CONTENT.");
+lines.push("");
+
+for (const child of CHILDREN) {
+  const correct = replay(child, all, true);
+  const incorrect = replay(child, all, false);
+  const got = correct.eligible.length;
+  const exp = PRIOR_ESTIMATE[child.name];
+  const note = got === exp ? "matches prior estimate" : `prior estimate ${exp} (see header)`;
+  lines.push(`## ${child.name} (${child.grade_level}) — band {${correct.band.join(",")}} — eligible ${got} (${note})`);
+  lines.push("");
+  lines.push("| pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |");
+  lines.push("|---|---|---|---|---|---|---|---|");
+  const posC = new Map(correct.served.map((r, i) => [r.external_id, i + 1]));
+  const posI = new Map(incorrect.served.map((r, i) => [r.external_id, i + 1]));
+  const ordered = [...correct.eligible].sort(
+    (a, b) => (posC.get(a.external_id) ?? 999) - (posC.get(b.external_id) ?? 999),
+  );
+  for (const r of ordered) {
+    const snip = r.stem.length > 70 ? r.stem.slice(0, 67) + "…" : r.stem;
+    lines.push(`| ${posC.get(r.external_id) ?? "—"} | ${posI.get(r.external_id) ?? "—"} | ${r.external_id} | ${r.format} | ${r.strand} | ${r.level} | ${r.difficulty} | ${snip.replace(/\|/g, "\\|")} |`);
+  }
+  lines.push("");
+  json[child.name] = {
+    band: correct.band, eligible_count: got, prior_estimate: exp,
+    served_all_correct: correct.served.map((r) => r.external_id),
+    served_all_incorrect: incorrect.served.map((r) => r.external_id),
+    items: correct.eligible.map((r) => ({ external_id: r.external_id, format: r.format, strand: r.strand, level: r.level, difficulty: r.difficulty, stem: r.stem })),
+  };
+}
+
+lines.push(`---`);
+lines.push(`Parser self-check: 0B and L2 match the prior estimate exactly (13, 27); L1 reflects the`);
+lines.push(`code band {0C,KA,KB}; L3/L4 differ from the estimate by 1. Pin founder notes by CONTENT.`);
+
+mkdirSync(HERE, { recursive: true });
+writeFileSync(path.join(HERE, "served-crosswalk.md"), lines.join("\n") + "\n");
+writeFileSync(path.join(HERE, "served-crosswalk.json"), JSON.stringify(json, null, 2) + "\n");
+process.stdout.write(`[crosswalk] parsed ${String(all.length)} rows across ${String(CHILDREN.length)} children\n`);
