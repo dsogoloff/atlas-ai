@@ -32,4 +32,9 @@ describe("formatGradeLevel", () => {
     expect(formatGradeLevel("Grade 2")).toBe("Grade 2");
     expect(formatGradeLevel("Kindergarten")).toBe("Kindergarten");
   });
+
+  it("renders the age-qualified intake Pre-K choices verbatim", () => {
+    expect(formatGradeLevel("Pre-K (age 4)")).toBe("Pre-K (age 4)");
+    expect(formatGradeLevel("Pre-K (age 5)")).toBe("Pre-K (age 5)");
+  });
 });

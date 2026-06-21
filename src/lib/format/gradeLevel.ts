@@ -1,8 +1,9 @@
 // Grade-level formatter for display.
 //
-// The add-child form (src/app/(auth)/add-child/add-child-form.tsx:152-158)
-// is a closed-list <select> emitting exactly: "K" | "1" | … | "8".
-// We expand those known values to "Kindergarten" / "Nth Grade".
+// The add-child form (src/app/(auth)/add-child/add-child-form.tsx) is a
+// closed-list <select> emitting exactly: "Pre-K (age 4)" | "Pre-K (age 5)" |
+// "K" | "1" | … | "8". We expand "K"/"1".."8" to "Kindergarten" / "Nth Grade";
+// the self-describing "Pre-K (age N)" values render verbatim (else branch).
 //
 // The DB column is open text, so non-form write paths (admin imports,
 // CSV) could land "Grade 2", "Pre-K", "Kindergarten" verbatim. For

@@ -70,6 +70,21 @@ describe("halfGradesForBooklets / levelLockHalfGrades", () => {
 });
 
 describe("anchorBookletForChild", () => {
+  it("intake young-band ladder: Pre-K (age 4) → 0A, Pre-K (age 5) → 0B, K → 0C", () => {
+    expect(anchorBookletForChild("Pre-K (age 4)", 2000)).toBe(0); // 0A
+    expect(anchorBookletForChild("Pre-K (age 5)", 2000)).toBe(1); // 0B
+    expect(anchorBookletForChild("K", 2000)).toBe(2); // 0C
+  });
+  it("intake ladder: 1st → L1, 4th → L4 (grade N → booklet N)", () => {
+    expect(anchorBookletForChild("1", 2000)).toBe(3); // L1
+    expect(anchorBookletForChild("4", 2000)).toBe(6); // L4
+  });
+  it("floors at 0A — never anchors below Pre-K (age 4)", () => {
+    // A sub-Pre-K birth year (grade < -2) clamps to the 0A floor.
+    expect(
+      anchorBookletForChild(null, CURRENT_ACADEMIC_YEAR_START - 2),
+    ).toBe(0);
+  });
   it("kindergarten anchors at the 0C booklet (ordinal 2)", () => {
     expect(anchorBookletForChild("K", 2000)).toBe(2);
     expect(anchorBookletForChild("Kindergarten", 2000)).toBe(2);
