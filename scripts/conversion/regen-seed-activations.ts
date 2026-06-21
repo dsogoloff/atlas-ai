@@ -34,7 +34,7 @@ const QA_MARKER_RE = /\n-- =+\n-- LOCAL-DEV QA SEED/;
 // in 20260620150000_l0b_q03_q06_activation.sql until PR #109 renames the file to
 // 150001 — resolved dynamically below so this works pre- or post-rename.
 const MIRROR_LIST: Array<[string, string]> = [
-  ["l0a-taxonomy-activation", "20260620120000_l0a_taxonomy_activation.sql"],
+  ["l0a-taxonomy-activation", "20260620120001_l0a_taxonomy_activation.sql"],
   ["l0c-taxonomy-activation", "20260620140000_l0c_taxonomy_activation.sql"],
   ["l0b-position-activation", "20260620130000_l0b_position_activation.sql"],
   ["l3-image-activation", "20260619100000_l3_image_activation.sql"],
