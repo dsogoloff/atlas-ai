@@ -4,14 +4,50 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-21 session (Picker Calibration) — trunk head is **`ce9a676`** (PR #115
-head; trunk advanced from `7f2a737` since the crosswalk session). Three stacked PRs opened
-this session; all verify-bar GREEN; Codex manual/skipped (relay unauth). Merge order:
-#119 → #121 → #122 (stacked; Dimitri merges attended after Vercel preview; stacked-PR
-retarget note: when #119 merges GitHub may not auto-retarget #121 — manually re-point
-#121's base to ATLAS-ASSESSMENT, and same for #122 after #121).
+**As of:** 2026-06-21 — trunk head is **`c3ad839`** (PR #119 `lane/picker-short-outcome`
+merged; advanced from `ce9a676`/#115). Two docs/memory records landed this day — the
+**Picker Calibration** build (3 stacked code PRs) and the **young-band image-activation
+audit** (#120) — plus the first Picker Calibration code merge (#119).
 
-**OPEN PRs (Picker Calibration, 3 stacked, 2026-06-21):**
+**Picker Calibration — 3 stacked PRs (2026-06-21).** All verify-bar GREEN; Codex
+manual/skipped (relay unauth). **PR #119 (PR1) MERGED (`c3ad839`).** Remaining stacked and
+open, in order: **#121 → #122** (Dimitri merges attended after Vercel preview; stacked-PR
+retarget note: when a parent PR merges GitHub may not auto-retarget the child — manually
+re-point #121's base to ATLAS-ASSESSMENT if needed, same for #122 after #121).
+
+**OPEN PR #120 — lane/young-band-image-activation-audit** (docs/memory only, off trunk
+`ce9a676`). **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content
+gate.** The short-test-eligible young-band image set is fully active on trunk (PR #78 + the
+2026-06-20 wave: l0a/l0b/l0c-taxonomy-activation, l0b-position, l0a-q15, l0a-q17,
+l0b-q03-q06, l0-qa-content-fixes; named defect patterns fixed). Triple-verified against
+`seed.sql`: **53 young-band rows = 36 active / 17 inactive**, 26 active IMAGE rows (0A=11,
+0B=6, 0C=9). **The 9 inactive image rows (SAM-L0A-Q09/Q12, L0B-Q01/Q08/Q12/Q13,
+L0C-Q01/Q06/Q12) are FOUNDER-ADJUDICATED EXCLUDED FROM THE SHORT TEST — not a content gap,
+not a beta gate.** Exclusion is durably encoded (`short_test_eligible=false` AND
+`is_active=false`) and picker-enforced (`shortTestPicker.ts:50-51` selects only
+`is_active=true AND short_test_eligible=true`; test `shortTestPicker.test.ts:88`) — they are
+inert to the short test regardless of art. No new flag needed; only the exclusion REASON was
+prose (now relabelled in the doc). Any per-row art note is COMPREHENSIVE-only/future, NOT a
+short-test blocker. Other 8 inactive: manual/oral/drawing/text-ambiguous or retired L0C-Q11
+(replaced by active Q11A–D). Named defect patterns verified clean (L0C-Q05 shuffled
+IMAGE_ORDERING + id-keyed grading; L0A-Q08 box-reference is a separate stimulus).
+Seed↔migration parity **PASS** (69 migrations). Verify GREEN 1196/89, tsc 0, lint 2 known
+warnings. No migration/seed/image change. Findings doc:
+`scripts/conversion/audit/young-band-image-activation-status.md`. PR is docs/memory only;
+merge at leisure to land the record.
+
+---
+
+**History (pre-#119 trunk).** Trunk reached **`7f2a737`** via six merges since the
+2026-06-18 snapshot below: PR #109 (fix-dup-migration-version, `e489312`), #110
+(restore-seed-mirrors, `8d3d09c`), #111 (seed↔migration activation **parity guard** +
+generated mirror region, `20127b0`), #112 (L0C young-band QA fix batch #2, `3c5dfc0`),
+#113 (L1 QA batch — Q1/Q2/Q4/Q8 + L4-Q06 missing-digit, `f5fdbc9`), #114 (short-test
+follow-up form, `7f2a737`); then #115 (`ce9a676`) and #119 (`c3ad839`, current head). PRs
+#82/#83/#84 below are now superseded/older — verify their GitHub status before acting; the
+2026-06-18 block is retained for history.
+
+**Picker Calibration PRs (3 stacked, 2026-06-21) — #119 MERGED (`c3ad839`); #121/#122 open:**
 
 - **PR #119 — lane/picker-short-outcome** (base ATLAS-ASSESSMENT, off `ce9a676`):
   New `src/lib/shortTest/outcome.ts` — `ShortTestOutcome` type with `measured_level`,

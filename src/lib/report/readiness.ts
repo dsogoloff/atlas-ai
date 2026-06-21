@@ -17,13 +17,19 @@
 // (correct / attempted — placement.overall_percentage). Readiness is SHORT-only;
 // comprehensive sessions return null (no readiness concept).
 
-/**
- * Minimum overall percentage (0..1) on the previous-level sample to count as a
- * CLEAN PASS. Editable single knob — founder can tune. Default 0.8 (80%): high
- * enough that "appears ready" is a confident, upside-only signal, low enough to
- * tolerate one or two slips on a short 10–15 item sample.
- */
-export const SHORT_TEST_CLEAN_PASS_RATIO = 0.8;
+// Scoring thresholds are canonical in shortTest/outcome.ts (the pass_band knobs)
+// so the readiness line and the persisted pass_band can never drift. The
+// readiness line renders ONLY on a "clean" pass_band: ≥ SHORT_TEST_MIN_GRADED
+// graded items AND overall ratio ≥ SHORT_TEST_CLEAN_PASS_RATIO. Below the graded
+// floor the sample is too thin to make any confident statement (insufficient) —
+// upside-only: suppress, never shame. SHORT_TEST_CLEAN_PASS_RATIO is re-exported
+// for back-compat with existing readiness consumers/tests.
+import {
+  SHORT_TEST_CLEAN_PASS_RATIO,
+  SHORT_TEST_MIN_GRADED,
+} from "@/lib/shortTest/outcome";
+
+export { SHORT_TEST_CLEAN_PASS_RATIO } from "@/lib/shortTest/outcome";
 
 export type TestType = "short" | "comprehensive";
 
@@ -46,12 +52,25 @@ export function computeReadiness(args: {
   testType: TestType;
   /** Session overall percentage, 0..100 (placement.overall_percentage). */
   overallPercentage: number;
+  /** Number of graded items in the session. Below SHORT_TEST_MIN_GRADED the
+   *  sample is too thin to assert readiness — the line is suppressed
+   *  (pass_band "insufficient"). */
+  gradedCount: number;
   /** Current S.A.M booklet level display (e.g. "0C", "3") — the level the child
    *  appears ready for. NEVER a school grade or half-grade code. */
   currentLevelLabel: string;
 }): ReadinessSummary | null {
   if (args.testType !== "short") return null;
-  const ready = args.overallPercentage >= SHORT_TEST_CLEAN_PASS_RATIO * 100;
+  // 0A edge: the short sample clamps at the axis floor (0A), so there is NO
+  // genuine level-below sample backing an "appears ready for 0A" claim — suppress
+  // the readiness line rather than assert it. (Grade-anchored short tests never
+  // reach this; defensive for measured-level anchoring downstream.)
+  if (args.currentLevelLabel === "0A") {
+    return { ready: false, currentLevelLabel: args.currentLevelLabel };
+  }
+  const ready =
+    args.gradedCount >= SHORT_TEST_MIN_GRADED &&
+    args.overallPercentage >= SHORT_TEST_CLEAN_PASS_RATIO * 100;
   return { ready, currentLevelLabel: args.currentLevelLabel };
 }
 

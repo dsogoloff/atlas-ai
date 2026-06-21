@@ -135,12 +135,16 @@ export interface NextQuestionRequest {
    * "comprehensive-floor" / "comprehensive-adapt" (comprehensive-engine lane)
    * are emitted by the comprehensive router (src/lib/engine/comprehensive.ts):
    * phase-1 per-strand coverage floor vs. phase-2 max-variance deepening.
-   * Additive — the short path keeps emitting "max-variance-strand". */
+   * "short-floor" / "short-adapt" are the short-test analogues (Picker
+   * Calibration — src/lib/engine/shortTest.ts): phase-1 stratified coverage vs.
+   * phase-2 fill. Diagnostic only — `reason` is never serialized to the wire. */
   reason:
     | "max-variance-strand"
     | "round-robin-fallback"
     | "comprehensive-floor"
-    | "comprehensive-adapt";
+    | "comprehensive-adapt"
+    | "short-floor"
+    | "short-adapt";
 }
 
 export interface TerminationDecision {

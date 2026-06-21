@@ -143,6 +143,10 @@ import {
   placementEstimate,
   shouldTerminate,
 } from "@/lib/engine/engine";
+import {
+  shortTestNextQuestionRequest,
+  shortTestShouldTerminate,
+} from "@/lib/engine/shortTest";
 import { STRANDS } from "@/lib/engine/levels";
 import type {
   EngineQuestion,
@@ -158,12 +162,25 @@ import { hasValidConsent } from "@/lib/consent/verify";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { attemptNarration } from "@/lib/report/narration/trigger";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import { discoverEmptyBankStrands } from "@/lib/questionPicker/picker";
+import {
+  discoverEmptyBankStrands,
+  discoverShortEligibleCounts,
+} from "@/lib/questionPicker/picker";
+import {
+  anchorBookletForChild,
+  BOOKLET_LEVELS,
+  bookletOrdinalForHalfGrade,
+  previousBookletHalfGrades,
+} from "@/lib/questionPicker/levelBand";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import {
   pickForSession,
   type SessionPickParams,
 } from "@/lib/questionPicker/pickForSession";
+import {
+  deriveShortTestOutcome,
+  type OutcomeResponse,
+} from "@/lib/shortTest/outcome";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -195,6 +212,19 @@ import {
 interface ComprehensiveContext {
   inScopeStrands: Set<Strand>;
   budget: ComprehensiveBudget;
+}
+
+/**
+ * Resolved SHORT-test parameterization (Picker Calibration). Null when the band
+ * anchor isn't computable (no grade/birth_year) — those sessions fall back to
+ * the legacy engine.shouldTerminate / engine.nextQuestionRequest behaviour.
+ *
+ * `availableByStrand` = count of active short_test_eligible items in the
+ * previous-booklet band, per strand — drives stratified coverage routing and
+ * the coverage/count stop (src/lib/engine/shortTest.ts).
+ */
+interface ShortContext {
+  availableByStrand: Map<Strand, number>;
 }
 
 interface HandlerInput {
@@ -331,6 +361,32 @@ export async function submitResponseHandler({
     comprehensive = { inScopeStrands, budget };
   }
 
+  // SHORT-test stratification context (Picker Calibration): per-strand count of
+  // active short_test_eligible items in the previous-booklet band. Drives the
+  // coverage-first routing + 10–15 coverage/count stop. Null when no usable band
+  // anchor (no grade/birth_year) → legacy short behaviour.
+  let short: ShortContext | null = null;
+  if (session.test_type === "short") {
+    const anchor = anchorBookletForChild(
+      sessionPick.gradeLevel,
+      sessionPick.birthYear,
+    );
+    if (Number.isFinite(anchor)) {
+      const band = previousBookletHalfGrades(anchor);
+      try {
+        short = {
+          availableByStrand: await discoverShortEligibleCounts(
+            serviceClient,
+            parent.tenant_id,
+            band,
+          ),
+        };
+      } catch (e) {
+        return fail("internal", 500, errorMessage(e));
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // 3.5 Consent gate (M2 readiness / COPPA Gate-B).
   //
@@ -451,6 +507,7 @@ export async function submitResponseHandler({
       request.question_id,
       emptyBankStrands,
       comprehensive,
+      short,
     );
   }
 
@@ -611,6 +668,7 @@ export async function submitResponseHandler({
         request.question_id,
         emptyBankStrands,
         comprehensive,
+        short,
       );
     }
     return fail("internal", 500, `response insert failed: ${insertErr.message}`);
@@ -660,6 +718,7 @@ export async function submitResponseHandler({
     postState,
     emptyBankStrands,
     comprehensive,
+    short,
   );
   if (term.done) {
     const closeMsg = await closeSession(serviceClient, request.session_id);
@@ -702,6 +761,7 @@ export async function submitResponseHandler({
     serviceClient,
     request.session_id,
     comprehensive,
+    short,
   );
   const pickResult = await pickAndMaybeClose(
     serviceClient,
@@ -805,6 +865,121 @@ async function persistSessionSummary(
 }
 
 /**
+ * Read the session's graded responses tagged with their question strand —
+ * the input to the ShortTestOutcome. Service-role; no is_active filter (counts
+ * reflect what was actually served, same rationale as replayStrandCounts).
+ */
+async function readOutcomeResponses(
+  supabase: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<OutcomeResponse[]> {
+  const { data: respRows, error: rErr } = await supabase
+    .from("responses")
+    .select("question_id, is_correct")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+  if (rErr) {
+    throw new Error(`[short-outcome] responses read failed: ${rErr.message}`);
+  }
+  const responses = respRows ?? [];
+  if (responses.length === 0) return [];
+
+  const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
+  const { data: qRows, error: qErr } = await supabase
+    .from("questions")
+    .select("id, strand")
+    .in("id", questionIds);
+  if (qErr) {
+    throw new Error(`[short-outcome] questions read failed: ${qErr.message}`);
+  }
+  const strandById = new Map((qRows ?? []).map((q) => [q.id, q.strand] as const));
+
+  const out: OutcomeResponse[] = [];
+  for (const r of responses) {
+    const strand = strandById.get(r.question_id);
+    if (!strand) {
+      throw new Error(
+        `[short-outcome] response references missing question ${r.question_id}`,
+      );
+    }
+    out.push({ questionId: r.question_id, strand, isCorrect: r.is_correct });
+  }
+  return out;
+}
+
+/**
+ * Picker Calibration — compute + persist the ShortTestOutcome on short-test
+ * completion (assessment_sessions.short_test_outcome). No-op for comprehensive
+ * sessions (gates internally on test_type). Self-contained: re-reads what it
+ * needs so closeSession's signature is unchanged. Returns null on success, an
+ * error string on failure (caller maps to 500), matching persistSessionSummary.
+ *
+ *   * measured_level — the engine's placement booklet (placementEstimate's
+ *     overall half-grade mapped to the booklet axis). The comprehensive anchor.
+ *   * intake_level — the grade-derived booklet (fallback anchor + report label).
+ */
+async function persistShortTestOutcome(
+  supabase: SupabaseClient<Database>,
+  sessionId: string,
+): Promise<string | null> {
+  const { data: sessionRow, error: sErr } = await supabase
+    .from("assessment_sessions")
+    .select("test_type, child_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (sErr) return `short-outcome session read failed: ${sErr.message}`;
+  if (!sessionRow || sessionRow.test_type !== "short") return null;
+
+  const { data: childRow, error: cErr } = await supabase
+    .from("children")
+    .select("grade_level, birth_year")
+    .eq("id", sessionRow.child_id)
+    .maybeSingle();
+  if (cErr) return `short-outcome child read failed: ${cErr.message}`;
+
+  let state: EngineState;
+  try {
+    state = await replayEngineState(supabase, sessionId);
+  } catch (e) {
+    return errorMessage(e);
+  }
+  const placement = placementEstimate(state);
+  const measuredOrd = bookletOrdinalForHalfGrade(placement.overallLevel);
+
+  const anchor = anchorBookletForChild(
+    childRow?.grade_level ?? null,
+    childRow?.birth_year ?? Number.NaN,
+  );
+  const intakeLevel = Number.isFinite(anchor) ? BOOKLET_LEVELS[anchor] : undefined;
+  const measuredLevel =
+    measuredOrd !== null ? BOOKLET_LEVELS[measuredOrd] : undefined;
+  // Both fall back to whichever resolved, then to the axis floor — there is
+  // always SOME label even for a degenerate (no-grade, empty) session.
+  const resolvedIntake = intakeLevel ?? measuredLevel ?? BOOKLET_LEVELS[0];
+  const resolvedMeasured = measuredLevel ?? resolvedIntake;
+
+  let responses: OutcomeResponse[];
+  try {
+    responses = await readOutcomeResponses(supabase, sessionId);
+  } catch (e) {
+    return errorMessage(e);
+  }
+
+  const outcome = deriveShortTestOutcome({
+    measuredLevel: resolvedMeasured,
+    intakeLevel: resolvedIntake,
+    responses,
+  });
+
+  const { error: upErr } = await supabase
+    .from("assessment_sessions")
+    .update({ short_test_outcome: outcome as unknown as Json })
+    .eq("id", sessionId);
+  if (upErr) return `short-outcome update failed: ${upErr.message}`;
+  return null;
+}
+
+/**
  * Funnel: emit the test-completed event off the response path. Comprehensive
  * vs short is keyed off the session's test_type. Called only from the two
  * FRESH-submit terminal paths (engine-terminated and bank-exhausted), never
@@ -875,17 +1050,27 @@ async function decideTermination(
   state: EngineState,
   emptyBankStrands: ReadonlySet<Strand>,
   comprehensive: ComprehensiveContext | null,
+  short: ShortContext | null,
 ): Promise<TerminationDecision> {
-  if (!comprehensive) {
-    return shouldTerminate(state, emptyBankStrands);
+  if (comprehensive) {
+    const strandCounts = await replayStrandCounts(serviceClient, sessionId);
+    return comprehensiveShouldTerminate({
+      state,
+      strandCounts,
+      inScopeStrands: comprehensive.inScopeStrands,
+      budget: comprehensive.budget,
+    });
   }
-  const strandCounts = await replayStrandCounts(serviceClient, sessionId);
-  return comprehensiveShouldTerminate({
-    state,
-    strandCounts,
-    inScopeStrands: comprehensive.inScopeStrands,
-    budget: comprehensive.budget,
-  });
+  if (short) {
+    const strandCounts = await replayStrandCounts(serviceClient, sessionId);
+    return shortTestShouldTerminate({
+      state,
+      strandCounts,
+      availableByStrand: short.availableByStrand,
+    });
+  }
+  // No usable band anchor — legacy short behaviour.
+  return shouldTerminate(state, emptyBankStrands);
 }
 
 /**
@@ -899,21 +1084,34 @@ async function buildRouter(
   serviceClient: SupabaseClient<Database>,
   sessionId: string,
   comprehensive: ComprehensiveContext | null,
+  short: ShortContext | null,
 ): Promise<
   (state: EngineState, excluded: ReadonlySet<Strand>) => NextQuestionRequest | null
 > {
-  if (!comprehensive) {
-    return (state, excluded) => nextQuestionRequest(state, excluded);
+  if (comprehensive) {
+    const strandCounts = await replayStrandCounts(serviceClient, sessionId);
+    return (state, excluded) =>
+      comprehensiveNextQuestionRequest({
+        state,
+        strandCounts,
+        inScopeStrands: comprehensive.inScopeStrands,
+        excludedStrands: excluded,
+        perStrandFloorN: comprehensive.budget.perStrandFloorN,
+      });
   }
-  const strandCounts = await replayStrandCounts(serviceClient, sessionId);
-  return (state, excluded) =>
-    comprehensiveNextQuestionRequest({
-      state,
-      strandCounts,
-      inScopeStrands: comprehensive.inScopeStrands,
-      excludedStrands: excluded,
-      perStrandFloorN: comprehensive.budget.perStrandFloorN,
-    });
+  if (short) {
+    const strandCounts = await replayStrandCounts(serviceClient, sessionId);
+    const availableByStrand = short.availableByStrand;
+    return (state, excluded) =>
+      shortTestNextQuestionRequest({
+        state,
+        strandCounts,
+        availableByStrand,
+        excludedStrands: excluded,
+      });
+  }
+  // No usable band anchor — legacy short behaviour.
+  return (state, excluded) => nextQuestionRequest(state, excluded);
 }
 
 function success(body: SubmitResponseBody): SubmitHandlerResult {
@@ -966,6 +1164,7 @@ async function duplicateResult(
   questionId: string,
   emptyBankStrands: ReadonlySet<Strand>,
   comprehensive: ComprehensiveContext | null,
+  short: ShortContext | null,
 ): Promise<SubmitHandlerResult> {
   const { data: row, error: rowErr } = await serviceClient
     .from("responses")
@@ -1001,6 +1200,7 @@ async function duplicateResult(
       state,
       emptyBankStrands,
       comprehensive,
+      short,
     );
   } catch (e) {
     return fail("internal", 500, errorMessage(e));
@@ -1017,7 +1217,12 @@ async function duplicateResult(
     });
   }
 
-  const router = await buildRouter(serviceClient, ctx.sessionId, comprehensive);
+  const router = await buildRouter(
+    serviceClient,
+    ctx.sessionId,
+    comprehensive,
+    short,
+  );
 
   let outstanding: PickedQuestionRow | null;
   try {
@@ -1224,6 +1429,12 @@ async function closeSession(
 
   const summaryErr = await persistSessionSummary(serviceClient, sessionId);
   if (summaryErr) return summaryErr;
+
+  // Persist the ShortTestOutcome hand-off surface for short sessions (no-op for
+  // comprehensive). Done synchronously before narration so the comprehensive
+  // picker can read it as soon as the session is COMPLETED.
+  const outcomeErr = await persistShortTestOutcome(serviceClient, sessionId);
+  if (outcomeErr) return outcomeErr;
 
   // (c3) Narration — fire-and-forget. The `after()` callback runs after
   // the response is sent; the runtime keeps the function alive until it

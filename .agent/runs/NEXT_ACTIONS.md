@@ -4,21 +4,22 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0aaa. 2026-06-21 session — Picker Calibration (PRs #119 / #121 / #122, stacked)
+## 0aaa. 2026-06-21 — Picker Calibration (PRs #119 / #121 / #122, stacked)
 
-**Trunk head entering this session: `ce9a676` (PR #115 head).** All three PRs verify-bar
-GREEN; Codex manual/skipped (relay unauth). Merge in order #119 → #121 → #122.
+**Trunk head entering this work: `ce9a676` (PR #115). PR #119 now MERGED → current trunk
+head `c3ad839`.** All three PRs verify-bar GREEN; Codex manual/skipped (relay unauth).
+Merge order #119 → #121 → #122.
 
-- [ ] **Dimitri: merge PR #119 (lane/picker-short-outcome)** after Vercel preview review,
-      then run `supabase db reset` (adds nullable `assessment_sessions.short_test_outcome`
-      column, migration `20260621130000`). No image upload.
-      After merge: manually check that GitHub has retargeted PR #121's base to
-      ATLAS-ASSESSMENT (`gh pr view 121 --json baseRefName`); if still pointing at
-      `lane/picker-short-outcome`, run `gh pr edit 121 --base ATLAS-ASSESSMENT`.
-
-- [ ] **Dimitri: merge PR #121 (lane/picker-comprehensive)** (after #119 merged +
-      retargeted). No new migration; no `supabase db reset` needed after this PR alone.
-      After merge: retarget PR #122's base to ATLAS-ASSESSMENT if needed.
+- [x] **PR #119 (lane/picker-short-outcome) MERGED** (`c3ad839`). **Dimitri: run
+      `supabase db reset`** if not already done after the merge — adds nullable
+      `assessment_sessions.short_test_outcome` column (migration `20260621130000`). No image
+      upload.
+- [ ] **Dimitri: check PR #121's base now that #119 merged** —
+      `gh pr view 121 --json baseRefName`; if still `lane/picker-short-outcome`, run
+      `gh pr edit 121 --base ATLAS-ASSESSMENT`.
+- [ ] **Dimitri: merge PR #121 (lane/picker-comprehensive)** after Vercel preview review.
+      No new migration; no `supabase db reset` needed after this PR alone. After merge:
+      retarget PR #122's base to ATLAS-ASSESSMENT if needed.
 
 - [ ] **Dimitri: merge PR #122 (lane/picker-floor-ceiling)** (after #121 merged +
       retargeted), then run `supabase db reset` (adds nullable
@@ -43,6 +44,30 @@ GREEN; Codex manual/skipped (relay unauth). Merge in order #119 → #121 → #12
       decision above first).** Once §2.4 copy is approved, a follow-up lane will render
       the placement guidance in the parent report and surface the flag + floor-find data
       in the instructor view.
+
+## 0aab. 2026-06-21 — young-band short-test gate audit (PR #120, lane/young-band-image-activation-audit)
+
+**Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO remaining content gate.**
+The short-test-eligible image set is fully active on trunk `ce9a676`. The 9 inactive
+image rows are FOUNDER-ADJUDICATED EXCLUDED from the short test — **not a content gap,
+not a beta gate.** Docs/memory-only PR records + reconciles this.
+
+- [ ] **Dimitri: merge PR #120 (lane/young-band-image-activation-audit) at leisure**
+      (docs/memory only — findings doc + this record + CURRENT_STATE). No DB change, no
+      migration, no seed change, no image upload, no `supabase db reset`. Verify GREEN
+      1196/89; seed↔migration parity PASS.
+- **Result:** 53 young-band rows = 36 active / 17 inactive. 26 active IMAGE rows (0A=11,
+  0B=6, 0C=9). The 9 excluded image rows (SAM-L0A-Q09/Q12, L0B-Q01/Q08/Q12/Q13,
+  L0C-Q01/Q06/Q12) carry `short_test_eligible=false` + `is_active=false`, picker-enforced
+  (`shortTestPicker.ts:50-51`) — inert to the short test regardless of art. Exclusion is
+  machine-readable; no new flag needed. (Earlier note that mislabelled these as
+  "blocked on missing art" is corrected in this PR.)
+- **COMPREHENSIVE-ONLY / future (NOT a short-test or beta concern):** if any of the 9
+  excluded rows are ever pulled into the comprehensive bank, they would need curated
+  per-question crops + deliberate re-adjudication. Also carried: SAM-L0B-Q05 count-back
+  blank-layout ambiguity. Full audit:
+  `scripts/conversion/audit/young-band-image-activation-status.md`. **Do NOT re-surface
+  these as short-test blockers.**
 
 ## 0aa. 2026-06-21 session — QA merges + crosswalk re-pin (lane/qa-crosswalk-l1l2)
 
