@@ -4247,6 +4247,55 @@ where q.tenant_id = t.id
 -- END l0-qa-content-fixes
 
 
+-- BEGIN l1-qa-content-fixes (seed mirror of supabase/migrations/20260620190000_l1_qa_content_fixes.sql)
+-- L1 QA batch (TASK B): SAM-L0C-Q15 stem ("circles"→plain); SAM-L1-Q02/Q04 re-authored
+-- to CLICK_IMAGE_SINGLE with relative-scale per-figure tiles; SAM-L1-Q17 ordering tiles
+-- presented shuffled (correct order unchanged). Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Tap the odd numbers.","select_rule":"all","options":[{"id":"o1","label":"1"},{"id":"o2","label":"5"},{"id":"o3","label":"10"},{"id":"o4","label":"12"},{"id":"o5","label":"24"},{"id":"o6","label":"35"},{"id":"o7","label":"40"},{"id":"o8","label":"41"}],"correct":["o1","o2","o6","o8"]}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L0C-Q15';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Click on the bigger animal.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l1/sam-l1-q02-t1.png","image_alt":"An animal."},{"id":"t2","label":"Picture 2","image_path":"l1/sam-l1-q02-t2.png","image_alt":"An animal."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q02';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'CLICK_IMAGE_SINGLE'::question_format,
+    content = '{"stem":"Who is shorter, Lin or George?","tiles":[{"id":"t1","label":"Picture 1","image_path":"l1/sam-l1-q04-t1.png","image_alt":"A child."},{"id":"t2","label":"Picture 2","image_path":"l1/sam-l1-q04-t2.png","image_alt":"A child."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q04';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"The pictures show what Tom does in one day. Put them in order from first to last.","tiles":[{"id":"t3","label":"Picture 3","image_path":"l1/sam-l1-q17-studying.png","image_alt":"A picture of part of a child''s day."},{"id":"t1","label":"Picture 1","image_path":"l1/sam-l1-q17-brushing-teeth.png","image_alt":"A picture of part of a child''s day."},{"id":"t4","label":"Picture 4","image_path":"l1/sam-l1-q17-sleeping.png","image_alt":"A picture of part of a child''s day."},{"id":"t2","label":"Picture 2","image_path":"l1/sam-l1-q17-walking-to-school.png","image_alt":"A picture of part of a child''s day."}],"_authoring":{"answer_model":{"rule":"order-equality","order":["t1","t2","t3","t4"]}}}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L1-Q17';
+-- END l1-qa-content-fixes
+
+
+-- BEGIN l4-q06-missing-digit-fix (seed mirror of supabase/migrations/20260620200000_l4_q06_missing_digit_fix.sql)
+-- SAM-L4-Q06: missing-digit box moved to the tens place so the arithmetic is
+-- consistent (8512 − 794 = 7718, answer 1). The "———" is the subtraction rule line
+-- (correct), not a mis-rendered "=". Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"What is the missing digit (■) in the following subtraction?\n\n  8 5 ■ 2\n–   7 9 4\n———————\n7 7 1 8","correct_answer":"1"}'::jsonb
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L4-Q06';
+-- END l4-q06-missing-digit-fix
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
