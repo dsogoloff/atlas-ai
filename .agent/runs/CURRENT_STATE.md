@@ -7,25 +7,26 @@
 **As of:** 2026-06-21 (session 2) — trunk head is **`ce9a676`** (#115 merged; the
 `7f2a737` cited below is one merge stale).
 
-**OPEN PR (this session) — lane/young-band-image-activation-audit** (docs/memory only,
-off trunk `ce9a676`). **Finding: young-band (0A/0B/0C) image-row activation is ALREADY
-COMPLETE on trunk — zero held-INACTIVE young-band image rows are activatable.** Requested
-as "activate held young-band image rows"; the premise is stale. PR #78 + the 2026-06-20
-wave (l0a/l0b/l0c-taxonomy-activation, l0b-position, l0a-q15, l0a-q17, l0b-q03-q06,
-l0-qa-content-fixes) already flipped every art-present young-band image row and fixed the
-named defect patterns. Triple-verified against `seed.sql` (subagent trace + ordered parser
-+ direct reads): **53 young-band rows = 36 active / 17 inactive.** 26 active IMAGE rows
-(0A=11, 0B=6, 0C=9). Of the 17 inactive, **9 are image/image-dependent and ALL blocked on
-a MISSING source crop / single-scene art** (SAM-L0A-Q09/Q12, L0B-Q01/Q08/Q12/Q13,
-L0C-Q01/Q06/Q12) — every format they need is already wired (#71+#77), so the only blocker
-is CONVERSION/founder art curation, **no ATLAS render/grader change**. The other 8 held
-rows are manual/oral/drawing/text-ambiguous or the retired L0C-Q11 (replaced by active
-Q11A–D). Named defect patterns verified clean: L0C-Q05 IMAGE_ORDERING serves shuffled
-`[t2,t3,t1]` with id-keyed grading; L0A-Q08 box-reference is a separate stimulus (not a
-tappable tile). Seed↔migration parity **PASS** (69 migrations). No migration, no seed
-change, no image upload. Findings doc:
-`scripts/conversion/audit/young-band-image-activation-status.md`. PR is docs/memory only —
-nothing for the founder to merge for activation; merge at leisure to land the record.
+**OPEN PR #120 (this session) — lane/young-band-image-activation-audit** (docs/memory
+only, off trunk `ce9a676`). **Finding: the young-band (0A/0B/0C) SHORT-TEST beta has NO
+remaining content gate.** The short-test-eligible young-band image set is fully active on
+trunk (PR #78 + the 2026-06-20 wave: l0a/l0b/l0c-taxonomy-activation, l0b-position,
+l0a-q15, l0a-q17, l0b-q03-q06, l0-qa-content-fixes; named defect patterns fixed).
+Triple-verified against `seed.sql`: **53 young-band rows = 36 active / 17 inactive**, 26
+active IMAGE rows (0A=11, 0B=6, 0C=9). **The 9 inactive image rows (SAM-L0A-Q09/Q12,
+L0B-Q01/Q08/Q12/Q13, L0C-Q01/Q06/Q12) are FOUNDER-ADJUDICATED EXCLUDED FROM THE SHORT
+TEST — not a content gap, not a beta gate.** Exclusion is durably encoded
+(`short_test_eligible=false` AND `is_active=false`) and picker-enforced
+(`shortTestPicker.ts:50-51` selects only `is_active=true AND short_test_eligible=true`;
+test `shortTestPicker.test.ts:88`) — they are inert to the short test regardless of art.
+No new flag needed; only the exclusion REASON was prose (now relabelled in the doc). Any
+per-row art note is COMPREHENSIVE-only/future, NOT a short-test blocker. Other 8 inactive:
+manual/oral/drawing/text-ambiguous or retired L0C-Q11 (replaced by active Q11A–D). Named
+defect patterns verified clean (L0C-Q05 shuffled IMAGE_ORDERING + id-keyed grading; L0A-Q08
+box-reference is a separate stimulus). Seed↔migration parity **PASS** (69 migrations).
+Verify GREEN 1196/89, tsc 0, lint 2 known warnings. No migration/seed/image change.
+Findings doc: `scripts/conversion/audit/young-band-image-activation-status.md`. PR is
+docs/memory only; merge at leisure to land the record.
 
 ---
 

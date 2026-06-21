@@ -1,17 +1,45 @@
 # Young-band (0A/0B/0C) image-row activation — status audit (2026-06-21)
 
-**Finding: the young-band image-row activation is already complete on trunk
-(`ce9a676`). Zero held-INACTIVE young-band image rows are activatable — every
-remaining held image row is blocked on a missing source crop or single-scene art
-(founder/CONVERSION curation), not on anything ATLAS-side.**
+**Finding: the young-band SHORT-TEST beta has NO remaining content gate.** The
+short-test-eligible young-band image set is fully activated on trunk (`ce9a676`),
+and the 9 rows that are NOT active were **adjudicated by the founder as EXCLUDED
+from the short test** — that exclusion is durably encoded (`short_test_eligible=false`
+AND `is_active=false`) and enforced by the picker. They are **not** a pending
+content gap and **not** a beta gate.
+
+> **Correction (2026-06-21).** An earlier revision of this doc framed these 9 rows
+> as "held / blocked on missing source crop." That mislabelled a CLOSED founder
+> decision as an open gap. They are excluded from the short test by adjudication;
+> art status is irrelevant to the short test. Any per-row art note below is a
+> COMPREHENSIVE-test/future concern only — never a short-test blocker.
 
 This audit was requested as "activate the held-INACTIVE young-band image rows."
-The premise is stale: prior sessions already did it. PR #78 (`l0-l2-activation`)
-plus the 2026-06-20 wave — `l0a/l0b/l0c-taxonomy-activation`, `l0b-position`,
-`l0a-q15`, `l0a-q17`, `l0b-q03-q06`, and the `l0-qa-content-fixes` batch — flipped
-every art-present young-band image row to active and corrected the known defect
-patterns. Nothing remains that can be flipped without new source art or a founder
-content decision.
+The activation premise is stale: prior sessions already activated every short-test
+row. PR #78 (`l0-l2-activation`) plus the 2026-06-20 wave —
+`l0a/l0b/l0c-taxonomy-activation`, `l0b-position`, `l0a-q15`, `l0a-q17`,
+`l0b-q03-q06`, and the `l0-qa-content-fixes` batch — flipped every short-test-eligible
+young-band image row to active and corrected the known defect patterns.
+
+## Short-test exclusion — is it machine-readable? (per-row)
+Yes for all 9. The short picker (`src/lib/questionPicker/shortTestPicker.ts:50–51`)
+selects only `is_active = true AND short_test_eligible = true`
+(test: `shortTestPicker.test.ts:88`). Every excluded row carries BOTH booleans
+`false` in `seed.sql` (mirrored from migrations; parity PASS), so the picker
+**cannot** serve them — they are inert to the short test regardless of art status.
+The exclusion FACT is encoded in a column the picker reads; only the exclusion
+REASON lives in prose (this doc). **No new flag is needed.**
+
+| row | is_active | short_test_eligible | excluded from short test by |
+|---|---|---|---|
+| SAM-L0A-Q09 | false | false | column (picker-enforced) |
+| SAM-L0A-Q12 | false | false | column (picker-enforced) |
+| SAM-L0B-Q01 | false | false | column (picker-enforced) |
+| SAM-L0B-Q08 | false | false | column (picker-enforced) |
+| SAM-L0B-Q12 | false | false | column (picker-enforced) |
+| SAM-L0B-Q13 | false | false | column (picker-enforced) |
+| SAM-L0C-Q01 | false | false | column (picker-enforced) |
+| SAM-L0C-Q06 | false | false | column (picker-enforced) |
+| SAM-L0C-Q12 | false | false | column (picker-enforced) |
 
 ## Method (triple-verified, source of truth = `supabase/seed.sql`)
 The dev DB builds entirely from `seed.sql`; a row is INSERTed once then mutated by
@@ -46,38 +74,46 @@ and the count is otherwise non-image.)
 - Stems checked against source wording on the active image set; no "circles"-type
   mismatch found.
 
-## HELD list — remaining inactive young-band rows (17) with reasons
+## Inactive young-band rows (17)
 
-### Image / image-dependent, held (9) — ALL blocked on missing source art
-None has a source crop on disk; per the brief these are routed to held, not activated.
+### Image rows EXCLUDED from the short test — founder-adjudicated (9)
+**Not a content gap. Not a beta gate.** These were adjudicated out of short-test
+scope; `short_test_eligible=false` + `is_active=false` keep them out, picker-enforced.
+The "art" column is a COMPREHENSIVE-test/future note only — it has NO bearing on the
+short test and must not be read as a short-test blocker.
 
-| row | target interaction | reason held |
-|---|---|---|
-| SAM-L0A-Q09 | click-image-single | no `0A-09` crop in source (picture unverifiable) |
-| SAM-L0A-Q12 | visual-matching (tails→animals) | no `0A-12` crop in source |
-| SAM-L0B-Q01 | click-image-multi (spot 3 differences) | single-scene, no discrete-tile crop |
-| SAM-L0B-Q08 | multi-blank (count toy cars) | picture-dependent; no `0B-08` crop |
-| SAM-L0B-Q12 | click-image-multi (bee number path) | no `0B-12` crop |
-| SAM-L0B-Q13 | click-image (front/behind animals) | no `0B-13` crop |
-| SAM-L0C-Q01 | visual-matching (ordinal birds) | no `0C-01` crop |
-| SAM-L0C-Q06 | multi-blank (colour pattern) | picture-dependent; no `0C-06` crop |
-| SAM-L0C-Q12 | click-image-multi (tap all cubes) | no `0C-12` crop |
+| row | target interaction | short-test status | comprehensive-only art note (future) |
+|---|---|---|---|
+| SAM-L0A-Q09 | click-image-single | excluded (adjudicated) | no `0A-09` crop yet |
+| SAM-L0A-Q12 | visual-matching (tails→animals) | excluded (adjudicated) | no `0A-12` crop yet |
+| SAM-L0B-Q01 | click-image-multi (spot 3 differences) | excluded (adjudicated) | single-scene; needs discrete tiles |
+| SAM-L0B-Q08 | multi-blank (count toy cars) | excluded (adjudicated) | picture-dependent; no `0B-08` crop |
+| SAM-L0B-Q12 | click-image-multi (bee number path) | excluded (adjudicated) | no `0B-12` crop |
+| SAM-L0B-Q13 | click-image (front/behind animals) | excluded (adjudicated) | no `0B-13` crop |
+| SAM-L0C-Q01 | visual-matching (ordinal birds) | excluded (adjudicated) | no `0C-01` crop |
+| SAM-L0C-Q06 | multi-blank (colour pattern) | excluded (adjudicated) | picture-dependent; no `0C-06` crop |
+| SAM-L0C-Q12 | click-image-multi (tap all cubes) | excluded (adjudicated) | no `0C-12` crop |
 
-All four answer formats these rows want (CLICK_IMAGE_SINGLE/MULTI, VISUAL_MATCHING,
-IMAGE_ORDERING, MULTI_BLANK) are already wired end-to-end in ATLAS (#71 + #77).
-**The only blocker is source art** — a CONVERSION/founder curation job, not an ATLAS
-render/grader change.
+All answer formats these rows would use (CLICK_IMAGE_SINGLE/MULTI, VISUAL_MATCHING,
+IMAGE_ORDERING, MULTI_BLANK) are already wired end-to-end in ATLAS (#71 + #77), so
+there is **no ATLAS render/grader change** outstanding for them either.
 
-### Non-image / out-of-scope held (8)
+### Other inactive young-band rows (8)
 - Manual/trace: SAM-L0A-Q01, SAM-L0A-Q02 (maze "draw a line"), SAM-L0A-Q16,
   SAM-L0C-Q02, SAM-L0C-Q07 (drawing/colour-in — no auto-grade path).
 - Oral: SAM-L0A-Q18.
 - Text content-ambiguity: SAM-L0B-Q05 (count-back blank layout ambiguous — founder).
 - Retired: SAM-L0C-Q11 (original number-line row; superseded by active Q11A–D).
 
+## Short-test beta gate status
+**No remaining content gate for the young-band short test.** The short-test-eligible
+set is fully active; the 9 excluded image rows are adjudicated out and picker-enforced.
+
 ## Cross-topic seams
-- **ATLAS render/grader:** none. All formats the held rows need are already wired;
-  the active image set serves and grades correctly. No ATLAS change required.
-- **Founder content decision (carried over, not new):** SAM-L0B-Q05 blank layout.
-- **CONVERSION/founder art curation:** the 9 image rows above need curated
-  per-question crops before any can flip (full-page renders must never ship).
+- **ATLAS render/grader:** none. All formats are wired; the active image set serves
+  and grades correctly.
+- **Short test:** nothing outstanding.
+- **COMPREHENSIVE test (future, NOT a short-test/beta concern):** if any of the 9
+  excluded rows are ever brought into the comprehensive bank, they would first need
+  curated per-question crops (full-page renders must never ship) and a deliberate
+  re-adjudication. Tracked as comprehensive-only; do not surface as a short-test gap.
