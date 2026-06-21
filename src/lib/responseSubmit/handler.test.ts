@@ -122,6 +122,17 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
             error: null,
           };
         }
+        // Picker Calibration PR3: discoverAvailableBooklets selects ONLY "level".
+        // Default to "every booklet loaded" so the comprehensive split/floor-find
+        // isn't bank-clamped and no staged picker entry is consumed.
+        if (table === "questions" && cols() === "level") {
+          return {
+            data: [
+              "0A", "0B", "0C", "1A", "2A", "3A", "4A", "5A", "6A", "7A", "8A",
+            ].map((level) => ({ level })),
+            error: null,
+          };
+        }
         // Picker Calibration: the per-(strand[,offset]) count replays both select
         // ONLY "question_id" from responses (replayStrandCounts /
         // replayStrandOffsetCounts). Default them to "nothing served yet" so they

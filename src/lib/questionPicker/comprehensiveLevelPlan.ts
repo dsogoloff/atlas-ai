@@ -70,6 +70,10 @@ export function planComprehensiveLevel(args: {
   servedByOffset: ReadonlyMap<number, number>;
   /** Proportion base — the tier's target item count. */
   budget: number;
+  /** PR3: booklet ordinals the bank can serve. When provided, an offset whose
+   *  booklet isn't available is dropped — the split won't reach above the
+   *  ceiling (highest available) or below an empty floor. */
+  availableOrdinals?: ReadonlySet<number>;
 }): LevelPlan | null {
   const ratio = args.ctx.strandMap[args.strand]?.ratio ?? null;
   const split = strandAdjustedSplit(baseSplit(args.ctx.passBand), ratio);
@@ -78,7 +82,9 @@ export function planComprehensiveLevel(args: {
   const availableOffsets = new Set<number>();
   for (const { offset } of split) {
     const ord = args.ctx.anchorOrdinal + offset;
-    if (ord >= 0 && ord <= maxOrdinal) availableOffsets.add(offset);
+    if (ord < 0 || ord > maxOrdinal) continue;
+    if (args.availableOrdinals && !args.availableOrdinals.has(ord)) continue;
+    availableOffsets.add(offset);
   }
 
   const offset = planNextOffset({
@@ -142,4 +148,61 @@ export async function loadComprehensiveOutcomeContext(args: {
     },
     seenItemIds: outcome.seen_item_ids,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Floor-find + ceiling (PR3)
+// ---------------------------------------------------------------------------
+
+/** Lowest / highest available booklet ordinal, or null when nothing is loaded. */
+export function lowestAvailableOrdinal(
+  availableOrdinals: ReadonlySet<number>,
+): number | null {
+  let lo: number | null = null;
+  for (const o of availableOrdinals) if (lo === null || o < lo) lo = o;
+  return lo;
+}
+
+export function highestAvailableOrdinal(
+  availableOrdinals: ReadonlySet<number>,
+): number | null {
+  let hi: number | null = null;
+  for (const o of availableOrdinals) if (hi === null || o > hi) hi = o;
+  return hi;
+}
+
+/**
+ * Floor-find band: the half-grades of every AVAILABLE booklet from the lowest
+ * loaded booklet up to the anchor (at-and-below). For a weak child the adaptive
+ * engine walks DOWN this band (M-1 → M-2 → …) until it settles where the child
+ * is solid; the band stops at the bottom of the loaded library. Returns [] when
+ * nothing at/below the anchor is available (caller keeps the default band).
+ */
+export function floorFindBand(
+  anchorOrdinal: number,
+  availableOrdinals: ReadonlySet<number>,
+): string[] {
+  const ords: number[] = [];
+  for (const o of availableOrdinals) if (o <= anchorOrdinal) ords.push(o);
+  return halfGradesForBooklets(ords);
+}
+
+/** Below-this overall ratio the child is NOT "solid" at a level (floor-find). */
+export const FLOOR_FIND_SOLID_RATIO = 0.5;
+
+/**
+ * Evaluate the floor-find outcome at comprehensive completion. manual placement
+ * is needed when the engine settled at (or below) the LOWEST available booklet
+ * AND the child is still not solid there — i.e. the walk-down fell past the
+ * bottom of the library without finding a solid level. Otherwise a floor was
+ * found and the auto-placement stands.
+ */
+export function evaluateFloorFind(args: {
+  placementOrdinal: number;
+  lowestAvailableOrdinal: number;
+  overallRatio: number;
+}): { manualPlacementNeeded: boolean } {
+  const atBottom = args.placementOrdinal <= args.lowestAvailableOrdinal;
+  const notSolid = args.overallRatio < FLOOR_FIND_SOLID_RATIO;
+  return { manualPlacementNeeded: atBottom && notSolid };
 }

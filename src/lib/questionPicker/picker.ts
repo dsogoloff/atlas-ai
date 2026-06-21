@@ -65,6 +65,7 @@ import { STRANDS } from "@/lib/engine/levels";
 import type { Strand } from "@/lib/engine/types";
 import type { Database } from "@/lib/supabase/database.types";
 
+import { bookletOrdinalForHalfGrade } from "./levelBand";
 import type {
   Chooser,
   PickedQuestionRow,
@@ -229,6 +230,37 @@ export async function discoverShortEligibleCounts(
     counts.set(row.strand, (counts.get(row.strand) ?? 0) + 1);
   }
   return counts;
+}
+
+/**
+ * Picker Calibration PR3 — the set of S.A.M. booklet ordinals the tenant's
+ * active bank can serve (any strand). Makes the comprehensive level split
+ * bank-aware: floor-find walks DOWN only to booklets that exist, and the ceiling
+ * is the highest available booklet (no "above scope" reach beyond the loaded
+ * library). Levels that don't map to a booklet are ignored.
+ */
+export async function discoverAvailableBooklets(
+  serviceClient: SupabaseClient<Database>,
+  tenantId: string,
+): Promise<Set<number>> {
+  const { data, error } = await serviceClient
+    .from("questions")
+    .select("level")
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true);
+
+  if (error) {
+    throw new Error(
+      `[picker] discoverAvailableBooklets failed: ${error.message}`,
+    );
+  }
+
+  const ordinals = new Set<number>();
+  for (const row of data ?? []) {
+    const ord = bookletOrdinalForHalfGrade(row.level);
+    if (ord !== null) ordinals.add(ord);
+  }
+  return ordinals;
 }
 
 export function compareCandidates(target: number) {

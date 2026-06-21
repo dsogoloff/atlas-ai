@@ -96,6 +96,20 @@ function makeServiceClient(
         ) {
           return { data: null, error: null };
         }
+        // Picker Calibration PR3: discoverAvailableBooklets (comprehensive first
+        // pick) selects ONLY "level". Default to "every booklet loaded" so the
+        // split/floor-find isn't bank-clamped and no staged entry is consumed.
+        if (
+          table === "questions" &&
+          selectCols.replace(/\s/g, "") === "level"
+        ) {
+          return {
+            data: [
+              "0A", "0B", "0C", "1A", "2A", "3A", "4A", "5A", "6A", "7A", "8A",
+            ].map((level) => ({ level })),
+            error: null,
+          };
+        }
         const staged = scripts[table]?.shift();
         if (staged !== undefined) return staged;
         if (table === "assessment_sessions") {

@@ -5,7 +5,11 @@ import type { Database } from "@/lib/supabase/database.types";
 import type { ShortTestOutcome } from "@/lib/shortTest/outcome";
 
 import {
+  evaluateFloorFind,
+  floorFindBand,
+  highestAvailableOrdinal,
   loadComprehensiveOutcomeContext,
+  lowestAvailableOrdinal,
   planComprehensiveLevel,
   type ComprehensiveOutcomeContext,
 } from "./comprehensiveLevelPlan";
@@ -133,5 +137,87 @@ describe("loadComprehensiveOutcomeContext", () => {
       strandMap: {},
     });
     expect(loaded.seenItemIds).toEqual([]);
+  });
+});
+
+describe("bank-aware planComprehensiveLevel (PR3)", () => {
+  it("drops an offset whose booklet the bank can't serve (ceiling clamp)", () => {
+    // anchor 10 ("8"); clean reach +1 is off-axis already, M(10) and M-1(9)
+    // exist. Make only booklet 9 available → plan must target offset -1.
+    const plan = planComprehensiveLevel({
+      strand: "number_sense",
+      ctx: { anchorOrdinal: 10, passBand: "clean", strandMap: {} },
+      servedByOffset: new Map(),
+      budget: 30,
+      availableOrdinals: new Set([9]),
+    });
+    expect(plan!.offset).toBe(-1);
+  });
+
+  it("returns null when no split offset is bank-available", () => {
+    const plan = planComprehensiveLevel({
+      strand: "number_sense",
+      ctx: { anchorOrdinal: 6, passBand: "clean", strandMap: {} },
+      servedByOffset: new Map(),
+      budget: 30,
+      availableOrdinals: new Set([0]), // nothing near the anchor
+    });
+    expect(plan).toBeNull();
+  });
+});
+
+describe("floorFindBand", () => {
+  it("returns the half-grades of available booklets at-and-below the anchor", () => {
+    // anchor 6 ("4"); available 2..6 → at-and-below = 2,3,4,5,6.
+    const band = floorFindBand(6, new Set([2, 3, 4, 5, 6, 7, 8]));
+    // booklet 2 == 0C/KA/KB, 3 == 1A/1B, 4 == 2A/2B, 5 == 3A/3B, 6 == 4A/4B.
+    expect(band).toContain("4A");
+    expect(band).toContain("0C");
+    expect(band).not.toContain("5A"); // booklet 7 is above the anchor
+  });
+
+  it("is empty when nothing at/below the anchor is available", () => {
+    expect(floorFindBand(2, new Set([7, 8]))).toEqual([]);
+  });
+});
+
+describe("lowest/highestAvailableOrdinal", () => {
+  it("finds the extremes, or null when empty", () => {
+    expect(lowestAvailableOrdinal(new Set([3, 7, 5]))).toBe(3);
+    expect(highestAvailableOrdinal(new Set([3, 7, 5]))).toBe(7);
+    expect(lowestAvailableOrdinal(new Set())).toBeNull();
+    expect(highestAvailableOrdinal(new Set())).toBeNull();
+  });
+});
+
+describe("evaluateFloorFind", () => {
+  it("manual placement when settled at the bottom AND not solid", () => {
+    expect(
+      evaluateFloorFind({
+        placementOrdinal: 0,
+        lowestAvailableOrdinal: 0,
+        overallRatio: 0.3,
+      }).manualPlacementNeeded,
+    ).toBe(true);
+  });
+
+  it("floor found when solid at the bottom (no manual placement)", () => {
+    expect(
+      evaluateFloorFind({
+        placementOrdinal: 0,
+        lowestAvailableOrdinal: 0,
+        overallRatio: 0.7,
+      }).manualPlacementNeeded,
+    ).toBe(false);
+  });
+
+  it("floor found when placed above the bottom even if weak", () => {
+    expect(
+      evaluateFloorFind({
+        placementOrdinal: 4,
+        lowestAvailableOrdinal: 0,
+        overallRatio: 0.2,
+      }).manualPlacementNeeded,
+    ).toBe(false);
   });
 });
