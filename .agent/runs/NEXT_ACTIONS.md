@@ -4,6 +4,46 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0aaa. 2026-06-21 session — Picker Calibration (PRs #119 / #121 / #122, stacked)
+
+**Trunk head entering this session: `ce9a676` (PR #115 head).** All three PRs verify-bar
+GREEN; Codex manual/skipped (relay unauth). Merge in order #119 → #121 → #122.
+
+- [ ] **Dimitri: merge PR #119 (lane/picker-short-outcome)** after Vercel preview review,
+      then run `supabase db reset` (adds nullable `assessment_sessions.short_test_outcome`
+      column, migration `20260621130000`). No image upload.
+      After merge: manually check that GitHub has retargeted PR #121's base to
+      ATLAS-ASSESSMENT (`gh pr view 121 --json baseRefName`); if still pointing at
+      `lane/picker-short-outcome`, run `gh pr edit 121 --base ATLAS-ASSESSMENT`.
+
+- [ ] **Dimitri: merge PR #121 (lane/picker-comprehensive)** (after #119 merged +
+      retargeted). No new migration; no `supabase db reset` needed after this PR alone.
+      After merge: retarget PR #122's base to ATLAS-ASSESSMENT if needed.
+
+- [ ] **Dimitri: merge PR #122 (lane/picker-floor-ceiling)** (after #121 merged +
+      retargeted), then run `supabase db reset` (adds nullable
+      `assessment_sessions.manual_placement_needed` column, migration `20260621140000`).
+      Then resolve the 3 batched gate items in PR #122:
+      (1) Confirm (or edit) the §2.4 draft parent copy lines `floorFoundLine` and
+          `ceilingLine` in `src/lib/report/manualPlacement.ts`.
+      (2) Decide: render floor-found/manual/ceiling copy in the parent report + surface
+          `manual_placement_needed` in the instructor view. Not yet built; needs copy
+          decision first.
+      (3) Thin-pool coverage: parametric item generation is out of scope; readiness min-N
+          floor + comprehensive confidence intervals are the current mitigations. Confirm
+          acceptable.
+
+- [ ] **PARKED — §2.4 draft copy in `manualPlacement.ts` (needs Dimitri).** The
+      `floorFoundLine` and `ceilingLine` strings are parent-facing outcome claims (§2.4).
+      Plain-English: these are the sentences that tell a parent what it means when the
+      assessment hit the bottom or top of the question bank. They are drafted but founder
+      must confirm the exact wording before they render. No build until confirmed.
+
+- [ ] **PARKED — instructor view for `manual_placement_needed` (needs Dimitri copy
+      decision above first).** Once §2.4 copy is approved, a follow-up lane will render
+      the placement guidance in the parent report and surface the flag + floor-find data
+      in the instructor view.
+
 ## 0aa. 2026-06-21 session — QA merges + crosswalk re-pin (lane/qa-crosswalk-l1l2)
 
 **Trunk merges since the 2026-06-18 snapshot (all MERGED to ATLAS-ASSESSMENT):**
@@ -461,6 +501,11 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
 - [ ] Offline (v2); multi-tenant scale-out (M5); remaining S.A.M. levels + public items.
 
 ## Parked-for-Dimitri (rollup)
+- **[NEW 2026-06-21] §2.4 draft parent copy in `manualPlacement.ts` — PARKED.** `floorFoundLine`
+  and `ceilingLine` are parent-facing outcome claims drafted in PR #122 pending Dimitri
+  confirmation. No render until confirmed.
+- **[NEW 2026-06-21] Instructor view + parent report render for `manual_placement_needed` —
+  PARKED.** Follow-up lane not built; blocked on copy decision above.
 - **[NEW 2026-06-18] /coppa page body reconciliation — PARKED.** On-screen `/coppa` page body is still Stitch placeholder copy; does NOT match the counsel PDF. Parent-facing claims language (§2.4). After PR #84 merges, Dimitri to direct the copy pass. No build until directed.
 - **[NEW 2026-06-18] PR #84 batched gate items — resolve after merge.** (1) Confirm served PDF rendering acceptable; (2) /coppa copy pass (see item above); (3) confirm committing `docs/legal/Parent_Privacy_Request_Policy.docx` was intended.
 - **Placement bar / radar / sub-strand pills on the degraded branch (item 1, report fix

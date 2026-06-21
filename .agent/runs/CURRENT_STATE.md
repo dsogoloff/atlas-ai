@@ -4,15 +4,69 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-21 session — trunk advanced to **`7f2a737`** via six merges since the
-2026-06-18 snapshot below: PR #109 (fix-dup-migration-version, `e489312`), #110
-(restore-seed-mirrors, `8d3d09c`), #111 (seed↔migration activation **parity guard** +
-generated mirror region, `20127b0`), #112 (L0C young-band QA fix batch #2, `3c5dfc0`),
-#113 (L1 QA batch — Q1/Q2/Q4/Q8 + L4-Q06 missing-digit, `f5fdbc9`), #114
-(short-test follow-up form, `7f2a737`). PRs #82/#83/#84 below are now superseded/older —
-verify their GitHub status before acting; the 2026-06-18 block is retained for history.
+**As of:** 2026-06-21 session (Picker Calibration) — trunk head is **`ce9a676`** (PR #115
+head; trunk advanced from `7f2a737` since the crosswalk session). Three stacked PRs opened
+this session; all verify-bar GREEN; Codex manual/skipped (relay unauth). Merge order:
+#119 → #121 → #122 (stacked; Dimitri merges attended after Vercel preview; stacked-PR
+retarget note: when #119 merges GitHub may not auto-retarget #121 — manually re-point
+#121's base to ATLAS-ASSESSMENT, and same for #122 after #121).
 
-**OPEN PR (this session) — lane/qa-crosswalk-l1l2** (off trunk `f5fdbc9` / #113 head; #114
+**OPEN PRs (Picker Calibration, 3 stacked, 2026-06-21):**
+
+- **PR #119 — lane/picker-short-outcome** (base ATLAS-ASSESSMENT, off `ce9a676`):
+  New `src/lib/shortTest/outcome.ts` — `ShortTestOutcome` type with `measured_level`,
+  `intake_level`, `pass_band` (clean/mixed/weak/insufficient, 8-graded-item floor;
+  clean ≥0.8 / mixed 0.5–0.8 / weak <0.5 / insufficient <8 graded), `clean_pass_ratio`,
+  `strand_map{correct,seen,ratio}`, `seen_item_ids`. Persisted to new nullable jsonb column
+  `assessment_sessions.short_test_outcome` (migration `20260621130000`, column DDL, NO seed
+  mirror) on session close via `persistShortTestOutcome` in `responseSubmit/handler.ts`
+  `closeSession` (gated to short). Readiness floor: needs ≥8 graded AND clean ratio;
+  0A current level suppressed. New `src/lib/engine/shortTest.ts` — stratified short draw:
+  coverage-first router (~2/strand, fewest-served then max-variance fill) + coverage+count
+  stop (10–15, no SE gate). In-scope = strands with ≥1 active short_test_eligible item in
+  previous-booklet band (new `picker.discoverShortEligibleCounts`); floor clamps to
+  availability. Wired into `responseSubmit` decideTermination/buildRouter for short.
+  Verify: **1220 tests / 91 files GREEN**, tsc 0, lint 0 err (2 known warnings), build OK.
+  Post-merge: `supabase db reset` (adds nullable `short_test_outcome` column).
+
+- **PR #121 — lane/picker-comprehensive** (base lane/picker-short-outcome):
+  Comprehensive anchors on MEASURED level (reads child's latest completed short session's
+  `ShortTestOutcome` → booklet band; neutral grade when no outcome). Global split by
+  `pass_band` (`src/lib/engine/comprehensiveSplit.ts`): clean 30/50/20 over M-1/M/M+1;
+  mixed 50/30/20 over M-1/M/M-2; weak below-weighted (floor-find seed); insufficient/none
+  neutral 50/30/20. `planNextOffset` steers each pick to the largest-deficit offset.
+  Per-strand override `strandAdjustedSplit` redistributes by `strand_map` ratio.
+  Per-pick plan (`src/lib/questionPicker/comprehensiveLevelPlan.ts`): chosen offset →
+  target±1 booklet band + difficulty centred on planned booklet (thin pool falls through to
+  neighbour). `replay.replayStrandOffsetCounts` attributes actual served level back to an
+  offset so the split self-corrects. ALWAYS subtracts `seen_item_ids`
+  (`PickContext.extraExcludedIds`, merged in both handlers). Length 20–30, cap 30:
+  G5_8 `hardCap` 36→30; K_4 stays target 20 / cap 26. `NextQuestionRequest`/`PickerRequest`
+  gain optional per-pick `levelBand`; `pickForSession` honours it for comprehensive.
+  Verify: **1250 / 94 GREEN**, tsc 0, lint 0 err (2 known), build OK. No new migration.
+
+- **PR #122 — lane/picker-floor-ceiling** (base lane/picker-comprehensive):
+  Bank-aware offsets (`picker.discoverAvailableBooklets` → `availableOrdinals`): split only
+  targets booklets the active bank serves. CEILING = no reach above highest available.
+  FLOOR = walk-down stops at lowest loaded booklet. Floor-find (`weak` pass_band): hands
+  level to adaptive engine over `floorFindBand` (at-and-below) so it walks down until solid.
+  Wired in `responseSubmit` router + sessionStart first pick. `manual_placement_needed`:
+  `evaluateFloorFind` sets it true when engine settled at/below lowest loaded booklet AND
+  child still not solid (< `FLOOR_FIND_SOLID_RATIO` 0.5). New nullable column
+  `assessment_sessions.manual_placement_needed` (migration `20260621140000`, column DDL,
+  NO seed mirror), persisted on comprehensive completion (`persistComprehensivePlacement`,
+  no-op for short). Copy `src/lib/report/manualPlacement.ts`: manual line founder-locked
+  verbatim; `floorFoundLine` + `ceilingLine` are §2.4 DRAFTS pending Dimitri.
+  Verify: **1260 / 94 GREEN**, tsc 0, lint 0 err (2 known), build OK.
+  Post-merge: `supabase db reset` (adds nullable `manual_placement_needed` column).
+  BATCHED GATE ITEMS for Dimitri (in PR #122 body):
+  (1) Confirm §2.4 draft parent copy (`floorFoundLine`, `ceilingLine`) in `manualPlacement.ts`.
+  (2) Render floor-found/manual/ceiling copy in parent report + surface `manual_placement_needed`
+      to instructor view — HELD pending copy decision (not built).
+  (3) Thin-pool structural fix = parametric item generation — out of scope; readiness min-N
+      floor (PR #119) + comprehensive confidence already cover under-N.
+
+**Previous session open PR — lane/qa-crosswalk-l1l2** (off trunk `f5fdbc9` / #113 head; #114
 is a sibling not in this branch's history — re-pin touches only bank content so no
 conflict). Short-test served-order→external_id crosswalk + three QA re-pins:
 - **Crosswalk** (`scripts/conversion/audit/build-served-crosswalk.ts` + `served-crosswalk.{md,json}`):
@@ -108,6 +162,9 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Picker short outcome (PR #119) | OPEN PR #119 | lane/picker-short-outcome, base ATLAS-ASSESSMENT off `ce9a676`. `ShortTestOutcome` type + persistence + stratified short draw. Migration `20260621130000` (nullable `short_test_outcome`). Verify GREEN 1220/91. Merge first in the stack; `supabase db reset` after. |
+| Picker comprehensive split (PR #121) | OPEN PR #121 | lane/picker-comprehensive, stacked on #119. pass_band global split + per-strand override + per-pick plan + seen_item_ids exclusion + G5_8 cap 36→30. No new migration. Verify GREEN 1250/94. Merge second; retarget base to ATLAS-ASSESSMENT after #119 merges. |
+| Picker floor/ceiling (PR #122) | OPEN PR #122 — FOUNDER GATE ITEMS | lane/picker-floor-ceiling, stacked on #121. Bank-aware offsets, floor-find, `manual_placement_needed` column. Migration `20260621140000`. `manualPlacement.ts` copy with §2.4 drafts PARKED for Dimitri. Verify GREEN 1260/94. Merge third; retarget base after #121 merges; `supabase db reset` after. |
 | Lead-notify tests (PR #82) | OPEN PR #82 | lane/lead-notify-test, off trunk `ae281dd`. Test-only: `src/lib/followUp/notify.test.ts`. Verify GREEN 1172/84. Awaiting Dimitri merge. |
 | Mascot welcome screen (PR #83) | OPEN PR #83 | lane/mascot-welcome, off trunk `ae281dd`. `src/app/(child)/assessment/components/Welcome.tsx` (tap-to-start). `assessment-client.tsx` start gating refactored. Verify GREEN 1170/84. Awaiting Dimitri merge. |
 | COPPA consent-of-record (PR #84) | OPEN PR #84 — LEGAL | lane/coppa-consent-of-record, off trunk `ae281dd`. Consent text canonical source, disclosure asset + served PDF, `consent_records` new columns, add-child action wired. Migration `20260618120000`. Verify GREEN 1170/84. Requires `supabase db reset` after merge. Batched gate items in PR for Dimitri. |
@@ -167,7 +224,14 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 See `NEXT_ACTIONS.md`.
 
 Founder actions (current):
-1. [DONE] Merged PR #50 (served-question-gate, ea53da5).
+1. **NEW (2026-06-21) — Picker Calibration:** Merge PRs in order #119 → #121 → #122 (each
+   stacked on the prior; attended, after Vercel preview review). After #119 merges: run
+   `supabase db reset` (adds `short_test_outcome` column). After #122 merges: run
+   `supabase db reset` (adds `manual_placement_needed` column). Stacked-PR note: after
+   #119 merges, manually re-point #121's base to ATLAS-ASSESSMENT if GitHub did not
+   auto-retarget; same for #122 after #121. Then resolve the 3 batched gate items in
+   PR #122 (§2.4 copy + render + thin-pool scope).
+2. [DONE] Merged PR #50 (served-question-gate, ea53da5).
 2. [DONE] Merged PR #55 (duplicate-response-constraint, 4b31baa) — superseded PR #51 (closed).
 3. [DONE] Merged PR #52 (ai-data-minimization, 57e5f93).
 4. [DONE] Merged PR #53 (next-upgrade-ci, 1997b3d).
