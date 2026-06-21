@@ -290,13 +290,19 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     <ReportShell>
       <Topbar reportId={reportContent.metadata.report_id} />
       <Hero childName={childFirstName} metaLine={metaLine}>
-        <PlacementCard
-          childName={childFirstName}
-          samLevel={reportContent.placement.sam_level}
-          overallPercentage={reportContent.placement.overall_percentage}
-          tier={reportContent.placement.tier}
-          narrationLine={narrationProse?.placement_line}
-        />
+        {/* Comprehensive placement block. SHORT reports (readiness !== null)
+            never show it — a short sample doesn't yield a placement, and the
+            comprehensive value would leak (e.g. "S.A.M Level 3" on a 0C short
+            report). Short shows only the readiness line + CTA below. */}
+        {!reportContent.readiness && (
+          <PlacementCard
+            childName={childFirstName}
+            samLevel={reportContent.placement.sam_level}
+            overallPercentage={reportContent.placement.overall_percentage}
+            tier={reportContent.placement.tier}
+            narrationLine={narrationProse?.placement_line}
+          />
+        )}
         <Link
           href={`/report/how-it-works?child=${child.id}`}
           className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium hover:opacity-70 transition-opacity print:hidden"
@@ -370,9 +376,13 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
         </Section>
       ) : null}
 
-      <Section title="Placement recommendation">
-        <PlacementRecommendation samLevel={reportContent.placement.sam_level} />
-      </Section>
+      {/* Placement recommendation — comprehensive only; suppressed on SHORT
+          reports (readiness !== null) for the same reason as the hero block. */}
+      {!reportContent.readiness && (
+        <Section title="Placement recommendation">
+          <PlacementRecommendation samLevel={reportContent.placement.sam_level} />
+        </Section>
+      )}
 
       <NextSteps sessionId={latestSession.id} />
 

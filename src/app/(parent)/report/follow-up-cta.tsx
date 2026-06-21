@@ -2,11 +2,11 @@
 
 // Universal comprehensive CTA for the short-test report (shown to every
 // short-test taker, pass or not). The button opens a short capture form
-// (child's school + parent contact + best time), an EXPLICIT opt-in submit
-// persists a follow-up lead and notifies the pilot center, then a generic
-// confirmation shows (the online line is a no-date capture incentive). All
-// copy is founder-approved (READINESS_COPY); only Tier 1/2 lead data is
-// collected — no diagnostic result.
+// (parent contact + zip + optional child's school) gated behind an EXPLICIT,
+// REQUIRED opt-in checkbox; submitting persists a follow-up lead and notifies
+// the pilot center, then a generic confirmation shows (the online line is a
+// no-date capture incentive). All copy is founder-approved (READINESS_COPY);
+// only Tier 1/2 lead data is collected — no diagnostic result.
 
 import { useState } from "react";
 
@@ -33,7 +33,8 @@ export function FollowUpCta({ sessionId, schoolFieldEnabled }: Props) {
   const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [parentPhone, setParentPhone] = useState("");
-  const [bestTimeToReach, setBestTimeToReach] = useState("");
+  const [zip, setZip] = useState("");
+  const [optedIn, setOptedIn] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +49,8 @@ export function FollowUpCta({ sessionId, schoolFieldEnabled }: Props) {
       parentName,
       parentEmail,
       parentPhone,
-      bestTimeToReach,
+      zip,
+      optedIn,
     });
     setSubmitting(false);
     if (result.ok) setDone(true);
@@ -95,8 +97,10 @@ export function FollowUpCta({ sessionId, schoolFieldEnabled }: Props) {
           setParentEmail={setParentEmail}
           parentPhone={parentPhone}
           setParentPhone={setParentPhone}
-          bestTimeToReach={bestTimeToReach}
-          setBestTimeToReach={setBestTimeToReach}
+          zip={zip}
+          setZip={setZip}
+          optedIn={optedIn}
+          setOptedIn={setOptedIn}
         />
       )}
     </div>
@@ -119,8 +123,10 @@ export function FollowUpForm({
   setParentEmail,
   parentPhone,
   setParentPhone,
-  bestTimeToReach,
-  setBestTimeToReach,
+  zip,
+  setZip,
+  optedIn,
+  setOptedIn,
 }: {
   schoolFieldEnabled: boolean;
   submitting: boolean;
@@ -134,18 +140,23 @@ export function FollowUpForm({
   setParentEmail: (v: string) => void;
   parentPhone: string;
   setParentPhone: (v: string) => void;
-  bestTimeToReach: string;
-  setBestTimeToReach: (v: string) => void;
+  zip: string;
+  setZip: (v: string) => void;
+  optedIn: boolean;
+  setOptedIn: (v: boolean) => void;
 }) {
   return (
     <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3">
-      {schoolFieldEnabled && (
-        <Field label={C.form.schoolLabel} value={schoolName} onChange={setSchoolName} required />
-      )}
       <Field label={C.form.parentNameLabel} value={parentName} onChange={setParentName} required />
       <Field label={C.form.emailLabel} type="email" value={parentEmail} onChange={setParentEmail} required />
       <Field label={C.form.phoneLabel} type="tel" value={parentPhone} onChange={setParentPhone} />
-      <Field label={C.form.bestTimeLabel} value={bestTimeToReach} onChange={setBestTimeToReach} />
+      <Field label={C.form.zipLabel} value={zip} onChange={setZip} required />
+      {/* School is OPTIONAL even when the flag is on — never `required`. */}
+      {schoolFieldEnabled && (
+        <Field label={C.form.schoolLabel} value={schoolName} onChange={setSchoolName} />
+      )}
+      {/* Explicit, REQUIRED opt-in — the form cannot submit unchecked. */}
+      <CheckboxField label={C.form.optInLabel} checked={optedIn} onChange={setOptedIn} required />
       {error && (
         <p role="alert" className="text-sm font-medium text-sam-red">
           {C.form.errorMessage}
@@ -185,6 +196,31 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="rounded-lg border border-sam-gray-light px-3 py-2 text-sam-navy focus:border-sam-teal focus:outline-none"
       />
+    </label>
+  );
+}
+
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+  required = false,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  required?: boolean;
+}) {
+  return (
+    <label className="flex items-start gap-2 text-sm font-medium text-sam-navy">
+      <input
+        type="checkbox"
+        checked={checked}
+        required={required}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-4 w-4 rounded border-sam-gray-light text-sam-teal focus:ring-sam-teal"
+      />
+      <span>{label}</span>
     </label>
   );
 }

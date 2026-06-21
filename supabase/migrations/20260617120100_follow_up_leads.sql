@@ -24,11 +24,11 @@ create table follow_up_leads (
   -- is later removed, since the lead's value is the parent contact.
   child_id            uuid references children(id) on delete set null,
   session_id          uuid references assessment_sessions(id) on delete set null,
-  -- Nullable: the child's school is gated behind LEAD_SCHOOL_FIELD_LIVE
-  -- (default OFF) to stay consistent with the counsel-approved COPPA disclosure
-  -- (which states the school name is NOT collected). When the flag is off the
-  -- field is not rendered, not required, and persists NULL. Re-enable via the
-  -- flag if counsel approves collecting it.
+  -- Nullable + gated behind LEAD_SCHOOL_FIELD_LIVE (default ON — counsel cleared
+  -- collecting the school under coppa-disclosure-v1, which removed the
+  -- "not collected" statement). The field is OPTIONAL: rendered + persisted when
+  -- the flag is on, but never required. When the flag is explicitly set to
+  -- 'false' the field is not rendered, not required, and persists NULL.
   school_name         text,
   parent_name         text not null,
   parent_email        text not null,

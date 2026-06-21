@@ -7,8 +7,8 @@ import "server-only";
 // misconception-classifier / report-narration LLM gates). Never throws — a
 // notification failure must not fail the parent's submit.
 //
-// DATA SCOPE: parent contact + child's school only (Tier 1/2 lead data). NO
-// diagnostic result is included. Uses the Resend HTTP API directly via fetch
+// DATA SCOPE: parent contact + zip + child's school only (Tier 1/2 lead data).
+// NO diagnostic result is included. Uses the Resend HTTP API directly via fetch
 // (no SDK dependency).
 
 import {
@@ -24,7 +24,8 @@ export interface FollowUpLeadNotification {
   parentName: string;
   parentEmail: string;
   parentPhone: string | null;
-  bestTimeToReach: string | null;
+  /** Parent zip/location (required on the form). */
+  zip: string;
 }
 
 export async function notifyFollowUpLead(
@@ -40,10 +41,13 @@ export async function notifyFollowUpLead(
       `Parent: ${lead.parentName}`,
       `Email: ${lead.parentEmail}`,
       `Phone: ${lead.parentPhone ?? "(not provided)"}`,
-      `Best time to reach: ${lead.bestTimeToReach ?? "(not provided)"}`,
+      `Zip/location: ${lead.zip}`,
       "",
       "Lead/contact data only — no assessment result is included.",
     ];
+    // Subject carries the school when present, else the zip — never an empty
+    // "— " / "— null" tail when the school is blank or gated off.
+    const subjectTag = lead.schoolName?.trim() || lead.zip;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -53,7 +57,7 @@ export async function notifyFollowUpLead(
       body: JSON.stringify({
         from: getLeadNotifyFromEmail(),
         to: getLeadNotifyToEmail(),
-        subject: `New assessment lead — ${lead.schoolName}`,
+        subject: `New assessment lead — ${subjectTag}`,
         text: lines.join("\n"),
       }),
     });

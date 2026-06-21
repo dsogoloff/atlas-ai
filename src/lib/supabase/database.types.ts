@@ -356,36 +356,42 @@ export type Database = {
           child_id: string | null
           created_at: string
           id: string
+          opted_in: boolean
           parent_email: string
           parent_name: string
           parent_phone: string | null
           school_name: string | null
           session_id: string | null
           tenant_id: string
+          zip: string | null
         }
         Insert: {
           best_time_to_reach?: string | null
           child_id?: string | null
           created_at?: string
           id?: string
+          opted_in?: boolean
           parent_email: string
           parent_name: string
           parent_phone?: string | null
           school_name?: string | null
           session_id?: string | null
           tenant_id: string
+          zip?: string | null
         }
         Update: {
           best_time_to_reach?: string | null
           child_id?: string | null
           created_at?: string
           id?: string
+          opted_in?: boolean
           parent_email?: string
           parent_name?: string
           parent_phone?: string | null
           school_name?: string | null
           session_id?: string | null
           tenant_id?: string
+          zip?: string | null
         }
         Relationships: [
           {

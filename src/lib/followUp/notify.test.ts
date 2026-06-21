@@ -7,7 +7,7 @@ const LEAD: FollowUpLeadNotification = {
   parentName: "Jordan Lee",
   parentEmail: "jordan@example.com",
   parentPhone: "555-0100",
-  bestTimeToReach: "weekday evenings",
+  zip: "94110",
 };
 
 /** Put the notifier in live mode with all required Resend env present. */
@@ -76,8 +76,20 @@ describe("notifyFollowUpLead — live", () => {
     expect(body.to).toBe("center@example.com");
     expect(body.text).toContain("jordan@example.com");
     expect(body.text).toContain("Maple Elementary");
+    expect(body.text).toContain("94110");
+    // Subject carries the school when present.
+    expect(body.subject).toBe("New assessment lead — Maple Elementary");
     // Lead/contact data only — never a diagnostic result.
     expect(body.text).toContain("no assessment result is included");
+  });
+
+  it("subject falls back to the zip when the school is null (no '— null' tail)", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyFollowUpLead({ ...LEAD, schoolName: null });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.subject).toBe("New assessment lead — 94110");
+    expect(body.subject).not.toContain("null");
   });
 });
 

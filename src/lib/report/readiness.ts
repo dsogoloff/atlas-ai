@@ -74,17 +74,20 @@ export const READINESS_COPY = {
   /** Comprehensive CTA — shown to every short-test taker (pass or not). */
   comprehensiveCtaHeading: "See the full picture",
   comprehensiveCtaBody:
-    "A complete S.A.M. assessment goes deeper than this quick check. We're running these at select neighborhood schools — tell us where your child goes and we'll find the right option.",
+    "A complete S.A.M assessment goes deeper than this quick check. We're running these at select neighborhood schools — tell us where your child goes and we'll find the right option.",
   comprehensiveCtaButton: "Find an assessment near us",
 
-  // Capture form (explicit parent opt-in; collects contact + child's school
-  // only — NO diagnostic result). Labels are presentational.
+  // Capture form (explicit, REQUIRED parent opt-in; collects contact + zip +
+  // child's school only — NO diagnostic result). Labels are presentational.
+  // Required: name, email, zip, opt-in. Optional: phone, school (gated).
   form: {
-    schoolLabel: "Child's school",
+    schoolLabel: "Child's school (optional)",
     parentNameLabel: "Your name",
     emailLabel: "Email",
     phoneLabel: "Phone (optional)",
-    bestTimeLabel: "Best time to reach you (optional)",
+    zipLabel: "Zip code",
+    optInLabel:
+      "Yes — have my local S.A.M center contact me about a full assessment.",
     submitButton: "Submit",
     submittingButton: "Submitting…",
     errorMessage: "Something went wrong — please try again.",

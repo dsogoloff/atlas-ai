@@ -29,8 +29,10 @@ function render(schoolFieldEnabled: boolean) {
       setParentEmail={noop}
       parentPhone=""
       setParentPhone={noop}
-      bestTimeToReach=""
-      setBestTimeToReach={noop}
+      zip=""
+      setZip={noop}
+      optedIn={false}
+      setOptedIn={noop}
     />,
   ).replace(/&#x27;/g, "'");
 }
@@ -42,6 +44,7 @@ describe("FollowUpForm — school field gating", () => {
     // the rest of the form still renders
     expect(html).toContain(READINESS_COPY.form.parentNameLabel);
     expect(html).toContain(READINESS_COPY.form.emailLabel);
+    expect(html).toContain(READINESS_COPY.form.zipLabel);
     expect(html).toContain(READINESS_COPY.form.submitButton);
   });
 
@@ -49,5 +52,20 @@ describe("FollowUpForm — school field gating", () => {
     const html = render(true);
     expect(html).toContain(READINESS_COPY.form.schoolLabel);
     expect(html).toContain(READINESS_COPY.form.parentNameLabel);
+  });
+});
+
+describe("FollowUpForm — required opt-in + zip", () => {
+  it("renders the explicit opt-in as a required checkbox", () => {
+    const html = render(true);
+    expect(html).toContain(READINESS_COPY.form.optInLabel);
+    expect(html).toContain('type="checkbox"');
+    // The checkbox is required → renderToString emits the boolean attribute.
+    expect(html).toMatch(/type="checkbox"[^>]*required/);
+  });
+
+  it("always renders the required zip field (both gate states)", () => {
+    expect(render(false)).toContain(READINESS_COPY.form.zipLabel);
+    expect(render(true)).toContain(READINESS_COPY.form.zipLabel);
   });
 });

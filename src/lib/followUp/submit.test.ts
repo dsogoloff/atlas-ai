@@ -54,7 +54,8 @@ const validInput: FollowUpLeadInput = {
   parentName: "Sam Park",
   parentEmail: "sam@example.com",
   parentPhone: "555-1234",
-  bestTimeToReach: "evenings",
+  zip: "94110",
+  optedIn: true,
 };
 
 const ownedOk = {
@@ -87,12 +88,58 @@ describe("submitFollowUpLeadCore", () => {
       parent_name: "Sam Park",
       parent_email: "sam@example.com",
       parent_phone: "555-1234",
-      best_time_to_reach: "evenings",
+      zip: "94110",
+      opted_in: true,
     });
+    // best_time_to_reach is retired — never written on new rows.
+    expect(inserts[0]).not.toHaveProperty("best_time_to_reach");
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ schoolName: "Lincoln Elementary" }),
+      expect.objectContaining({ schoolName: "Lincoln Elementary", zip: "94110" }),
     );
+  });
+
+  it("rejects when the explicit opt-in is false (no insert, no notify)", async () => {
+    const { client: serviceClient, inserts } = makeServiceClient();
+    const notify = vi.fn();
+    const result = await submitFollowUpLeadCore({
+      rlsClient: makeRlsClient(ownedOk),
+      serviceClient,
+      notify,
+      schoolFieldEnabled: true,
+      input: { ...validInput, optedIn: false },
+    });
+    expect(result).toEqual({ ok: false, error: "opt_in_required" });
+    expect(inserts).toHaveLength(0);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing zip (required) before any DB work", async () => {
+    const { client: serviceClient, inserts } = makeServiceClient();
+    const notify = vi.fn();
+    const result = await submitFollowUpLeadCore({
+      rlsClient: makeRlsClient(ownedOk),
+      serviceClient,
+      notify,
+      schoolFieldEnabled: true,
+      input: { ...validInput, zip: "  " },
+    });
+    expect(result).toEqual({ ok: false, error: "missing_fields" });
+    expect(inserts).toHaveLength(0);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("succeeds with a blank school even when the flag is ON (school optional)", async () => {
+    const { client: serviceClient, inserts } = makeServiceClient();
+    const result = await submitFollowUpLeadCore({
+      rlsClient: makeRlsClient(ownedOk),
+      serviceClient,
+      notify: vi.fn().mockResolvedValue(undefined),
+      schoolFieldEnabled: true,
+      input: { ...validInput, schoolName: "  " },
+    });
+    expect(result).toEqual({ ok: true });
+    expect(inserts[0]).toMatchObject({ school_name: null, zip: "94110" });
   });
 
   it("rejects when the session is not the caller's child (no insert, no notify)", async () => {
@@ -125,32 +172,29 @@ describe("submitFollowUpLeadCore", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it("rejects missing required fields", async () => {
+  it("rejects a missing parent name (required)", async () => {
     const { client: serviceClient } = makeServiceClient();
     const result = await submitFollowUpLeadCore({
       rlsClient: makeRlsClient(ownedOk),
       serviceClient,
       notify: vi.fn(),
       schoolFieldEnabled: true,
-      input: { ...validInput, schoolName: "  " },
+      input: { ...validInput, parentName: "  " },
     });
     expect(result).toEqual({ ok: false, error: "missing_fields" });
   });
 
-  it("optional phone/time persist as null when blank", async () => {
+  it("optional phone persists as null when blank (zip still required + kept)", async () => {
     const { client: serviceClient, inserts } = makeServiceClient();
     const result = await submitFollowUpLeadCore({
       rlsClient: makeRlsClient(ownedOk),
       serviceClient,
       notify: vi.fn().mockResolvedValue(undefined),
       schoolFieldEnabled: true,
-      input: { ...validInput, parentPhone: "", bestTimeToReach: "" },
+      input: { ...validInput, parentPhone: "" },
     });
     expect(result).toEqual({ ok: true });
-    expect(inserts[0]).toMatchObject({
-      parent_phone: null,
-      best_time_to_reach: null,
-    });
+    expect(inserts[0]).toMatchObject({ parent_phone: null, zip: "94110" });
   });
 });
 
