@@ -42,9 +42,23 @@ export function SignupForm({ centerName }: Props) {
 
   async function onSubmit(values: SignupInput) {
     setSubmitting(true);
-    const r = await signupAction(values);
-    setSubmitting(false);
-    setResult(r);
+    try {
+      // signupAction returns a typed {ok:false,error} for handled failures,
+      // but it can still THROW (server action runtime error, Vercel function
+      // timeout, network failure reaching Supabase). Without this catch a
+      // rejection would skip setSubmitting(false), leaving the button stuck on
+      // "Creating account..." with no error shown. Surface it via the same
+      // failed-result render path the form already uses.
+      const r = await signupAction(values);
+      setResult(r);
+    } catch {
+      setResult({
+        ok: false,
+        error: "Something went wrong creating your account. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (result?.ok) {
