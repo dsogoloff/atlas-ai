@@ -9,6 +9,36 @@
 -- gated import once licensing is formalized.
 
 -- =============================================================================
+-- LOCAL-ONLY GUARD — fail closed if run against a non-fresh (e.g. PRODUCTION) DB
+-- =============================================================================
+-- This file is for a FRESH local dev database only. `supabase db reset` DROPS
+-- and recreates the database, reapplies migrations (which insert NO tenant /
+-- auth rows — verified), THEN runs this seed. So at this point in a legitimate
+-- local reset, public.tenants and auth.users are guaranteed EMPTY.
+--
+-- We therefore use data-freshness as the local-vs-remote signal, NOT a host /
+-- database-name / network check: on Supabase both local and prod use database
+-- name `postgres`, and there is no portable connection/GUC discriminator that
+-- is guaranteed to detect prod WITHOUT also risking a false abort of the local
+-- flow. A populated tenants/auth.users table, by contrast, can ONLY mean this
+-- is not a fresh reset — i.e. someone is running seed.sql against an already-
+-- populated database (production). Prod data changes must go through the
+-- audited supabase/prod-*.sql files, never this seed. Fails closed: aborts
+-- BEFORE any insert below, so nothing is written.
+do $$
+begin
+  if exists (select 1 from public.tenants)
+     or exists (select 1 from auth.users) then
+    raise exception
+      'seed.sql is LOCAL-ONLY and refused to run: the target database is not '
+      'fresh (existing tenants and/or auth users found). A normal `supabase db '
+      'reset` drops everything before seeding, so this only fires when seed.sql '
+      'is being applied to an already-populated database (production). Use the '
+      'audited supabase/prod-*.sql files for production data, never seed.sql.';
+  end if;
+end $$;
+
+-- =============================================================================
 -- Single v1 tenant (architecture.md guardrail #1)
 -- =============================================================================
 
