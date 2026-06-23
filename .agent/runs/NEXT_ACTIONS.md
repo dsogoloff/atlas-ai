@@ -4,6 +4,18 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-23 — in-question mascot extended to all tiers (PR #146 — MERGED)
+
+Trunk head **`e93d5cd`**. UI-only; no migration / no `supabase db reset`.
+
+- [x] **PR #146 (lane/inquestion-mascot-all-tiers) MERGED (`e93d5cd`)** — the in-question footer
+      mascot (thinking idle + per-submit celebrate hop) now renders for ALL tiers, not just K_4.
+      The G5_8 `QuestionShell` branch gets a mascot-only footer (no "Read carefully!" text). New
+      `questionMascotIsLively` policy (all tiers, reduced-motion gated only); bookend
+      `mascotIsLively` (Welcome/Completion, K_4-only) unchanged. Kept by design: hop stays
+      correctness-agnostic, in-flow poses stay thinking + celebrating, reduced-motion gate kept.
+      +5 tests. Verify GREEN 1237/92.
+
 ## 0. 2026-06-22 — short-test length cap confirmed (PR #144 — MERGED)
 
 Trunk head **`cc93799`**. Docs/audit-tooling only; no migration / no `supabase db reset`.
