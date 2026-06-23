@@ -4,6 +4,31 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-23 (OVERNIGHT autonomous run — CONVERSION lane). Summary for the morning:
+
+- **PR #148 OPEN — lane/l5l6-conversion-20260623 — CI GREEN (verify-bar + Vercel).** L5/L6
+  conversion gap closed. DISCOVERY: L5/L6 were already loaded by a prior run — 60/68 rows in
+  seed with source-correct content + answers (verified vs the founder's new answer-key PDFs),
+  but `short_test_eligible` was never set (loader INSERT lacked the column → all false). PR sets
+  `short_test_eligible` STRICTLY from each worksheet's "Short Test" column (migration
+  `20260623140000` + seed mirror; L5 25 rows, L6 34 rows; explicit IN-lists; parity PASS 73).
+  Verify 1232/91 GREEN, tsc 0, lint 0 err (2 known). **After merge: `supabase db reset`.**
+  Per-task source-verified map captured in `scripts/conversion/finalize-l5l6-tags.ts`; status
+  doc `scripts/conversion/audit/l5l6-conversion-status-2026-06-23.md`.
+- **PR #142 (lane/l5l6-conversion-supply-gap) now SUPERSEDED** — both gaps it reported (answer
+  keys, L6-Q25/Q26 crops) were resolved by the founder; safe to CLOSE.
+- **PR #138 (lane/l0ab-content-identity) still OPEN** — L0A/L0B "identical render" cleared as a
+  content bug (cause = short-test previous-booklet band collapse; picker decision). Awaits merge.
+- **CONVERSION follow-ups queued (NEXT_ACTIONS):** 8 L5/L6 rows not yet loaded (6 gradeable
+  prior-run skips + 2 manual Short=N); ~17 L5/L6 image rows inactive pending curated crops
+  (founder upload); L5/L6 level-review (prior run derived half-grade from difficulty, below
+  booklet Level for review content).
+- **FLAG:** a Stage-4 exploration run auto-uploaded 15 whole-page renders to
+  `question-images/conversion-staging/` (loader stages page renders when Supabase creds
+  present) — a staging prefix (not served), but it touched the bucket despite the no-upload
+  limit. Founder may purge `conversion-staging/`. No further uploads run. `input/` now holds the
+  L5/L6 worksheet + answer-key PDFs (gitignored).
+
 **As of:** 2026-06-22 (short-test length cap confirmed) — trunk head is **`cc93799`** (PR #144
 merged). Audit + docs/audit-tooling fix; no migration — **no `supabase db reset` needed.**
 

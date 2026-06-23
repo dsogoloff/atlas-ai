@@ -4,6 +4,34 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0-overnight. 2026-06-23 — L5/L6 conversion (PR #148 OPEN, CI GREEN)
+
+Founder action: **merge PR #148**, then `supabase db reset` (applies `20260623140000` —
+sets `short_test_eligible` on the L5/L6 rows). Close superseded **PR #142**. Merge **PR #138**
+(L0A/L0B investigation) at leisure.
+
+CONVERSION follow-ups (ungated unless noted; do top-down next session):
+- [ ] **Load the 6 gradeable missing L5/L6 rows** — `SAM-L5-Q01` (MC place-value), `SAM-L5-Q10`
+      (order fractions, DRAG), `SAM-L5-Q16` (order decimals, DRAG), `SAM-L5-Q18` (decimal→fraction
+      MC), `SAM-L6-Q22` (0.052 kg→g = 52), `SAM-L6-Q27` (fraction>50% MC, 3/5). Answers recorded
+      in `finalize-l5l6-tags.ts`. Prior loader skipped them (DRAG mappability + MC fraction-option
+      divergence); author via UPDATE/INSERT (or fix the Stage-4 gates first). Set
+      `short_test_eligible=true` (all Short=Y) when added.
+- [ ] **Activate the ~17 L5/L6 image rows** (currently `is_active=false`): wire `image_path` +
+      add `SOURCE_MAP` entries (crops are in `source/5,6`), then **founder uploads** via
+      `pnpm convert:upload-activation-images` and flips `is_active=true`. (Image upload = founder.)
+- [ ] **Optional:** load the 2 manual Short=N draw tasks `SAM-L6-Q17`/`SAM-L6-Q35` inactive for the
+      comprehensive bank only (no auto-grade).
+- [ ] **PARKED — level-review (needs Dimitri/picker decision):** the prior L5/L6 load derived the
+      half-grade `level` from difficulty, so review content sits below its booklet Level (e.g.
+      SAM-L5-Q02 at `3A`, several L6 at `4A`), contradicting the source Level column. Decide whether
+      the picker should band review content by booklet Level (source) or skill difficulty (current).
+- [ ] **Stage-4 loader fixes** (prereq for clean future auto-loads): accept `TEXT_ENTRY`; relax the
+      verbatim-options gate for unicode/spacing-only fraction differences; reconcile half-grade
+      derivation with the source Level column.
+- [ ] **Housekeeping:** founder may purge `question-images/conversion-staging/` (15 page renders
+      auto-staged by a Stage-4 exploration run; not served).
+
 ## 0. 2026-06-22 — short-test length cap confirmed (PR #144 — MERGED)
 
 Trunk head **`cc93799`**. Docs/audit-tooling only; no migration / no `supabase db reset`.
