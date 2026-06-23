@@ -24,6 +24,7 @@ const startBody: StartResponseBody = {
   },
   next_request: { strand: "operations_algorithms", target_difficulty: 0, width: 0.5 },
   response_count: 0,
+  max_questions: 12,
 };
 
 const submitBodyNext: SubmitResponseBody = {

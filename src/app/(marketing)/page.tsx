@@ -29,26 +29,6 @@ export default function LandingPage() {
           <span className="text-2xl font-black text-sam-navy">
             Atlas Assessment
           </span>
-          <nav className="hidden md:flex gap-6 items-center">
-            <a
-              className="text-sam-red border-b-2 border-sam-red pb-1 hover:text-sam-red transition-colors"
-              href="#"
-            >
-              Journey
-            </a>
-            <a
-              className="text-sam-navy/60 hover:text-sam-red transition-colors"
-              href="#"
-            >
-              Reports
-            </a>
-            <a
-              className="text-sam-navy/60 hover:text-sam-red transition-colors"
-              href="#"
-            >
-              Students
-            </a>
-          </nav>
         </div>
         <div className="flex items-center gap-4">
           <Link
@@ -64,7 +44,7 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="grid grid-cols-12 gap-gutter items-center min-h-[716px] mb-stack-lg">
           <div className="col-span-12 lg:col-span-6 space-y-stack-md">
-            <div className="inline-flex items-center gap-2 bg-sam-red/10 text-sam-red px-4 py-2 rounded-full font-headline-adult text-caption">
+            <div className="inline-flex items-center gap-2 bg-sam-navy/10 text-sam-navy px-4 py-2 rounded-full font-headline-adult text-caption">
               <span
                 className="material-symbols-outlined text-[18px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
@@ -92,18 +72,15 @@ export default function LandingPage() {
               >
                 Start Assessment
               </Link>
-              <button className="bg-white border-2 border-sam-navy text-sam-navy font-headline-adult px-8 py-4 rounded-[16px] hover:bg-sam-cream transition-all active:scale-95">
-                View Sample Reports
-              </button>
             </div>
           </div>
           <div className="col-span-12 lg:col-span-6 relative flex justify-center items-center">
             {/* Mascot: brown long-haired mini dachshund */}
             <div className="relative z-10 w-full max-w-md">
               <img
-                alt="Dachshund mascot wearing a small graduation cap"
-                className="rounded-[48px] shadow-2xl border-8 border-white transform rotate-3"
-                src="/img/placeholder-mascot.svg"
+                alt="Atlas dachshund mascot waving hello"
+                className="rounded-[48px] shadow-2xl border-8 border-white transform rotate-3 bg-sam-cream"
+                src="/mascot/waving.png"
               />
               {/* Decorative elements */}
               <div className="absolute -top-6 -right-6 bg-sam-yellow p-4 rounded-2xl shadow-md rotate-12">
@@ -140,7 +117,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {/* Card 1 */}
-            <div className="col-span-1 md:col-span-2 bg-white p-8 rounded-[32px] shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light hover:border-sam-red transition-all group">
+            <div className="col-span-1 bg-white p-8 rounded-[32px] shadow-[0px_4px_12px_rgba(27,58,107,0.08)] border border-sam-gray-light hover:border-sam-red transition-all group">
               <div className="w-14 h-14 bg-sam-red/10 rounded-2xl flex items-center justify-center mb-6 text-sam-red group-hover:scale-110 transition-transform">
                 <span
                   className="material-symbols-outlined text-3xl"
@@ -203,13 +180,10 @@ export default function LandingPage() {
                 <h3 className="font-display-child text-sam-navy text-2xl mb-4">
                   Instructor Dashboard
                 </h3>
-                <p className="text-sam-gray-dark max-w-sm mb-6">
+                <p className="text-sam-gray-dark max-w-sm">
                   Real-time tracking of student progress with visual milestone
                   mapping and detailed error analysis.
                 </p>
-                <button className="bg-sam-navy text-white px-6 py-2 rounded-xl text-caption">
-                  Explore Dashboard
-                </button>
               </div>
               <div className="absolute -right-10 -bottom-10 opacity-20 transform -rotate-12">
                 <span
@@ -238,24 +212,6 @@ export default function LandingPage() {
                 addition, subtraction, multiplication, and division.
               </p>
             </div>
-            {/* Card 6 */}
-            <div className="col-span-1 bg-sam-teal p-8 rounded-[32px] text-white group cursor-pointer">
-              <h3 className="font-headline-adult mb-4">Success Story</h3>
-              <div className="flex items-center gap-3">
-                <img
-                  alt="Mrs. Thompson, Grade 2 instructor"
-                  className="h-10 w-10 rounded-full border-2 border-white/30"
-                  src="/img/placeholder-avatar.svg"
-                />
-                <div className="text-[10px] uppercase tracking-widest font-bold">
-                  Mrs. Thompson, Grade 2
-                </div>
-              </div>
-              <p className="mt-4 text-sm text-white/90 italic">
-                &ldquo;The most detailed reports I&rsquo;ve ever used. It
-                actually tells me <em>why</em> they are struggling.&rdquo;
-              </p>
-            </div>
           </div>
         </section>
 
@@ -266,8 +222,8 @@ export default function LandingPage() {
               Ready to start the journey?
             </h2>
             <p className="text-white/70 mb-8 font-body-regular">
-              Join over 10,000 instructors using Atlas to personalize math
-              education for every child.
+              Join over 30,000 students who took Seriously Addictive Mathematics
+              assessment. We personalize math education for every child.
             </p>
             <div className="flex justify-center gap-4">
               <Link
@@ -276,25 +232,22 @@ export default function LandingPage() {
               >
                 Get Started Now
               </Link>
-              <button className="bg-transparent border-2 border-white/30 text-white px-10 py-4 rounded-[20px] font-bold hover:bg-white/10 transition-colors">
-                Book a Demo
-              </button>
             </div>
           </div>
           {/* Mascot peek-a-boo */}
           <div className="absolute -bottom-4 right-10 w-48 h-48">
             <img
-              alt="Dachshund mascot peeking up"
-              className="rounded-t-full border-8 border-sam-navy"
-              src="/img/placeholder-mascot.svg"
+              alt="Atlas dachshund mascot celebrating"
+              className="w-full h-full object-contain"
+              src="/mascot/celebrating.png"
             />
           </div>
         </section>
       </main>
 
       <footer className="bg-white border-t border-sam-gray-light mt-stack-lg py-12">
-        <div className="max-w-container-max mx-auto px-gutter grid grid-cols-4 gap-gutter">
-          <div className="col-span-4 md:col-span-1">
+        <div className="max-w-container-max mx-auto px-gutter">
+          <div className="max-w-sm">
             <span className="text-xl font-black text-sam-navy">
               Atlas Assessment
             </span>
@@ -302,74 +255,9 @@ export default function LandingPage() {
               Empowering educators with world-class assessment tools.
             </p>
           </div>
-          <div className="col-span-2 md:col-span-1">
-            <h4 className="font-headline-adult text-sam-navy text-sm mb-4">
-              Platform
-            </h4>
-            <ul className="space-y-2 text-sam-gray-mid text-sm">
-              <li>
-                <a className="hover:text-sam-red" href="#">
-                  Journey Map
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-sam-red" href="#">
-                  Assessment Suites
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-sam-red" href="#">
-                  Reporting Portal
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div className="col-span-2 md:col-span-1">
-            <h4 className="font-headline-adult text-sam-navy text-sm mb-4">
-              Resources
-            </h4>
-            <ul className="space-y-2 text-sam-gray-mid text-sm">
-              <li>
-                <a className="hover:text-sam-red" href="#">
-                  Case Studies
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-sam-red" href="#">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-sam-red" href="#">
-                  Math Pedagogy
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div className="col-span-4 md:col-span-1">
-            <h4 className="font-headline-adult text-sam-navy text-sm mb-4">
-              Connect
-            </h4>
-            <div className="flex gap-4">
-              <a
-                className="h-10 w-10 bg-sam-cream rounded-full flex items-center justify-center text-sam-navy hover:bg-sam-red hover:text-white transition-all"
-                href="#"
-              >
-                <span className="material-symbols-outlined">
-                  alternate_email
-                </span>
-              </a>
-              <a
-                className="h-10 w-10 bg-sam-cream rounded-full flex items-center justify-center text-sam-navy hover:bg-sam-red hover:text-white transition-all"
-                href="#"
-              >
-                <span className="material-symbols-outlined">share</span>
-              </a>
-            </div>
-          </div>
         </div>
         <div className="max-w-container-max mx-auto px-gutter mt-12 pt-8 border-t border-sam-gray-light text-center text-xs text-sam-gray-mid">
-          © 2024 Atlas Assessment Suite by S.A.M. All rights reserved.
+          © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
         </div>
       </footer>
     </>

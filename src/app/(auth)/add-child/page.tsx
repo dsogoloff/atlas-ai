@@ -35,8 +35,10 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { isBetaWelcomeEnabled } from "@/lib/env";
 
 import { AddChildForm } from "./add-child-form";
+import { BetaWelcomeGate } from "./beta-welcome-gate";
 
 interface Props {
   searchParams: Promise<{ next?: string }>;
@@ -64,7 +66,7 @@ export default async function AddChildPage({ searchParams }: Props) {
       : "/signup";
 
   return (
-    <>
+    <BetaWelcomeGate enabled={isBetaWelcomeEnabled()}>
       {/* TopAppBar */}
       <header className="bg-[#FEFBF6] font-display-child font-semibold top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-4">
@@ -127,9 +129,9 @@ export default async function AddChildPage({ searchParams }: Props) {
           <div className="flex justify-center -mt-24 mb-6">
             <div className="w-32 h-32 relative">
               <img
-                alt="Mascot"
+                alt="Atlas dachshund mascot waving hello"
                 className="w-full h-full object-contain"
-                src="/img/placeholder-mascot.svg"
+                src="/mascot/waving.png"
               />
             </div>
           </div>
@@ -147,8 +149,8 @@ export default async function AddChildPage({ searchParams }: Props) {
       </main>
 
       <footer className="p-6 text-center text-sam-gray-mid/50 text-caption font-caption">
-        © 2024 Atlas Assessment Diagnostic Suite. All rights reserved.
+        © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
       </footer>
-    </>
+    </BetaWelcomeGate>
   );
 }

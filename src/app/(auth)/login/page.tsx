@@ -49,9 +49,9 @@ export default async function LoginPage({ searchParams }: Props) {
             <div className="relative z-10 text-center space-y-stack-md max-w-[440px]">
               <div className="flex justify-center mb-8">
                 <img
-                  alt="Family using Atlas Assessment together"
-                  className="w-full h-64 object-cover rounded-3xl shadow-lg border-4 border-white bg-sam-cream"
-                  src="/img/placeholder-mascot.svg"
+                  alt="Atlas dachshund mascot waving hello"
+                  className="w-full h-64 object-contain rounded-3xl shadow-lg border-4 border-white bg-sam-cream"
+                  src="/mascot/waving.png"
                 />
               </div>
               <h1 className="font-display-child text-display-child text-sam-navy">
@@ -89,7 +89,7 @@ export default async function LoginPage({ searchParams }: Props) {
               <img
                 alt="Atlas mascot"
                 className="w-20 h-20 object-contain"
-                src="/img/placeholder-mascot.svg"
+                src="/mascot/waving.png"
               />
               <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-sam-gray-light relative">
                 <p className="text-caption font-caption text-sam-navy italic">
@@ -123,7 +123,7 @@ export default async function LoginPage({ searchParams }: Props) {
       </main>
       <footer className="w-full py-stack-md flex justify-center border-t border-sam-gray-light/30">
         <p className="font-caption text-caption text-sam-gray-mid/60">
-          © 2024 Atlas Assessment Diagnostic Suite. All rights reserved.
+          © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
         </p>
       </footer>
     </>

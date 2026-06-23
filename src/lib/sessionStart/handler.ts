@@ -104,10 +104,12 @@ import {
   comprehensiveBudget,
 } from "@/lib/engine/comprehensive";
 import {
+  MAX_QUESTIONS,
   createEngineState,
   nextQuestionRequest,
   shouldTerminate,
 } from "@/lib/engine/engine";
+import { SHORT_TEST_CONFIG } from "@/lib/engine/shortTest";
 import { STRANDS } from "@/lib/engine/levels";
 import { ACTIVE_PRIOR_VERSION, PRIORS_V1 } from "@/lib/engine/priors";
 import type {
@@ -117,7 +119,14 @@ import type {
 } from "@/lib/engine/types";
 import { deriveTier } from "@/lib/tier/derive";
 import { logQuestionServe } from "@/lib/questionAccessLog/log";
-import { discoverEmptyBankStrands } from "@/lib/questionPicker/picker";
+import {
+  discoverEmptyBankStrands,
+  discoverShortEligibleCounts,
+} from "@/lib/questionPicker/picker";
+import {
+  anchorBookletForChild,
+  previousBookletHalfGrades,
+} from "@/lib/questionPicker/levelBand";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import {
   pickForSession,
@@ -454,6 +463,13 @@ export async function sessionStartHandler({
 
   // Fresh-session first pick: no responses persisted yet, so the served
   // question is question 1 (response_count + 1 = 1).
+  const maxQuestions = await computeMaxQuestions({
+    serviceClient,
+    tenantId: parent.tenant_id,
+    testType,
+    gradeLevel: child.grade_level,
+    birthYear: child.birth_year,
+  });
   return {
     ok: true,
     status: 200,
@@ -462,6 +478,7 @@ export async function sessionStartHandler({
       question: await serveQuestion(serviceClient, pickedQuestion),
       next_request: toNextRequestJson(pickedRequest),
       response_count: 0,
+      max_questions: maxQuestions,
     },
   };
 }
@@ -675,6 +692,14 @@ async function logAndRespond(
     return fail("internal", 500, "next_request not computable");
   }
 
+  const maxQuestions = await computeMaxQuestions({
+    serviceClient: args.serviceClient,
+    tenantId: args.tenantId,
+    testType: args.testType,
+    gradeLevel: args.gradeLevel,
+    birthYear: args.birthYear,
+  });
+
   if (!args.hasProgress) {
     // Zero-response resume — looks fresh to the parent. Return 200
     // with the fresh-start shape so the client suppresses the resume
@@ -692,6 +717,7 @@ async function logAndRespond(
         question: await serveQuestion(args.serviceClient, args.question),
         next_request: toNextRequestJson(req),
         response_count: args.responseCount,
+        max_questions: maxQuestions,
       },
     };
   }
@@ -709,9 +735,55 @@ async function logAndRespond(
       question: await serveQuestion(args.serviceClient, args.question),
       next_request: toNextRequestJson(req),
       response_count: args.responseCount,
+      max_questions: maxQuestions,
       resumed: true,
     },
   };
+}
+
+// ===========================================================================
+// Progress ceiling (Item #14)
+// ===========================================================================
+
+/**
+ * The session's progress denominator — the "of up to N" total the child-facing
+ * progress bar shows. NOT a fixed 25:
+ *
+ *   * comprehensive → the engine cap (MAX_QUESTIONS).
+ *   * short         → the short-test hard cap, lowered to the eligible-pool
+ *     size when the previous-booklet band can't fill it. So a thin band that
+ *     can only ever serve 8 items shows "of up to 8" (exhaustion-bound), and a
+ *     deep band shows "of up to 15" (cap-bound) — never a misleading 25.
+ *
+ * Best-effort: any discovery failure falls back to the short-test cap. The
+ * denominator is display-only, so it must never block or fail the start path.
+ */
+async function computeMaxQuestions(args: {
+  serviceClient: SupabaseClient<Database>;
+  tenantId: string;
+  testType: SessionTestType;
+  gradeLevel: string | null;
+  birthYear: number;
+}): Promise<number> {
+  if (args.testType === "comprehensive") {
+    return MAX_QUESTIONS;
+  }
+  const band = previousBookletHalfGrades(
+    anchorBookletForChild(args.gradeLevel, args.birthYear),
+  );
+  try {
+    const counts = await discoverShortEligibleCounts(
+      args.serviceClient,
+      args.tenantId,
+      band,
+    );
+    let totalEligible = 0;
+    for (const n of counts.values()) totalEligible += n;
+    if (totalEligible <= 0) return SHORT_TEST_CONFIG.hardCap;
+    return Math.min(SHORT_TEST_CONFIG.hardCap, totalEligible);
+  } catch {
+    return SHORT_TEST_CONFIG.hardCap;
+  }
 }
 
 // ===========================================================================

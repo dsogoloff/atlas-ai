@@ -156,7 +156,9 @@ export function AddChildForm({ cancelHref }: Props) {
               defaultValue=""
               {...register("gradeLevel")}
             >
-              <option value="">Optional — select if you know</option>
+              <option disabled value="">
+                Select grade
+              </option>
               {/* Young band — Pre-K is age-qualified (age disambiguates 0A/0B);
                   from Kindergarten up, grade disambiguates. Each value maps to
                   exactly one S.A.M. booklet via parseGradeNumber +
