@@ -57,7 +57,7 @@ export default async function CoppaPage({ searchParams }: Props) {
           alt=""
           aria-hidden
           className="w-64 grayscale contrast-125"
-          src="/img/placeholder-mascot.svg"
+          src="/mascot/waving.png"
         />
       </div>
 
@@ -247,9 +247,9 @@ export default async function CoppaPage({ searchParams }: Props) {
         </div>
         <div className="w-24 h-24 relative">
           <img
-            alt="Mascot"
+            alt="Atlas dachshund mascot waving hello"
             className="w-full h-full object-contain drop-shadow-lg"
-            src="/img/placeholder-mascot.svg"
+            src="/mascot/waving.png"
           />
         </div>
       </div>

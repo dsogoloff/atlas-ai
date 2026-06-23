@@ -9,9 +9,13 @@
 //     children.birth_year per migration 20260426000000). The form's
 //     <select> tightens this to 2010-2022 for UX; the schema accepts
 //     the full DB range as a safety net.
-//   * gradeLevel: optional (compliance.md §3 + features.md §6). Stored
-//     as free-text string; tier derivation in src/lib/tier/derive.ts
-//     handles "K", bare digits, ordinals, word forms, Pre-K variants.
+//   * gradeLevel: REQUIRED (product decision 2026-06-22 — the grade anchors
+//     the picker's level band, so a real selection beats a birth-year guess).
+//     The DB column stays nullable (compliance.md §3 still classes grade as
+//     data-minimization-optional at the storage layer); this only requires a
+//     selection in the add-child UI. Stored as free-text string; tier
+//     derivation in src/lib/tier/derive.ts handles "K", bare digits, ordinals,
+//     word forms, Pre-K variants.
 
 import { z } from "zod";
 
@@ -25,13 +29,14 @@ export const AddChildSchema = z.object({
     .int("Pick a year")
     .min(2000, "Out of range")
     .max(2030, "Out of range"),
-  // Empty string from the optional <select> placeholder maps to
-  // undefined so the DB receives null, not "".
+  // Required: the form's <select> opens on a disabled placeholder, so an empty
+  // string means "not chosen" and must fail. Trim defensively, then enforce a
+  // non-empty selection.
   gradeLevel: z
     .string()
-    .max(50, "Too long")
-    .optional()
-    .transform((v) => v?.trim() || undefined),
+    .trim()
+    .min(1, "Please select your child's current grade")
+    .max(50, "Too long"),
   // Per-child parental consent (Model B / COPPA Gate-B). The binding consent
   // is captured here, with the child in hand; the server action writes a
   // consent_records row keyed to the new child_id. Must be true to register.

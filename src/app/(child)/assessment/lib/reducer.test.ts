@@ -23,6 +23,8 @@ const startBody: StartResponseBody = {
   },
   next_request: { strand: "operations_algorithms", target_difficulty: 0, width: 0.5 },
   response_count: 0,
+  // Item #14 — per-session progress ceiling (short test, thin band: 12).
+  max_questions: 12,
 };
 
 const resumeBody: StartResponseBody = {
@@ -72,6 +74,7 @@ const runningInitial: ViewState = {
   sessionId: startBody.session_id,
   question: startBody.question,
   responseCount: 0,
+  maxQuestions: 12,
   resumed: false,
   submitting: false,
 };
@@ -90,6 +93,7 @@ describe("START_OK / START_RESUME / START_ERR", () => {
       sessionId: startBody.session_id,
       question: startBody.question,
       responseCount: 0,
+      maxQuestions: 12,
       resumed: false,
       submitting: false,
     });
@@ -113,6 +117,13 @@ describe("START_OK / START_RESUME / START_ERR", () => {
     expect(next.kind).toBe("running");
     // resumeBody is defined above with response_count: 3 (resume scenario).
     if (next.kind === "running") expect(next.responseCount).toBe(3);
+  });
+
+  // Item #14 — per-session progress ceiling plumbing.
+  it("START_OK copies max_questions from wire into running state", () => {
+    const next = reduce(initialState, { type: "START_OK", body: startBody });
+    expect(next.kind).toBe("running");
+    if (next.kind === "running") expect(next.maxQuestions).toBe(12);
   });
 
   it("START_OK from running is a no-op (defensive)", () => {
@@ -199,6 +210,8 @@ describe("SUBMIT_OK_NEXT / SUBMIT_OK_DONE", () => {
       expect(next.resumed).toBe(false);
       // Item #12 Phase 7.7 — responseCount advances from the wire.
       expect(next.responseCount).toBe(submitNext.response_count);
+      // Item #14 — the session ceiling is fixed; SUBMIT_OK_NEXT preserves it.
+      expect(next.maxQuestions).toBe(12);
     }
   });
 
@@ -256,6 +269,7 @@ describe("SUBMIT_ERR", () => {
         sessionId: submitting.sessionId,
         question: submitting.question,
         responseCount: 0,
+        maxQuestions: 12,
         answerGiven: "2",
         timeMs: 5000,
       });
@@ -305,6 +319,7 @@ describe("RETRY_FROM_ERROR", () => {
         sessionId: "s1",
         question: startBody.question,
         responseCount: 0,
+        maxQuestions: 12,
         answerGiven: "2",
         timeMs: 5000,
       },

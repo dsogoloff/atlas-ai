@@ -38,6 +38,10 @@ export type ResumeContext =
        *  restores the same progress-chrome state the user saw before
        *  the network failure. */
       responseCount: number;
+      /** Session progress denominator — fixed for the session, carried
+       *  through the error round-trip so the restored running state keeps
+       *  the same "of up to N" total. */
+      maxQuestions: number;
       answerGiven: string;
       timeMs: number;
     };
@@ -54,6 +58,10 @@ export type ViewState =
        *  → 0; resume with 3 past answers → 3. The displayed question
        *  number is `responseCount + 1`. */
       responseCount: number;
+      /** Session progress denominator — the "of up to N" total for the
+       *  progress chrome (Item #14). Server-stamped once on /start
+       *  (body.max_questions) and held for the whole session. */
+      maxQuestions: number;
       /** True iff this state was entered via START_RESUME (resumed
        *  in-progress session on /start — body.resumed on the wire). */
       resumed: boolean;
@@ -94,6 +102,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
         sessionId: action.body.session_id,
         question: action.body.question,
         responseCount: action.body.response_count,
+        maxQuestions: action.body.max_questions,
         resumed: false,
         submitting: false,
       };
@@ -105,6 +114,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
         sessionId: action.body.session_id,
         question: action.body.question,
         responseCount: action.body.response_count,
+        maxQuestions: action.body.max_questions,
         resumed: true,
         submitting: false,
       };
@@ -143,6 +153,8 @@ export function reduce(state: ViewState, action: Action): ViewState {
         // number for `next` will be responseCount + 1, advancing the
         // progress chrome by one.
         responseCount: action.body.response_count,
+        // Fixed for the session — preserve the denominator across picks.
+        maxQuestions: state.maxQuestions,
         resumed: false,
         submitting: false,
       };
@@ -172,6 +184,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
           sessionId: state.sessionId,
           question: state.question,
           responseCount: state.responseCount,
+          maxQuestions: state.maxQuestions,
           answerGiven: state.pending.answerGiven,
           timeMs: state.pending.timeMs,
         },
@@ -187,6 +200,7 @@ export function reduce(state: ViewState, action: Action): ViewState {
         sessionId: state.resumeFrom.sessionId,
         question: state.resumeFrom.question,
         responseCount: state.resumeFrom.responseCount,
+        maxQuestions: state.resumeFrom.maxQuestions,
         resumed: false,
         submitting: true,
         pending: {

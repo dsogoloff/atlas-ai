@@ -165,7 +165,7 @@ export default async function ParentDashboardPage() {
                     <img
                       alt="Sammy the brown long-haired mini dachshund mascot"
                       className="w-full h-full object-contain"
-                      src="/img/placeholder-mascot.svg"
+                      src="/mascot/waving.png"
                     />
                   </div>
                   <div className="absolute top-0 right-1/4 w-12 h-12 bg-sam-teal/10 rounded-xl flex items-center justify-center text-sam-teal -rotate-12">
@@ -243,7 +243,7 @@ export default async function ParentDashboardPage() {
                 <img
                   alt="Sammy the dachshund mascot"
                   className="w-full h-full object-contain"
-                  src="/img/placeholder-mascot.svg"
+                  src="/mascot/waving.png"
                 />
               </div>
             </div>

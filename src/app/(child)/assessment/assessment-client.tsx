@@ -13,19 +13,16 @@ import { useEffect, useReducer, useState } from "react";
 
 import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
-import { mascotPoseFor } from "./lib/mascot";
 import { computeProgressDisplay } from "@/lib/display/progress";
 import type { Tier } from "@/lib/tier/derive";
 import type { ProctoringMode } from "@/lib/proctoring/mode";
 
-import { Mascot } from "./components/Mascot";
 import { QuestionShell } from "./components/QuestionShell";
 import { QuestionTimer } from "./components/QuestionTimer";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { ResumeBanner } from "./components/ResumeBanner";
 import { ErrorPanel } from "./components/ErrorPanel";
 import { DevTestModeChooser } from "./components/DevTestModeChooser";
-import { BetaWelcome } from "./components/BetaWelcome";
 import { ParentIntro } from "./components/ParentIntro";
 import { Welcome } from "./components/Welcome";
 
@@ -39,11 +36,6 @@ interface Props {
    *  pre-start DevTestModeChooser gates the auto-start so QA can pick the test
    *  type. The server re-checks the same flag, so this is convenience UI only. */
   comprehensivePilotEnabled?: boolean;
-  /** True iff BETA_WELCOME_LIVE is on (read server-side; default-ON for the
-   *  pilot). When true, a beta welcome screen shows first — before the parent
-   *  intro — on every session. When false (v1.0) the screen never renders and
-   *  the flow is unchanged. */
-  betaWelcomeEnabled?: boolean;
   /** True iff ENABLE_PARENT_INTRO is on (read server-side). When true, a
    *  pre-start parent intro / instructions screen gates the auto-start; when
    *  false (default) the session auto-starts unchanged. */
@@ -58,7 +50,6 @@ export function AssessmentClient({
   childName,
   tier,
   comprehensivePilotEnabled = false,
-  betaWelcomeEnabled = false,
   parentIntroEnabled = false,
   proctoringMode = "no-assistance",
 }: Props) {
@@ -67,14 +58,13 @@ export function AssessmentClient({
   // Pre-start gates. The start effect is held until `startConfirmed`, which is
   // released ONLY by the child tapping the Welcome screen — so the test begins
   // on the tap, never auto-advances. Earlier gates just unlock the screens in
-  // front of Welcome: the beta welcome (BETA_WELCOME_LIVE) shows first, then the
-  // parent intro (ENABLE_PARENT_INTRO), then the DEV pilot chooser
-  // (ENABLE_COMPREHENSIVE_PILOT), then the child Welcome. `betaAcknowledged` /
-  // `introAcknowledged` / `testModeChosen` default true when their gate is off,
-  // so the default short-test path goes straight to Welcome. All gate state is
-  // per-mount, so each gate re-shows on every session (not once-per-family).
+  // front of Welcome: the parent intro (ENABLE_PARENT_INTRO) shows first, then
+  // the DEV pilot chooser (ENABLE_COMPREHENSIVE_PILOT), then the child Welcome.
+  // (The beta welcome no longer lives here — it is shown ONCE during onboarding,
+  // between COPPA and child setup; see the add-child route.) `introAcknowledged`
+  // / `testModeChosen` default true when their gate is off, so the default
+  // short-test path goes straight to Welcome.
   const [startConfirmed, setStartConfirmed] = useState(false);
-  const [betaAcknowledged, setBetaAcknowledged] = useState(!betaWelcomeEnabled);
   const [introAcknowledged, setIntroAcknowledged] = useState(
     !parentIntroEnabled,
   );
@@ -161,15 +151,6 @@ export function AssessmentClient({
   }
 
   if (state.kind === "starting") {
-    // Gate 0: beta welcome (BETA_WELCOME_LIVE, default-ON for the pilot). The
-    // very first screen, shown every session. Tapping Continue only
-    // acknowledges it — later gates still run and the child Welcome releases
-    // the actual start.
-    if (betaWelcomeEnabled && !betaAcknowledged) {
-      return (
-        <BetaWelcome tier={tier} onContinue={() => setBetaAcknowledged(true)} />
-      );
-    }
     // Gate 1: parent intro / instructions (ENABLE_PARENT_INTRO). Shows before
     // any child-facing UI. Tapping Start only acknowledges it — the child
     // Welcome (gate 3) still releases the actual start.
@@ -207,7 +188,7 @@ export function AssessmentClient({
         />
       );
     }
-    return <Loading tier={tier} />;
+    return <Loading />;
   }
 
   if (state.kind === "completed") {
@@ -231,7 +212,10 @@ export function AssessmentClient({
   }
 
   const { question } = state;
-  const progress = computeProgressDisplay(state.responseCount);
+  const progress = computeProgressDisplay(
+    state.responseCount,
+    state.maxQuestions,
+  );
   return (
     <>
       {state.resumed && <ResumeBanner />}
@@ -256,17 +240,13 @@ export function AssessmentClient({
   );
 }
 
-function Loading({ tier }: { tier: Tier }) {
+// Brief transition after the child taps "Let's go!" on the Welcome screen,
+// while startSession runs. NO mascot here — the Welcome screen already showed
+// the waving mascot, and a second standalone mascot screen was redundant. Just
+// a minimal spinner so the wait reads as "loading", not a new screen.
+function Loading() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-sam-cream">
-      {/* Greeting beat — mascot waves while the session starts. K-4 gets
-          the entrance pop + idle bounce; G5-8 stays smaller and still. */}
-      <Mascot
-        pose={mascotPoseFor("starting")}
-        tier={tier}
-        size={tier === "K_4" ? 144 : 96}
-        entrance
-      />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-sam-cream">
       <div className="flex items-center gap-3 rounded-full border border-sam-gray-light bg-white px-6 py-3 shadow-sm">
         <span
           className="material-symbols-outlined animate-spin text-sam-teal"

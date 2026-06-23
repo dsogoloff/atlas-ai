@@ -22,7 +22,6 @@ import { createClient } from "@/lib/supabase/server";
 import { deriveTier } from "@/lib/tier/derive";
 import { deriveProctoringMode } from "@/lib/proctoring/mode";
 import {
-  isBetaWelcomeEnabled,
   isComprehensivePilotEnabled,
   isParentIntroEnabled,
 } from "@/lib/env";
@@ -90,16 +89,16 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
 
   // DEV-ONLY: when the comprehensive pilot flag is on, the client shows a
   // pre-start chooser so QA can pick short vs comprehensive. Off in prod, so
-  // the client auto-starts the short test unchanged. The beta welcome
-  // (BETA_WELCOME_LIVE, default-on) shows first every session; the parent intro
-  // (ENABLE_PARENT_INTRO, default-off) gates a pre-start instructions screen.
+  // the client auto-starts the short test unchanged. The parent intro
+  // (ENABLE_PARENT_INTRO) gates a pre-start instructions screen. (The beta
+  // welcome now shows once during onboarding — between COPPA and child setup —
+  // not before every assessment; see the add-child route.)
   return (
     <AssessmentClient
       childId={childId}
       childName={child.name}
       tier={tier}
       comprehensivePilotEnabled={isComprehensivePilotEnabled()}
-      betaWelcomeEnabled={isBetaWelcomeEnabled()}
       parentIntroEnabled={isParentIntroEnabled()}
       proctoringMode={proctoringMode}
     />
