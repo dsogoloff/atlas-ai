@@ -153,17 +153,18 @@ export function isVisualPrimitivesGalleryEnabled(): boolean {
 }
 
 /**
- * Gate for the parent intro / instructions screen shown before the short
- * assessment (age-dependent proctoring instructions + about-this-check).
- * Default-off (only 'true' enables) so it can be surfaced for founder QA on a
- * specific deploy without changing the start flow elsewhere. NOT a §12 strategy
- * flag (it gates a presentational pre-start screen, not a milestone-gated
- * business feature), so it stays OUT of ROLLOUT_FLAGS and the default-off
- * invariant test — mirroring the visual-primitives gallery flag's treatment.
- * When off, the assessment auto-starts exactly as before.
+ * Gate for the parent intro / instructions screen shown when the parent starts
+ * the short assessment (age-dependent proctoring instructions + about-this-
+ * check). Default-ON: only the literal string 'false' turns it OFF, so the
+ * instructions screen renders by default and can be suppressed on a deploy with
+ * ENABLE_PARENT_INTRO='false' (no code change). Default-on + 'false'-to-disable
+ * mirrors BETA_WELCOME_LIVE. NOT a §12 strategy flag (it gates a presentational
+ * pre-start screen, not a milestone-gated business feature), so it stays OUT of
+ * ROLLOUT_FLAGS and the default-off invariant test. The copy is founder-approved
+ * (see src/lib/proctoring/copy.ts).
  */
 export function isParentIntroEnabled(): boolean {
-  return process.env.ENABLE_PARENT_INTRO === "true";
+  return process.env.ENABLE_PARENT_INTRO !== "false";
 }
 
 /**
