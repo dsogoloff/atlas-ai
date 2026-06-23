@@ -144,6 +144,7 @@ import {
   shouldTerminate,
 } from "@/lib/engine/engine";
 import {
+  SHORT_TEST_CONFIG,
   shortTestNextQuestionRequest,
   shortTestShouldTerminate,
 } from "@/lib/engine/shortTest";
@@ -322,7 +323,8 @@ export async function submitResponseHandler({
   // grade_level/birth_year, which the earlier owned-children read doesn't
   // fetch, so we read them here (service-role; the ownership check above
   // already authorised this session for the caller). null for short sessions —
-  // the short path keeps using shouldTerminate / nextQuestionRequest unchanged.
+  // the short path uses the short-test stop + router (shortTestShouldTerminate /
+  // shortTestNextQuestionRequest), built from the `short` context below.
   // ---------------------------------------------------------------------------
   // Child grade is needed by BOTH the comprehensive tier budget AND the
   // level-lock band on the next pick (all sessions), so read it once here
@@ -711,7 +713,8 @@ export async function submitResponseHandler({
   // (c) Engine-driven termination side-effects. Comprehensive sessions use the
   //     budget/floor/SE rule (reads post-state strand counts from the DB — the
   //     response row from (a) is already persisted, so counts include this
-  //     item); short sessions use shouldTerminate unchanged.
+  //     item); short sessions use the short-test coverage+count stop
+  //     (shortTestShouldTerminate — soft floor 10, HARD cap 15).
   const term = await decideTermination(
     serviceClient,
     request.session_id,
@@ -1038,11 +1041,17 @@ function emitPlacementCreated(
 }
 
 /**
- * Termination decision for a session — comprehensive-aware (comprehensive-engine
- * lane). Short sessions (comprehensive === null) use engine.shouldTerminate
- * unchanged. Comprehensive sessions use the budget/floor/SE rule, reading
- * post-state per-strand counts via replayStrandCounts. `state` is the post-state
- * (the just-inserted response already applied / replayed).
+ * Termination decision for a session — comprehensive- and short-aware.
+ *   * Comprehensive sessions use the budget/floor/SE rule (hardCap 26/36).
+ *   * Short sessions use `shortTestShouldTerminate` — the coverage+count stop
+ *     with the AGREED short-test length: soft floor 10, HARD cap 15. This is the
+ *     uniform cap for every level/band; a deep eligible pool never lets a short
+ *     test run past 15.
+ *   * Only a short session with NO usable band anchor (no grade AND no
+ *     birth_year — not reachable in prod, where birth_year is NOT NULL) falls to
+ *     the legacy `shouldTerminate`; even there we keep the 15 hard cap so a short
+ *     test can never exceed 15.
+ * `state` is the post-state (the just-inserted response already applied/replayed).
  */
 async function decideTermination(
   serviceClient: SupabaseClient<Database>,
@@ -1069,7 +1078,12 @@ async function decideTermination(
       availableByStrand: short.availableByStrand,
     });
   }
-  // No usable band anchor — legacy short behaviour.
+  // No usable band anchor (degenerate short session — not reachable in prod).
+  // Still enforce the short-test HARD cap of 15 so a short test can never exceed
+  // it; below the cap, defer to the legacy confidence/exhaustion rule.
+  if (state.responseCount >= SHORT_TEST_CONFIG.hardCap) {
+    return { done: true, reason: "max-questions-reached" };
+  }
   return shouldTerminate(state, emptyBankStrands);
 }
 
