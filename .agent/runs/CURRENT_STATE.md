@@ -4,6 +4,32 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-22 — **PR #140 (lane/crosswalk-regen-band-20260622) OPEN, CI running
+(verify-bar pending, Vercel deploying).** Off trunk `17fa2bf`. Regenerates the short-test
+served-order→external_id crosswalk artifacts (`scripts/conversion/audit/served-crosswalk.md`
+and `served-crosswalk.json`) against the new {previous, current} sampling band introduced
+in PR #139 (commit `263fa53`). Generator `build-served-crosswalk.ts` already imported
+`shortTestLevelBand` from `levelBand.ts`; this PR also refreshed stale cross-check
+annotations (renamed `PRIOR_ESTIMATE` → `PRIOR_BAND_ELIGIBLE` holding the old
+previous-only counts; added per-child "prev-band → now" delta note; footer documents the
+band change). Verify GREEN: 1232 tests / 91 files, tsc clean, lint 2 pre-existing warnings.
+Codex manual/skipped (relay unauth). Docs/artifacts only — NO migration, NO seed change,
+NO image upload, NO supabase db reset needed.
+
+Served-count changes per QA-seed child (old previous-only → new {previous,current} band;
+eligible old→new): QA Zero-A {0A}→{0A,0B} 17→30; QA Zero-C {0B}→{0B,0C,KA,KB} 13→21;
+QA Level 1 {0C,KA,KB}→{0C,KA,KB,1A,1B} 8→35; QA Level 2 {1A,1B}→{1A,1B,2A,2B} 27→52;
+QA Level 3 {2A,2B}→{2A,2B,3A,3B} 25→38; QA Level 4 {3A,3B}→{3A,3B,4A,4B} 13→18. Every
+non-floor cohort widens (adds the child's own booklet level); bank unchanged.
+
+CONVERSION Task C(c) CLOSED: the "L0A vs L0B render identically" symptom was NOT
+duplicated bank content — it was SAMPLING-BAND COLLAPSE. Under the old previous-only band
+a 0B-anchored child sampled {0A}, identical to a 0A-floor child. PR #139 fixed the band
+({previous,current}); PR #140 regenerated the crosswalk to reflect this. No bank de-dupe /
+re-author was needed.
+
+---
+
 **As of:** 2026-06-22 (ATLAS UI / onboarding session) — trunk head is **`1f0196a`** (PR #136
 merged). Three ATLAS-lane PRs landed this session; PR #134 (young-band/L3 QA) also merged
 (`bc637ea`). No migration in any of the three — **no `supabase db reset` needed.**
@@ -299,6 +325,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Crosswalk regen — {prev,current} band (PR #140) | OPEN PR #140 — CI running | lane/crosswalk-regen-band-20260622, off trunk `17fa2bf`. Docs/artifacts only: regenerated `served-crosswalk.md/json` against new {previous,current} sampling band (PR #139). No migration, no seed, no supabase db reset. Verify GREEN 1232/91. CLOSES CONVERSION Task C(c). Dimitri: merge at leisure. |
 | Young-band + L3 QA defects (PR #134) | OPEN PR #134 — CI GREEN | lane/young-l3-qa-defects-20260622, off trunk `f95920c`. Migrations `20260622120000` (3 UPDATEs: L0A-Q11/L0B-Q02 pattern stimuli, L0C-Q13 days stem+image) + `20260622130000` (L0C-Q04 fact-family EQUATION_SET→MULTI_BLANK). Cake = SOURCE_MAP re-point (no DB). Seed parity PASS (72). Founder: upload 3 new stimulus images + re-point cake, `supabase db reset`. ONE parked item: L4-Q21 source PNG (rectangle dims). |
 | Picker short outcome (PR #119) | MERGED (`c3ad839`) | lane/picker-short-outcome, base ATLAS-ASSESSMENT off `ce9a676`. `ShortTestOutcome` type + persistence + stratified short draw. Migration `20260621130000` (nullable `short_test_outcome`). Verify GREEN 1220/91. `supabase db reset` after. |
 | Picker comprehensive split (PR #121) | OPEN PR #121 | lane/picker-comprehensive, stacked on #119. pass_band global split + per-strand override + per-pick plan + seen_item_ids exclusion + G5_8 cap 36→30. No new migration. Verify GREEN 1250/94. Merge next; retarget base to ATLAS-ASSESSMENT now that #119 is merged. |

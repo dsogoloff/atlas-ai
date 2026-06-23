@@ -5,6 +5,20 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-22
 
+* **CONVERSION Task C(c) RESOLVED — L0A/L0B "render identically" symptom was sampling-band
+  collapse, not duplicated bank content (PRs #139 + #140, 2026-06-22).** Investigation
+  confirmed 0A and 0B are distinct booklet ordinals with disjoint level filters; the picker
+  never mis-maps them. The symptom (a 0B-anchored child receiving identical questions to a
+  0A-floor child) was caused by the old previous-only sampling band: at level 0B, "previous"
+  = {0A} — the same pool sampled by a 0A-floor child. PR #139 (commit `263fa53`) widened the
+  band to {previous, current} at every non-floor level (floor 0A samples itself only). A 0B
+  cohort now samples {0A, 0B} and receives its own 0B-level items, distinct from the floor
+  pool. PR #140 (lane/crosswalk-regen-band-20260622, off trunk `17fa2bf`) regenerated the
+  short-test served-order→external_id crosswalk artifacts (`served-crosswalk.md/json`) to
+  reflect this, refreshed stale cross-check annotations, and added per-child delta notes.
+  No bank de-dupe, no re-authoring, no migration, no seed change. Verify GREEN 1232/91.
+  PR #140 OPEN (docs/artifacts only; no supabase db reset needed).
+
 * **Parent-instructions screen restored (default-ON) with FINAL founder-approved copy
   (PRs #135 + #136).** `ENABLE_PARENT_INTRO` flipped to default-ON (`!== "false"`, mirroring
   BETA_WELCOME_LIVE) so the age-dependent screen renders by default (read-aloud ≤ grade 2 /

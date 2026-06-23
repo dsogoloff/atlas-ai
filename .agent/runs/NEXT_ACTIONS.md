@@ -15,12 +15,17 @@ Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db r
 - [x] **PR #136 (lane/parent-intro-final-copy) MERGED (`1f0196a`)** — FINAL founder-approved
       parent-instructions copy; env.ts merge conflict (shared flag flip) resolved.
 
-- [ ] **CONVERSION lane — investigate L0A vs L0B content identity (Task C(c)).** The ATLAS picker
-      is correct (0A/0B are distinct booklet ordinals, disjoint level filters). If L0A and L0B
-      questions render identically for a child, the duplication is in the BANK (same content
-      authored under both external_ids). Recommend a content diff across the 0A vs 0B
-      `short_test_eligible` rows and de-dupe / re-author the wrong level. Bank-owned; ATLAS lane
-      did not touch content.
+- [x] **CONVERSION lane — Task C(c) COMPLETE (L0A vs L0B content identity).** Root cause was
+      SAMPLING-BAND COLLAPSE, not duplicated bank content. Under the old previous-only band a
+      0B-anchored child sampled {0A}, identical to a 0A-floor child — so identical questions were
+      served from the same pool. PR #139 (commit `263fa53`) fixed the band to {previous, current};
+      a 0B cohort now samples {0A,0B} and includes its own 0B-level items, distinct from the floor
+      {0A} pool. PR #140 (lane/crosswalk-regen-band-20260622) regenerated the served-crosswalk
+      artifacts to reflect the new band. No bank de-dupe or re-author was needed.
+
+- [ ] **Dimitri: merge PR #140 (lane/crosswalk-regen-band-20260622)** — docs/artifacts only;
+      no migration, no seed change, no image upload, no `supabase db reset` needed. Verify GREEN
+      1232/91. Closes CONVERSION Task C(c).
 
 - **RESOLVED (was PR #135 gate item):** parent-intro DRAFT copy — founder approved the FINAL
   wording, landed in PR #136. The `proctoring/copy.ts` banner now reads FINAL/approved; future
