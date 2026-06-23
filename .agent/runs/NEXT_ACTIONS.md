@@ -4,11 +4,11 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0-overnight. 2026-06-23 — L5/L6 conversion (PR #148 OPEN, CI GREEN)
+## 0-overnight. 2026-06-23 — L5/L6 conversion (PR #148 — MERGED `01aee53`)
 
-Founder action: **merge PR #148**, then `supabase db reset` (applies `20260623140000` —
-sets `short_test_eligible` on the L5/L6 rows). Close superseded **PR #142**. Merge **PR #138**
-(L0A/L0B investigation) at leisure.
+Founder action: run `supabase db reset` (applies `20260623140000` — sets
+`short_test_eligible` on the L5/L6 rows). Close superseded **PR #142**. (PR #138 + #139
+already merged — L0A/L0B "identical render" resolved: bank not duplicated + band fix.)
 
 CONVERSION follow-ups (ungated unless noted; do top-down next session):
 - [ ] **Load the 6 gradeable missing L5/L6 rows** — `SAM-L5-Q01` (MC place-value), `SAM-L5-Q10`
@@ -31,6 +31,18 @@ CONVERSION follow-ups (ungated unless noted; do top-down next session):
       derivation with the source Level column.
 - [ ] **Housekeeping:** founder may purge `question-images/conversion-staging/` (15 page renders
       auto-staged by a Stage-4 exploration run; not served).
+
+## 0. 2026-06-23 — in-question mascot extended to all tiers (PR #146 — MERGED)
+
+Trunk head **`e93d5cd`**. UI-only; no migration / no `supabase db reset`.
+
+- [x] **PR #146 (lane/inquestion-mascot-all-tiers) MERGED (`e93d5cd`)** — the in-question footer
+      mascot (thinking idle + per-submit celebrate hop) now renders for ALL tiers, not just K_4.
+      The G5_8 `QuestionShell` branch gets a mascot-only footer (no "Read carefully!" text). New
+      `questionMascotIsLively` policy (all tiers, reduced-motion gated only); bookend
+      `mascotIsLively` (Welcome/Completion, K_4-only) unchanged. Kept by design: hop stays
+      correctness-agnostic, in-flow poses stay thinking + celebrating, reduced-motion gate kept.
+      +5 tests. Verify GREEN 1237/92.
 
 ## 0. 2026-06-22 — short-test length cap confirmed (PR #144 — MERGED)
 

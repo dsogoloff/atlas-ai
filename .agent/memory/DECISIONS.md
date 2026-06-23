@@ -3,6 +3,20 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-23
+
+* **In-question footer mascot extended to ALL tiers (PR #146, lane/inquestion-mascot-all-tiers).**
+  The `QuestionShell` footer mascot (thinking idle + per-submit celebrate hop) rendered only on
+  K_4; the G5_8 branch had no footer, so older kids saw no in-question mascot. Now both tiers'
+  footers host `<QuestionMascot>` — G5_8 gets a mascot-ONLY footer (no "Read carefully!" text,
+  preserving its measured chrome). New `questionMascotIsLively(reduceMotion)` in `lib/mascot.ts`
+  is the in-question motion policy: animated for EVERY tier, gated ONLY by reduced motion; the
+  bookend `mascotIsLively` (Welcome/Completion, K_4-only) is left UNCHANGED. Kept by design: the
+  hop is correctness-agnostic (correctness is never sent to the child client), in-flow poses stay
+  thinking + celebrating (waving/completion stay on the bookend screens), reduced-motion users
+  get the static thinking image. Real `public/mascot/*.png` reused; no content/bank change, no
+  migration. +5 tests. Verify GREEN 1237/92.
+
 ## 2026-06-22
 
 * **Short-test length cap confirmed live (10–15); the crosswalk model corrected (PR #144,

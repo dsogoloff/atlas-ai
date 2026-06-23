@@ -4,30 +4,49 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-23 (OVERNIGHT autonomous run — CONVERSION lane). Summary for the morning:
+**As of:** 2026-06-23 (OVERNIGHT autonomous run — CONVERSION lane). L5/L6 conversion:
 
-- **PR #148 OPEN — lane/l5l6-conversion-20260623 — CI GREEN (verify-bar + Vercel).** L5/L6
+- **PR #148 — lane/l5l6-conversion-20260623 — MERGED (`116f1bb`, merge `01aee53`).** L5/L6
   conversion gap closed. DISCOVERY: L5/L6 were already loaded by a prior run — 60/68 rows in
-  seed with source-correct content + answers (verified vs the founder's new answer-key PDFs),
-  but `short_test_eligible` was never set (loader INSERT lacked the column → all false). PR sets
+  seed with source-correct content + answers (verified vs the founder's answer-key PDFs), but
+  `short_test_eligible` was never set (loader INSERT lacked the column → all false). PR sets
   `short_test_eligible` STRICTLY from each worksheet's "Short Test" column (migration
-  `20260623140000` + seed mirror; L5 25 rows, L6 34 rows; explicit IN-lists; parity PASS 73).
-  Verify 1232/91 GREEN, tsc 0, lint 0 err (2 known). **After merge: `supabase db reset`.**
-  Per-task source-verified map captured in `scripts/conversion/finalize-l5l6-tags.ts`; status
-  doc `scripts/conversion/audit/l5l6-conversion-status-2026-06-23.md`.
-- **PR #142 (lane/l5l6-conversion-supply-gap) now SUPERSEDED** — both gaps it reported (answer
-  keys, L6-Q25/Q26 crops) were resolved by the founder; safe to CLOSE.
-- **PR #138 (lane/l0ab-content-identity) still OPEN** — L0A/L0B "identical render" cleared as a
-  content bug (cause = short-test previous-booklet band collapse; picker decision). Awaits merge.
-- **CONVERSION follow-ups queued (NEXT_ACTIONS):** 8 L5/L6 rows not yet loaded (6 gradeable
-  prior-run skips + 2 manual Short=N); ~17 L5/L6 image rows inactive pending curated crops
-  (founder upload); L5/L6 level-review (prior run derived half-grade from difficulty, below
-  booklet Level for review content).
+  `20260623140000` + seed mirror; L5 25 rows, L6 34 rows; parity PASS). Verify 1232/91 GREEN.
+  **Founder after merge: `supabase db reset`** (applies `20260623140000`). Per-task
+  source-verified map in `scripts/conversion/finalize-l5l6-tags.ts`; status doc
+  `scripts/conversion/audit/l5l6-conversion-status-2026-06-23.md`.
+- **PR #142 (lane/l5l6-conversion-supply-gap) SUPERSEDED** — its reported gaps (answer keys,
+  L6-Q25/Q26 crops) were resolved by the founder; safe to CLOSE.
+- L0A/L0B "identical render" is already RESOLVED on trunk — PR #138 (bank content NOT
+  duplicated) + PR #139 (band fix {previous,current}); see the 2026-06-22 band-fix block below.
+- **CONVERSION follow-ups queued (NEXT_ACTIONS §0-overnight):** 8 L5/L6 rows not yet loaded
+  (6 gradeable prior-run skips + 2 manual Short=N); ~17 L5/L6 image rows inactive pending
+  curated crops (founder upload); L5/L6 level-review (prior run derived half-grade from
+  difficulty, below booklet Level for review content); Stage-4 loader fixes.
 - **FLAG:** a Stage-4 exploration run auto-uploaded 15 whole-page renders to
   `question-images/conversion-staging/` (loader stages page renders when Supabase creds
   present) — a staging prefix (not served), but it touched the bucket despite the no-upload
-  limit. Founder may purge `conversion-staging/`. No further uploads run. `input/` now holds the
-  L5/L6 worksheet + answer-key PDFs (gitignored).
+  limit. Founder may purge `conversion-staging/`. `input/` holds the L5/L6 PDFs (gitignored).
+
+---
+
+**As of:** 2026-06-23 (in-question mascot extended to all tiers) — trunk head is **`e93d5cd`**
+(PR #146 merged). UI-only change; no migration — **no `supabase db reset` needed.**
+
+- **PR #146 — lane/inquestion-mascot-all-tiers — MERGED (`e93d5cd`).** The in-question footer
+  mascot (thinking-pose idle + per-submit celebrate hop) now renders for EVERY tier, not just
+  the young band / K_4. The G5_8 `QuestionShell` branch previously had no footer; it now hosts a
+  mascot-ONLY footer (right-aligned, no "Read carefully!" text — the measured G5-8 chrome keeps
+  the prompt as the focus). New `questionMascotIsLively(reduceMotion)` policy in `lib/mascot.ts`
+  drives the in-question mascot (animates for ALL tiers, gated ONLY by reduced motion); the
+  bookend `mascotIsLively` (Welcome/Completion, K_4-only) is UNCHANGED. Unchanged by design: the
+  hop stays correctness-agnostic (`celebrateTick` bumps on every submit; correctness never
+  reaches the child client), in-flow poses stay thinking + celebrating (waving/completion remain
+  on the bookend screens), reduced-motion gate kept (static thinking image). Real
+  `public/mascot/*.png` reused; no content change. +5 tests (`questionMascotIsLively` unit + a
+  `QuestionShell` smoke asserting the footer mascot mounts for both tiers). Verify GREEN 1237/92.
+
+---
 
 **As of:** 2026-06-22 (short-test length cap confirmed) — trunk head is **`cc93799`** (PR #144
 merged). Audit + docs/audit-tooling fix; no migration — **no `supabase db reset` needed.**
