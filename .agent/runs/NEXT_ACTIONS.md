@@ -4,6 +4,22 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-22 — short-test length cap confirmed (PR #144 — MERGED)
+
+Trunk head **`cc93799`**. Docs/audit-tooling only; no migration / no `supabase db reset`.
+
+- [x] **PR #144 (lane/short-test-hardcap-15) MERGED (`cc93799`)** — AUDIT: the LIVE short test
+      ALREADY caps at soft floor 10 / HARD cap 15 (`responseSubmit` uses `shortTestShouldTerminate`;
+      `shortTest.test.ts` pins `hardCap === 15`). The "served up to 25" was a stale crosswalk-
+      SCRIPT model (`build-served-crosswalk.ts` used the generic engine stop `shouldTerminate` /
+      MAX_QUESTIONS = 25 + generic router) that overstated length once #139/#140 widened pools
+      past 25. Fixed: the crosswalk now replays the real short-test stop + coverage router;
+      regenerated `served-crosswalk.{md,json}` show served **10–12** (deep pools L1 35 / L2 52 /
+      L3 38). Hardened the unreachable no-anchor short fallback to also cap at 15; comprehensive
+      length untouched (20–30); progress denominator confirmed ≤15.
+      NOTE: this corrects the #140 crosswalk regen below, which had rebuilt the artifacts for the
+      band widening but still using the generic 25-cap script — the served counts are now right.
+
 ## 0. 2026-06-22 — short-test sampling band fix (PR #139 — MERGED; PR #138 CONVERSION — MERGED)
 
 Trunk head **`17fa2bf`**. No migration / no `supabase db reset`.

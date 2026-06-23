@@ -4,6 +4,27 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-22 (short-test length cap confirmed) — trunk head is **`cc93799`** (PR #144
+merged). Audit + docs/audit-tooling fix; no migration — **no `supabase db reset` needed.**
+
+- **PR #144 — lane/short-test-hardcap-15 — MERGED (`cc93799`).** AUDIT result: the LIVE short
+  test ALREADY caps at **soft floor 10 / HARD cap 15**. `responseSubmit.decideTermination` uses
+  `shortTestShouldTerminate` for every short session (the `short` context is always present in
+  prod — `birth_year` is NOT NULL); `shortTest.test.ts` pins `hardCap === 15`. The generic
+  `shouldTerminate` (MAX_QUESTIONS 25) is only the no-anchor fallback (unreachable in prod). The
+  "served up to 25" seen earlier was a STALE CROSSWALK-SCRIPT model: `build-served-crosswalk.ts`
+  replayed the short test with the generic engine stop+router (25-cap), overstating served
+  length once #139/#140 widened the pools past 25. Fixes: (1) the crosswalk now replays the REAL
+  short-test stop + coverage router (`shortTestShouldTerminate` + `shortTestNextQuestionRequest`)
+  — regenerated `served-crosswalk.{md,json}` show served **10–12** across all cohorts (was up to
+  25), with deep pools L1 35 / L2 52 / L3 38 eligible; (2) hardened the unreachable no-anchor
+  short fallback to also cap at 15; (3) corrected stale "short uses shouldTerminate unchanged"
+  comments. Comprehensive length UNTOUCHED (target 20/30, hardCap 26/36). Progress denominator
+  confirmed ≤15 (`computeMaxQuestions` = `min(15, eligible pool)`). No content/bank change.
+  Verify GREEN 1232/91.
+
+---
+
 **As of:** 2026-06-22 (short-test sampling band fix) — trunk head is **`96e34f6`** (PRs #139,
 #140, #141 merged). Picker fix + crosswalk regen landed after the UI session below; no
 migration — **no `supabase db reset` needed.**
