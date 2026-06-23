@@ -4,6 +4,28 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-22 — ATLAS UI / onboarding session (PRs #133 / #135 / #136 — ALL MERGED)
+
+Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db reset` needed.
+
+- [x] **PR #133 (lane/landing-page-cleanup) MERGED (`55d5b8d`)** — landing/auth cleanup (Task A).
+- [x] **PR #135 (lane/assessment-flow-fixes) MERGED (`2e388bd`)** — assessment/onboarding flow
+      (Task B): beta-welcome once-only on /add-child, parent-intro restored (default-ON),
+      duplicate mascot screen removed, per-session progress ceiling, required grade, real mascots.
+- [x] **PR #136 (lane/parent-intro-final-copy) MERGED (`1f0196a`)** — FINAL founder-approved
+      parent-instructions copy; env.ts merge conflict (shared flag flip) resolved.
+
+- [ ] **CONVERSION lane — investigate L0A vs L0B content identity (Task C(c)).** The ATLAS picker
+      is correct (0A/0B are distinct booklet ordinals, disjoint level filters). If L0A and L0B
+      questions render identically for a child, the duplication is in the BANK (same content
+      authored under both external_ids). Recommend a content diff across the 0A vs 0B
+      `short_test_eligible` rows and de-dupe / re-author the wrong level. Bank-owned; ATLAS lane
+      did not touch content.
+
+- **RESOLVED (was PR #135 gate item):** parent-intro DRAFT copy — founder approved the FINAL
+  wording, landed in PR #136. The `proctoring/copy.ts` banner now reads FINAL/approved; future
+  wording changes remain §2.4 gate-to-Dimitri.
+
 ## 0aaaa. 2026-06-22 — Young-band + L3 QA defect batch (PR #134, lane/young-l3-qa-defects-20260622)
 
 **Trunk head entering this work: `f95920c`. PR #134 OPEN — CI GREEN, Vercel GREEN.**

@@ -4,6 +4,51 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-22 (ATLAS UI / onboarding session) — trunk head is **`1f0196a`** (PR #136
+merged). Three ATLAS-lane PRs landed this session; PR #134 (young-band/L3 QA) also merged
+(`bc637ea`). No migration in any of the three — **no `supabase db reset` needed.**
+
+- **PR #133 — lane/landing-page-cleanup — MERGED (`55d5b8d`).** Public marketing (`/`) + auth
+  (`/login`, `/signup`) cleanup (Task A): hero badge recolored navy (was red-on-pink); removed
+  dead CTAs (View Sample Reports / Explore Dashboard / Book a Demo), public nav
+  (Journey|Reports|Students), Number-Sense double-width, Success-Story card, all footer dead
+  links; approved CTA by-line ("Join over 30,000 students…"); © 2024→2026 + branding unified to
+  "Atlas Assessment Suite by S.A.M New York"; placeholder mascots → real `/mascot/*.png`. Verify
+  GREEN 1225/91.
+- **PR #135 — lane/assessment-flow-fixes — MERGED (`2e388bd`).** Assessment/onboarding flow
+  (Task B): beta-welcome moved out of the per-assessment gate into a once-only onboarding
+  interstitial on `/add-child` (localStorage `atlas_beta_welcome_seen`, `useSyncExternalStore`;
+  larger font); parent-instructions screen restored (`ENABLE_PARENT_INTRO` flipped default-ON);
+  removed the duplicate post-Welcome mascot screen (now spinner-only); short-test progress bar
+  now shows a per-session ceiling `max_questions` from /start (short = min(short cap 15,
+  eligible-pool size); comprehensive = engine cap) instead of a fixed 25 — plumbed
+  handler→types→api→reducer→progress; "Current grade" on add-child now REQUIRED (UI-only; DB
+  column still nullable); remaining placeholder mascots (coppa/add-child/dashboard) → real
+  assets. Verify GREEN 1230/91 (+5 tests).
+- **PR #136 — lane/parent-intro-final-copy — MERGED (`1f0196a`).** Replaced DRAFT parent-intro
+  copy (`src/lib/proctoring/copy.ts`) with FINAL founder-approved wording (both age variants +
+  shared block) and confirmed `ENABLE_PARENT_INTRO` default-ON. Read-aloud dropped the italic
+  note (boxed summary only); no-assistance gained the concept-help point (parent may explain a
+  unit conversion, then let the child do the math); button "Start the assessment". The env.ts
+  conflict vs trunk (shared flag flip already in #135) was resolved keeping the
+  default-off-invariant note + adding the founder-approved copy reference.
+
+**Task C — picker investigations (report-only, NO code change; verdicts):**
+- (a) **Short test L1 = 8 is GENUINE bank exhaustion, not a stop-short bug.** L1's
+  previous-booklet eligible pool holds exactly 8 active `short_test_eligible` items; the loop
+  serves all 8 then closes `bank-exhausted`. Stop policy (softFloor 10 / hardCap 15, per-strand
+  floor clamps to availability) cannot stop before the pool empties. (PR #135's progress fix now
+  shows "of up to 8" here instead of 25.)
+- (b) **Short test: sampling level band is FIXED for the session** (anchored on grade, never
+  widened on interim results); **question order is RE-DERIVED adaptively on each pick**
+  (difficulty targets the running posterior within the fixed band). Actual == intended.
+- (c) **L0A==L0B is NOT a picker bug.** 0A/0B are distinct booklet ordinals with disjoint level
+  filters — no L0A→L0B mis-map is possible. If they render identically it is a CONTENT-BANK
+  identity issue (same content authored under both external_ids) — **flagged for the CONVERSION
+  lane**; the ATLAS lane did not touch bank content.
+
+---
+
 **As of:** 2026-06-22 — trunk head is **`f95920c`** (PR #134 open off this head;
 PR #123 merged at `c4a67e8`; PR #119 `lane/picker-short-outcome` merged at `c3ad839`;
 advanced from `ce9a676`/#115). Session 2026-06-22: duplicate-migration collision
