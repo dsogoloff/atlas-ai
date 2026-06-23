@@ -4,6 +4,25 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-22 — short-test sampling band fix (PR #139 — MERGED; PR #138 CONVERSION — MERGED)
+
+Trunk head **`17fa2bf`**. No migration / no `supabase db reset`.
+
+- [x] **PR #139 (lane/young-band-sampling-band) MERGED (`17fa2bf`)** — short-test band →
+      {previous, current} at every non-floor level, {0A} only at the 0A floor. Renamed
+      `previousBookletHalfGrades` → `shortTestLevelBand`; 3 short-path call sites updated
+      (pick band, eligible-count discovery, `max_questions` ceiling). SCOPE: changes the served
+      band for EVERY non-floor level (prior behavior was uniformly previous-only). Comprehensive
+      picker unaffected. Supersedes the earlier Task C(c) content-identity verdict.
+- [x] **PR #138 (lane/l0ab-content-identity-20260622) MERGED (`d1dcc31`, CONVERSION)** —
+      confirmed L0A/L0B bank content is NOT duplicated; the identical-rendering cause was the
+      band (fixed in #139).
+
+- [x] **CONVERSION lane — regenerate the served-order crosswalk artifacts — DONE (PR #140,
+      MERGED `872f044`).** `scripts/conversion/audit/served-crosswalk.{md,json}` were rebuilt
+      against the new `shortTestLevelBand` by re-running `build-served-crosswalk.ts` over
+      `seed.sql`. Memory record in PR #143.
+
 ## 0. 2026-06-22 — ATLAS UI / onboarding session (PRs #133 / #135 / #136 — ALL MERGED)
 
 Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db reset` needed.
@@ -15,17 +34,17 @@ Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db r
 - [x] **PR #136 (lane/parent-intro-final-copy) MERGED (`1f0196a`)** — FINAL founder-approved
       parent-instructions copy; env.ts merge conflict (shared flag flip) resolved.
 
-- [x] **CONVERSION lane — Task C(c) COMPLETE (L0A vs L0B content identity).** Root cause was
-      SAMPLING-BAND COLLAPSE, not duplicated bank content. Under the old previous-only band a
-      0B-anchored child sampled {0A}, identical to a 0A-floor child — so identical questions were
-      served from the same pool. PR #139 (commit `263fa53`) fixed the band to {previous, current};
-      a 0B cohort now samples {0A,0B} and includes its own 0B-level items, distinct from the floor
-      {0A} pool. PR #140 (lane/crosswalk-regen-band-20260622) regenerated the served-crosswalk
-      artifacts to reflect the new band. No bank de-dupe or re-author was needed.
-
-- [ ] **Dimitri: merge PR #140 (lane/crosswalk-regen-band-20260622)** — docs/artifacts only;
-      no migration, no seed change, no image upload, no `supabase db reset` needed. Verify GREEN
-      1232/91. Closes CONVERSION Task C(c).
+- [x] **RESOLVED — L0A vs L0B "identical rendering" (Task C(c)).** The earlier verdict framed
+      this as a content-bank identity issue. CORRECTED: the cause was the short-test sampling
+      band (a 0B child was served an all-0A test), fixed in **PR #139**. PR #138 (CONVERSION)
+      separately confirmed the 0A/0B bank content is NOT duplicated. No bank de-dupe needed.
+- [x] **PR #140 (lane/crosswalk-regen-band-20260622) MERGED (`872f044`)** — regenerated the
+      served-crosswalk artifacts (`served-crosswalk.{md,json}`) against the new
+      {previous,current} band; docs/artifacts only, no migration / no `supabase db reset`.
+      Verify GREEN 1232/91. Closes the #139 crosswalk follow-up above.
+- [ ] **Dimitri: merge PR #143 (lane/memory-crosswalk-band-20260622)** — this memory record
+      (CURRENT_STATE / NEXT_ACTIONS / DECISIONS) for the #140 regeneration + Task C(c) closure.
+      Docs/memory only; no DB change.
 
 - **RESOLVED (was PR #135 gate item):** parent-intro DRAFT copy — founder approved the FINAL
   wording, landed in PR #136. The `proctoring/copy.ts` banner now reads FINAL/approved; future

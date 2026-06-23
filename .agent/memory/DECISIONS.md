@@ -5,19 +5,25 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-22
 
-* **CONVERSION Task C(c) RESOLVED — L0A/L0B "render identically" symptom was sampling-band
-  collapse, not duplicated bank content (PRs #139 + #140, 2026-06-22).** Investigation
-  confirmed 0A and 0B are distinct booklet ordinals with disjoint level filters; the picker
-  never mis-maps them. The symptom (a 0B-anchored child receiving identical questions to a
-  0A-floor child) was caused by the old previous-only sampling band: at level 0B, "previous"
-  = {0A} — the same pool sampled by a 0A-floor child. PR #139 (commit `263fa53`) widened the
-  band to {previous, current} at every non-floor level (floor 0A samples itself only). A 0B
-  cohort now samples {0A, 0B} and receives its own 0B-level items, distinct from the floor
-  pool. PR #140 (lane/crosswalk-regen-band-20260622, off trunk `17fa2bf`) regenerated the
-  short-test served-order→external_id crosswalk artifacts (`served-crosswalk.md/json`) to
-  reflect this, refreshed stale cross-check annotations, and added per-child delta notes.
-  No bank de-dupe, no re-authoring, no migration, no seed change. Verify GREEN 1232/91.
-  PR #140 OPEN (docs/artifacts only; no supabase db reset needed).
+* **Short-test sampling band changed to {previous, current} booklet (PR #139,
+  lane/young-band-sampling-band).** The short test sampled the PREVIOUS booklet ONLY for every
+  level, so a 0B child got an all-0A test identical to a 0A child's. Per the intended design the
+  band is now {previous, current} above the floor and {0A} only at the 0A floor (0B→{0A,0B},
+  0C→{0B,0C}, grade1→{0C,1A,1B}, … grade5→{4A,4B,5A,5B}). Helper renamed
+  `previousBookletHalfGrades` → `shortTestLevelBand`; all three short-path call sites updated
+  (pick band, eligible-count discovery, `max_questions` ceiling) so they stay consistent. The
+  floor collapses naturally (previous==current==0 → {0A}); KA/KB still fold into the 0C booklet
+  ordinal. **SCOPE: this changes the served band for EVERY non-floor level, not just the young
+  band — the prior behavior was uniformly previous-only (a grade-5 child sampled grade 4 only;
+  now grade 4 + grade 5).** Comprehensive picker UNAFFECTED (it anchors on measured level via
+  `levelLockHalfGrades` / the per-pick comprehensive plan, never this function). No content/bank
+  change, no migration. Verify GREEN 1232/91. **This supersedes the 2026-06-22 Task C(c) verdict
+  that framed L0A==L0B as a content-bank identity issue: the picker band was the cause; PR #138
+  (CONVERSION lane, `l0ab-content-identity-2026-06-22.md`) separately confirmed the bank content
+  is not duplicated.** Follow-up DONE: PR #140 (lane/crosswalk-regen-band-20260622, MERGED)
+  regenerated the served-order crosswalk artifacts (`served-crosswalk.{md,json}`) against the
+  new band — per-QA-cohort eligible counts widened old→new: Zero-A 17→30, Zero-C 13→21,
+  L1 8→35, L2 27→52, L3 25→38, L4 13→18.
 
 * **Parent-instructions screen restored (default-ON) with FINAL founder-approved copy
   (PRs #135 + #136).** `ENABLE_PARENT_INTRO` flipped to default-ON (`!== "false"`, mirroring

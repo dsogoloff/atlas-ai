@@ -4,29 +4,44 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-22 — **PR #140 (lane/crosswalk-regen-band-20260622) OPEN, CI running
-(verify-bar pending, Vercel deploying).** Off trunk `17fa2bf`. Regenerates the short-test
-served-order→external_id crosswalk artifacts (`scripts/conversion/audit/served-crosswalk.md`
-and `served-crosswalk.json`) against the new {previous, current} sampling band introduced
-in PR #139 (commit `263fa53`). Generator `build-served-crosswalk.ts` already imported
-`shortTestLevelBand` from `levelBand.ts`; this PR also refreshed stale cross-check
-annotations (renamed `PRIOR_ESTIMATE` → `PRIOR_BAND_ELIGIBLE` holding the old
-previous-only counts; added per-child "prev-band → now" delta note; footer documents the
-band change). Verify GREEN: 1232 tests / 91 files, tsc clean, lint 2 pre-existing warnings.
-Codex manual/skipped (relay unauth). Docs/artifacts only — NO migration, NO seed change,
-NO image upload, NO supabase db reset needed.
+**As of:** 2026-06-22 (short-test sampling band fix) — trunk head is **`96e34f6`** (PRs #139,
+#140, #141 merged). Picker fix + crosswalk regen landed after the UI session below; no
+migration — **no `supabase db reset` needed.**
 
-Served-count changes per QA-seed child (old previous-only → new {previous,current} band;
-eligible old→new): QA Zero-A {0A}→{0A,0B} 17→30; QA Zero-C {0B}→{0B,0C,KA,KB} 13→21;
-QA Level 1 {0C,KA,KB}→{0C,KA,KB,1A,1B} 8→35; QA Level 2 {1A,1B}→{1A,1B,2A,2B} 27→52;
-QA Level 3 {2A,2B}→{2A,2B,3A,3B} 25→38; QA Level 4 {3A,3B}→{3A,3B,4A,4B} 13→18. Every
-non-floor cohort widens (adds the child's own booklet level); bank unchanged.
+- **PR #139 — lane/young-band-sampling-band — MERGED (`17fa2bf`).** Short-test sampling band
+  changed from PREVIOUS-booklet-only to **{previous, current}** at every level above the floor,
+  and **{0A} only at the 0A floor**: 0B → {0A,0B}, 0C → {0B,0C}, grade 1 → {0C,1A,1B}, grade 5
+  → {4A,4B,5A,5B}, … up the ladder. Fixes a 0B child being served an all-0A test identical to a
+  0A child's. Renamed `previousBookletHalfGrades` → `shortTestLevelBand` in `levelBand.ts`;
+  updated all three short-path call sites (pickForSession pick band, responseSubmit availability
+  discovery, sessionStart `max_questions` ceiling) so band / eligible-count / progress
+  denominator stay consistent. The floor collapses naturally (previous==current==0 → {0A});
+  KA/KB still fold into the 0C booklet ordinal. **SCOPE: changes the served band for EVERY
+  non-floor level — the prior behavior was uniformly previous-only, NOT a 0B one-off.**
+  Comprehensive picker UNAFFECTED (anchors on measured level via `levelLockHalfGrades` /
+  per-pick plan, never this function). No content/bank change. Verify GREEN 1232/91.
+  **Supersedes the earlier Task C(c) verdict** — the picker band, not bank content, caused the
+  L0A==L0B "identical" symptom.
+- **PR #138 — lane/l0ab-content-identity-20260622 — MERGED (`d1dcc31`, CONVERSION lane).**
+  Independently confirmed the L0A/L0B bank content is NOT duplicated (audit
+  `scripts/conversion/audit/l0ab-content-identity-2026-06-22.md`); the identical-rendering cause
+  was the short-test band, fixed in #139.
 
-CONVERSION Task C(c) CLOSED: the "L0A vs L0B render identically" symptom was NOT
-duplicated bank content — it was SAMPLING-BAND COLLAPSE. Under the old previous-only band
-a 0B-anchored child sampled {0A}, identical to a 0A-floor child. PR #139 fixed the band
-({previous,current}); PR #140 regenerated the crosswalk to reflect this. No bank de-dupe /
-re-author was needed.
+- **PR #140 — lane/crosswalk-regen-band-20260622 — MERGED (`872f044`, CONVERSION lane).**
+  Regenerated the served-order crosswalk artifacts
+  `scripts/conversion/audit/served-crosswalk.{md,json}` against the new {previous,current}
+  band (re-ran `build-served-crosswalk.ts` over `seed.sql`; also refreshed the generator's
+  stale cross-check annotations — `PRIOR_ESTIMATE` → `PRIOR_BAND_ELIGIBLE` + per-child
+  "prev-band → now" delta + footer). Docs/artifacts only; no migration, no seed change, no
+  supabase db reset. Verify GREEN 1232/91. Closes the #139 crosswalk follow-up.
+  - Served-count change per QA-seed child (old previous-only → new {previous,current} band;
+    eligible old→new): QA Zero-A {0A}→{0A,0B} 17→30; QA Zero-C {0B}→{0B,0C,KA,KB} 13→21;
+    QA Level 1 {0C,KA,KB}→{0C,KA,KB,1A,1B} 8→35; QA Level 2 {1A,1B}→{1A,1B,2A,2B} 27→52;
+    QA Level 3 {2A,2B}→{2A,2B,3A,3B} 25→38; QA Level 4 {3A,3B}→{3A,3B,4A,4B} 13→18. Every
+    non-floor cohort widens (adds the child's own booklet level); bank unchanged.
+- **PR #143 — lane/memory-crosswalk-band-20260622 — OPEN.** This memory record
+  (CURRENT_STATE / NEXT_ACTIONS / DECISIONS) for the #140 regeneration + Task C(c) closure.
+  Docs/memory only; no DB change.
 
 ---
 
