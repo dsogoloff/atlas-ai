@@ -18,11 +18,10 @@ Trunk head **`17fa2bf`**. No migration / no `supabase db reset`.
       confirmed L0A/L0B bank content is NOT duplicated; the identical-rendering cause was the
       band (fixed in #139).
 
-- [ ] **CONVERSION lane — regenerate the served-order crosswalk artifacts.**
-      `scripts/conversion/audit/served-crosswalk.{md,json}` are STALE vs the new
-      `shortTestLevelBand` (they were built against the previous-only band). Re-run
-      `scripts/conversion/audit/build-served-crosswalk.ts` against `seed.sql` to refresh them.
-      #139 updated only the script's import (mechanical). Bank/CONVERSION-owned.
+- [x] **CONVERSION lane — regenerate the served-order crosswalk artifacts — DONE (PR #140,
+      MERGED `872f044`).** `scripts/conversion/audit/served-crosswalk.{md,json}` were rebuilt
+      against the new `shortTestLevelBand` by re-running `build-served-crosswalk.ts` over
+      `seed.sql`. Memory record in PR #143.
 
 ## 0. 2026-06-22 — ATLAS UI / onboarding session (PRs #133 / #135 / #136 — ALL MERGED)
 
@@ -39,6 +38,13 @@ Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db r
       this as a content-bank identity issue. CORRECTED: the cause was the short-test sampling
       band (a 0B child was served an all-0A test), fixed in **PR #139**. PR #138 (CONVERSION)
       separately confirmed the 0A/0B bank content is NOT duplicated. No bank de-dupe needed.
+- [x] **PR #140 (lane/crosswalk-regen-band-20260622) MERGED (`872f044`)** — regenerated the
+      served-crosswalk artifacts (`served-crosswalk.{md,json}`) against the new
+      {previous,current} band; docs/artifacts only, no migration / no `supabase db reset`.
+      Verify GREEN 1232/91. Closes the #139 crosswalk follow-up above.
+- [ ] **Dimitri: merge PR #143 (lane/memory-crosswalk-band-20260622)** — this memory record
+      (CURRENT_STATE / NEXT_ACTIONS / DECISIONS) for the #140 regeneration + Task C(c) closure.
+      Docs/memory only; no DB change.
 
 - **RESOLVED (was PR #135 gate item):** parent-intro DRAFT copy — founder approved the FINAL
   wording, landed in PR #136. The `proctoring/copy.ts` banner now reads FINAL/approved; future

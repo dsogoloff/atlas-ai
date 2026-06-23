@@ -20,9 +20,10 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   change, no migration. Verify GREEN 1232/91. **This supersedes the 2026-06-22 Task C(c) verdict
   that framed L0A==L0B as a content-bank identity issue: the picker band was the cause; PR #138
   (CONVERSION lane, `l0ab-content-identity-2026-06-22.md`) separately confirmed the bank content
-  is not duplicated.** Follow-up: the served-order crosswalk artifacts
-  (`served-crosswalk.{md,json}`) are stale vs the new band and need regenerating in the
-  CONVERSION lane (#139 updated only the script import).
+  is not duplicated.** Follow-up DONE: PR #140 (lane/crosswalk-regen-band-20260622, MERGED)
+  regenerated the served-order crosswalk artifacts (`served-crosswalk.{md,json}`) against the
+  new band — per-QA-cohort eligible counts widened old→new: Zero-A 17→30, Zero-C 13→21,
+  L1 8→35, L2 27→52, L3 25→38, L4 13→18.
 
 * **Parent-instructions screen restored (default-ON) with FINAL founder-approved copy
   (PRs #135 + #136).** `ENABLE_PARENT_INTRO` flipped to default-ON (`!== "false"`, mirroring

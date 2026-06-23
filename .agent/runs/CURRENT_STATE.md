@@ -4,9 +4,9 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-22 (short-test sampling band fix) — trunk head is **`17fa2bf`** (PR #139
-merged). One picker fix landed after the UI session below; no migration — **no
-`supabase db reset` needed.**
+**As of:** 2026-06-22 (short-test sampling band fix) — trunk head is **`96e34f6`** (PRs #139,
+#140, #141 merged). Picker fix + crosswalk regen landed after the UI session below; no
+migration — **no `supabase db reset` needed.**
 
 - **PR #139 — lane/young-band-sampling-band — MERGED (`17fa2bf`).** Short-test sampling band
   changed from PREVIOUS-booklet-only to **{previous, current}** at every level above the floor,
@@ -27,10 +27,21 @@ merged). One picker fix landed after the UI session below; no migration — **no
   `scripts/conversion/audit/l0ab-content-identity-2026-06-22.md`); the identical-rendering cause
   was the short-test band, fixed in #139.
 
-**OPEN follow-up (CONVERSION lane):** the served-order crosswalk artifacts
-`scripts/conversion/audit/served-crosswalk.{md,json}` are now STALE vs the new band and need
-regenerating (re-run `build-served-crosswalk.ts` against `seed.sql`); #139 only updated that
-script's import (mechanical) to keep the build green.
+- **PR #140 — lane/crosswalk-regen-band-20260622 — MERGED (`872f044`, CONVERSION lane).**
+  Regenerated the served-order crosswalk artifacts
+  `scripts/conversion/audit/served-crosswalk.{md,json}` against the new {previous,current}
+  band (re-ran `build-served-crosswalk.ts` over `seed.sql`; also refreshed the generator's
+  stale cross-check annotations — `PRIOR_ESTIMATE` → `PRIOR_BAND_ELIGIBLE` + per-child
+  "prev-band → now" delta + footer). Docs/artifacts only; no migration, no seed change, no
+  supabase db reset. Verify GREEN 1232/91. Closes the #139 crosswalk follow-up.
+  - Served-count change per QA-seed child (old previous-only → new {previous,current} band;
+    eligible old→new): QA Zero-A {0A}→{0A,0B} 17→30; QA Zero-C {0B}→{0B,0C,KA,KB} 13→21;
+    QA Level 1 {0C,KA,KB}→{0C,KA,KB,1A,1B} 8→35; QA Level 2 {1A,1B}→{1A,1B,2A,2B} 27→52;
+    QA Level 3 {2A,2B}→{2A,2B,3A,3B} 25→38; QA Level 4 {3A,3B}→{3A,3B,4A,4B} 13→18. Every
+    non-floor cohort widens (adds the child's own booklet level); bank unchanged.
+- **PR #143 — lane/memory-crosswalk-band-20260622 — OPEN.** This memory record
+  (CURRENT_STATE / NEXT_ACTIONS / DECISIONS) for the #140 regeneration + Task C(c) closure.
+  Docs/memory only; no DB change.
 
 ---
 
@@ -329,6 +340,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Crosswalk regen — {prev,current} band (PR #140) | OPEN PR #140 — CI running | lane/crosswalk-regen-band-20260622, off trunk `17fa2bf`. Docs/artifacts only: regenerated `served-crosswalk.md/json` against new {previous,current} sampling band (PR #139). No migration, no seed, no supabase db reset. Verify GREEN 1232/91. CLOSES CONVERSION Task C(c). Dimitri: merge at leisure. |
 | Young-band + L3 QA defects (PR #134) | OPEN PR #134 — CI GREEN | lane/young-l3-qa-defects-20260622, off trunk `f95920c`. Migrations `20260622120000` (3 UPDATEs: L0A-Q11/L0B-Q02 pattern stimuli, L0C-Q13 days stem+image) + `20260622130000` (L0C-Q04 fact-family EQUATION_SET→MULTI_BLANK). Cake = SOURCE_MAP re-point (no DB). Seed parity PASS (72). Founder: upload 3 new stimulus images + re-point cake, `supabase db reset`. ONE parked item: L4-Q21 source PNG (rectangle dims). |
 | Picker short outcome (PR #119) | MERGED (`c3ad839`) | lane/picker-short-outcome, base ATLAS-ASSESSMENT off `ce9a676`. `ShortTestOutcome` type + persistence + stratified short draw. Migration `20260621130000` (nullable `short_test_outcome`). Verify GREEN 1220/91. `supabase db reset` after. |
 | Picker comprehensive split (PR #121) | OPEN PR #121 | lane/picker-comprehensive, stacked on #119. pass_band global split + per-strand override + per-pick plan + seen_item_ids exclusion + G5_8 cap 36→30. No new migration. Verify GREEN 1250/94. Merge next; retarget base to ATLAS-ASSESSMENT now that #119 is merged. |
