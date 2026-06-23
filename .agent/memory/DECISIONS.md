@@ -5,6 +5,21 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-22
 
+* **Short-test length cap confirmed live (10–15); the crosswalk model corrected (PR #144,
+  lane/short-test-hardcap-15).** Audit result: the LIVE short test ALREADY enforces soft floor
+  10 / HARD cap 15 — `responseSubmit.decideTermination` uses `shortTestShouldTerminate` for
+  every short session (the `short` context is always present in prod; `shortTest.test.ts` pins
+  `hardCap === 15`). The earlier "served up to 25" was a STALE CROSSWALK-SCRIPT model:
+  `build-served-crosswalk.ts` replayed with the generic engine stop (`shouldTerminate` /
+  MAX_QUESTIONS = 25) + generic router, which overstated served length once PRs #139/#140
+  widened the eligible pools past 25. Fixes: the crosswalk now replays the real short-test stop
+  + coverage router (regenerated `served-crosswalk.{md,json}` show served 10–12 across all
+  cohorts, deep pools L1 35 / L2 52 / L3 38); the unreachable no-anchor short fallback hardened
+  to also cap at 15; stale "short uses shouldTerminate unchanged" comments corrected.
+  Comprehensive length untouched (target 20/30, hardCap 26/36). Progress denominator confirmed
+  ≤15 (`computeMaxQuestions` = `min(15, eligible pool)`). No content/bank change, no migration.
+  Verify GREEN 1232/91.
+
 * **Short-test sampling band changed to {previous, current} booklet (PR #139,
   lane/young-band-sampling-band).** The short test sampled the PREVIOUS booklet ONLY for every
   level, so a 0B child got an all-0A test identical to a 0A child's. Per the intended design the
