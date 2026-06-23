@@ -4,6 +4,36 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-22 (short-test sampling band fix) — trunk head is **`17fa2bf`** (PR #139
+merged). One picker fix landed after the UI session below; no migration — **no
+`supabase db reset` needed.**
+
+- **PR #139 — lane/young-band-sampling-band — MERGED (`17fa2bf`).** Short-test sampling band
+  changed from PREVIOUS-booklet-only to **{previous, current}** at every level above the floor,
+  and **{0A} only at the 0A floor**: 0B → {0A,0B}, 0C → {0B,0C}, grade 1 → {0C,1A,1B}, grade 5
+  → {4A,4B,5A,5B}, … up the ladder. Fixes a 0B child being served an all-0A test identical to a
+  0A child's. Renamed `previousBookletHalfGrades` → `shortTestLevelBand` in `levelBand.ts`;
+  updated all three short-path call sites (pickForSession pick band, responseSubmit availability
+  discovery, sessionStart `max_questions` ceiling) so band / eligible-count / progress
+  denominator stay consistent. The floor collapses naturally (previous==current==0 → {0A});
+  KA/KB still fold into the 0C booklet ordinal. **SCOPE: changes the served band for EVERY
+  non-floor level — the prior behavior was uniformly previous-only, NOT a 0B one-off.**
+  Comprehensive picker UNAFFECTED (anchors on measured level via `levelLockHalfGrades` /
+  per-pick plan, never this function). No content/bank change. Verify GREEN 1232/91.
+  **Supersedes the earlier Task C(c) verdict** — the picker band, not bank content, caused the
+  L0A==L0B "identical" symptom.
+- **PR #138 — lane/l0ab-content-identity-20260622 — MERGED (`d1dcc31`, CONVERSION lane).**
+  Independently confirmed the L0A/L0B bank content is NOT duplicated (audit
+  `scripts/conversion/audit/l0ab-content-identity-2026-06-22.md`); the identical-rendering cause
+  was the short-test band, fixed in #139.
+
+**OPEN follow-up (CONVERSION lane):** the served-order crosswalk artifacts
+`scripts/conversion/audit/served-crosswalk.{md,json}` are now STALE vs the new band and need
+regenerating (re-run `build-served-crosswalk.ts` against `seed.sql`); #139 only updated that
+script's import (mechanical) to keep the build green.
+
+---
+
 **As of:** 2026-06-22 (ATLAS UI / onboarding session) — trunk head is **`1f0196a`** (PR #136
 merged). Three ATLAS-lane PRs landed this session; PR #134 (young-band/L3 QA) also merged
 (`bc637ea`). No migration in any of the three — **no `supabase db reset` needed.**

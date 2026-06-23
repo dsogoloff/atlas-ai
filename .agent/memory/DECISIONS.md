@@ -5,6 +5,25 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-22
 
+* **Short-test sampling band changed to {previous, current} booklet (PR #139,
+  lane/young-band-sampling-band).** The short test sampled the PREVIOUS booklet ONLY for every
+  level, so a 0B child got an all-0A test identical to a 0A child's. Per the intended design the
+  band is now {previous, current} above the floor and {0A} only at the 0A floor (0B→{0A,0B},
+  0C→{0B,0C}, grade1→{0C,1A,1B}, … grade5→{4A,4B,5A,5B}). Helper renamed
+  `previousBookletHalfGrades` → `shortTestLevelBand`; all three short-path call sites updated
+  (pick band, eligible-count discovery, `max_questions` ceiling) so they stay consistent. The
+  floor collapses naturally (previous==current==0 → {0A}); KA/KB still fold into the 0C booklet
+  ordinal. **SCOPE: this changes the served band for EVERY non-floor level, not just the young
+  band — the prior behavior was uniformly previous-only (a grade-5 child sampled grade 4 only;
+  now grade 4 + grade 5).** Comprehensive picker UNAFFECTED (it anchors on measured level via
+  `levelLockHalfGrades` / the per-pick comprehensive plan, never this function). No content/bank
+  change, no migration. Verify GREEN 1232/91. **This supersedes the 2026-06-22 Task C(c) verdict
+  that framed L0A==L0B as a content-bank identity issue: the picker band was the cause; PR #138
+  (CONVERSION lane, `l0ab-content-identity-2026-06-22.md`) separately confirmed the bank content
+  is not duplicated.** Follow-up: the served-order crosswalk artifacts
+  (`served-crosswalk.{md,json}`) are stale vs the new band and need regenerating in the
+  CONVERSION lane (#139 updated only the script import).
+
 * **Parent-instructions screen restored (default-ON) with FINAL founder-approved copy
   (PRs #135 + #136).** `ENABLE_PARENT_INTRO` flipped to default-ON (`!== "false"`, mirroring
   BETA_WELCOME_LIVE) so the age-dependent screen renders by default (read-aloud ≤ grade 2 /

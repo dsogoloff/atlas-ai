@@ -4,6 +4,26 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-22 — short-test sampling band fix (PR #139 — MERGED; PR #138 CONVERSION — MERGED)
+
+Trunk head **`17fa2bf`**. No migration / no `supabase db reset`.
+
+- [x] **PR #139 (lane/young-band-sampling-band) MERGED (`17fa2bf`)** — short-test band →
+      {previous, current} at every non-floor level, {0A} only at the 0A floor. Renamed
+      `previousBookletHalfGrades` → `shortTestLevelBand`; 3 short-path call sites updated
+      (pick band, eligible-count discovery, `max_questions` ceiling). SCOPE: changes the served
+      band for EVERY non-floor level (prior behavior was uniformly previous-only). Comprehensive
+      picker unaffected. Supersedes the earlier Task C(c) content-identity verdict.
+- [x] **PR #138 (lane/l0ab-content-identity-20260622) MERGED (`d1dcc31`, CONVERSION)** —
+      confirmed L0A/L0B bank content is NOT duplicated; the identical-rendering cause was the
+      band (fixed in #139).
+
+- [ ] **CONVERSION lane — regenerate the served-order crosswalk artifacts.**
+      `scripts/conversion/audit/served-crosswalk.{md,json}` are STALE vs the new
+      `shortTestLevelBand` (they were built against the previous-only band). Re-run
+      `scripts/conversion/audit/build-served-crosswalk.ts` against `seed.sql` to refresh them.
+      #139 updated only the script's import (mechanical). Bank/CONVERSION-owned.
+
 ## 0. 2026-06-22 — ATLAS UI / onboarding session (PRs #133 / #135 / #136 — ALL MERGED)
 
 Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db reset` needed.
@@ -15,12 +35,10 @@ Trunk head **`1f0196a`**. No migration in any of the three — no `supabase db r
 - [x] **PR #136 (lane/parent-intro-final-copy) MERGED (`1f0196a`)** — FINAL founder-approved
       parent-instructions copy; env.ts merge conflict (shared flag flip) resolved.
 
-- [ ] **CONVERSION lane — investigate L0A vs L0B content identity (Task C(c)).** The ATLAS picker
-      is correct (0A/0B are distinct booklet ordinals, disjoint level filters). If L0A and L0B
-      questions render identically for a child, the duplication is in the BANK (same content
-      authored under both external_ids). Recommend a content diff across the 0A vs 0B
-      `short_test_eligible` rows and de-dupe / re-author the wrong level. Bank-owned; ATLAS lane
-      did not touch content.
+- [x] **RESOLVED — L0A vs L0B "identical rendering" (Task C(c)).** The earlier verdict framed
+      this as a content-bank identity issue. CORRECTED: the cause was the short-test sampling
+      band (a 0B child was served an all-0A test), fixed in **PR #139**. PR #138 (CONVERSION)
+      separately confirmed the 0A/0B bank content is NOT duplicated. No bank de-dupe needed.
 
 - **RESOLVED (was PR #135 gate item):** parent-intro DRAFT copy — founder approved the FINAL
   wording, landed in PR #136. The `proctoring/copy.ts` banner now reads FINAL/approved; future
