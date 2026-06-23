@@ -212,17 +212,16 @@ export async function assembleReportContent(
       );
     }
     const subStrandCodeById = new Map<string, Strand>();
-    const applicable: Array<{ code: Strand; order: number }> = [];
+    const displayOrderByCode = new Map<Strand, number>();
+    const applicable = new Map<Strand, number>(); // code → display_order
     for (const ss of subStrands ?? []) {
-      subStrandCodeById.set(ss.id, ss.code as Strand);
+      const code = ss.code as Strand;
+      subStrandCodeById.set(ss.id, code);
+      displayOrderByCode.set(code, ss.display_order);
       if (ss.applies_to_level_codes.includes(taxLevelCode)) {
-        applicable.push({ code: ss.code as Strand, order: ss.display_order });
+        applicable.set(code, ss.display_order);
       }
     }
-    // Stable display order — sub-strand display_order is unique within
-    // tax_sub_strands so this gives a deterministic bar order.
-    applicable.sort((a, b) => a.order - b.order);
-    applicableStrands = applicable.map((a) => a.code);
 
     // tax_content — map question.content_id → tax_content.sub_strand_id
     // → sub-strand code. Filter to just the content_ids on this session.
@@ -250,11 +249,36 @@ export async function assembleReportContent(
         if (code) subStrandByQuestion.set(qid, code);
       }
     }
+
+    // Displayed sub-strands = those applicable at the child's MEASURED level
+    // UNION every sub-strand the child was actually assessed on this session.
+    // The short test samples the PREVIOUS booklet, so a child can be served
+    // (and scored on) a sub-strand that isn't in applies_to_level_codes for
+    // their measured level — e.g. Measurement and Money exist at L3 but not
+    // L4. Keying the display set off the measured level ALONE silently
+    // dropped those real, scored responses (computeStrandMastery only emits
+    // rows for the set passed here), collapsing the bar map toward the one
+    // sub-strand that overlaps both levels. Including assessed sub-strands
+    // keeps every measured strand visible; unassessed applicable ones still
+    // render as no_data so the parent sees the full level grid.
+    const displaySet = new Map<Strand, number>(applicable);
+    for (const code of subStrandByQuestion.values()) {
+      const order = displayOrderByCode.get(code);
+      if (order !== undefined && !displaySet.has(code)) {
+        displaySet.set(code, order);
+      }
+    }
+    // Stable display order — sub-strand display_order is unique within
+    // tax_sub_strands so this gives a deterministic bar order.
+    applicableStrands = Array.from(displaySet.entries())
+      .sort((a, b) => a[1] - b[1])
+      .map(([code]) => code);
   }
 
   // Scored responses for computeStrandMastery — keyed by V2026 sub-strand
   // codes. Responses whose question has no content_id (or whose content_id
-  // doesn't resolve to an applicable sub-strand) are silently dropped.
+  // doesn't resolve to any sub-strand) are dropped; resolved sub-strands are
+  // all displayed (applicableStrands now includes every assessed sub-strand).
   const scoredResponses: ScoredResponse[] = [];
   for (const r of responses) {
     const strand = subStrandByQuestion.get(r.question_id);

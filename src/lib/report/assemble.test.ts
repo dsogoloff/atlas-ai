@@ -178,6 +178,83 @@ describe("assembleReportContent", () => {
     }
   });
 
+  it("aggregates EVERY assessed sub-strand, even ones not applicable at the measured level", async () => {
+    // Regression: the short test samples the PREVIOUS booklet, so a child can
+    // be served (and scored on) a sub-strand that isn't in applies_to_level
+    // for their MEASURED level. Here the child measured at 4A → l4; the
+    // session served one whole_numbers item (applicable at l4) AND one
+    // measurement item (L3-only — NOT applicable at l4). The measurement
+    // response must NOT be silently dropped: both strands aggregate, with the
+    // measured strand carrying its real data.
+    const subStrands = [
+      {
+        id: "ss-whole-numbers",
+        code: "whole_numbers",
+        applies_to_level_codes: ["l1", "l2", "l3", "l4"],
+        display_order: 1,
+      },
+      {
+        id: "ss-measurement",
+        code: "measurement",
+        applies_to_level_codes: ["l1", "l2", "l3"], // applies at L3, NOT L4
+        display_order: 9,
+      },
+    ];
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q-wn", is_correct: true, detected_misconceptions: [] },
+        { question_id: "q-meas", is_correct: false, detected_misconceptions: [] },
+      ],
+      tax_sub_strands: subStrands,
+      tax_content: [
+        { id: "c-wn", sub_strand_id: "ss-whole-numbers" },
+        { id: "c-meas", sub_strand_id: "ss-measurement" },
+      ],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q-wn", content_id: "c-wn" },
+        { id: "q-meas", content_id: "c-meas" },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: {
+        ...SESSION,
+        current_estimate: {
+          ...VALID_PLACEMENT_JSON,
+          overall_level: "4A",
+        } as never,
+      },
+      child: { ...CHILD, grade_level: "4" },
+    });
+
+    const byStrand = new Map(
+      content.strand_mastery.map((r) => [r.strand, r]),
+    );
+    // Measurement was assessed but is NOT applicable at l4 — it must still
+    // appear (the bug dropped it entirely).
+    expect(byStrand.has("measurement")).toBe(true);
+    expect(byStrand.get("measurement")).toMatchObject({ total: 1, correct: 0 });
+    // Whole numbers carries its real data.
+    expect(byStrand.get("whole_numbers")).toMatchObject({
+      total: 1,
+      correct: 1,
+    });
+    // Ordered by display_order (whole_numbers=1 before measurement=9).
+    const idxWn = content.strand_mastery.findIndex(
+      (r) => r.strand === "whole_numbers",
+    );
+    const idxMeas = content.strand_mastery.findIndex(
+      (r) => r.strand === "measurement",
+    );
+    expect(idxWn).toBeLessThan(idxMeas);
+  });
+
   it("defaults session_time_flag null to 'normal'", async () => {
     const readClient = makeFakeClient({
       responses: [],

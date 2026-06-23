@@ -153,6 +153,22 @@ export function isVisualPrimitivesGalleryEnabled(): boolean {
 }
 
 /**
+ * Dev-only gate for the report layout preview route (/dev/report-preview),
+ * which renders the parent report from synthetic data (no auth, no DB) so the
+ * report layout can be eyeballed on a Vercel preview. Same shape as the
+ * visual-primitives gate: always reachable in non-production; in a production
+ * build (incl. Vercel preview deployments) it 404s unless
+ * ENABLE_REPORT_PREVIEW === 'true'. NOT a §12 strategy flag — kept out of
+ * ROLLOUT_FLAGS and its default-off invariant test (no user-facing feature).
+ */
+export function isReportPreviewEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.ENABLE_REPORT_PREVIEW === "true"
+  );
+}
+
+/**
  * Gate for the parent intro / instructions screen shown when the parent starts
  * the short assessment (age-dependent proctoring instructions + about-this-
  * check). Default-ON: only the literal string 'false' turns it OFF, so the
