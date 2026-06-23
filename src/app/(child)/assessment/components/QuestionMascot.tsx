@@ -1,6 +1,6 @@
 "use client";
 
-// Per-question footer mascot (K-4 only). Two behaviours, both transform-only
+// Per-question footer mascot (ALL tiers). Two behaviours, both transform-only
 // and reduced-motion gated:
 //
 //   * IDLE — the thinking pose with a gentle low-amplitude bob + sway. Runs
@@ -17,13 +17,14 @@
 //
 // Mounted ONCE in QuestionShell's footer (not per-format), so the beat fires
 // exactly once per question across every answer format. Reduced-motion users
-// get a still thinking mascot — no bob, no hop. G5-8 never renders this (the
-// footer that hosts it is K-4 only).
+// get a still thinking mascot — no bob, no hop. Rendered for EVERY tier (both
+// the K-4 and G5-8 QuestionShell footers host it); motion is gated only by the
+// reduced-motion preference, never by tier (questionMascotIsLively).
 
 import { useEffect, useRef } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 
-import { mascotIsLively } from "../lib/mascot";
+import { questionMascotIsLively } from "../lib/mascot";
 import { MascotImage } from "./Mascot";
 
 interface Props {
@@ -37,9 +38,8 @@ interface Props {
 
 export function QuestionMascot({ celebrateTick, size, className }: Props) {
   const reduceMotion = useReducedMotion();
-  // The footer only ever renders for K-4 (QuestionShell gate); the tier check
-  // here keeps the reduced-motion contract explicit and self-contained.
-  const lively = mascotIsLively("K_4", reduceMotion);
+  // In-question mascot animates for every tier — gated only by reduced motion.
+  const lively = questionMascotIsLively(reduceMotion);
 
   const hop = useAnimationControls(); // outer box: scale-pop + vertical hop
   const flash = useAnimationControls(); // celebrating layer: opacity crossfade
@@ -50,7 +50,7 @@ export function QuestionMascot({ celebrateTick, size, className }: Props) {
   useEffect(() => {
     if (lastTick.current === celebrateTick) return;
     lastTick.current = celebrateTick;
-    if (!lively) return; // reduced-motion / non-K4: no hop, no swap
+    if (!lively) return; // reduced-motion: no hop, no swap
 
     void hop.start({
       y: [0, -14, 0],

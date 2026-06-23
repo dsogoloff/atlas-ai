@@ -7,8 +7,9 @@
 //   * G5_8: adapted from stitch/module-c/03-g58-mc-journey.html. Adds a
 //     logo-only TopAppBar (no menu, no avatar — exit affordance deferred
 //     per Item #6 plan gate decision #7). Same prompt + yellow underline
-//     (brand mark retained per gate decision #4). No footer text — the
-//     prompt is the focus. Brand palette only (gate decision #3).
+//     (brand mark retained per gate decision #4). No footer TEXT — the
+//     prompt is the focus — but the footer hosts the in-question mascot
+//     (extended to all tiers). Brand palette only (gate decision #3).
 //
 // Progress chrome (Item #12 Phase 7.7): both tiers render a "Question N
 // of up to 25" copy + a subtle progress bar. The "up to" hedge is
@@ -17,12 +18,11 @@
 // the brand red bar; G5-8 uses a muted neutral, matching the existing
 // tier-aware chrome distinction (cheerful for K-4, measured for G5-8).
 //
-// Presentational + a single passthrough prop (celebrateTick). The K-4 footer
-// hosts <QuestionMascot> — the thinking-pose idle (slowest/smallest motion,
-// stays decorative beside live questions) plus a brief celebrate hop on each
-// submit; all motion lives inside that component. G5-8 renders no mascot during
-// questions — measured chrome, per the tier-aware restraint above. Imported
-// into a "use client" boundary by assessment-client.
+// Presentational + a single passthrough prop (celebrateTick). BOTH tiers' footers
+// host <QuestionMascot> — the thinking-pose idle (slowest/smallest motion, stays
+// decorative beside live questions) plus a brief celebrate hop on each submit;
+// all motion lives inside that component (reduced-motion gated, tier-agnostic).
+// Imported into a "use client" boundary by assessment-client.
 
 import type { Tier } from "@/lib/tier/derive";
 import type { ProgressDisplay } from "@/lib/display/progress";
@@ -94,6 +94,18 @@ export function QuestionShell({
             <div className="w-full">{children}</div>
           </div>
         </main>
+
+        {/* In-question mascot — extended to ALL tiers. Measured G5-8 chrome
+            keeps NO footer text (the prompt is the focus), so the footer hosts
+            only the mascot at the right edge: thinking idle + a brief celebrate
+            hop on each submit, reduced-motion gated. */}
+        <footer className="flex items-center border-t border-sam-gray-light bg-white/80 px-6 py-4 backdrop-blur">
+          <QuestionMascot
+            celebrateTick={celebrateTick}
+            size={44}
+            className="ml-auto"
+          />
+        </footer>
       </div>
     );
   }

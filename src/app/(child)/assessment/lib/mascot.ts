@@ -5,9 +5,13 @@
 // states render no mascot — a playful character next to a failure message
 // reads as mixed signals.
 //
-// Motion is tier-gated: only K_4 gets the lively (animated) treatment,
-// and only when the OS does not ask for reduced motion. G5_8 is always
-// still — the older-grade chrome is deliberately more measured.
+// Two motion policies:
+//   * BOOKEND mascot (Welcome / Completion <Mascot>) — tier-gated via
+//     mascotIsLively: only K_4 animates, and only when the OS does not ask for
+//     reduced motion. G5_8 stays still on those screens (measured chrome).
+//   * IN-QUESTION footer mascot (<QuestionMascot>) — questionMascotIsLively:
+//     animates for EVERY tier (the in-flow mascot now shows for all levels),
+//     gated ONLY by reduced motion.
 //
 // Pure logic, no React — co-located tests in mascot.test.ts.
 
@@ -45,11 +49,21 @@ export function mascotPoseFor<K extends ViewState["kind"]>(
   return POSE_BY_PHASE[kind];
 }
 
-/** `reduceMotion` accepts null because framer-motion's useReducedMotion
- *  reports null before hydration; treat that as "motion allowed". */
+/** BOOKEND (Welcome / Completion) mascot motion policy — tier-gated: only K_4
+ *  animates, and only when motion is allowed. `reduceMotion` accepts null
+ *  because framer-motion's useReducedMotion reports null before hydration; treat
+ *  that as "motion allowed". */
 export function mascotIsLively(
   tier: Tier,
   reduceMotion: boolean | null,
 ): boolean {
   return tier === "K_4" && reduceMotion !== true;
+}
+
+/** IN-QUESTION footer mascot motion policy — animates for EVERY tier (the
+ *  in-flow mascot now shows for all levels, not just the young band), gated
+ *  ONLY by reduced motion. Null (pre-hydration SSR) reads as "motion allowed".
+ *  Deliberately NOT tier-gated, unlike the bookend `mascotIsLively`. */
+export function questionMascotIsLively(reduceMotion: boolean | null): boolean {
+  return reduceMotion !== true;
 }
