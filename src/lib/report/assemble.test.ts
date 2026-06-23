@@ -202,13 +202,23 @@ describe("assembleReportContent", () => {
     ];
     const readClient = makeFakeClient({
       responses: [
-        { question_id: "q-wn", is_correct: true, detected_misconceptions: [] },
-        { question_id: "q-meas", is_correct: false, detected_misconceptions: [] },
+        {
+          question_id: "q-wn",
+          is_correct: true,
+          detected_misconceptions: [],
+          time_flag: "NORMAL",
+        },
+        {
+          question_id: "q-meas",
+          is_correct: false,
+          detected_misconceptions: [],
+          time_flag: "TOO_FAST",
+        },
       ],
       tax_sub_strands: subStrands,
       tax_content: [
-        { id: "c-wn", sub_strand_id: "ss-whole-numbers" },
-        { id: "c-meas", sub_strand_id: "ss-measurement" },
+        { id: "c-wn", sub_strand_id: "ss-whole-numbers", name: "Multiplication" },
+        { id: "c-meas", sub_strand_id: "ss-measurement", name: "Length" },
       ],
       misconceptions: [],
       curriculum_recommendations: [],
@@ -253,6 +263,23 @@ describe("assembleReportContent", () => {
       (r) => r.strand === "measurement",
     );
     expect(idxWn).toBeLessThan(idxMeas);
+
+    // growth_signals (areas-to-confirm enrichment) carry per-sub-strand
+    // evidence: served/correct, the missed skill label, and pace.
+    const signals = new Map(
+      (content.growth_signals ?? []).map((g) => [g.strand, g]),
+    );
+    expect(signals.get("measurement")).toMatchObject({
+      served: 1,
+      correct: 0,
+      missed_skills: ["Length"],
+      pace: "fast",
+    });
+    expect(signals.get("whole_numbers")).toMatchObject({
+      served: 1,
+      correct: 1,
+      missed_skills: [],
+    });
   });
 
   it("defaults session_time_flag null to 'normal'", async () => {

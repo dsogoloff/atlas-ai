@@ -40,6 +40,10 @@ import {
   bookletOrdinalForHalfGrade,
 } from "@/lib/questionPicker/levelBand";
 import {
+  buildGrowthSignals,
+  type GrowthResponseInput,
+} from "@/lib/report/growth-signals";
+import {
   computeStrandMastery,
   type ScoredResponse,
 } from "@/lib/report/strand-mastery";
@@ -159,7 +163,7 @@ export async function assembleReportContent(
   // ---- responses
   const { data: responses, error: responsesErr } = await readClient
     .from("responses")
-    .select("question_id, is_correct, detected_misconceptions")
+    .select("question_id, is_correct, detected_misconceptions, time_flag")
     .eq("session_id", session.id);
   if (responsesErr || !responses) {
     throw new AssembleError(
@@ -197,6 +201,9 @@ export async function assembleReportContent(
   const taxLevelCode = halfGradeToTaxLevelCode(placement.overallLevel);
   let applicableStrands: Strand[] = [];
   const subStrandByQuestion = new Map<string, Strand>();
+  // question_id → tax_content.name (the skill/topic label), for the
+  // areas-to-confirm enrichment. Taxonomy label, never question content.
+  const skillNameByQuestion = new Map<string, string>();
 
   if (taxLevelCode) {
     // tax_sub_strands — applies_to_level_codes carries the level filter
@@ -231,7 +238,7 @@ export async function assembleReportContent(
     if (sessionContentIds.length > 0) {
       const { data: contentRows, error: cErr } = await readClient
         .from("tax_content")
-        .select("id, sub_strand_id")
+        .select("id, sub_strand_id, name")
         .in("id", sessionContentIds);
       if (cErr) {
         throw new AssembleError(
@@ -240,13 +247,17 @@ export async function assembleReportContent(
         );
       }
       const subStrandByContent = new Map<string, Strand>();
+      const nameByContent = new Map<string, string>();
       for (const c of contentRows ?? []) {
         const code = subStrandCodeById.get(c.sub_strand_id);
         if (code) subStrandByContent.set(c.id, code);
+        if (c.name) nameByContent.set(c.id, c.name);
       }
       for (const [qid, cid] of contentIdByQuestion) {
         const code = subStrandByContent.get(cid);
         if (code) subStrandByQuestion.set(qid, code);
+        const name = nameByContent.get(cid);
+        if (name) skillNameByQuestion.set(qid, name);
       }
     }
 
@@ -305,6 +316,9 @@ export async function assembleReportContent(
   // ---- misconceptions
   const misconceptionCodes = responses.map((r) => r.detected_misconceptions);
   const allCodes = Array.from(new Set(misconceptionCodes.flat()));
+  // code → label, shared by the aggregate (cards) and the growth-signal
+  // enrichment (per-sub-strand "areas to confirm" detail).
+  const misconceptionLabelByCode = new Map<string, string>();
   let misconceptions: ReturnType<typeof aggregateMisconceptions> = [];
   if (allCodes.length > 0) {
     const { data: mcRows, error: mcErr } = await readClient
@@ -318,11 +332,35 @@ export async function assembleReportContent(
       );
     }
     const lookup = new Map((mcRows ?? []).map((row) => [row.code, row]));
+    for (const row of mcRows ?? []) {
+      misconceptionLabelByCode.set(row.code, row.label);
+    }
     misconceptions = aggregateMisconceptions({
       codes: misconceptionCodes,
       lookup,
     });
   }
+
+  // ---- areas-to-confirm supporting detail (narration input only). One
+  // GrowthSignal per assessed sub-strand: served count + missed skill labels
+  // + tied misconception labels + pace, so the narrator can name the specific
+  // skill and scale the note to the evidence. Responses that don't resolve to
+  // a sub-strand are dropped (same as strand_mastery).
+  const growthResponses: GrowthResponseInput[] = [];
+  for (const r of responses) {
+    const strand = subStrandByQuestion.get(r.question_id);
+    if (!strand) continue;
+    growthResponses.push({
+      strand,
+      isCorrect: r.is_correct,
+      skillName: skillNameByQuestion.get(r.question_id) ?? null,
+      timeFlag: r.time_flag,
+      misconceptionLabels: r.detected_misconceptions
+        .map((c) => misconceptionLabelByCode.get(c))
+        .filter((l): l is string => Boolean(l)),
+    });
+  }
+  const growthSignals = buildGrowthSignals(growthResponses);
 
   // ---- recommendations (Phase 7.6 nearest-level fallback). Still keyed
   // by the engine's 6-value strand because curriculum_recommendations
@@ -411,6 +449,7 @@ export async function assembleReportContent(
       tier,
     },
     strand_mastery: strandMastery,
+    growth_signals: growthSignals,
     misconceptions,
     recommendations,
     readiness,
