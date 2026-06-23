@@ -7,8 +7,8 @@ import {
   bookletBand,
   bookletOrdinalForHalfGrade,
   levelLockHalfGrades,
-  previousBookletHalfGrades,
   previousBookletOrdinal,
+  shortTestLevelBand,
 } from "./levelBand";
 import { CURRENT_ACADEMIC_YEAR_START } from "@/lib/tier/derive";
 
@@ -101,16 +101,25 @@ describe("anchorBookletForChild", () => {
   });
 });
 
-describe("previous booklet (short-test sampling)", () => {
-  it("a 0C child (anchor 2) samples the 0B booklet (ordinal 1)", () => {
+describe("shortTestLevelBand (previous + current booklet)", () => {
+  it("a 0B child (anchor 1) samples BOTH 0A and 0B (the regression case)", () => {
+    // Previously resolved to {0A} only — identical to a 0A child's test.
+    expect(shortTestLevelBand(1).sort()).toEqual(["0A", "0B"]);
+  });
+  it("a 0C child (anchor 2) samples 0B and the 0C booklet (incl. KA/KB fold)", () => {
     expect(previousBookletOrdinal(2)).toBe(1);
-    expect(previousBookletHalfGrades(2).sort()).toEqual(["0B"]);
+    // KA/KB fold into the 0C booklet ordinal, so they ride along with 0C.
+    expect(shortTestLevelBand(2).sort()).toEqual(["0B", "0C", "KA", "KB"]);
   });
-  it("a grade-5 child (anchor 7) samples grade 4 (ordinal 6 → 4A/4B)", () => {
+  it("a grade-1 child (anchor 3) samples the 0C booklet (incl. KA/KB) + grade 1", () => {
+    expect(shortTestLevelBand(3).sort()).toEqual(["0C", "1A", "1B", "KA", "KB"]);
+  });
+  it("a grade-5 child (anchor 7) samples grade 4 and grade 5 (4A/4B/5A/5B)", () => {
     expect(previousBookletOrdinal(7)).toBe(6);
-    expect(previousBookletHalfGrades(7).sort()).toEqual(["4A", "4B"]);
+    expect(shortTestLevelBand(7).sort()).toEqual(["4A", "4B", "5A", "5B"]);
   });
-  it("clamps at the bottom (0A child stays at 0A)", () => {
+  it("collapses to {0A} only at the floor (0A child, anchor 0)", () => {
     expect(previousBookletOrdinal(0)).toBe(0);
+    expect(shortTestLevelBand(0).sort()).toEqual(["0A"]);
   });
 });

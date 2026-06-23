@@ -125,7 +125,7 @@ import {
 } from "@/lib/questionPicker/picker";
 import {
   anchorBookletForChild,
-  previousBookletHalfGrades,
+  shortTestLevelBand,
 } from "@/lib/questionPicker/levelBand";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import {
@@ -768,7 +768,7 @@ async function computeMaxQuestions(args: {
   if (args.testType === "comprehensive") {
     return MAX_QUESTIONS;
   }
-  const band = previousBookletHalfGrades(
+  const band = shortTestLevelBand(
     anchorBookletForChild(args.gradeLevel, args.birthYear),
   );
   try {

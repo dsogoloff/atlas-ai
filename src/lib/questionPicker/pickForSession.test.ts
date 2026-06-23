@@ -82,7 +82,7 @@ describe("pickForSession — comprehensive", () => {
 });
 
 describe("pickForSession — short", () => {
-  it("filters short_test_eligible AND bands to the previous booklet", async () => {
+  it("filters short_test_eligible AND bands to the previous + current booklet", async () => {
     const prev = row({ id: "prev", level: "4A" });
     const same = row({ id: "same", level: "5A" });
     const { client, eqs, ins } = makeClient([same, prev]);
@@ -93,21 +93,23 @@ describe("pickForSession — short", () => {
     });
     expect(eqs.some((e) => e.col === "short_test_eligible" && e.val === true)).toBe(true);
     const levelIn = ins.find((i) => i.col === "level");
-    // grade-5 child → previous booklet grade 4 → only 4A/4B
-    expect(levelIn?.vals).toEqual(["4A", "4B"]);
+    // grade-5 child → previous booklet grade 4 AND current booklet grade 5
+    expect(levelIn?.vals).toEqual(["4A", "4B", "5A", "5B"]);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.question.id).toBe("prev");
   });
 
-  it("reaches below the intake floor (Kindergarten → samples 0B)", async () => {
+  it("reaches below the intake floor (Kindergarten → samples 0B and 0C)", async () => {
     const { client, ins } = makeClient([row({ id: "b", level: "0B" })]);
     const result = await pickForSession(client, req, base, {
       testType: "short",
       gradeLevel: "K",
       birthYear: 2020,
     });
+    // Kindergarten anchors at the 0C booklet (ordinal 2); previous + current =
+    // {0B, 0C}, and KA/KB fold into the 0C booklet ordinal.
     const levelIn = ins.find((i) => i.col === "level");
-    expect(levelIn?.vals).toEqual(["0B"]);
+    expect(levelIn?.vals).toEqual(["0B", "0C", "KA", "KB"]);
     expect(result.ok).toBe(true);
   });
 });

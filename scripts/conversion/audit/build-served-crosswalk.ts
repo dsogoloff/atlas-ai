@@ -23,7 +23,7 @@ import {
   applyResponse,
   shouldTerminate,
 } from "../../../src/lib/engine/engine";
-import { anchorBookletForChild, previousBookletHalfGrades } from "../../../src/lib/questionPicker/levelBand";
+import { anchorBookletForChild, shortTestLevelBand } from "../../../src/lib/questionPicker/levelBand";
 
 // Inlined verbatim from src/lib/questionPicker/picker.ts compareCandidates (that
 // module imports `server-only` and can't load under tsx). Nearest-difficulty,
@@ -250,7 +250,7 @@ function parseRows(sql: string): Map<string, Row> {
 
 // ── replay one child ─────────────────────────────────────────────────────────
 function replay(child: typeof CHILDREN[number], all: Row[], isCorrect: boolean) {
-  const band = new Set(previousBookletHalfGrades(anchorBookletForChild(child.grade_level, child.birth_year)));
+  const band = new Set(shortTestLevelBand(anchorBookletForChild(child.grade_level, child.birth_year)));
   const eligible = all.filter((r) => r.is_active && r.short_test_eligible && band.has(r.level));
   let state = createEngineState({ grade: child.grade_level as never });
   const excluded = new Set<Strand>();

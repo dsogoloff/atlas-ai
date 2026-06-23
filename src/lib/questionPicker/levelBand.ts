@@ -94,15 +94,32 @@ export function anchorBookletForChild(
   return Math.max(0, Math.min(BOOKLET_LEVELS.length - 1, ordinal));
 }
 
-/** The booklet ordinal one level BELOW the anchor (short test samples the
- *  previous booklet — a grade-5 child is sampled from grade 4, a 0C child from
- *  0B). Clamped at the bottom of the axis. */
+/** The booklet ordinal one level BELOW the anchor — the lower bound of the
+ *  short-test sampling band (see `shortTestLevelBand`). Clamped at the bottom of
+ *  the axis (a 0A child's "previous" stays 0A). */
 export function previousBookletOrdinal(anchor: number): number {
   return Math.max(0, anchor - 1);
 }
 
-/** The half_grade_level set for the single booklet one level below the anchor
- *  (the short-test sampling pool's level filter). */
-export function previousBookletHalfGrades(anchor: number): string[] {
-  return halfGradesForBooklets([previousBookletOrdinal(anchor)]);
+/**
+ * The half_grade_level set the SHORT test samples for a child anchored at
+ * `anchor`: the PREVIOUS booklet AND the CURRENT (anchor) booklet — except at
+ * the floor (0A, ordinal 0), which collapses to the current booklet only
+ * because there is nothing below it.
+ *
+ *   0A (floor) → {0A}
+ *   0B         → {0A, 0B}
+ *   0C         → {0B, 0C}
+ *   grade 1    → {0C, 1A, 1B}
+ *   grade 5    → {4A, 4B, 5A, 5B}   … and so on up the ladder.
+ *
+ * Sampling the child's OWN level alongside the level below is what differentiates
+ * adjacent levels: a 0B child now sees 0B items too, so the short test is no
+ * longer an all-0A test identical to a 0A child's. HOLD HARD beyond these two
+ * booklets — no further widening (the picker treats an empty in-band set as
+ * strand-exhausted). The floor falls out naturally: at ordinal 0,
+ * `previousBookletOrdinal` and `anchor` are both 0, so the set dedupes to {0A}.
+ */
+export function shortTestLevelBand(anchor: number): string[] {
+  return halfGradesForBooklets([previousBookletOrdinal(anchor), anchor]);
 }
