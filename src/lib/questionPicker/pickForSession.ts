@@ -7,9 +7,11 @@
 //
 //   * comprehensive → pickQuestion, band = ±1 booklet level around the child's
 //     grade anchor (levelLockHalfGrades, HOLD HARD).
-//   * short         → pickShortTestQuestion, band = the single booklet ONE
-//     LEVEL BELOW the child's grade (previousBookletHalfGrades) + the
-//     short_test_eligible filter. This is the Task 2 readiness sample.
+//   * short         → pickShortTestQuestion, band = the PREVIOUS booklet AND the
+//     child's CURRENT booklet (shortTestLevelBand; {current}-only at the 0A
+//     floor) + the short_test_eligible filter. Sampling both levels keeps the
+//     readiness sample from collapsing to a single level (e.g. a 0B child would
+//     otherwise see an all-0A test identical to a 0A child's).
 //
 // Both bands reach by bank level independent of which grades are selectable at
 // signup (a 0C/Kindergarten child reaches 0B below the intake floor).
@@ -23,7 +25,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import {
   anchorBookletForChild,
   levelLockHalfGrades,
-  previousBookletHalfGrades,
+  shortTestLevelBand,
 } from "./levelBand";
 import { pickQuestion } from "./picker";
 import { pickShortTestQuestion } from "./shortTestPicker";
@@ -69,7 +71,7 @@ export async function pickForSession(
       serviceClient,
       request,
       hasAnchor
-        ? { ...base, levelBand: previousBookletHalfGrades(anchor) }
+        ? { ...base, levelBand: shortTestLevelBand(anchor) }
         : base,
       chooser,
     );

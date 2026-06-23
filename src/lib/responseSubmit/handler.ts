@@ -170,7 +170,7 @@ import {
   anchorBookletForChild,
   BOOKLET_LEVELS,
   bookletOrdinalForHalfGrade,
-  previousBookletHalfGrades,
+  shortTestLevelBand,
 } from "@/lib/questionPicker/levelBand";
 import { serveQuestion } from "@/lib/questionPicker/serveQuestion";
 import {
@@ -372,7 +372,7 @@ export async function submitResponseHandler({
       sessionPick.birthYear,
     );
     if (Number.isFinite(anchor)) {
-      const band = previousBookletHalfGrades(anchor);
+      const band = shortTestLevelBand(anchor);
       try {
         short = {
           availableByStrand: await discoverShortEligibleCounts(

@@ -8,9 +8,10 @@
 //      CONVERSION captures from each worksheet's last-page "short test: Yes/No"
 //      marking. This is the AUTHORITATIVE short-test item set.
 //   2. level ∈ ctx.levelBand — the short test samples the S.A.M. booklet ONE
-//      LEVEL BELOW the child's grade (previousBookletHalfGrades in levelBand.ts;
-//      a 0C child is sampled from 0B, a grade-5 child from grade 4). The caller
-//      passes that single-booklet level set as ctx.levelBand. HOLD HARD — an
+//      LEVEL BELOW the child's grade AND the child's own (current) booklet
+//      (shortTestLevelBand in levelBand.ts; a 0C child draws from {0B, 0C}, a
+//      grade-5 child from {grade 4, grade 5}; the 0A floor is {0A} only). The
+//      caller passes that two-booklet level set as ctx.levelBand. HOLD HARD — an
 //      empty in-band set yields strand-exhausted, no widening.
 //
 // Otherwise it mirrors pickQuestion: tenant + strand + is_active, exclude
