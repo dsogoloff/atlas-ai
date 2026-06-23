@@ -56,6 +56,13 @@ export interface StartResponseBody {
    *  number of past answers (so the displayed question number is
    *  `response_count + 1`). */
   response_count: number;
+  /** The session's progress denominator — the "of up to N" total the
+   *  child-facing progress bar shows (Item #14). NOT a fixed 25: short
+   *  sessions report min(short-test cap, eligible-pool size) so the bar is
+   *  cap- or exhaustion-bound; comprehensive reports the engine cap. Fixed
+   *  for the session (the band/eligibility don't change), so the client reads
+   *  it once from /start and reuses it across submits. */
+  max_questions: number;
   /** Present (and true) iff an existing IN_PROGRESS session with ≥1
    *  answered question was resumed — drives the client's resume banner.
    *  Absent for fresh sessions AND zero-progress resumes, which should

@@ -51,6 +51,32 @@ describe("computeProgressDisplay", () => {
     const d = computeProgressDisplay(2.7);
     expect(d.questionNumber).toBe(3);
   });
+
+  // Item #14 — the denominator is the per-session ceiling, not a fixed 25.
+  it("uses the supplied per-session ceiling as the denominator", () => {
+    const d = computeProgressDisplay(0, 12);
+    expect(d.maxQuestions).toBe(12);
+    expect(d.copy).toBe("Question 1 of up to 12");
+    expect(d.percent).toBeCloseTo((1 / 12) * 100);
+  });
+
+  it("clamps to a thin exhaustion-bound ceiling (e.g. L1 = 8)", () => {
+    const d = computeProgressDisplay(20, 8);
+    expect(d.questionNumber).toBe(8);
+    expect(d.copy).toBe("Question 8 of up to 8");
+    expect(d.percent).toBe(100);
+  });
+
+  it("floors the ceiling at 1 so the denominator is never zero", () => {
+    const d = computeProgressDisplay(0, 0);
+    expect(d.maxQuestions).toBe(1);
+    expect(d.percent).toBe(100);
+  });
+
+  it("defaults to MAX_QUESTIONS when no ceiling is supplied", () => {
+    const d = computeProgressDisplay(0);
+    expect(d.maxQuestions).toBe(MAX_QUESTIONS);
+  });
 });
 
 describe("timeFlagBadge", () => {

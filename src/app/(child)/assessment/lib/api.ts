@@ -115,6 +115,7 @@ function isStartSessionBody(body: Partial<StartResponseBody>): boolean {
     typeof body.session_id === "string" &&
     body.session_id.length > 0 &&
     typeof body.response_count === "number" &&
+    typeof body.max_questions === "number" &&
     body.question !== undefined &&
     body.question !== null &&
     typeof body.question.id === "string" &&
