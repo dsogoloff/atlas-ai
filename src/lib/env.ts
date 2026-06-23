@@ -160,7 +160,8 @@ export function isVisualPrimitivesGalleryEnabled(): boolean {
  * ENABLE_PARENT_INTRO='false' (no code change). Default-on + 'false'-to-disable
  * mirrors BETA_WELCOME_LIVE. NOT a §12 strategy flag (it gates a presentational
  * pre-start screen, not a milestone-gated business feature), so it stays OUT of
- * ROLLOUT_FLAGS and the default-off invariant test.
+ * ROLLOUT_FLAGS and the default-off invariant test. The copy is founder-approved
+ * (see src/lib/proctoring/copy.ts).
  */
 export function isParentIntroEnabled(): boolean {
   return process.env.ENABLE_PARENT_INTRO !== "false";

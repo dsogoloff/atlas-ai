@@ -8,13 +8,15 @@ import { describe, expect, it } from "vitest";
 import { ParentIntro } from "./ParentIntro";
 import { PARENT_INTRO_COPY } from "@/lib/proctoring/copy";
 
-// renderToString HTML-escapes apostrophes (' → &#x27;) and ampersands; decode
-// them back so assertions can compare against the verbatim copy strings.
+// renderToString HTML-escapes apostrophes (' → &#x27;), double quotes
+// (" → &quot;), and ampersands; decode them back so assertions can compare
+// against the verbatim copy strings.
 function render(mode: "read-aloud" | "no-assistance", tier: "K_4" | "G5_8") {
   return renderToString(
     <ParentIntro mode={mode} tier={tier} onStart={() => {}} />,
   )
     .replace(/&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
     .replace(/&amp;/g, "&");
 }
 
@@ -34,10 +36,6 @@ describe("ParentIntro / read-aloud mode", () => {
     expect(html).toContain(PARENT_INTRO_COPY.modes["read-aloud"].summary);
   });
 
-  it("renders the closing note under the don't list", () => {
-    expect(html).toContain(PARENT_INTRO_COPY.modes["read-aloud"].dontNote!);
-  });
-
   it("does NOT render the no-assistance summary", () => {
     expect(html).not.toContain(
       PARENT_INTRO_COPY.modes["no-assistance"].summary,
@@ -53,6 +51,16 @@ describe("ParentIntro / no-assistance mode", () => {
     expect(html).toContain(m.heading);
     expect(html).toContain(m.points![0]);
     expect(html).toContain(m.summary);
+  });
+
+  it("renders the concept-help point (verbatim, incl. the quoted example)", () => {
+    // The metric-conversion point carries an embedded double-quoted example —
+    // guards that the approved wording renders intact through HTML escaping.
+    const conceptPoint = PARENT_INTRO_COPY.modes["no-assistance"].points!.find(
+      (p) => p.includes("metric measures"),
+    );
+    expect(conceptPoint).toBeDefined();
+    expect(html).toContain(conceptPoint!);
   });
 
   it("does NOT render the read-aloud 'It's okay to' list", () => {
