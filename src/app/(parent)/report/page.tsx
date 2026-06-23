@@ -316,21 +316,6 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
         </Link>
       </Hero>
 
-      {/* SHORT-test readiness + comprehensive CTA (null for comprehensive
-          sessions → not rendered). Copy is DRAFT (readiness-section.tsx). */}
-      {reportContent.readiness && (
-        <section
-          className="px-12 max-sm:px-6 py-9 border-b"
-          style={{ borderColor: "var(--color-report-border)" }}
-        >
-          <ReadinessSection
-            readiness={reportContent.readiness}
-            sessionId={reportContent.session_id}
-            schoolFieldEnabled={isLeadSchoolFieldEnabled()}
-          />
-        </section>
-      )}
-
       {(reportContent.time_flag === "rushed" ||
         reportContent.time_flag === "struggling") && (
         <section
@@ -375,6 +360,23 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
           </p>
         </Section>
       ) : null}
+
+      {/* SHORT-test readiness + comprehensive CTA (null for comprehensive
+          sessions → not rendered). Placed below the strand/narrative content
+          so the "See the full picture" CTA closes the report. Copy is DRAFT
+          (readiness-section.tsx). */}
+      {reportContent.readiness && (
+        <section
+          className="px-12 max-sm:px-6 py-9 border-b"
+          style={{ borderColor: "var(--color-report-border)" }}
+        >
+          <ReadinessSection
+            readiness={reportContent.readiness}
+            sessionId={reportContent.session_id}
+            schoolFieldEnabled={isLeadSchoolFieldEnabled()}
+          />
+        </section>
+      )}
 
       {/* Placement recommendation — comprehensive only; suppressed on SHORT
           reports (readiness !== null) for the same reason as the hero block. */}
