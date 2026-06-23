@@ -1,41 +1,62 @@
 {
   "QA Zero-A": {
     "band": [
-      "0A"
+      "0A",
+      "0B"
     ],
-    "eligible_count": 17,
+    "eligible_count": 30,
+    "prior_band_eligible": 17,
     "served_all_correct": [
-      "SAM-L0A-Q17",
-      "SAM-L0B-Q10",
+      "SAM-L0C-Q11A",
+      "SAM-L0B-Q14",
+      "SAM-L0C-Q13",
       "SAM-L0A-Q11",
-      "SAM-L0B-Q11",
-      "SAM-L0B-Q03",
       "SAM-L0B-Q02",
-      "SAM-L0B-Q06",
+      "SAM-L0C-Q11B",
+      "SAM-L0B-Q15",
       "SAM-L0B-Q07",
+      "SAM-L0C-Q11C",
+      "SAM-L0C-Q09",
       "SAM-L0A-Q08",
+      "SAM-L0C-Q11D",
+      "SAM-L0C-Q10",
       "SAM-L0A-Q03",
       "SAM-L0A-Q05",
+      "SAM-L0A-Q17",
+      "SAM-L0B-Q10",
       "SAM-L0A-Q06",
+      "SAM-L0B-Q11",
+      "SAM-L0C-Q03",
       "SAM-L0A-Q07",
       "SAM-L0A-Q10",
+      "SAM-L0C-Q04",
       "SAM-L0A-Q13",
-      "SAM-L0A-Q14",
-      "SAM-L0A-Q15"
+      "SAM-L0C-Q05"
     ],
     "served_all_incorrect": [
-      "SAM-L0A-Q17",
-      "SAM-L0B-Q10",
+      "SAM-L0C-Q11A",
+      "SAM-L0B-Q14",
+      "SAM-L0C-Q13",
       "SAM-L0A-Q11",
-      "SAM-L0B-Q03",
+      "SAM-L0C-Q11B",
+      "SAM-L0B-Q15",
       "SAM-L0B-Q02",
-      "SAM-L0B-Q11",
+      "SAM-L0B-Q03",
+      "SAM-L0B-Q10",
       "SAM-L0A-Q08",
       "SAM-L0B-Q06",
+      "SAM-L0B-Q11",
       "SAM-L0A-Q03",
+      "SAM-L0A-Q17",
+      "SAM-L0C-Q09",
       "SAM-L0A-Q05",
+      "SAM-L0C-Q10",
+      "SAM-L0C-Q03",
       "SAM-L0A-Q06",
+      "SAM-L0C-Q04",
+      "SAM-L0C-Q05",
       "SAM-L0A-Q07",
+      "SAM-L0C-Q08",
       "SAM-L0A-Q10"
     ],
     "items": [
@@ -78,6 +99,70 @@
         "level": "0A",
         "difficulty": -2,
         "stem": "How are the shapes sorted?"
+      },
+      {
+        "external_id": "SAM-L0B-Q14",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "There are 4 pieces of sushi on a tray. There are 6 pieces of sushi in a box. How many pieces of sushi are there altogether?"
+      },
+      {
+        "external_id": "SAM-L0B-Q15",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left?"
+      },
+      {
+        "external_id": "SAM-L0C-Q03",
+        "format": "SELECT_MULTIPLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -2,
+        "stem": "Tap the boxes that make 10."
+      },
+      {
+        "external_id": "SAM-L0C-Q05",
+        "format": "IMAGE_ORDERING",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -2,
+        "stem": "Put the pictures in order by size, from smallest to biggest."
+      },
+      {
+        "external_id": "SAM-L0C-Q08",
+        "format": "MULTI_BLANK",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -2,
+        "stem": "Skip count by 2s. Fill in the missing numbers."
+      },
+      {
+        "external_id": "SAM-L0C-Q09",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "There are 14 blue beads and 5 green beads on Sally's necklace. How many beads are there altogether?"
+      },
+      {
+        "external_id": "SAM-L0C-Q10",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "There are 18 birds. 6 of the birds are blue. How many birds are yellow?"
+      },
+      {
+        "external_id": "SAM-L0C-Q13",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "measurement",
+        "level": "0B",
+        "difficulty": -2,
+        "stem": "Read aloud the days of the week from Monday. A part of the page is torn. What is the missing day? Tap your answer."
       },
       {
         "external_id": "SAM-L0A-Q03",
@@ -174,42 +259,99 @@
         "level": "0A",
         "difficulty": -2.1,
         "stem": "Mary put 7 items in a basket. She took out 3 items. How many items were left in the basket? Tap your answer."
+      },
+      {
+        "external_id": "SAM-L0C-Q04",
+        "format": "MULTI_BLANK",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -2,
+        "stem": "Complete the fact family."
+      },
+      {
+        "external_id": "SAM-L0C-Q11A",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 31 comes ___ 30."
+      },
+      {
+        "external_id": "SAM-L0C-Q11B",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 31 is ___ than 30."
+      },
+      {
+        "external_id": "SAM-L0C-Q11C",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 33 comes ___ 36."
+      },
+      {
+        "external_id": "SAM-L0C-Q11D",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 33 is ___ than 36."
       }
     ]
   },
   "QA Zero-C": {
     "band": [
-      "0B"
+      "0B",
+      "0C",
+      "KA",
+      "KB"
     ],
-    "eligible_count": 13,
-    "prior_estimate": 13,
+    "eligible_count": 21,
+    "prior_band_eligible": 13,
     "served_all_correct": [
       "SAM-L0C-Q11A",
       "SAM-L0B-Q14",
       "SAM-L0C-Q13",
+      "SAM-L1-Q01",
+      "SAM-L1-Q02",
+      "SAM-L1-Q07",
       "SAM-L0C-Q11B",
       "SAM-L0B-Q15",
+      "SAM-L1-Q03",
       "SAM-L0C-Q11C",
       "SAM-L0C-Q09",
       "SAM-L0C-Q11D",
       "SAM-L0C-Q10",
+      "SAM-L0C-Q15",
+      "SAM-L0C-Q16",
       "SAM-L0C-Q03",
       "SAM-L0C-Q04",
       "SAM-L0C-Q05",
-      "SAM-L0C-Q08"
+      "SAM-L0C-Q08",
+      "SAM-L0C-Q14",
+      "SAM-L1-Q17"
     ],
     "served_all_incorrect": [
       "SAM-L0C-Q11A",
       "SAM-L0B-Q14",
       "SAM-L0C-Q13",
+      "SAM-L1-Q01",
       "SAM-L0C-Q11B",
       "SAM-L0B-Q15",
+      "SAM-L1-Q02",
+      "SAM-L1-Q07",
       "SAM-L0C-Q03",
       "SAM-L0C-Q09",
+      "SAM-L1-Q03",
       "SAM-L0C-Q10",
       "SAM-L0C-Q04",
       "SAM-L0C-Q05",
       "SAM-L0C-Q08",
+      "SAM-L0C-Q14",
+      "SAM-L1-Q17",
       "SAM-L0C-Q11C",
       "SAM-L0C-Q11D"
     ],
@@ -276,79 +418,8 @@
         "strand": "measurement",
         "level": "0B",
         "difficulty": -2,
-        "stem": "Read the days of the week from Monday. One day is torn off: Monday, Tuesday, Wednesday, Thursday, ___, Saturday, Sunday. Tap the correctly spelled missing day."
+        "stem": "Read aloud the days of the week from Monday. A part of the page is torn. What is the missing day? Tap your answer."
       },
-      {
-        "external_id": "SAM-L0C-Q04",
-        "format": "EQUATION_SET",
-        "strand": "number_sense",
-        "level": "0B",
-        "difficulty": -2,
-        "stem": "Complete the fact family."
-      },
-      {
-        "external_id": "SAM-L0C-Q11A",
-        "format": "CLICK_IMAGE_SINGLE",
-        "strand": "number_sense",
-        "level": "0B",
-        "difficulty": -1.8,
-        "stem": "Look at the number line. 31 comes ___ 30."
-      },
-      {
-        "external_id": "SAM-L0C-Q11B",
-        "format": "CLICK_IMAGE_SINGLE",
-        "strand": "number_sense",
-        "level": "0B",
-        "difficulty": -1.8,
-        "stem": "Look at the number line. 31 is ___ than 30."
-      },
-      {
-        "external_id": "SAM-L0C-Q11C",
-        "format": "CLICK_IMAGE_SINGLE",
-        "strand": "number_sense",
-        "level": "0B",
-        "difficulty": -1.8,
-        "stem": "Look at the number line. 33 comes ___ 36."
-      },
-      {
-        "external_id": "SAM-L0C-Q11D",
-        "format": "CLICK_IMAGE_SINGLE",
-        "strand": "number_sense",
-        "level": "0B",
-        "difficulty": -1.8,
-        "stem": "Look at the number line. 33 is ___ than 36."
-      }
-    ]
-  },
-  "QA Level 1": {
-    "band": [
-      "0C",
-      "KA",
-      "KB"
-    ],
-    "eligible_count": 8,
-    "prior_estimate": 3,
-    "served_all_correct": [
-      "SAM-L0C-Q15",
-      "SAM-L1-Q02",
-      "SAM-L1-Q01",
-      "SAM-L1-Q03",
-      "SAM-L1-Q07",
-      "SAM-L0C-Q16",
-      "SAM-L0C-Q14",
-      "SAM-L1-Q17"
-    ],
-    "served_all_incorrect": [
-      "SAM-L0C-Q15",
-      "SAM-L1-Q02",
-      "SAM-L1-Q01",
-      "SAM-L0C-Q16",
-      "SAM-L1-Q03",
-      "SAM-L1-Q07",
-      "SAM-L0C-Q14",
-      "SAM-L1-Q17"
-    ],
-    "items": [
       {
         "external_id": "SAM-L0C-Q14",
         "format": "NUMERIC_ENTRY",
@@ -412,16 +483,59 @@
         "level": "KB",
         "difficulty": -2,
         "stem": "The pictures show what Tom does in one day. Put them in order from first to last."
+      },
+      {
+        "external_id": "SAM-L0C-Q04",
+        "format": "MULTI_BLANK",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -2,
+        "stem": "Complete the fact family."
+      },
+      {
+        "external_id": "SAM-L0C-Q11A",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 31 comes ___ 30."
+      },
+      {
+        "external_id": "SAM-L0C-Q11B",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 31 is ___ than 30."
+      },
+      {
+        "external_id": "SAM-L0C-Q11C",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 33 comes ___ 36."
+      },
+      {
+        "external_id": "SAM-L0C-Q11D",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0B",
+        "difficulty": -1.8,
+        "stem": "Look at the number line. 33 is ___ than 36."
       }
     ]
   },
-  "QA Level 2": {
+  "QA Level 1": {
     "band": [
+      "0C",
+      "KA",
+      "KB",
       "1A",
       "1B"
     ],
-    "eligible_count": 27,
-    "prior_estimate": 27,
+    "eligible_count": 35,
+    "prior_band_eligible": 8,
     "served_all_correct": [
       "SAM-L1-Q28",
       "SAM-L1-Q23",
@@ -436,18 +550,18 @@
       "SAM-L3-Q18",
       "SAM-L2-Q07",
       "SAM-L3-Q08",
+      "SAM-L1-Q01",
       "SAM-L1-Q05",
       "SAM-L2-Q09",
       "SAM-L2-Q15",
-      "SAM-L1-Q22",
+      "SAM-L1-Q07",
+      "SAM-L0C-Q15",
       "SAM-L2-Q16",
-      "SAM-L2-Q06",
-      "SAM-L1-Q04",
-      "SAM-L2-Q13",
-      "SAM-L2-Q12",
-      "SAM-L3-Q01",
-      "SAM-L3-Q03",
-      "SAM-L2-Q01"
+      "SAM-L0C-Q16",
+      "SAM-L1-Q02",
+      "SAM-L1-Q22",
+      "SAM-L1-Q03",
+      "SAM-L1-Q04"
     ],
     "served_all_incorrect": [
       "SAM-L1-Q28",
@@ -459,22 +573,22 @@
       "SAM-L2-Q07",
       "SAM-L1-Q24",
       "SAM-L2-Q03",
-      "SAM-L1-Q04",
-      "SAM-L1-Q10",
+      "SAM-L1-Q02",
+      "SAM-L0C-Q14",
       "SAM-L1-Q21",
+      "SAM-L1-Q01",
+      "SAM-L1-Q03",
+      "SAM-L1-Q10",
       "SAM-L1-Q05",
-      "SAM-L2-Q12",
+      "SAM-L1-Q04",
       "SAM-L1-Q12",
+      "SAM-L1-Q07",
+      "SAM-L2-Q12",
+      "SAM-L1-Q17",
       "SAM-L3-Q18",
       "SAM-L2-Q15",
       "SAM-L2-Q01",
-      "SAM-L2-Q16",
-      "SAM-L1-Q22",
-      "SAM-L3-Q08",
-      "SAM-L2-Q06",
-      "SAM-L2-Q13",
-      "SAM-L3-Q01",
-      "SAM-L3-Q03"
+      "SAM-L2-Q16"
     ],
     "items": [
       {
@@ -692,69 +806,617 @@
         "level": "1A",
         "difficulty": -1.8,
         "stem": "Name a 3-dimensional shape that has 2 flat faces and a curved surface."
+      },
+      {
+        "external_id": "SAM-L0C-Q14",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "0C",
+        "difficulty": -2,
+        "stem": "How many pairs of the same bikes are there? Write the number."
+      },
+      {
+        "external_id": "SAM-L0C-Q15",
+        "format": "SELECT_MULTIPLE",
+        "strand": "number_sense",
+        "level": "0C",
+        "difficulty": -1.8,
+        "stem": "Tap the odd numbers."
+      },
+      {
+        "external_id": "SAM-L0C-Q16",
+        "format": "MULTI_BLANK",
+        "strand": "number_sense",
+        "level": "0C",
+        "difficulty": -1.8,
+        "stem": "Break apart 32. Fill in the boxes."
+      },
+      {
+        "external_id": "SAM-L1-Q01",
+        "format": "CLICK_IMAGE_MULTI",
+        "strand": "geometry",
+        "level": "KA",
+        "difficulty": -2,
+        "stem": "Tap the things that have the same color."
+      },
+      {
+        "external_id": "SAM-L1-Q02",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "measurement",
+        "level": "KA",
+        "difficulty": -2,
+        "stem": "Click on the bigger animal."
+      },
+      {
+        "external_id": "SAM-L1-Q03",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "KA",
+        "difficulty": -2,
+        "stem": "Which is longer, the toy car or the toy plane?"
+      },
+      {
+        "external_id": "SAM-L1-Q07",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "KA",
+        "difficulty": -2,
+        "stem": "Match to complete the picture."
+      },
+      {
+        "external_id": "SAM-L1-Q17",
+        "format": "IMAGE_ORDERING",
+        "strand": "number_sense",
+        "level": "KB",
+        "difficulty": -2,
+        "stem": "The pictures show what Tom does in one day. Put them in order from first to last."
+      }
+    ]
+  },
+  "QA Level 2": {
+    "band": [
+      "1A",
+      "1B",
+      "2A",
+      "2B"
+    ],
+    "eligible_count": 52,
+    "prior_band_eligible": 27,
+    "served_all_correct": [
+      "SAM-L2-Q22",
+      "SAM-L3-Q05",
+      "SAM-L3-Q13",
+      "SAM-L2-Q17",
+      "SAM-L4-Q21",
+      "SAM-L3-Q17",
+      "SAM-L3-Q14",
+      "SAM-L2-Q05",
+      "SAM-L4-Q13",
+      "SAM-L4-Q16",
+      "SAM-L3-Q20",
+      "SAM-L2-Q11",
+      "SAM-L2-Q02",
+      "SAM-L3-Q09",
+      "SAM-L2-Q14",
+      "SAM-L2-Q21",
+      "SAM-L2-Q03",
+      "SAM-L3-Q12",
+      "SAM-L3-Q18",
+      "SAM-L3-Q07",
+      "SAM-L1-Q28",
+      "SAM-L1-Q05",
+      "SAM-L3-Q06",
+      "SAM-L1-Q23",
+      "SAM-L2-Q18"
+    ],
+    "served_all_incorrect": [
+      "SAM-L2-Q22",
+      "SAM-L3-Q05",
+      "SAM-L3-Q13",
+      "SAM-L2-Q17",
+      "SAM-L4-Q21",
+      "SAM-L3-Q17",
+      "SAM-L3-Q07",
+      "SAM-L1-Q28",
+      "SAM-L3-Q06",
+      "SAM-L2-Q02",
+      "SAM-L3-Q14",
+      "SAM-L2-Q05",
+      "SAM-L1-Q21",
+      "SAM-L2-Q01",
+      "SAM-L1-Q04",
+      "SAM-L1-Q05",
+      "SAM-L1-Q23",
+      "SAM-L1-Q10",
+      "SAM-L2-Q12",
+      "SAM-L2-Q03",
+      "SAM-L1-Q24",
+      "SAM-L1-Q12",
+      "SAM-L2-Q15",
+      "SAM-L3-Q18",
+      "SAM-L2-Q11"
+    ],
+    "items": [
+      {
+        "external_id": "SAM-L2-Q01",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.9,
+        "stem": "What is the missing number? 1 and ___ make 10."
+      },
+      {
+        "external_id": "SAM-L2-Q07",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "1B",
+        "difficulty": -1.6,
+        "stem": "What is the missing number? 76 = ___ tens 6 ones"
+      },
+      {
+        "external_id": "SAM-L2-Q09",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.7,
+        "stem": "What is 3 more than 54?"
+      },
+      {
+        "external_id": "SAM-L2-Q10",
+        "format": "DRAG_DROP",
+        "strand": "number_sense",
+        "level": "1B",
+        "difficulty": -1.5,
+        "stem": "Arrange the following numbers. Begin with the smallest. 68, 81, 9"
+      },
+      {
+        "external_id": "SAM-L2-Q11",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "2A",
+        "difficulty": -1.1,
+        "stem": "Jo had 7 apples. Her brother gave her some more apples. '\r\n       'She has 35 apples now. How many apples did her brother give her?"
+      },
+      {
+        "external_id": "SAM-L2-Q14",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "operations_algorithms",
+        "level": "2A",
+        "difficulty": -1.1,
+        "stem": "Mrs Tan puts 12 birds into 3 cages. How many birds are '\r\n       'there in each cage?"
+      },
+      {
+        "external_id": "SAM-L2-Q17",
+        "format": "NUMERIC_ENTRY",
+        "strand": "measurement",
+        "level": "1B",
+        "difficulty": -1,
+        "stem": "Larry has $45. He buys a school bag for $29. '\r\n       'How much money does he have left?"
+      },
+      {
+        "external_id": "SAM-L2-Q19",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.3,
+        "stem": "What is the missing number? 600 + 40 + 8 = ___"
+      },
+      {
+        "external_id": "SAM-L2-Q20",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "What is 100 more than 504?"
+      },
+      {
+        "external_id": "SAM-L2-Q21",
+        "format": "DRAG_DROP",
+        "strand": "number_sense",
+        "level": "2B",
+        "difficulty": -0.9,
+        "stem": "Arrange the following numbers in order. Begin with the '\r\n       'greatest. 652, 716, 629, 708"
+      },
+      {
+        "external_id": "SAM-L2-Q22",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "2B",
+        "difficulty": -0.7,
+        "stem": "What comes next in the number pattern below? '\r\n       '860, 840, 820, 800, ?"
+      },
+      {
+        "external_id": "SAM-L1-Q04",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "measurement",
+        "level": "1A",
+        "difficulty": -2,
+        "stem": "Who is shorter, Lin or George?"
+      },
+      {
+        "external_id": "SAM-L1-Q05",
+        "format": "NUMERIC_ENTRY",
+        "strand": "geometry",
+        "level": "1A",
+        "difficulty": -2,
+        "stem": "Group A    Group B\\ In which group does [object] belong?\\ Answer: Group ___"
+      },
+      {
+        "external_id": "SAM-L1-Q10",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -2,
+        "stem": "Count. Write the number."
+      },
+      {
+        "external_id": "SAM-L1-Q12",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -2,
+        "stem": "Which set has more? Set A: [image] Set B: [image] Answer: Set ___"
+      },
+      {
+        "external_id": "SAM-L1-Q21",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "1A",
+        "difficulty": -2,
+        "stem": "What is 1 more than 7?"
+      },
+      {
+        "external_id": "SAM-L1-Q22",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "Look at the first number bond: 6 and 3 make 9. Now complete the second number bond: 2 and 6 make ___."
+      },
+      {
+        "external_id": "SAM-L1-Q23",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "Lily has 7 ribbons. She buys another 3 red ribbons. How many ribbons does Lily have now?"
+      },
+      {
+        "external_id": "SAM-L1-Q24",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "Alan has 10 apples. 5 apples are red. The rest are green. How many apples are green?"
+      },
+      {
+        "external_id": "SAM-L1-Q28",
+        "format": "DRAG_DROP",
+        "strand": "number_sense",
+        "level": "1B",
+        "difficulty": -1.2,
+        "stem": "Arrange the numbers in order, from smallest to largest."
+      },
+      {
+        "external_id": "SAM-L2-Q02",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "geometry",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "How many triangles do you see in the picture?"
+      },
+      {
+        "external_id": "SAM-L2-Q03",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "geometry",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "What are the two shapes that make up the figure below?"
+      },
+      {
+        "external_id": "SAM-L2-Q05",
+        "format": "NUMERIC_ENTRY",
+        "strand": "data_statistics",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "The picture graph below shows the number of seashells collected by four boys. How many more seashells were collected by Mark than by Adam?"
+      },
+      {
+        "external_id": "SAM-L2-Q06",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "Which picture shows 37?"
+      },
+      {
+        "external_id": "SAM-L2-Q12",
+        "format": "NUMERIC_ENTRY",
+        "strand": "measurement",
+        "level": "1A",
+        "difficulty": -2,
+        "stem": "The picture below shows the length of a toy car. What is the length of the toy car?"
+      },
+      {
+        "external_id": "SAM-L2-Q13",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "3 × 4 is ___."
+      },
+      {
+        "external_id": "SAM-L2-Q15",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "The clock shows the time Joe finished his lunch. At what time did he finish his lunch?"
+      },
+      {
+        "external_id": "SAM-L2-Q16",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "How much money is there?"
+      },
+      {
+        "external_id": "SAM-L2-Q18",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "How many are there?"
+      },
+      {
+        "external_id": "SAM-L3-Q01",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "What number does the figure below show?"
+      },
+      {
+        "external_id": "SAM-L3-Q03",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "In the number 804, what does the digit '8' stand for?"
+      },
+      {
+        "external_id": "SAM-L3-Q05",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "2B",
+        "difficulty": -0.5,
+        "stem": "An oven costs $645. It costs $297 more than a vacuum cleaner. How much do the oven and vacuum cleaner cost altogether?"
+      },
+      {
+        "external_id": "SAM-L3-Q06",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "1B",
+        "difficulty": -1.5,
+        "stem": "How long is the thumb drive as shown below?"
+      },
+      {
+        "external_id": "SAM-L3-Q07",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "operations_algorithms",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes are there in each box? Which of the following shows the correct answer?"
+      },
+      {
+        "external_id": "SAM-L3-Q08",
+        "format": "NUMERIC_ENTRY",
+        "strand": "measurement",
+        "level": "1B",
+        "difficulty": -1.5,
+        "stem": "What is the mass of the cylinder?"
+      },
+      {
+        "external_id": "SAM-L3-Q09",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Kelvin had dinner at the time shown below. What time did he have dinner?"
+      },
+      {
+        "external_id": "SAM-L3-Q10",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "A gardener planted 75 orchids, 25 lilies and 50 roses. How many flowers did he plant in all? Which model is correct for this question?"
+      },
+      {
+        "external_id": "SAM-L3-Q11",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Which of the following is equal to 18?"
+      },
+      {
+        "external_id": "SAM-L3-Q12",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "How much money is there?"
+      },
+      {
+        "external_id": "SAM-L3-Q13",
+        "format": "NUMERIC_ENTRY",
+        "strand": "fractions_decimals",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "What fraction of the figure below is shaded?"
+      },
+      {
+        "external_id": "SAM-L3-Q14",
+        "format": "DRAG_DROP",
+        "strand": "fractions_decimals",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Arrange the fractions in order. Begin with the smallest. 10/11, 6/11, 9/11, 2/11"
+      },
+      {
+        "external_id": "SAM-L3-Q17",
+        "format": "NUMERIC_ENTRY",
+        "strand": "data_statistics",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "The picture graph below shows the favourite fruits of some Class 2 students in a school. How many more students like pears than oranges?"
+      },
+      {
+        "external_id": "SAM-L3-Q18",
+        "format": "TEXT_ENTRY",
+        "strand": "geometry",
+        "level": "1A",
+        "difficulty": -1.8,
+        "stem": "Name a 3-dimensional shape that has 2 flat faces and a curved surface."
+      },
+      {
+        "external_id": "SAM-L3-Q20",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "2B",
+        "difficulty": -0.8,
+        "stem": "What number does the figure below show?"
+      },
+      {
+        "external_id": "SAM-L4-Q01",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.8,
+        "stem": "What is 1 more than the number shown?"
+      },
+      {
+        "external_id": "SAM-L4-Q02",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -2,
+        "stem": "In the greatest 4-digit whole number, which digit is in the ones place?"
+      },
+      {
+        "external_id": "SAM-L4-Q03",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Which of the following shows numbers arranged in order beginning with the greatest?"
+      },
+      {
+        "external_id": "SAM-L4-Q04",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Continue the following number pattern. 2458   2238   2018"
+      },
+      {
+        "external_id": "SAM-L4-Q05",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "The sum of 562 and 3379 is ___."
+      },
+      {
+        "external_id": "SAM-L4-Q13",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "2A",
+        "difficulty": -1,
+        "stem": "What is the volume of liquid in the jug shown below?"
+      },
+      {
+        "external_id": "SAM-L4-Q16",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "geometry",
+        "level": "2A",
+        "difficulty": -1.2,
+        "stem": "Which one of the angles below is smaller than a right angle?"
+      },
+      {
+        "external_id": "SAM-L4-Q21",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "geometry",
+        "level": "2A",
+        "difficulty": -1,
+        "stem": "What is the area of the rectangle below?"
       }
     ]
   },
   "QA Level 3": {
     "band": [
       "2A",
-      "2B"
+      "2B",
+      "3A",
+      "3B"
     ],
-    "eligible_count": 25,
-    "prior_estimate": 26,
+    "eligible_count": 38,
+    "prior_band_eligible": 25,
     "served_all_correct": [
-      "SAM-L2-Q22",
+      "SAM-L4-Q11",
       "SAM-L3-Q05",
       "SAM-L3-Q13",
-      "SAM-L4-Q13",
+      "SAM-L4-Q14",
       "SAM-L4-Q21",
-      "SAM-L3-Q17",
+      "SAM-L4-Q20",
       "SAM-L3-Q14",
-      "SAM-L3-Q09",
       "SAM-L4-Q16",
-      "SAM-L3-Q20",
-      "SAM-L2-Q11",
+      "SAM-L4-Q12",
+      "SAM-L4-Q15",
+      "SAM-L3-Q17",
+      "SAM-L3-Q22",
+      "SAM-L4-Q22",
+      "SAM-L4-Q07",
+      "SAM-L4-Q06",
+      "SAM-L4-Q13",
+      "SAM-L4-Q08",
+      "SAM-L3-Q21",
+      "SAM-L3-Q09",
       "SAM-L3-Q12",
-      "SAM-L2-Q14",
-      "SAM-L2-Q21",
-      "SAM-L3-Q07",
-      "SAM-L2-Q18",
-      "SAM-L2-Q20",
-      "SAM-L3-Q10",
-      "SAM-L3-Q11",
-      "SAM-L4-Q03",
-      "SAM-L4-Q04",
-      "SAM-L4-Q05",
-      "SAM-L2-Q19",
-      "SAM-L4-Q01",
-      "SAM-L4-Q02"
+      "SAM-L4-Q09",
+      "SAM-L4-Q10",
+      "SAM-L2-Q11",
+      "SAM-L2-Q22",
+      "SAM-L2-Q14"
     ],
     "served_all_incorrect": [
-      "SAM-L2-Q22",
+      "SAM-L4-Q11",
       "SAM-L3-Q05",
       "SAM-L3-Q13",
-      "SAM-L4-Q13",
+      "SAM-L4-Q14",
       "SAM-L4-Q21",
-      "SAM-L3-Q17",
-      "SAM-L3-Q07",
+      "SAM-L4-Q20",
       "SAM-L2-Q18",
+      "SAM-L3-Q07",
       "SAM-L3-Q09",
+      "SAM-L3-Q17",
       "SAM-L4-Q16",
       "SAM-L3-Q14",
-      "SAM-L2-Q11",
       "SAM-L4-Q02",
+      "SAM-L2-Q11",
       "SAM-L3-Q12",
       "SAM-L2-Q14",
+      "SAM-L4-Q13",
       "SAM-L4-Q01",
+      "SAM-L4-Q08",
+      "SAM-L4-Q15",
+      "SAM-L4-Q22",
+      "SAM-L4-Q09",
       "SAM-L2-Q19",
-      "SAM-L2-Q20",
-      "SAM-L3-Q10",
-      "SAM-L3-Q11",
-      "SAM-L4-Q03",
-      "SAM-L4-Q04",
-      "SAM-L4-Q05",
-      "SAM-L2-Q21",
-      "SAM-L3-Q20"
+      "SAM-L4-Q07",
+      "SAM-L4-Q12"
     ],
     "items": [
       {
@@ -894,6 +1556,22 @@
         "stem": "What number does the figure below show?"
       },
       {
+        "external_id": "SAM-L3-Q21",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "3A",
+        "difficulty": -0.5,
+        "stem": "What is the missing number below? 7602 = ___ hundreds 2 ones"
+      },
+      {
+        "external_id": "SAM-L3-Q22",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "3B",
+        "difficulty": 0.2,
+        "stem": "What is the greatest 4-digit even number?"
+      },
+      {
         "external_id": "SAM-L4-Q01",
         "format": "MULTIPLE_CHOICE",
         "strand": "number_sense",
@@ -934,12 +1612,84 @@
         "stem": "The sum of 562 and 3379 is ___."
       },
       {
+        "external_id": "SAM-L4-Q06",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "3B",
+        "difficulty": 0.2,
+        "stem": "What is the missing digit (■) in the following subtraction?    8 5 ■ 2 –   7 9 4 ——————— 7 7 1 8"
+      },
+      {
+        "external_id": "SAM-L4-Q07",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "3B",
+        "difficulty": 0.3,
+        "stem": "A school library has 2540 fiction books. It has 1651 more fiction books than non-fiction books. What is the total number of books in the library?"
+      },
+      {
+        "external_id": "SAM-L4-Q08",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "3A",
+        "difficulty": -0.5,
+        "stem": "A box of grapes cost $5.60. Mrs Singh bought two such boxes of grapes and had $4.80 left. How much money did she have at first?"
+      },
+      {
+        "external_id": "SAM-L4-Q09",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "operations_algorithms",
+        "level": "3A",
+        "difficulty": -0.5,
+        "stem": "Mr Lee has 60 mangoes. He puts as many mangoes as possible equally into 7 boxes. How many mangoes does he have left?"
+      },
+      {
+        "external_id": "SAM-L4-Q10",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "3A",
+        "difficulty": -0.5,
+        "stem": "Multiply 324 by 5."
+      },
+      {
+        "external_id": "SAM-L4-Q11",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "3B",
+        "difficulty": 0,
+        "stem": "What is the remainder of 406 ÷ 3?"
+      },
+      {
+        "external_id": "SAM-L4-Q12",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "3B",
+        "difficulty": 0.4,
+        "stem": "There were 1569 men at a concert. There were 4 times as many women as men at the concert. 278 people left the concert hall before the last song was performed. How many people were there when the last song was performed?"
+      },
+      {
         "external_id": "SAM-L4-Q13",
         "format": "MULTIPLE_CHOICE",
         "strand": "measurement",
         "level": "2A",
         "difficulty": -1,
         "stem": "What is the volume of liquid in the jug shown below?"
+      },
+      {
+        "external_id": "SAM-L4-Q14",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "measurement",
+        "level": "3A",
+        "difficulty": -0.5,
+        "stem": "6 kg 27 g = ___ g"
+      },
+      {
+        "external_id": "SAM-L4-Q15",
+        "format": "TEXT_ENTRY",
+        "strand": "measurement",
+        "level": "3B",
+        "difficulty": 0.2,
+        "stem": "Aaron and Billy took part in a marathon. When Aaron had run 5 km 250 m, he had run 3 times the distance Billy had run. What was the distance Billy had run? Express your answer in kilometres and metres."
       },
       {
         "external_id": "SAM-L4-Q16",
@@ -950,34 +1700,57 @@
         "stem": "Which one of the angles below is smaller than a right angle?"
       },
       {
+        "external_id": "SAM-L4-Q20",
+        "format": "MULTI_BLANK",
+        "strand": "data_statistics",
+        "level": "3A",
+        "difficulty": -0.5,
+        "stem": "The bar graph below shows the scores of five basketball teams in a tournament."
+      },
+      {
         "external_id": "SAM-L4-Q21",
         "format": "MULTIPLE_CHOICE",
         "strand": "geometry",
         "level": "2A",
         "difficulty": -1,
         "stem": "What is the area of the rectangle below?"
+      },
+      {
+        "external_id": "SAM-L4-Q22",
+        "format": "TEXT_ENTRY",
+        "strand": "measurement",
+        "level": "3B",
+        "difficulty": 0.2,
+        "stem": "Mr Davis took 6 h 50 min to complete a marathon. He crossed the finish line at 4:15 pm. At what time did he start running?"
       }
     ]
   },
   "QA Level 4": {
     "band": [
       "3A",
-      "3B"
+      "3B",
+      "4A",
+      "4B"
     ],
-    "eligible_count": 13,
-    "prior_estimate": 14,
+    "eligible_count": 18,
+    "prior_band_eligible": 13,
     "served_all_correct": [
       "SAM-L4-Q11",
       "SAM-L4-Q08",
       "SAM-L4-Q14",
       "SAM-L4-Q20",
-      "SAM-L4-Q12",
+      "SAM-L4-Q27",
       "SAM-L4-Q15",
-      "SAM-L3-Q22",
+      "SAM-L4-Q26",
       "SAM-L4-Q22",
+      "SAM-L4-Q12",
+      "SAM-L4-Q23",
+      "SAM-L4-Q25",
       "SAM-L4-Q07",
-      "SAM-L4-Q06",
+      "SAM-L3-Q22",
       "SAM-L4-Q09",
+      "SAM-L4-Q06",
+      "SAM-L4-Q24",
       "SAM-L3-Q21",
       "SAM-L4-Q10"
     ],
@@ -994,7 +1767,12 @@
       "SAM-L4-Q07",
       "SAM-L4-Q12",
       "SAM-L3-Q22",
-      "SAM-L4-Q06"
+      "SAM-L4-Q27",
+      "SAM-L4-Q06",
+      "SAM-L4-Q24",
+      "SAM-L4-Q23",
+      "SAM-L4-Q25",
+      "SAM-L4-Q26"
     ],
     "items": [
       {
@@ -1100,6 +1878,46 @@
         "level": "3B",
         "difficulty": 0.2,
         "stem": "Mr Davis took 6 h 50 min to complete a marathon. He crossed the finish line at 4:15 pm. At what time did he start running?"
+      },
+      {
+        "external_id": "SAM-L4-Q23",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.3,
+        "stem": "Write the number shown."
+      },
+      {
+        "external_id": "SAM-L4-Q24",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.2,
+        "stem": "What is the value of the digit '8' in 82 149?"
+      },
+      {
+        "external_id": "SAM-L4-Q25",
+        "format": "DRAG_DROP",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.3,
+        "stem": "Arrange the numbers in ascending order. 9148   62 753   7265   62 009"
+      },
+      {
+        "external_id": "SAM-L4-Q26",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.4,
+        "stem": "Round 42 750 to the nearest hundred."
+      },
+      {
+        "external_id": "SAM-L4-Q27",
+        "format": "NUMERIC_ENTRY",
+        "strand": "operations_algorithms",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "Name one number that can divide both 54 and 72."
       }
     ]
   }

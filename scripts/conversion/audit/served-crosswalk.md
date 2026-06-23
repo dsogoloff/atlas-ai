@@ -6,60 +6,68 @@ order depends on answers; the QA bank is thin so every test bank-exhausts and th
 SET == the full eligible-in-band set. Two canonical orders are shown (all-correct /
 all-incorrect) which bracket any real play-through. Match founder QA notes by CONTENT.
 
-## QA Zero-A (Pre-K (age 5)) — band {0A} — eligible 17 (prior estimate undefined (see header))
-
-| pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
-|---|---|---|---|---|---|---|---|
-| 1 | 1 | SAM-L0A-Q17 | MULTIPLE_CHOICE | number_sense | 0A | -2 | Count the balloons. Tap the number. |
-| 2 | 2 | SAM-L0B-Q10 | MULTIPLE_CHOICE | operations_algorithms | 0A | -2.1 | There are 3 fish in a bowl and 5 fish in a tank. How many fish are … |
-| 3 | 3 | SAM-L0A-Q11 | CLICK_IMAGE_SINGLE | geometry | 0A | -2 | Look at the pattern below. Tap what comes next. |
-| 4 | 6 | SAM-L0B-Q11 | MULTIPLE_CHOICE | operations_algorithms | 0A | -2.1 | Mary put 7 items in a basket. She took out 3 items. How many items … |
-| 5 | 4 | SAM-L0B-Q03 | CLICK_IMAGE_SINGLE | number_sense | 0A | -2.1 | Tap the part that is missing from the cake. |
-| 6 | 5 | SAM-L0B-Q02 | CLICK_IMAGE_SINGLE | geometry | 0A | -2 | Tap the object that comes next in the pattern below. |
-| 7 | 8 | SAM-L0B-Q06 | SELECT_MULTIPLE | number_sense | 0A | -2.1 | Tap the numbers greater than 6. |
-| 8 | — | SAM-L0B-Q07 | MULTIPLE_CHOICE | geometry | 0A | -2 | How are the shapes sorted? |
-| 9 | 7 | SAM-L0A-Q08 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.2 | Tap the object that is the same as the one in the box. |
-| 10 | 9 | SAM-L0A-Q03 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the big bowl. |
-| 11 | 10 | SAM-L0A-Q05 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the thick book. |
-| 12 | 11 | SAM-L0A-Q06 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the long branch. |
-| 13 | 12 | SAM-L0A-Q07 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the tall animal. |
-| 14 | 13 | SAM-L0A-Q10 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the taller door. |
-| 15 | — | SAM-L0A-Q13 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bird facing left. |
-| 16 | — | SAM-L0A-Q14 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bird that is flying up. |
-| 17 | — | SAM-L0A-Q15 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bowl on the bottom shelf. |
-
-## QA Zero-C (Pre-K) — band {0B} — eligible 13 (matches prior estimate)
+## QA Zero-A (Pre-K (age 5)) — band {0A,0B} — eligible 30 (prev-band {previous-only} eligible 17 → now 30 (band widened to {previous,current}))
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
 | 1 | 1 | SAM-L0C-Q11A | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 comes ___ 30. |
 | 2 | 2 | SAM-L0B-Q14 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 4 pieces of sushi on a tray. There are 6 pieces of sushi … |
-| 3 | 3 | SAM-L0C-Q13 | CLICK_IMAGE_SINGLE | measurement | 0B | -2 | Read the days of the week from Monday. One day is torn off: Monday,… |
-| 4 | 4 | SAM-L0C-Q11B | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 is ___ than 30. |
-| 5 | 5 | SAM-L0B-Q15 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? |
-| 6 | 12 | SAM-L0C-Q11C | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 comes ___ 36. |
-| 7 | 7 | SAM-L0C-Q09 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 14 blue beads and 5 green beads on Sally's necklace. How … |
-| 8 | 13 | SAM-L0C-Q11D | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 is ___ than 36. |
-| 9 | 8 | SAM-L0C-Q10 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 18 birds. 6 of the birds are blue. How many birds are yel… |
-| 10 | 6 | SAM-L0C-Q03 | SELECT_MULTIPLE | number_sense | 0B | -2 | Tap the boxes that make 10. |
-| 11 | 9 | SAM-L0C-Q04 | EQUATION_SET | number_sense | 0B | -2 | Complete the fact family. |
-| 12 | 10 | SAM-L0C-Q05 | IMAGE_ORDERING | number_sense | 0B | -2 | Put the pictures in order by size, from smallest to biggest. |
-| 13 | 11 | SAM-L0C-Q08 | MULTI_BLANK | number_sense | 0B | -2 | Skip count by 2s. Fill in the missing numbers. |
+| 3 | 3 | SAM-L0C-Q13 | CLICK_IMAGE_SINGLE | measurement | 0B | -2 | Read aloud the days of the week from Monday. A part of the page is … |
+| 4 | 4 | SAM-L0A-Q11 | CLICK_IMAGE_SINGLE | geometry | 0A | -2 | Look at the pattern below. Tap what comes next. |
+| 5 | 7 | SAM-L0B-Q02 | CLICK_IMAGE_SINGLE | geometry | 0A | -2 | Tap the object that comes next in the pattern below. |
+| 6 | 5 | SAM-L0C-Q11B | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 is ___ than 30. |
+| 7 | 6 | SAM-L0B-Q15 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? |
+| 8 | — | SAM-L0B-Q07 | MULTIPLE_CHOICE | geometry | 0A | -2 | How are the shapes sorted? |
+| 9 | — | SAM-L0C-Q11C | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 comes ___ 36. |
+| 10 | 15 | SAM-L0C-Q09 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 14 blue beads and 5 green beads on Sally's necklace. How … |
+| 11 | 10 | SAM-L0A-Q08 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.2 | Tap the object that is the same as the one in the box. |
+| 12 | — | SAM-L0C-Q11D | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 is ___ than 36. |
+| 13 | 17 | SAM-L0C-Q10 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 18 birds. 6 of the birds are blue. How many birds are yel… |
+| 14 | 13 | SAM-L0A-Q03 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the big bowl. |
+| 15 | 16 | SAM-L0A-Q05 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the thick book. |
+| 16 | 14 | SAM-L0A-Q17 | MULTIPLE_CHOICE | number_sense | 0A | -2 | Count the balloons. Tap the number. |
+| 17 | 9 | SAM-L0B-Q10 | MULTIPLE_CHOICE | operations_algorithms | 0A | -2.1 | There are 3 fish in a bowl and 5 fish in a tank. How many fish are … |
+| 18 | 19 | SAM-L0A-Q06 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the long branch. |
+| 19 | 12 | SAM-L0B-Q11 | MULTIPLE_CHOICE | operations_algorithms | 0A | -2.1 | Mary put 7 items in a basket. She took out 3 items. How many items … |
+| 20 | 18 | SAM-L0C-Q03 | SELECT_MULTIPLE | number_sense | 0B | -2 | Tap the boxes that make 10. |
+| 21 | 22 | SAM-L0A-Q07 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the tall animal. |
+| 22 | 24 | SAM-L0A-Q10 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the taller door. |
+| 23 | 20 | SAM-L0C-Q04 | MULTI_BLANK | number_sense | 0B | -2 | Complete the fact family. |
+| 24 | — | SAM-L0A-Q13 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bird facing left. |
+| 25 | 21 | SAM-L0C-Q05 | IMAGE_ORDERING | number_sense | 0B | -2 | Put the pictures in order by size, from smallest to biggest. |
+| — | 23 | SAM-L0C-Q08 | MULTI_BLANK | number_sense | 0B | -2 | Skip count by 2s. Fill in the missing numbers. |
+| — | — | SAM-L0A-Q14 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bird that is flying up. |
+| — | — | SAM-L0A-Q15 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bowl on the bottom shelf. |
+| — | 8 | SAM-L0B-Q03 | CLICK_IMAGE_SINGLE | number_sense | 0A | -2.1 | Tap the part that is missing from the cake. |
+| — | 11 | SAM-L0B-Q06 | SELECT_MULTIPLE | number_sense | 0A | -2.1 | Tap the numbers greater than 6. |
 
-## QA Level 1 (Grade 1) — band {0C,KA,KB} — eligible 8 (prior estimate 3 (see header))
+## QA Zero-C (Pre-K) — band {0B,0C,KA,KB} — eligible 21 (prev-band {previous-only} eligible 13 → now 21 (band widened to {previous,current}))
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
-| 1 | 1 | SAM-L0C-Q15 | SELECT_MULTIPLE | number_sense | 0C | -1.8 | Tap the odd numbers. |
-| 2 | 2 | SAM-L1-Q02 | CLICK_IMAGE_SINGLE | measurement | KA | -2 | Click on the bigger animal. |
-| 3 | 3 | SAM-L1-Q01 | CLICK_IMAGE_MULTI | geometry | KA | -2 | Tap the things that have the same color. |
-| 4 | 5 | SAM-L1-Q03 | MULTIPLE_CHOICE | measurement | KA | -2 | Which is longer, the toy car or the toy plane? |
-| 5 | 6 | SAM-L1-Q07 | CLICK_IMAGE_SINGLE | geometry | KA | -2 | Match to complete the picture. |
-| 6 | 4 | SAM-L0C-Q16 | MULTI_BLANK | number_sense | 0C | -1.8 | Break apart 32. Fill in the boxes. |
-| 7 | 7 | SAM-L0C-Q14 | NUMERIC_ENTRY | number_sense | 0C | -2 | How many pairs of the same bikes are there? Write the number. |
-| 8 | 8 | SAM-L1-Q17 | IMAGE_ORDERING | number_sense | KB | -2 | The pictures show what Tom does in one day. Put them in order from … |
+| 1 | 1 | SAM-L0C-Q11A | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 comes ___ 30. |
+| 2 | 2 | SAM-L0B-Q14 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 4 pieces of sushi on a tray. There are 6 pieces of sushi … |
+| 3 | 3 | SAM-L0C-Q13 | CLICK_IMAGE_SINGLE | measurement | 0B | -2 | Read aloud the days of the week from Monday. A part of the page is … |
+| 4 | 4 | SAM-L1-Q01 | CLICK_IMAGE_MULTI | geometry | KA | -2 | Tap the things that have the same color. |
+| 5 | 7 | SAM-L1-Q02 | CLICK_IMAGE_SINGLE | measurement | KA | -2 | Click on the bigger animal. |
+| 6 | 8 | SAM-L1-Q07 | CLICK_IMAGE_SINGLE | geometry | KA | -2 | Match to complete the picture. |
+| 7 | 5 | SAM-L0C-Q11B | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 is ___ than 30. |
+| 8 | 6 | SAM-L0B-Q15 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? |
+| 9 | 11 | SAM-L1-Q03 | MULTIPLE_CHOICE | measurement | KA | -2 | Which is longer, the toy car or the toy plane? |
+| 10 | 18 | SAM-L0C-Q11C | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 comes ___ 36. |
+| 11 | 10 | SAM-L0C-Q09 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 14 blue beads and 5 green beads on Sally's necklace. How … |
+| 12 | 19 | SAM-L0C-Q11D | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 is ___ than 36. |
+| 13 | 12 | SAM-L0C-Q10 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 18 birds. 6 of the birds are blue. How many birds are yel… |
+| 14 | — | SAM-L0C-Q15 | SELECT_MULTIPLE | number_sense | 0C | -1.8 | Tap the odd numbers. |
+| 15 | — | SAM-L0C-Q16 | MULTI_BLANK | number_sense | 0C | -1.8 | Break apart 32. Fill in the boxes. |
+| 16 | 9 | SAM-L0C-Q03 | SELECT_MULTIPLE | number_sense | 0B | -2 | Tap the boxes that make 10. |
+| 17 | 13 | SAM-L0C-Q04 | MULTI_BLANK | number_sense | 0B | -2 | Complete the fact family. |
+| 18 | 14 | SAM-L0C-Q05 | IMAGE_ORDERING | number_sense | 0B | -2 | Put the pictures in order by size, from smallest to biggest. |
+| 19 | 15 | SAM-L0C-Q08 | MULTI_BLANK | number_sense | 0B | -2 | Skip count by 2s. Fill in the missing numbers. |
+| 20 | 16 | SAM-L0C-Q14 | NUMERIC_ENTRY | number_sense | 0C | -2 | How many pairs of the same bikes are there? Write the number. |
+| 21 | 17 | SAM-L1-Q17 | IMAGE_ORDERING | number_sense | KB | -2 | The pictures show what Tom does in one day. Put them in order from … |
 
-## QA Level 2 (Grade 2) — band {1A,1B} — eligible 27 (matches prior estimate)
+## QA Level 1 (Grade 1) — band {0C,KA,KB,1A,1B} — eligible 35 (prev-band {previous-only} eligible 8 → now 35 (band widened to {previous,current}))
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
@@ -74,25 +82,33 @@ all-incorrect) which bracket any real play-through. Match founder QA notes by CO
 | 8 | — | SAM-L2-Q10 | DRAG_DROP | number_sense | 1B | -1.5 | Arrange the following numbers. Begin with the smallest. 68, 81, 9 |
 | 9 | 6 | SAM-L3-Q06 | MULTIPLE_CHOICE | measurement | 1B | -1.5 | How long is the thumb drive as shown below? |
 | 10 | 12 | SAM-L1-Q21 | NUMERIC_ENTRY | operations_algorithms | 1A | -2 | What is 1 more than 7? |
-| 11 | 16 | SAM-L3-Q18 | TEXT_ENTRY | geometry | 1A | -1.8 | Name a 3-dimensional shape that has 2 flat faces and a curved surface. |
+| 11 | 22 | SAM-L3-Q18 | TEXT_ENTRY | geometry | 1A | -1.8 | Name a 3-dimensional shape that has 2 flat faces and a curved surface. |
 | 12 | 7 | SAM-L2-Q07 | MULTIPLE_CHOICE | number_sense | 1B | -1.6 | What is the missing number? 76 = ___ tens 6 ones |
-| 13 | 21 | SAM-L3-Q08 | NUMERIC_ENTRY | measurement | 1B | -1.5 | What is the mass of the cylinder? |
-| 14 | 13 | SAM-L1-Q05 | NUMERIC_ENTRY | geometry | 1A | -2 | Group A    Group B\ In which group does [object] belong?\ Answer: G… |
-| 15 | — | SAM-L2-Q09 | MULTIPLE_CHOICE | number_sense | 1A | -1.7 | What is 3 more than 54? |
-| 16 | 17 | SAM-L2-Q15 | MULTIPLE_CHOICE | measurement | 1A | -1.8 | The clock shows the time Joe finished his lunch. At what time did h… |
-| 17 | 20 | SAM-L1-Q22 | NUMERIC_ENTRY | number_sense | 1A | -1.8 | Look at the first number bond: 6 and 3 make 9. Now complete the sec… |
-| 18 | 19 | SAM-L2-Q16 | MULTIPLE_CHOICE | measurement | 1A | -1.8 | How much money is there? |
-| 19 | 22 | SAM-L2-Q06 | CLICK_IMAGE_SINGLE | number_sense | 1A | -1.8 | Which picture shows 37? |
-| 20 | 10 | SAM-L1-Q04 | CLICK_IMAGE_SINGLE | measurement | 1A | -2 | Who is shorter, Lin or George? |
-| 21 | 23 | SAM-L2-Q13 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | 3 × 4 is ___. |
-| 22 | 14 | SAM-L2-Q12 | NUMERIC_ENTRY | measurement | 1A | -2 | The picture below shows the length of a toy car. What is the length… |
-| 23 | 24 | SAM-L3-Q01 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | What number does the figure below show? |
-| 24 | 25 | SAM-L3-Q03 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | In the number 804, what does the digit '8' stand for? |
-| 25 | 18 | SAM-L2-Q01 | MULTIPLE_CHOICE | number_sense | 1A | -1.9 | What is the missing number? 1 and ___ make 10. |
-| — | 11 | SAM-L1-Q10 | NUMERIC_ENTRY | number_sense | 1A | -2 | Count. Write the number. |
-| — | 15 | SAM-L1-Q12 | NUMERIC_ENTRY | number_sense | 1A | -2 | Which set has more? Set A: [image] Set B: [image] Answer: Set ___ |
+| 13 | — | SAM-L3-Q08 | NUMERIC_ENTRY | measurement | 1B | -1.5 | What is the mass of the cylinder? |
+| 14 | 13 | SAM-L1-Q01 | CLICK_IMAGE_MULTI | geometry | KA | -2 | Tap the things that have the same color. |
+| 15 | 16 | SAM-L1-Q05 | NUMERIC_ENTRY | geometry | 1A | -2 | Group A    Group B\ In which group does [object] belong?\ Answer: G… |
+| 16 | — | SAM-L2-Q09 | MULTIPLE_CHOICE | number_sense | 1A | -1.7 | What is 3 more than 54? |
+| 17 | 23 | SAM-L2-Q15 | MULTIPLE_CHOICE | measurement | 1A | -1.8 | The clock shows the time Joe finished his lunch. At what time did h… |
+| 18 | 19 | SAM-L1-Q07 | CLICK_IMAGE_SINGLE | geometry | KA | -2 | Match to complete the picture. |
+| 19 | — | SAM-L0C-Q15 | SELECT_MULTIPLE | number_sense | 0C | -1.8 | Tap the odd numbers. |
+| 20 | 25 | SAM-L2-Q16 | MULTIPLE_CHOICE | measurement | 1A | -1.8 | How much money is there? |
+| 21 | — | SAM-L0C-Q16 | MULTI_BLANK | number_sense | 0C | -1.8 | Break apart 32. Fill in the boxes. |
+| 22 | 10 | SAM-L1-Q02 | CLICK_IMAGE_SINGLE | measurement | KA | -2 | Click on the bigger animal. |
+| 23 | — | SAM-L1-Q22 | NUMERIC_ENTRY | number_sense | 1A | -1.8 | Look at the first number bond: 6 and 3 make 9. Now complete the sec… |
+| 24 | 14 | SAM-L1-Q03 | MULTIPLE_CHOICE | measurement | KA | -2 | Which is longer, the toy car or the toy plane? |
+| 25 | 17 | SAM-L1-Q04 | CLICK_IMAGE_SINGLE | measurement | 1A | -2 | Who is shorter, Lin or George? |
+| — | 24 | SAM-L2-Q01 | MULTIPLE_CHOICE | number_sense | 1A | -1.9 | What is the missing number? 1 and ___ make 10. |
+| — | 15 | SAM-L1-Q10 | NUMERIC_ENTRY | number_sense | 1A | -2 | Count. Write the number. |
+| — | 18 | SAM-L1-Q12 | NUMERIC_ENTRY | number_sense | 1A | -2 | Which set has more? Set A: [image] Set B: [image] Answer: Set ___ |
+| — | — | SAM-L2-Q06 | CLICK_IMAGE_SINGLE | number_sense | 1A | -1.8 | Which picture shows 37? |
+| — | 20 | SAM-L2-Q12 | NUMERIC_ENTRY | measurement | 1A | -2 | The picture below shows the length of a toy car. What is the length… |
+| — | — | SAM-L2-Q13 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | 3 × 4 is ___. |
+| — | — | SAM-L3-Q01 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | What number does the figure below show? |
+| — | — | SAM-L3-Q03 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | In the number 804, what does the digit '8' stand for? |
+| — | 11 | SAM-L0C-Q14 | NUMERIC_ENTRY | number_sense | 0C | -2 | How many pairs of the same bikes are there? Write the number. |
+| — | 21 | SAM-L1-Q17 | IMAGE_ORDERING | number_sense | KB | -2 | The pictures show what Tom does in one day. Put them in order from … |
 
-## QA Level 3 (Grade 3) — band {2A,2B} — eligible 25 (prior estimate 26 (see header))
+## QA Level 2 (Grade 2) — band {1A,1B,2A,2B} — eligible 52 (prev-band {previous-only} eligible 27 → now 52 (band widened to {previous,current}))
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
@@ -100,33 +116,108 @@ all-incorrect) which bracket any real play-through. Match founder QA notes by CO
        '860, 840, 8… |
 | 2 | 2 | SAM-L3-Q05 | NUMERIC_ENTRY | operations_algorithms | 2B | -0.5 | An oven costs $645. It costs $297 more than a vacuum cleaner. How m… |
 | 3 | 3 | SAM-L3-Q13 | NUMERIC_ENTRY | fractions_decimals | 2A | -1.2 | What fraction of the figure below is shaded? |
-| 4 | 4 | SAM-L4-Q13 | MULTIPLE_CHOICE | measurement | 2A | -1 | What is the volume of liquid in the jug shown below? |
+| 4 | 4 | SAM-L2-Q17 | NUMERIC_ENTRY | measurement | 1B | -1 | Larry has $45. He buys a school bag for $29. '
+       'How much mo… |
 | 5 | 5 | SAM-L4-Q21 | MULTIPLE_CHOICE | geometry | 2A | -1 | What is the area of the rectangle below? |
 | 6 | 6 | SAM-L3-Q17 | NUMERIC_ENTRY | data_statistics | 2A | -1.2 | The picture graph below shows the favourite fruits of some Class 2 … |
 | 7 | 11 | SAM-L3-Q14 | DRAG_DROP | fractions_decimals | 2A | -1.2 | Arrange the fractions in order. Begin with the smallest. 10/11, 6/1… |
-| 8 | 9 | SAM-L3-Q09 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | Kelvin had dinner at the time shown below. What time did he have di… |
-| 9 | 10 | SAM-L4-Q16 | MULTIPLE_CHOICE | geometry | 2A | -1.2 | Which one of the angles below is smaller than a right angle? |
-| 10 | 25 | SAM-L3-Q20 | MULTIPLE_CHOICE | number_sense | 2B | -0.8 | What number does the figure below show? |
-| 11 | 12 | SAM-L2-Q11 | NUMERIC_ENTRY | operations_algorithms | 2A | -1.1 | Jo had 7 apples. Her brother gave her some more apples. '
+| 8 | 12 | SAM-L2-Q05 | NUMERIC_ENTRY | data_statistics | 1A | -1.8 | The picture graph below shows the number of seashells collected by … |
+| 9 | — | SAM-L4-Q13 | MULTIPLE_CHOICE | measurement | 2A | -1 | What is the volume of liquid in the jug shown below? |
+| 10 | — | SAM-L4-Q16 | MULTIPLE_CHOICE | geometry | 2A | -1.2 | Which one of the angles below is smaller than a right angle? |
+| 11 | — | SAM-L3-Q20 | MULTIPLE_CHOICE | number_sense | 2B | -0.8 | What number does the figure below show? |
+| 12 | 25 | SAM-L2-Q11 | NUMERIC_ENTRY | operations_algorithms | 2A | -1.1 | Jo had 7 apples. Her brother gave her some more apples. '
        '… |
-| 12 | 14 | SAM-L3-Q12 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | How much money is there? |
-| 13 | 15 | SAM-L2-Q14 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.1 | Mrs Tan puts 12 birds into 3 cages. How many birds are '
+| 13 | 10 | SAM-L2-Q02 | MULTIPLE_CHOICE | geometry | 1A | -1.8 | How many triangles do you see in the picture? |
+| 14 | — | SAM-L3-Q09 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | Kelvin had dinner at the time shown below. What time did he have di… |
+| 15 | — | SAM-L2-Q14 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.1 | Mrs Tan puts 12 birds into 3 cages. How many birds are '
        't… |
-| 14 | 24 | SAM-L2-Q21 | DRAG_DROP | number_sense | 2B | -0.9 | Arrange the following numbers in order. Begin with the '
+| 16 | — | SAM-L2-Q21 | DRAG_DROP | number_sense | 2B | -0.9 | Arrange the following numbers in order. Begin with the '
        'g… |
-| 15 | 7 | SAM-L3-Q07 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.2 | Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes ar… |
-| 16 | 8 | SAM-L2-Q18 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | How many are there? |
-| 17 | 18 | SAM-L2-Q20 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | What is 100 more than 504? |
-| 18 | 19 | SAM-L3-Q10 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | A gardener planted 75 orchids, 25 lilies and 50 roses. How many flo… |
-| 19 | 20 | SAM-L3-Q11 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following is equal to 18? |
-| 20 | 21 | SAM-L4-Q03 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following shows numbers arranged in order beginning wi… |
-| 21 | 22 | SAM-L4-Q04 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | Continue the following number pattern. 2458   2238   2018 |
-| 22 | 23 | SAM-L4-Q05 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | The sum of 562 and 3379 is ___. |
-| 23 | 17 | SAM-L2-Q19 | NUMERIC_ENTRY | number_sense | 2A | -1.3 | What is the missing number? 600 + 40 + 8 = ___ |
-| 24 | 16 | SAM-L4-Q01 | MULTIPLE_CHOICE | number_sense | 2A | -1.8 | What is 1 more than the number shown? |
-| 25 | 13 | SAM-L4-Q02 | NUMERIC_ENTRY | number_sense | 2A | -2 | In the greatest 4-digit whole number, which digit is in the ones pl… |
+| 17 | 20 | SAM-L2-Q03 | MULTIPLE_CHOICE | geometry | 1A | -1.8 | What are the two shapes that make up the figure below? |
+| 18 | — | SAM-L3-Q12 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | How much money is there? |
+| 19 | 24 | SAM-L3-Q18 | TEXT_ENTRY | geometry | 1A | -1.8 | Name a 3-dimensional shape that has 2 flat faces and a curved surface. |
+| 20 | 7 | SAM-L3-Q07 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.2 | Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes ar… |
+| 21 | 8 | SAM-L1-Q28 | DRAG_DROP | number_sense | 1B | -1.2 | Arrange the numbers in order, from smallest to largest. |
+| 22 | 16 | SAM-L1-Q05 | NUMERIC_ENTRY | geometry | 1A | -2 | Group A    Group B\ In which group does [object] belong?\ Answer: G… |
+| 23 | 9 | SAM-L3-Q06 | MULTIPLE_CHOICE | measurement | 1B | -1.5 | How long is the thumb drive as shown below? |
+| 24 | 17 | SAM-L1-Q23 | NUMERIC_ENTRY | operations_algorithms | 1A | -1.8 | Lily has 7 ribbons. She buys another 3 red ribbons. How many ribbon… |
+| 25 | — | SAM-L2-Q18 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | How many are there? |
+| — | 14 | SAM-L2-Q01 | MULTIPLE_CHOICE | number_sense | 1A | -1.9 | What is the missing number? 1 and ___ make 10. |
+| — | — | SAM-L2-Q07 | MULTIPLE_CHOICE | number_sense | 1B | -1.6 | What is the missing number? 76 = ___ tens 6 ones |
+| — | — | SAM-L2-Q09 | MULTIPLE_CHOICE | number_sense | 1A | -1.7 | What is 3 more than 54? |
+| — | — | SAM-L2-Q10 | DRAG_DROP | number_sense | 1B | -1.5 | Arrange the following numbers. Begin with the smallest. 68, 81, 9 |
+| — | — | SAM-L2-Q19 | NUMERIC_ENTRY | number_sense | 2A | -1.3 | What is the missing number? 600 + 40 + 8 = ___ |
+| — | — | SAM-L2-Q20 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | What is 100 more than 504? |
+| — | 15 | SAM-L1-Q04 | CLICK_IMAGE_SINGLE | measurement | 1A | -2 | Who is shorter, Lin or George? |
+| — | 18 | SAM-L1-Q10 | NUMERIC_ENTRY | number_sense | 1A | -2 | Count. Write the number. |
+| — | 22 | SAM-L1-Q12 | NUMERIC_ENTRY | number_sense | 1A | -2 | Which set has more? Set A: [image] Set B: [image] Answer: Set ___ |
+| — | 13 | SAM-L1-Q21 | NUMERIC_ENTRY | operations_algorithms | 1A | -2 | What is 1 more than 7? |
+| — | — | SAM-L1-Q22 | NUMERIC_ENTRY | number_sense | 1A | -1.8 | Look at the first number bond: 6 and 3 make 9. Now complete the sec… |
+| — | 21 | SAM-L1-Q24 | NUMERIC_ENTRY | operations_algorithms | 1A | -1.8 | Alan has 10 apples. 5 apples are red. The rest are green. How many … |
+| — | — | SAM-L2-Q06 | CLICK_IMAGE_SINGLE | number_sense | 1A | -1.8 | Which picture shows 37? |
+| — | 19 | SAM-L2-Q12 | NUMERIC_ENTRY | measurement | 1A | -2 | The picture below shows the length of a toy car. What is the length… |
+| — | — | SAM-L2-Q13 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | 3 × 4 is ___. |
+| — | 23 | SAM-L2-Q15 | MULTIPLE_CHOICE | measurement | 1A | -1.8 | The clock shows the time Joe finished his lunch. At what time did h… |
+| — | — | SAM-L2-Q16 | MULTIPLE_CHOICE | measurement | 1A | -1.8 | How much money is there? |
+| — | — | SAM-L3-Q01 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | What number does the figure below show? |
+| — | — | SAM-L3-Q03 | MULTIPLE_CHOICE | number_sense | 1A | -1.8 | In the number 804, what does the digit '8' stand for? |
+| — | — | SAM-L3-Q08 | NUMERIC_ENTRY | measurement | 1B | -1.5 | What is the mass of the cylinder? |
+| — | — | SAM-L3-Q10 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | A gardener planted 75 orchids, 25 lilies and 50 roses. How many flo… |
+| — | — | SAM-L3-Q11 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following is equal to 18? |
+| — | — | SAM-L4-Q01 | MULTIPLE_CHOICE | number_sense | 2A | -1.8 | What is 1 more than the number shown? |
+| — | — | SAM-L4-Q02 | NUMERIC_ENTRY | number_sense | 2A | -2 | In the greatest 4-digit whole number, which digit is in the ones pl… |
+| — | — | SAM-L4-Q03 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following shows numbers arranged in order beginning wi… |
+| — | — | SAM-L4-Q04 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | Continue the following number pattern. 2458   2238   2018 |
+| — | — | SAM-L4-Q05 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | The sum of 562 and 3379 is ___. |
 
-## QA Level 4 (Grade 4) — band {3A,3B} — eligible 13 (prior estimate 14 (see header))
+## QA Level 3 (Grade 3) — band {2A,2B,3A,3B} — eligible 38 (prev-band {previous-only} eligible 25 → now 38 (band widened to {previous,current}))
+
+| pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | SAM-L4-Q11 | NUMERIC_ENTRY | number_sense | 3B | 0 | What is the remainder of 406 ÷ 3? |
+| 2 | 2 | SAM-L3-Q05 | NUMERIC_ENTRY | operations_algorithms | 2B | -0.5 | An oven costs $645. It costs $297 more than a vacuum cleaner. How m… |
+| 3 | 3 | SAM-L3-Q13 | NUMERIC_ENTRY | fractions_decimals | 2A | -1.2 | What fraction of the figure below is shaded? |
+| 4 | 4 | SAM-L4-Q14 | MULTIPLE_CHOICE | measurement | 3A | -0.5 | 6 kg 27 g = ___ g |
+| 5 | 5 | SAM-L4-Q21 | MULTIPLE_CHOICE | geometry | 2A | -1 | What is the area of the rectangle below? |
+| 6 | 6 | SAM-L4-Q20 | MULTI_BLANK | data_statistics | 3A | -0.5 | The bar graph below shows the scores of five basketball teams in a … |
+| 7 | 12 | SAM-L3-Q14 | DRAG_DROP | fractions_decimals | 2A | -1.2 | Arrange the fractions in order. Begin with the smallest. 10/11, 6/1… |
+| 8 | 11 | SAM-L4-Q16 | MULTIPLE_CHOICE | geometry | 2A | -1.2 | Which one of the angles below is smaller than a right angle? |
+| 9 | 25 | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
+| 10 | 20 | SAM-L4-Q15 | TEXT_ENTRY | measurement | 3B | 0.2 | Aaron and Billy took part in a marathon. When Aaron had run 5 km 25… |
+| 11 | 10 | SAM-L3-Q17 | NUMERIC_ENTRY | data_statistics | 2A | -1.2 | The picture graph below shows the favourite fruits of some Class 2 … |
+| 12 | — | SAM-L3-Q22 | MULTIPLE_CHOICE | number_sense | 3B | 0.2 | What is the greatest 4-digit even number? |
+| 13 | 21 | SAM-L4-Q22 | TEXT_ENTRY | measurement | 3B | 0.2 | Mr Davis took 6 h 50 min to complete a marathon. He crossed the fin… |
+| 14 | 24 | SAM-L4-Q07 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.3 | A school library has 2540 fiction books. It has 1651 more fiction b… |
+| 15 | — | SAM-L4-Q06 | NUMERIC_ENTRY | number_sense | 3B | 0.2 | What is the missing digit (■) in the following subtraction?    8 5 … |
+| 16 | 17 | SAM-L4-Q13 | MULTIPLE_CHOICE | measurement | 2A | -1 | What is the volume of liquid in the jug shown below? |
+| 17 | 19 | SAM-L4-Q08 | NUMERIC_ENTRY | operations_algorithms | 3A | -0.5 | A box of grapes cost $5.60. Mrs Singh bought two such boxes of grap… |
+| 18 | — | SAM-L3-Q21 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | What is the missing number below? 7602 = ___ hundreds 2 ones |
+| 19 | 9 | SAM-L3-Q09 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | Kelvin had dinner at the time shown below. What time did he have di… |
+| 20 | 15 | SAM-L3-Q12 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | How much money is there? |
+| 21 | 22 | SAM-L4-Q09 | MULTIPLE_CHOICE | operations_algorithms | 3A | -0.5 | Mr Lee has 60 mangoes. He puts as many mangoes as possible equally … |
+| 22 | — | SAM-L4-Q10 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | Multiply 324 by 5. |
+| 23 | 14 | SAM-L2-Q11 | NUMERIC_ENTRY | operations_algorithms | 2A | -1.1 | Jo had 7 apples. Her brother gave her some more apples. '
+       '… |
+| 24 | — | SAM-L2-Q22 | NUMERIC_ENTRY | number_sense | 2B | -0.7 | What comes next in the number pattern below? '
+       '860, 840, 8… |
+| 25 | 16 | SAM-L2-Q14 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.1 | Mrs Tan puts 12 birds into 3 cages. How many birds are '
+       't… |
+| — | 23 | SAM-L2-Q19 | NUMERIC_ENTRY | number_sense | 2A | -1.3 | What is the missing number? 600 + 40 + 8 = ___ |
+| — | — | SAM-L2-Q20 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | What is 100 more than 504? |
+| — | — | SAM-L2-Q21 | DRAG_DROP | number_sense | 2B | -0.9 | Arrange the following numbers in order. Begin with the '
+       'g… |
+| — | 7 | SAM-L2-Q18 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | How many are there? |
+| — | 8 | SAM-L3-Q07 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.2 | Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes ar… |
+| — | — | SAM-L3-Q10 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | A gardener planted 75 orchids, 25 lilies and 50 roses. How many flo… |
+| — | — | SAM-L3-Q11 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following is equal to 18? |
+| — | — | SAM-L3-Q20 | MULTIPLE_CHOICE | number_sense | 2B | -0.8 | What number does the figure below show? |
+| — | 18 | SAM-L4-Q01 | MULTIPLE_CHOICE | number_sense | 2A | -1.8 | What is 1 more than the number shown? |
+| — | 13 | SAM-L4-Q02 | NUMERIC_ENTRY | number_sense | 2A | -2 | In the greatest 4-digit whole number, which digit is in the ones pl… |
+| — | — | SAM-L4-Q03 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following shows numbers arranged in order beginning wi… |
+| — | — | SAM-L4-Q04 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | Continue the following number pattern. 2458   2238   2018 |
+| — | — | SAM-L4-Q05 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | The sum of 562 and 3379 is ___. |
+
+## QA Level 4 (Grade 4) — band {3A,3B,4A,4B} — eligible 18 (prev-band {previous-only} eligible 13 → now 18 (band widened to {previous,current}))
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
@@ -134,16 +225,24 @@ all-incorrect) which bracket any real play-through. Match founder QA notes by CO
 | 2 | 2 | SAM-L4-Q08 | NUMERIC_ENTRY | operations_algorithms | 3A | -0.5 | A box of grapes cost $5.60. Mrs Singh bought two such boxes of grap… |
 | 3 | 3 | SAM-L4-Q14 | MULTIPLE_CHOICE | measurement | 3A | -0.5 | 6 kg 27 g = ___ g |
 | 4 | 4 | SAM-L4-Q20 | MULTI_BLANK | data_statistics | 3A | -0.5 | The bar graph below shows the scores of five basketball teams in a … |
-| 5 | 11 | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
+| 5 | 13 | SAM-L4-Q27 | NUMERIC_ENTRY | operations_algorithms | 4B | 0.8 | Name one number that can divide both 54 and 72. |
 | 6 | 7 | SAM-L4-Q15 | TEXT_ENTRY | measurement | 3B | 0.2 | Aaron and Billy took part in a marathon. When Aaron had run 5 km 25… |
-| 7 | 12 | SAM-L3-Q22 | MULTIPLE_CHOICE | number_sense | 3B | 0.2 | What is the greatest 4-digit even number? |
+| 7 | 18 | SAM-L4-Q26 | NUMERIC_ENTRY | number_sense | 4A | 0.4 | Round 42 750 to the nearest hundred. |
 | 8 | 8 | SAM-L4-Q22 | TEXT_ENTRY | measurement | 3B | 0.2 | Mr Davis took 6 h 50 min to complete a marathon. He crossed the fin… |
-| 9 | 10 | SAM-L4-Q07 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.3 | A school library has 2540 fiction books. It has 1651 more fiction b… |
-| 10 | 13 | SAM-L4-Q06 | NUMERIC_ENTRY | number_sense | 3B | 0.2 | What is the missing digit (■) in the following subtraction?    8 5 … |
-| 11 | 6 | SAM-L4-Q09 | MULTIPLE_CHOICE | operations_algorithms | 3A | -0.5 | Mr Lee has 60 mangoes. He puts as many mangoes as possible equally … |
-| 12 | 5 | SAM-L3-Q21 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | What is the missing number below? 7602 = ___ hundreds 2 ones |
-| 13 | 9 | SAM-L4-Q10 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | Multiply 324 by 5. |
+| 9 | 11 | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
+| 10 | 16 | SAM-L4-Q23 | NUMERIC_ENTRY | number_sense | 4A | 0.3 | Write the number shown. |
+| 11 | 17 | SAM-L4-Q25 | DRAG_DROP | number_sense | 4A | 0.3 | Arrange the numbers in ascending order. 9148   62 753   7265   62 009 |
+| 12 | 10 | SAM-L4-Q07 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.3 | A school library has 2540 fiction books. It has 1651 more fiction b… |
+| 13 | 12 | SAM-L3-Q22 | MULTIPLE_CHOICE | number_sense | 3B | 0.2 | What is the greatest 4-digit even number? |
+| 14 | 6 | SAM-L4-Q09 | MULTIPLE_CHOICE | operations_algorithms | 3A | -0.5 | Mr Lee has 60 mangoes. He puts as many mangoes as possible equally … |
+| 15 | 14 | SAM-L4-Q06 | NUMERIC_ENTRY | number_sense | 3B | 0.2 | What is the missing digit (■) in the following subtraction?    8 5 … |
+| 16 | 15 | SAM-L4-Q24 | NUMERIC_ENTRY | number_sense | 4A | 0.2 | What is the value of the digit '8' in 82 149? |
+| 17 | 5 | SAM-L3-Q21 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | What is the missing number below? 7602 = ___ hundreds 2 ones |
+| 18 | 9 | SAM-L4-Q10 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | Multiply 324 by 5. |
 
 ---
-Parser self-check: 0B and L2 match the prior estimate exactly (13, 27); L1 reflects the
-code band {0C,KA,KB}; L3/L4 differ from the estimate by 1. Pin founder notes by CONTENT.
+Band change (PR #139 / 263fa53): the short test now samples {previous, current} booklet
+instead of previous-only. Every non-floor cohort widens — Zero-A 17→30, Zero-C 13→21,
+L1 8→35, L2 27→52, L3 25→38, L4 13→18 — and the youngest cohorts no longer collapse to
+an identical 0A-only pool (each now includes its OWN booklet level). Pin founder notes by
+CONTENT, not served position (order is response-adaptive).

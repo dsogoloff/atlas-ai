@@ -58,13 +58,14 @@ const CHILDREN = [
   { name: "QA Level 4", grade_level: "Grade 4", birth_year: 2016 },
 ];
 
-// Prior manual estimate (picker-algorithm audit) — a cross-check, NOT ground truth.
-// Computed bands here come from the real levelBand.ts; where they differ the code
-// wins. (The estimate used L1 band {0C} but the code yields {0C,KA,KB}; and L3/L4
-// differed by 1 — an estimate miscount. L2=27 and 0B=13 match exactly, validating
-// the parser.)
-const PRIOR_ESTIMATE: Record<string, number> = {
-  "QA Zero-C": 13, "QA Level 1": 3, "QA Level 2": 27, "QA Level 3": 26, "QA Level 4": 14,
+// Prior crosswalk eligible counts under the OLD short-test band (PREVIOUS booklet
+// ONLY), captured from the committed served-crosswalk.md before the band change
+// (PR #139 / commit 263fa53). The band now samples {previous, current} booklet
+// (levelBand.shortTestLevelBand), so every non-floor cohort widens — this is the
+// delta to expect, NOT a regression. Shown per child as "prev-band → now".
+const PRIOR_BAND_ELIGIBLE: Record<string, number> = {
+  "QA Zero-A": 17, "QA Zero-C": 13, "QA Level 1": 8,
+  "QA Level 2": 27, "QA Level 3": 25, "QA Level 4": 13,
 };
 
 interface Row {
@@ -310,8 +311,11 @@ for (const child of CHILDREN) {
   const correct = replay(child, all, true);
   const incorrect = replay(child, all, false);
   const got = correct.eligible.length;
-  const exp = PRIOR_ESTIMATE[child.name];
-  const note = got === exp ? "matches prior estimate" : `prior estimate ${exp} (see header)`;
+  const prev = PRIOR_BAND_ELIGIBLE[child.name];
+  const note =
+    prev === undefined ? "no prior-band count"
+    : got === prev ? `unchanged from prev-band (${prev})`
+    : `prev-band {previous-only} eligible ${prev} → now ${got} (band widened to {previous,current})`;
   lines.push(`## ${child.name} (${child.grade_level}) — band {${correct.band.join(",")}} — eligible ${got} (${note})`);
   lines.push("");
   lines.push("| pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |");
@@ -327,7 +331,7 @@ for (const child of CHILDREN) {
   }
   lines.push("");
   json[child.name] = {
-    band: correct.band, eligible_count: got, prior_estimate: exp,
+    band: correct.band, eligible_count: got, prior_band_eligible: prev ?? null,
     served_all_correct: correct.served.map((r) => r.external_id),
     served_all_incorrect: incorrect.served.map((r) => r.external_id),
     items: correct.eligible.map((r) => ({ external_id: r.external_id, format: r.format, strand: r.strand, level: r.level, difficulty: r.difficulty, stem: r.stem })),
@@ -335,8 +339,11 @@ for (const child of CHILDREN) {
 }
 
 lines.push(`---`);
-lines.push(`Parser self-check: 0B and L2 match the prior estimate exactly (13, 27); L1 reflects the`);
-lines.push(`code band {0C,KA,KB}; L3/L4 differ from the estimate by 1. Pin founder notes by CONTENT.`);
+lines.push(`Band change (PR #139 / 263fa53): the short test now samples {previous, current} booklet`);
+lines.push(`instead of previous-only. Every non-floor cohort widens — Zero-A 17→30, Zero-C 13→21,`);
+lines.push(`L1 8→35, L2 27→52, L3 25→38, L4 13→18 — and the youngest cohorts no longer collapse to`);
+lines.push(`an identical 0A-only pool (each now includes its OWN booklet level). Pin founder notes by`);
+lines.push(`CONTENT, not served position (order is response-adaptive).`);
 
 mkdirSync(HERE, { recursive: true });
 writeFileSync(path.join(HERE, "served-crosswalk.md"), lines.join("\n") + "\n");
