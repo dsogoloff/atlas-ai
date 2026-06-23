@@ -4,6 +4,24 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-23 (in-question mascot extended to all tiers) — trunk head is **`e93d5cd`**
+(PR #146 merged). UI-only change; no migration — **no `supabase db reset` needed.**
+
+- **PR #146 — lane/inquestion-mascot-all-tiers — MERGED (`e93d5cd`).** The in-question footer
+  mascot (thinking-pose idle + per-submit celebrate hop) now renders for EVERY tier, not just
+  the young band / K_4. The G5_8 `QuestionShell` branch previously had no footer; it now hosts a
+  mascot-ONLY footer (right-aligned, no "Read carefully!" text — the measured G5-8 chrome keeps
+  the prompt as the focus). New `questionMascotIsLively(reduceMotion)` policy in `lib/mascot.ts`
+  drives the in-question mascot (animates for ALL tiers, gated ONLY by reduced motion); the
+  bookend `mascotIsLively` (Welcome/Completion, K_4-only) is UNCHANGED. Unchanged by design: the
+  hop stays correctness-agnostic (`celebrateTick` bumps on every submit; correctness never
+  reaches the child client), in-flow poses stay thinking + celebrating (waving/completion remain
+  on the bookend screens), reduced-motion gate kept (static thinking image). Real
+  `public/mascot/*.png` reused; no content change. +5 tests (`questionMascotIsLively` unit + a
+  `QuestionShell` smoke asserting the footer mascot mounts for both tiers). Verify GREEN 1237/92.
+
+---
+
 **As of:** 2026-06-22 (short-test length cap confirmed) — trunk head is **`cc93799`** (PR #144
 merged). Audit + docs/audit-tooling fix; no migration — **no `supabase db reset` needed.**
 
