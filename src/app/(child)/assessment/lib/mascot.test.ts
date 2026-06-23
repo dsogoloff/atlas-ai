@@ -5,6 +5,7 @@ import {
   footerMascotPose,
   mascotIsLively,
   mascotPoseFor,
+  questionMascotIsLively,
 } from "./mascot";
 
 describe("mascotPoseFor", () => {
@@ -42,6 +43,21 @@ describe("mascotIsLively", () => {
   it("treats a null reduced-motion reading (SSR) as motion allowed for K_4", () => {
     // framer-motion's useReducedMotion returns null before hydration.
     expect(mascotIsLively("K_4", null)).toBe(true);
+  });
+});
+
+describe("questionMascotIsLively (in-question footer — all tiers)", () => {
+  it("animates when motion is allowed, regardless of tier", () => {
+    // No tier param: the in-question mascot is intentionally tier-agnostic.
+    expect(questionMascotIsLively(false)).toBe(true);
+  });
+
+  it("stays still under prefers-reduced-motion", () => {
+    expect(questionMascotIsLively(true)).toBe(false);
+  });
+
+  it("treats a null reduced-motion reading (SSR) as motion allowed", () => {
+    expect(questionMascotIsLively(null)).toBe(true);
   });
 });
 
