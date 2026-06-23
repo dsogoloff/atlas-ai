@@ -4312,6 +4312,33 @@ where q.tenant_id = t.id
 -- END l1-q28-stem-rework
 
 
+-- BEGIN young-qa-image-stem-fixes (seed mirror of supabase/migrations/20260622120000_young_qa_image_stem_fixes.sql)
+-- 2026-06-22 founder QA: three young-band items served WITHOUT the stimulus their
+-- stem refers to (+ one reworded stem). Stimulus crops taken directly from the doc
+-- page (gen_young_qa_stimuli.py); bucket keys resolved by SOURCE_MAP. Source-verified
+-- (doc page + Question Summary key + every PNG). Idempotent; rows already active.
+--   SAM-L0A-Q11 — wire the missing pattern strip (red,blue,red,blue,red,?).
+--   SAM-L0B-Q02 — wire the missing pattern strip (magnet,baseball x3).
+--   SAM-L0C-Q13 — verbatim stem + torn-calendar stimulus + two choices (Friday/Fryday).
+-- (SAM-L0B-Q03 cake fixed by re-pointing l0/sam-l0b-q03-stimulus.png in SOURCE_MAP —
+--  no DB change. SAM-L0C-Q04 fact-family = EQUATION_SET prefill gap — flagged, not forced.)
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Look at the pattern below. Tap what comes next.","image_path":"l0/sam-l0a-q11-stimulus.png","image_alt":"A repeating pattern of flowers: red, blue, red, blue, red, then a box with a question mark for the missing flower.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0a-q11-t1.png","image_alt":"First flower choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0a-q11-t2.png","image_alt":"Second flower choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t2"}}}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0A-Q11';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Tap the object that comes next in the pattern below.","image_path":"l0/sam-l0b-q02-stimulus.png","image_alt":"A repeating pattern: magnet, baseball, magnet, baseball, magnet, baseball.","tiles":[{"id":"t1","label":"Picture 1","image_path":"l0/sam-l0b-q02-t1.png","image_alt":"First object choice."},{"id":"t2","label":"Picture 2","image_path":"l0/sam-l0b-q02-t2.png","image_alt":"Second object choice."},{"id":"t3","label":"Picture 3","image_path":"l0/sam-l0b-q02-t3.png","image_alt":"Third object choice."},{"id":"t4","label":"Picture 4","image_path":"l0/sam-l0b-q02-t4.png","image_alt":"Fourth object choice."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t4"}}}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0B-Q02';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Read aloud the days of the week from Monday. A part of the page is torn. What is the missing day? Tap your answer.","image_path":"l0/sam-l0c-q13-stimulus.png","image_alt":"An open weekly planner. The left page lists Monday, Tuesday, Wednesday, Thursday; the right page lists Saturday and Sunday. The line above Saturday is torn off.","tiles":[{"id":"t1","label":"Friday","image_path":"l0/sam-l0c-q13-t2.png","image_alt":"The word Friday."},{"id":"t2","label":"Fryday","image_path":"l0/sam-l0c-q13-t4.png","image_alt":"The word Fryday."}],"_authoring":{"answer_model":{"rule":"select-one","correct":"t1"}}}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q13';
+-- END young-qa-image-stem-fixes
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================

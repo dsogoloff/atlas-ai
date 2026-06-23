@@ -6,6 +6,28 @@ order depends on answers; the QA bank is thin so every test bank-exhausts and th
 SET == the full eligible-in-band set. Two canonical orders are shown (all-correct /
 all-incorrect) which bracket any real play-through. Match founder QA notes by CONTENT.
 
+## QA Zero-A (Pre-K (age 5)) — band {0A} — eligible 17 (prior estimate undefined (see header))
+
+| pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | SAM-L0A-Q17 | MULTIPLE_CHOICE | number_sense | 0A | -2 | Count the balloons. Tap the number. |
+| 2 | 2 | SAM-L0B-Q10 | MULTIPLE_CHOICE | operations_algorithms | 0A | -2.1 | There are 3 fish in a bowl and 5 fish in a tank. How many fish are … |
+| 3 | 3 | SAM-L0A-Q11 | CLICK_IMAGE_SINGLE | geometry | 0A | -2 | Look at the pattern below. Tap what comes next. |
+| 4 | 6 | SAM-L0B-Q11 | MULTIPLE_CHOICE | operations_algorithms | 0A | -2.1 | Mary put 7 items in a basket. She took out 3 items. How many items … |
+| 5 | 4 | SAM-L0B-Q03 | CLICK_IMAGE_SINGLE | number_sense | 0A | -2.1 | Tap the part that is missing from the cake. |
+| 6 | 5 | SAM-L0B-Q02 | CLICK_IMAGE_SINGLE | geometry | 0A | -2 | Tap the object that comes next in the pattern below. |
+| 7 | 8 | SAM-L0B-Q06 | SELECT_MULTIPLE | number_sense | 0A | -2.1 | Tap the numbers greater than 6. |
+| 8 | — | SAM-L0B-Q07 | MULTIPLE_CHOICE | geometry | 0A | -2 | How are the shapes sorted? |
+| 9 | 7 | SAM-L0A-Q08 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.2 | Tap the object that is the same as the one in the box. |
+| 10 | 9 | SAM-L0A-Q03 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the big bowl. |
+| 11 | 10 | SAM-L0A-Q05 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the thick book. |
+| 12 | 11 | SAM-L0A-Q06 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the long branch. |
+| 13 | 12 | SAM-L0A-Q07 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the tall animal. |
+| 14 | 13 | SAM-L0A-Q10 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the taller door. |
+| 15 | — | SAM-L0A-Q13 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bird facing left. |
+| 16 | — | SAM-L0A-Q14 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bird that is flying up. |
+| 17 | — | SAM-L0A-Q15 | CLICK_IMAGE_SINGLE | geometry | 0A | -2.5 | Tap the bowl on the bottom shelf. |
+
 ## QA Zero-C (Pre-K) — band {0B} — eligible 13 (matches prior estimate)
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |

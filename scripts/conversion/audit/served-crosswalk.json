@@ -1,4 +1,182 @@
 {
+  "QA Zero-A": {
+    "band": [
+      "0A"
+    ],
+    "eligible_count": 17,
+    "served_all_correct": [
+      "SAM-L0A-Q17",
+      "SAM-L0B-Q10",
+      "SAM-L0A-Q11",
+      "SAM-L0B-Q11",
+      "SAM-L0B-Q03",
+      "SAM-L0B-Q02",
+      "SAM-L0B-Q06",
+      "SAM-L0B-Q07",
+      "SAM-L0A-Q08",
+      "SAM-L0A-Q03",
+      "SAM-L0A-Q05",
+      "SAM-L0A-Q06",
+      "SAM-L0A-Q07",
+      "SAM-L0A-Q10",
+      "SAM-L0A-Q13",
+      "SAM-L0A-Q14",
+      "SAM-L0A-Q15"
+    ],
+    "served_all_incorrect": [
+      "SAM-L0A-Q17",
+      "SAM-L0B-Q10",
+      "SAM-L0A-Q11",
+      "SAM-L0B-Q03",
+      "SAM-L0B-Q02",
+      "SAM-L0B-Q11",
+      "SAM-L0A-Q08",
+      "SAM-L0B-Q06",
+      "SAM-L0A-Q03",
+      "SAM-L0A-Q05",
+      "SAM-L0A-Q06",
+      "SAM-L0A-Q07",
+      "SAM-L0A-Q10"
+    ],
+    "items": [
+      {
+        "external_id": "SAM-L0A-Q08",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.2,
+        "stem": "Tap the object that is the same as the one in the box."
+      },
+      {
+        "external_id": "SAM-L0A-Q11",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2,
+        "stem": "Look at the pattern below. Tap what comes next."
+      },
+      {
+        "external_id": "SAM-L0A-Q17",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "0A",
+        "difficulty": -2,
+        "stem": "Count the balloons. Tap the number."
+      },
+      {
+        "external_id": "SAM-L0B-Q02",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2,
+        "stem": "Tap the object that comes next in the pattern below."
+      },
+      {
+        "external_id": "SAM-L0B-Q07",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2,
+        "stem": "How are the shapes sorted?"
+      },
+      {
+        "external_id": "SAM-L0A-Q03",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the big bowl."
+      },
+      {
+        "external_id": "SAM-L0A-Q05",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the thick book."
+      },
+      {
+        "external_id": "SAM-L0A-Q06",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the long branch."
+      },
+      {
+        "external_id": "SAM-L0A-Q07",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the tall animal."
+      },
+      {
+        "external_id": "SAM-L0A-Q10",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the taller door."
+      },
+      {
+        "external_id": "SAM-L0A-Q13",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the bird facing left."
+      },
+      {
+        "external_id": "SAM-L0A-Q14",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the bird that is flying up."
+      },
+      {
+        "external_id": "SAM-L0A-Q15",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "geometry",
+        "level": "0A",
+        "difficulty": -2.5,
+        "stem": "Tap the bowl on the bottom shelf."
+      },
+      {
+        "external_id": "SAM-L0B-Q03",
+        "format": "CLICK_IMAGE_SINGLE",
+        "strand": "number_sense",
+        "level": "0A",
+        "difficulty": -2.1,
+        "stem": "Tap the part that is missing from the cake."
+      },
+      {
+        "external_id": "SAM-L0B-Q06",
+        "format": "SELECT_MULTIPLE",
+        "strand": "number_sense",
+        "level": "0A",
+        "difficulty": -2.1,
+        "stem": "Tap the numbers greater than 6."
+      },
+      {
+        "external_id": "SAM-L0B-Q10",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "operations_algorithms",
+        "level": "0A",
+        "difficulty": -2.1,
+        "stem": "There are 3 fish in a bowl and 5 fish in a tank. How many fish are there altogether? Tap your answer."
+      },
+      {
+        "external_id": "SAM-L0B-Q11",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "operations_algorithms",
+        "level": "0A",
+        "difficulty": -2.1,
+        "stem": "Mary put 7 items in a basket. She took out 3 items. How many items were left in the basket? Tap your answer."
+      }
+    ]
+  },
   "QA Zero-C": {
     "band": [
       "0B"
