@@ -5,6 +5,38 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-22
 
+* **Parent-instructions screen restored (default-ON) with FINAL founder-approved copy
+  (PRs #135 + #136).** `ENABLE_PARENT_INTRO` flipped to default-ON (`!== "false"`, mirroring
+  BETA_WELCOME_LIVE) so the age-dependent screen renders by default (read-aloud ≤ grade 2 /
+  no-assistance ≥ grade 3 — logic was already implemented, only gated off). ⚑ The DRAFT copy in
+  `src/lib/proctoring/copy.ts` was replaced verbatim with the founder-approved FINAL wording
+  (#136). Read-aloud now shows only the boxed summary (the italic "Doing any of these…" note was
+  dropped); no-assistance gained a concept-help point (parent may explain a unit conversion,
+  then let the child do the math); button is "Start the assessment". §2.4 discipline retained;
+  any future wording change is parent-facing claims language → still gate to Dimitri.
+
+* **Short-test progress bar reflects a per-session ceiling, not a fixed 25 (PR #135).** /start
+  now stamps `max_questions` on the wire: short = `min(SHORT_TEST_CONFIG.hardCap 15, eligible
+  pool size in the previous-booklet band)`; comprehensive = engine `MAX_QUESTIONS`. So a thin
+  band shows "of up to 8" (exhaustion-bound) and a deep band "of up to 15" (cap-bound). Computed
+  best-effort in the start handler (discovery failure falls back to the cap), threaded through
+  types→api→reducer→`computeProgressDisplay`. Display-only; never blocks the start path.
+
+* **Beta-welcome relocated to a once-only onboarding step; add-child grade made required
+  (PR #135).** The beta-welcome screen no longer gates every assessment — it shows ONCE between
+  COPPA and child setup via a localStorage flag (`atlas_beta_welcome_seen`) on `/add-child`
+  (a beta notice, not a legal record → no DB column). "Current grade" on add-child is now a
+  required selection (anchors the picker band); the DB column stays nullable, so this is a
+  UI-only requirement and compliance.md §3 data-minimization at the storage layer is unchanged.
+
+* **Task C picker verdicts — confirm-only, no code change.** (a) Short-test L1 = 8 is GENUINE
+  bank exhaustion (the previous-booklet eligible pool is exactly 8), not a stop-short bug —
+  matches the prior served-order crosswalk. (b) The short-test sampling level band is FIXED for
+  the session (never widened on interim results); question order is RE-DERIVED adaptively each
+  pick. (c) L0A==L0B is NOT a picker mis-map (0A/0B are distinct booklet ordinals with disjoint
+  filters); if they render identically it is a content-bank identity issue → flagged for the
+  CONVERSION lane (ATLAS lane does not touch bank content).
+
 * **Duplicate-migration version 20260620120000 collision verified already resolved on
   trunk — no new work this session.** The 20-commit fast-forward already present at session
   start contained the rename: `l0a_taxonomy_activation` → `20260620120001`; `follow_up_leads_optin_zip`
