@@ -4339,6 +4339,20 @@ from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q13';
 -- END young-qa-image-stem-fixes
 
 
+-- BEGIN l0c-q04-factfamily-multiblank (seed mirror of supabase/migrations/20260622130000_l0c_q04_factfamily_multiblank.sql)
+-- SAM-L0C-Q04 fact-family rendered blank as EQUATION_SET (all-blank number sentences,
+-- operands only in canonical). Re-authored to MULTI_BLANK: operands shown as text
+-- tokens (3+6 / 6+3 / 9-3 / 9-6), each result its own blank; per-blank numeric grading
+-- reuses the canonical answers (9, 9, 6, 3). Source-verified (0C page 6 + key Task 4).
+-- Idempotent; overrides the earlier l0-l2-activation EQUATION_SET block for this id.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set format = 'MULTI_BLANK'::question_format,
+    content = '{"stem":"Complete the fact family.","tokens":[{"t":"text","value":"3 + 6 ="},{"t":"blank","id":"b1"},{"t":"text","value":"6 + 3 ="},{"t":"blank","id":"b2"},{"t":"text","value":"9 - 3 ="},{"t":"blank","id":"b3"},{"t":"text","value":"9 - 6 ="},{"t":"blank","id":"b4"}],"blanks":{"b1":{"value":"9","numeric":true},"b2":{"value":"9","numeric":true},"b3":{"value":"6","numeric":true},"b4":{"value":"3","numeric":true}}}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q04';
+-- END l0c-q04-factfamily-multiblank
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================

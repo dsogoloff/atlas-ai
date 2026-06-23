@@ -3,6 +3,39 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-22
+
+* **Duplicate-migration version 20260620120000 collision verified already resolved on
+  trunk — no new work this session.** The 20-commit fast-forward already present at session
+  start contained the rename: `l0a_taxonomy_activation` → `20260620120001`; `follow_up_leads_optin_zip`
+  kept on `20260620120000`. No duplicate version prefixes remain. All references (seed mirror,
+  `regen-seed-activations.ts`) confirmed consistent. Session item closed as confirm-only.
+
+* **Young-band missing stimuli fixed by faithfully cropping the rendered worksheet pages
+  (PR #134, lane/young-l3-qa-defects-20260622, 2026-06-22).** Missing or incorrect stimulus
+  images for SAM-L0A-Q11, SAM-L0B-Q02, SAM-L0C-Q13, and SAM-L0B-Q03 were resolved by
+  cutting crops directly from the Word-rendered PDF pages of the corresponding S.A.M.
+  worksheets using the committed reproducible generator
+  `scripts/conversion/gen_young_qa_stimuli.py` (Word→PDF→PNG→crop). No images were
+  re-drawn, reconstructed from memory, or approximated. SAM-L0C-Q13 also received a
+  verbatim stem re-author from the worksheet and a choice reduction to two options
+  (Friday/Fryday). Three DB rows updated via migration `20260622120000`; SAM-L0B-Q03
+  received only a SOURCE_MAP re-point (no DB change). Source PNGs are gitignored; founder
+  uploads to the private `question-images` bucket post-merge.
+
+* **SAM-L0C-Q04 fact-family fixed by re-authoring EQUATION_SET → MULTI_BLANK; the
+  "EQUATION_SET prefill gap" framing was over-scoped (2026-06-22, superseded same day).**
+  Initial read: the row rendered blank because `EquationSet.tsx` seeds all cells empty (no
+  given/prefill concept), so it was parked as a cross-cutting "prefill" lane. On founder
+  re-scoping, the correct fix is far simpler and needs NO new concept: MULTI_BLANK already
+  renders an inline `tokens` template (text + blank slots). Re-authored content so the
+  GIVEN operands are visible `text` tokens (3+6 / 6+3 / 9-3 / 9-6) and each result is its
+  own `blank`; per-blank numeric grading reuses the same answers the EQUATION_SET
+  `canonical` held (9, 9, 6, 3). Migration `20260622130000` + seed mirror (overrides the
+  earlier EQUATION_SET activation block, last-write-wins), folded into PR #134. Lesson:
+  prefer an EXISTING format that already fits the worksheet shape over inventing a new
+  cross-cutting capability for a single QA item.
+
 ## 2026-06-21
 
 * **Short-test outcome persisted as structured jsonb on session close (PR #119,

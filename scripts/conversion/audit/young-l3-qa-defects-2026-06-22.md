@@ -60,19 +60,21 @@ rendered via `gen_young_qa_stimuli.py`'s Word→PDF→PNG path).
   the doc's two tiles Friday (correct) / Fryday (reusing existing q13-t2 / q13-t4 word
   crops). Migration + seed mirror; `SOURCE_MAP` entry added.
 
-### SAM-L0C-Q04 — fact-family, renders blank  → FLAGGED (EQUATION_SET prefill gap)
-- **Doc:** "Complete the fact family." with the operands **given**: `3+6=▢ 6+3=▢
-  9−3=▢ 9−6=▢` (child fills the four results; answers 9, 9, 6, 3).
-- **Root cause = the EQUATION_SET prefill seam.** `EquationSetInput` →
-  `EquationSet.tsx` renders N **fully-blank** rows (`defaultRows` seeds every cell empty);
-  there is no given/locked-cell concept. The operands live ONLY in `content.canonical`
-  (server-side set-equality grading), so they cannot be displayed — the grid renders
-  blank. Showing the givens needs a new prefill concept threaded through the content
-  schema, the shared `EquationSet` component, `AnswerValue`, grading, serialize, the
-  parent answers page, and the misconception prompt — a cross-cutting change.
-- **Per founder instruction: flagged, NOT forced** in this QA pass. Park as a dedicated
-  "EQUATION_SET given/prefill" lane. (Grading is already correct via `canonical`; only the
-  on-screen givens are missing.)
+### SAM-L0C-Q04 — fact-family, rendered blank  → FIXED (re-authored to MULTI_BLANK)
+- **Doc (page 6, key Task 4):** "Complete the fact family." with the operands **given**:
+  `3+6=▢ 6+3=▢ 9-3=▢ 9-6=▢` (child fills the four results; answers 9, 9, 6, 3). No picture.
+- **Root cause:** authored as EQUATION_SET, whose input (`EquationSet.tsx`) renders N
+  **fully-blank** number sentences (a/op/b/result all editable, seeded empty) — so the
+  given operands never appeared and the grid rendered blank. The operands lived only in
+  `content.canonical` (set-equality grading).
+- **Fix (no new prefill concept — founder's Option-A path):** re-authored to **MULTI_BLANK**,
+  which renders an inline template of `tokens` (text + blank slots). The operands are
+  visible `text` tokens; each result is its own `blank` slot. Per-blank numeric grading
+  reuses the same answers (`b1=9 b2=9 b3=6 b4=3`). `serialize.ts` serves stem+tokens only
+  and never leaks `blanks`. Migration `20260622130000` + seed mirror (overrides the earlier
+  EQUATION_SET activation block for this id, last-write-wins).
+  > Supersedes the earlier "EQUATION_SET prefill gap" flag — that framing was over-scoped;
+  > MULTI_BLANK already provides per-blank slots with the operands shown as text.
 
 ### SAM-L4-Q21 — L3-session rectangle, missing dimension labels  → FOUNDER RE-UPLOAD
 - **Item:** `SAM-L4-Q21` "What is the area of the rectangle below?" (served in the
@@ -91,5 +93,8 @@ rendered via `gen_young_qa_stimuli.py`'s Word→PDF→PNG path).
    re-pointed cake key from `SOURCE_MAP`).
 2. Re-upload a corrected `source/4/L4-21.png` (rectangle WITH dimension labels), then
    re-run the image upload for `l4/sam-l4-q21.png`.
-3. `supabase db reset` to apply migration `20260622120000` (+ seed mirror) locally.
-4. (Backlog) schedule the EQUATION_SET given/prefill lane to surface L0C-Q04's givens.
+3. `supabase db reset` to apply migrations `20260622120000` + `20260622130000`
+   (+ seed mirrors) locally.
+
+(The earlier "EQUATION_SET given/prefill lane" backlog item is RESOLVED — L0C-Q04 is now
+fixed via MULTI_BLANK in `20260622130000`; no separate lane needed.)
