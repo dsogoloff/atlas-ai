@@ -4,6 +4,39 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0aaaa. 2026-06-22 — Young-band + L3 QA defect batch (PR #134, lane/young-l3-qa-defects-20260622)
+
+**Trunk head entering this work: `f95920c`. PR #134 OPEN — CI GREEN, Vercel GREEN.**
+Verify: 1225 tests / 91 files GREEN, tsc 0, lint 0 errors (2 known warnings), build OK,
+seed-migration parity PASS (71 migrations). Codex manual/skipped (relay unauth).
+
+- [ ] **Dimitri: merge PR #134 (lane/young-l3-qa-defects-20260622)** after Vercel preview
+      review. Then, in order:
+      (a) Run `pnpm convert:upload-activation-images` to push the 3 new stimulus images
+          (`sam-l0a-q11-stimulus.png`, `sam-l0b-q02-stimulus.png`,
+          `sam-l0c-q13-stimulus.png`) and the re-pointed cake image
+          (`sam-l0b-q03-stimulus.png`) to the private `question-images` bucket.
+      (b) Re-upload `scripts/conversion/source/4/L4-21.png` with a corrected version
+          that includes dimension labels (exact values from the worksheet — do NOT
+          fabricate). Then re-run the image upload step for that key.
+      (c) Run `supabase db reset` (applies `20260622120000_young_qa_image_stem_fixes.sql`
+          — 3 UPDATEs on SAM-L0A-Q11, SAM-L0B-Q02, SAM-L0C-Q13 — AND
+          `20260622130000_l0c_q04_factfamily_multiblank.sql` — SAM-L0C-Q04).
+
+- [x] **RESOLVED — SAM-L0C-Q04 fact-family (was "EQUATION_SET prefill lane").** The
+      prefill framing was over-scoped. Re-authored to MULTI_BLANK (migration
+      `20260622130000` + seed mirror, same PR #134 lane): operands shown as `text` tokens
+      (3+6 / 6+3 / 9-3 / 9-6), each result its own `blank` slot, per-blank numeric grading
+      reusing canonical answers (9,9,6,3). No new prefill concept, no cross-cutting change.
+
+- [ ] **PARKED — SAM-L4-Q21 corrected source PNG (needs Dimitri).** The file
+      `scripts/conversion/source/4/L4-21.png` is a blank blue rectangle with no
+      dimension labels. Plain-English: the question asks about the area of a rectangle
+      but the image shows no numbers. The correct dimensions must come from the real
+      S.A.M. Level 4 worksheet — they must NOT be invented. Founder to re-upload the
+      correct source PNG (with labels), then re-run the image upload for that key.
+      No DB change was made.
+
 ## 0aaa. 2026-06-21 — Picker Calibration (PRs #119 / #121 / #122, stacked)
 
 **Trunk head entering this work: `ce9a676` (PR #115). PR #119 now MERGED → current trunk
@@ -549,6 +582,15 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
 - [ ] Offline (v2); multi-tenant scale-out (M5); remaining S.A.M. levels + public items.
 
 ## Parked-for-Dimitri (rollup)
+- **[RESOLVED 2026-06-22] SAM-L0C-Q04 fact-family** (was "EQUATION_SET given/prefill
+  lane") — fixed via MULTI_BLANK in migration `20260622130000` (PR #134). The prefill
+  framing was over-scoped; MULTI_BLANK shows the operands as text and gives each result
+  its own blank. No dedicated lane needed.
+- **[NEW 2026-06-22] SAM-L4-Q21 corrected source PNG — PARKED (needs Dimitri).** Current
+  `scripts/conversion/source/4/L4-21.png` is a blank blue rectangle; no dimension labels.
+  Founder must re-upload the correct cropped worksheet PNG with labels (real values from
+  Level 4 worksheet; do NOT fabricate). Then re-run `pnpm convert:upload-activation-images`
+  for that key. No DB change.
 - **[NEW 2026-06-21] §2.4 draft parent copy in `manualPlacement.ts` — PARKED.** `floorFoundLine`
   and `ceilingLine` are parent-facing outcome claims drafted in PR #122 pending Dimitri
   confirmation. No render until confirmed.

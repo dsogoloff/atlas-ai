@@ -45,6 +45,10 @@ export const SOURCE_MAP: Record<string, string> = {
   "l0/sam-l0a-q08-t3.png": `${L0_SRC}/0a/0A-08_4.png`,
   "l0/sam-l0a-q11-t1.png": `${L0_SRC}/0a/0A-11_1.png`,
   "l0/sam-l0a-q11-t2.png": `${L0_SRC}/0a/0A-11_2.png`,
+  // QA 2026-06-22: Q11 served pictureless — the repeating pattern strip
+  // (red,blue,red,blue,red,?) was never wired. Stimulus cropped from the doc page
+  // (gen_young_qa_stimuli.py); wired by migration 20260622120000.
+  "l0/sam-l0a-q11-stimulus.png": `${L0_SRC}/0a/sam-l0a-q11-stimulus.png`,
   "l0/sam-l0a-q03-t1.png": `${L0_SRC}/0a/sam-l0a-q03-t1.png`,
   "l0/sam-l0a-q03-t2.png": `${L0_SRC}/0a/sam-l0a-q03-t2.png`,
   "l0/sam-l0a-q05-t1.png": `${L0_SRC}/0a/0A-05_1.png`,
@@ -68,11 +72,18 @@ export const SOURCE_MAP: Record<string, string> = {
   "l0/sam-l0b-q02-t2.png": `${L0_SRC}/0b/0B-02_2.png`,
   "l0/sam-l0b-q02-t3.png": `${L0_SRC}/0b/0B-02_3.png`,
   "l0/sam-l0b-q02-t4.png": `${L0_SRC}/0b/0B-02_4.png`,
+  // QA 2026-06-22: Q02 served pictureless — the repeating pattern strip
+  // (magnet,baseball x3) was never wired. Stimulus cropped from the doc page
+  // (gen_young_qa_stimuli.py); wired by migration 20260622120000.
+  "l0/sam-l0b-q02-stimulus.png": `${L0_SRC}/0b/sam-l0b-q02-stimulus.png`,
   "l0/sam-l0b-q14.png": `${L0_SRC}/0b/0B-14.png`,
   "l0/sam-l0b-q15.png": `${L0_SRC}/0b/0B-15.png`, // QA-fix#2: cookies word-problem stimulus
   "l0/sam-l0b-q04.png": `${L0_SRC}/0b/0B-04_1.png`,
   "l0/sam-l0b-q07.png": `${L0_SRC}/0b/sam-l0b-q07.png`, // #97 composited sorted-shapes stimulus (generated)
-  "l0/sam-l0b-q03-stimulus.png": `${L0_SRC}/0b/0B-03_1.png`,
+  // QA 2026-06-22: the wired stimulus was 0B-03_1 = a WHOLE cake; the doc shows the
+  // cake with a triangular wedge MISSING (?-overlay). Re-pointed to the doc-faithful
+  // crop (gen_young_qa_stimuli.py). Bucket key unchanged — founder re-uploads.
+  "l0/sam-l0b-q03-stimulus.png": `${L0_SRC}/0b/sam-l0b-q03-stimulus.png`,
   "l0/sam-l0b-q03-t1.png": `${L0_SRC}/0b/0B-03_2.png`,
   "l0/sam-l0b-q03-t2.png": `${L0_SRC}/0b/0B-03_3.png`,
   "l0/sam-l0b-q03-t3.png": `${L0_SRC}/0b/0B-03_4.png`,
@@ -87,6 +98,10 @@ export const SOURCE_MAP: Record<string, string> = {
   "l0/sam-l0c-q13-t2.png": `${L0_SRC}/0c/sam-l0c-q13-t2.png`,
   "l0/sam-l0c-q13-t3.png": `${L0_SRC}/0c/sam-l0c-q13-t3.png`,
   "l0/sam-l0c-q13-t4.png": `${L0_SRC}/0c/sam-l0c-q13-t4.png`,
+  // QA 2026-06-22: Q13 served pictureless + stem reworded. Torn-calendar stimulus
+  // (Mon-Thu | Sat-Sun, Friday torn out) cropped from the doc (gen_young_qa_stimuli.py);
+  // wired + stem re-authored verbatim by migration 20260622120000.
+  "l0/sam-l0c-q13-stimulus.png": `${L0_SRC}/0c/sam-l0c-q13-stimulus.png`,
   "l0/sam-l0c-q11-after.png": `${L0_SRC}/0c/sam-l0c-q11-after.png`,
   "l0/sam-l0c-q11-before.png": `${L0_SRC}/0c/sam-l0c-q11-before.png`,
   "l0/sam-l0c-q11-greater.png": `${L0_SRC}/0c/sam-l0c-q11-greater.png`,

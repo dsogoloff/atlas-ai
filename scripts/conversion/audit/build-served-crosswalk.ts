@@ -50,6 +50,7 @@ const SEED = path.join(REPO_ROOT, "supabase", "seed.sql");
 
 // ── QA-seed children (supabase/seed.sql LOCAL-DEV QA SEED block) ──────────────
 const CHILDREN = [
+  { name: "QA Zero-A", grade_level: "Pre-K (age 5)", birth_year: 2021 },
   { name: "QA Zero-C", grade_level: "Pre-K", birth_year: 2020 },
   { name: "QA Level 1", grade_level: "Grade 1", birth_year: 2019 },
   { name: "QA Level 2", grade_level: "Grade 2", birth_year: 2018 },

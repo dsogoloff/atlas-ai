@@ -4,11 +4,48 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-21 — trunk head is **`c4a67e8`** (PR #123 merged; PR #119
-`lane/picker-short-outcome` merged at `c3ad839`; advanced from `ce9a676`/#115). Several
-docs/memory records landed this day — the **Picker Calibration** build (3 stacked code PRs),
-the **young-band image-activation audit** (#120), and the **short-eligible / comprehensive
-over-set audit** (#123) — plus the first Picker Calibration code merge (#119).
+**As of:** 2026-06-22 — trunk head is **`f95920c`** (PR #134 open off this head;
+PR #123 merged at `c4a67e8`; PR #119 `lane/picker-short-outcome` merged at `c3ad839`;
+advanced from `ce9a676`/#115). Session 2026-06-22: duplicate-migration collision
+(version 20260620120000) verified already resolved on trunk — no new work. New open PR
+#134 (young-band + L3 founder-QA defect batch).
+
+**PR #134 — lane/young-l3-qa-defects-20260622 — OPEN (CI GREEN, Vercel GREEN).** Young-band
++ L3 founder-QA defect batch, off trunk head `f95920c`. Verify: 1225 tests / 91 files GREEN,
+tsc 0, lint 0 errors (2 known warnings), build OK, seed-migration parity PASS (71 migrations).
+Codex manual/skipped (relay unauth). Migration `20260622120000_young_qa_image_stem_fixes.sql` +
+seed mirror (3 UPDATEs on already-active rows):
+- SAM-L0A-Q11 (band-{0A} pattern): wired missing pattern-strip stimulus
+  `l0/sam-l0a-q11-stimulus.png` (red,blue,red,blue,red,?).
+- SAM-L0B-Q02 (band-{0A} pattern): wired missing pattern-strip stimulus
+  `l0/sam-l0b-q02-stimulus.png` (magnet,baseball x3).
+- SAM-L0C-Q13 (band-{0B} days-of-week): re-authored stem VERBATIM from worksheet, wired
+  torn-calendar stimulus `l0/sam-l0c-q13-stimulus.png`, reduced choices to two
+  (Friday/Fryday, reusing q13-t2/q13-t4).
+- SAM-L0B-Q03 (band-{0A} cake): NO DB change — SOURCE_MAP key `l0/sam-l0b-q03-stimulus.png`
+  re-pointed from 0B-03_1.png (whole cake) to doc-faithful cake-with-wedge crop.
+New stimulus crops cut from rendered worksheet pages via committed reproducible generator
+`scripts/conversion/gen_young_qa_stimuli.py` (Word→PDF→PNG→crop). Source PNGs gitignored;
+founder uploads to private question-images bucket. SOURCE_MAP (`activation-image-set.ts`)
+updated: 3 new keys + 1 re-point. Served-order crosswalk (`build-served-crosswalk.ts`)
+extended with a band-{0A} child "QA Zero-A" (Pre-K age 5); `served-crosswalk.md/json`
+regenerated. `scripts/conversion/_extract_docx.py` now tracked (was untracked). Findings
+doc: `scripts/conversion/audit/young-l3-qa-defects-2026-06-22.md`.
+ALSO FIXED (2026-06-22 follow-up, same lane):
+- SAM-L0C-Q04 (fact-family): was EQUATION_SET → rendered blank (all-blank number sentences;
+  operands only in canonical). Re-authored to **MULTI_BLANK** — operands shown as `text`
+  tokens (3+6 / 6+3 / 9-3 / 9-6), each result its own `blank`; per-blank numeric grading
+  reuses canonical answers (9,9,6,3). Migration `20260622130000` + seed mirror. The earlier
+  "EQUATION_SET prefill lane" backlog is RESOLVED (the flag was over-scoped — MULTI_BLANK
+  already gives per-blank slots with operands as text). serialize serves stem+tokens only.
+
+ONE ITEM PARKED (founder-supplied art):
+- SAM-L4-Q21 (L3-session rectangle area, served Q5): source
+  `scripts/conversion/source/4/L4-21.png` is a blank blue rectangle with no dimension
+  labels. Founder to re-upload a corrected PNG (dimensions NOT fabricated). No DB change.
+Founder actions after merge: (a) `pnpm convert:upload-activation-images` (3 new keys +
+re-pointed cake); (b) re-upload corrected `source/4/L4-21.png` then re-run image upload;
+(c) `supabase db reset` (applies `20260622120000` + `20260622130000`).
 
 **PR #123 — lane/short-eligible-overset-audit — MERGED (`c4a67e8`)** (docs/helpers only — no
 migration, no seed, no flag change; commit `a084d0e`). Verify GREEN pnpm test 1196/89, tsc
@@ -217,6 +254,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Young-band + L3 QA defects (PR #134) | OPEN PR #134 — CI GREEN | lane/young-l3-qa-defects-20260622, off trunk `f95920c`. Migrations `20260622120000` (3 UPDATEs: L0A-Q11/L0B-Q02 pattern stimuli, L0C-Q13 days stem+image) + `20260622130000` (L0C-Q04 fact-family EQUATION_SET→MULTI_BLANK). Cake = SOURCE_MAP re-point (no DB). Seed parity PASS (72). Founder: upload 3 new stimulus images + re-point cake, `supabase db reset`. ONE parked item: L4-Q21 source PNG (rectangle dims). |
 | Picker short outcome (PR #119) | MERGED (`c3ad839`) | lane/picker-short-outcome, base ATLAS-ASSESSMENT off `ce9a676`. `ShortTestOutcome` type + persistence + stratified short draw. Migration `20260621130000` (nullable `short_test_outcome`). Verify GREEN 1220/91. `supabase db reset` after. |
 | Picker comprehensive split (PR #121) | OPEN PR #121 | lane/picker-comprehensive, stacked on #119. pass_band global split + per-strand override + per-pick plan + seen_item_ids exclusion + G5_8 cap 36→30. No new migration. Verify GREEN 1250/94. Merge next; retarget base to ATLAS-ASSESSMENT now that #119 is merged. |
 | Picker floor/ceiling (PR #122) | OPEN PR #122 — FOUNDER GATE ITEMS | lane/picker-floor-ceiling, stacked on #121. Bank-aware offsets, floor-find, `manual_placement_needed` column. Migration `20260621140000`. `manualPlacement.ts` copy with §2.4 drafts PARKED for Dimitri. Verify GREEN 1260/94. Merge third; retarget base after #121 merges; `supabase db reset` after. |
@@ -280,7 +318,16 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 See `NEXT_ACTIONS.md`.
 
 Founder actions (current):
-1. **NEW (2026-06-21) — Picker Calibration:** Merge PRs in order #119 → #121 → #122 (each
+1. **NEW (2026-06-22) — PR #134 (young-band + L3 QA defects):** After review, merge PR #134
+   then: (a) run `pnpm convert:upload-activation-images` to upload the 3 new stimulus images
+   (`sam-l0a-q11-stimulus.png`, `sam-l0b-q02-stimulus.png`, `sam-l0c-q13-stimulus.png`) and
+   re-pointed cake (`sam-l0b-q03-stimulus.png`); (b) re-upload a corrected
+   `scripts/conversion/source/4/L4-21.png` that includes dimension labels (do NOT fabricate
+   dimensions — use the real worksheet values), then re-run image upload for that key;
+   (c) run `supabase db reset` (applies migrations `20260622120000` + `20260622130000`).
+   (L0C-Q04 fact-family is now FIXED via MULTI_BLANK in `20260622130000` — the earlier
+   EQUATION_SET prefill backlog item is resolved, no separate lane needed.)
+2. **NEW (2026-06-21) — Picker Calibration:** Merge PRs in order #119 → #121 → #122 (each
    stacked on the prior; attended, after Vercel preview review). After #119 merges: run
    `supabase db reset` (adds `short_test_outcome` column). After #122 merges: run
    `supabase db reset` (adds `manual_placement_needed` column). Stacked-PR note: after
