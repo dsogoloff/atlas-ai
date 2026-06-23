@@ -89,6 +89,32 @@ export const PARENT_STRAND_ORDER: readonly ParentStrand[] = [
   "statistics",
 ] as const;
 
+/**
+ * Per-sub-strand supporting detail for the report narration's "areas to
+ * confirm" section. NARRATION INPUT ONLY — not rendered by the report page;
+ * assembled in assemble.ts and consumed by the Sonnet prompt builder so each
+ * "area to confirm" can name the specific skill(s) and scale its note to the
+ * evidence. Carries no question content or PII: skill names are taxonomy topic
+ * labels (tax_content.name), pace is derived from per-item timing.
+ */
+export interface GrowthSignal {
+  /** Sub-strand slug (same axis as StrandMastery.strand). */
+  strand: Strand;
+  /** Items served in this sub-strand this session — the evidence weight a
+   *  note's specificity is scaled to. */
+  served: number;
+  correct: number;
+  /** Topic labels (tax_content.name) of the items answered incorrectly,
+   *  deduped, capped. Never question content. */
+  missed_skills: string[];
+  /** Misconception labels tied to this sub-strand's responses, deduped. */
+  misconceptions: string[];
+  /** Pace across the sub-strand's served items, from per-item time_flag:
+   *  "fast" (mostly rushed), "slow" (mostly laboured), "mixed" (both), or
+   *  "typical". A hint for the note, never asserted as fact. */
+  pace: "fast" | "slow" | "mixed" | "typical";
+}
+
 // =============================================================================
 // Recommendation — still keyed by the engine's 6-value strand because the
 // curriculum_recommendations DB rows haven't been remapped onto sub-strands.
@@ -132,6 +158,11 @@ export interface ReportContent {
   // bar map directly; the radar consumes a rolled-up 3-parent view
   // derived at render time via rollUpToParentStrands.
   strand_mastery: StrandMastery[];
+  // Narration-only supporting detail per assessed sub-strand (the
+  // areas-to-confirm enrichment). NOT rendered by the page; consumed by the
+  // narration prompt builder. Optional — absent on hand-built/legacy
+  // ReportContent (e.g. the dev preview), present on assembled content.
+  growth_signals?: GrowthSignal[];
   misconceptions: AggregatedMisconception[]; // 0..3, occurrence desc; empty array
   // is the ML1 positive-state signal — no separate flag
   recommendations: Recommendation[]; // band-sorted (page-owned sort), strand-keyed
