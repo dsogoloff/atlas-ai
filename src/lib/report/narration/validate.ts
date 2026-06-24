@@ -66,11 +66,80 @@ export type ValidateNarrationResult =
   | { valid: true; prose: NarrationProse }
   | { valid: false };
 
-/** All-or-nothing validation. Any failure (missing field, wrong type, empty
- *  after trim, over-length, too many findings) invalidates the whole
- *  narration. Callers should fall back to status='failed' / data-only
- *  render per surface. */
+/** Strict validation — the happy path. All four fields present, valid, and
+ *  within bounds → valid. Any failure falls through to salvageNarration so a
+ *  single bad field no longer discards the whole narration (see below). */
 export function validateNarration(parsed: unknown): ValidateNarrationResult {
   const result = narrationProseSchema.safeParse(parsed);
   return result.success ? { valid: true, prose: result.data } : { valid: false };
+}
+
+/** A field-by-field salvage of partially-valid model output. Earlier this
+ *  layer was all-or-nothing: one over-long item or a 4th findings item set
+ *  `status='failed'` and the report rendered with NO narrative at all. But the
+ *  report already degrades PER SURFACE (resolve.ts maps each field
+ *  independently; the page renders each section only when its field is
+ *  present), so dropping the whole narration on one bad field is strictly
+ *  worse than keeping the good ones. salvageNarration keeps every field that
+ *  validates on its own and drops only what doesn't: each prose field
+ *  independently, and findings lists clamped to the first MAX_FINDINGS_PER_LIST
+ *  items after dropping empty / over-length entries. `kept` is empty only when
+ *  nothing usable survived (then the caller writes status='failed'). */
+export interface SalvageResult {
+  prose: Partial<NarrationProse>;
+  /** Field names that survived (empty ⇒ nothing usable). */
+  kept: string[];
+  /** Human-readable notes on what was dropped (for diagnostic logging). */
+  dropped: string[];
+}
+
+function validProse(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  return t.length > 0 && t.length <= MAX_PROSE_LENGTH ? v : null;
+}
+
+function salvageList(v: unknown): { list: string[]; droppedCount: number } {
+  if (!Array.isArray(v)) return { list: [], droppedCount: 0 };
+  const valid = v.filter((x): x is string => validProse(x) !== null);
+  const clamped = valid.slice(0, MAX_FINDINGS_PER_LIST);
+  return { list: clamped, droppedCount: v.length - clamped.length };
+}
+
+export function salvageNarration(parsed: unknown): SalvageResult {
+  const prose: Partial<NarrationProse> = {};
+  const kept: string[] = [];
+  const dropped: string[] = [];
+
+  if (typeof parsed !== "object" || parsed === null) {
+    return { prose, kept, dropped: ["output was not a JSON object"] };
+  }
+  const o = parsed as Record<string, unknown>;
+
+  for (const field of ["placement_line", "strand_lede", "recommendations_lede"] as const) {
+    const v = validProse(o[field]);
+    if (v !== null) {
+      prose[field] = v;
+      kept.push(field);
+    } else if (o[field] !== undefined) {
+      dropped.push(field);
+    }
+  }
+
+  if (typeof o.key_findings === "object" && o.key_findings !== null) {
+    const kf = o.key_findings as Record<string, unknown>;
+    const strengths = salvageList(kf.strengths);
+    const growth = salvageList(kf.growth_areas);
+    prose.key_findings = {
+      strengths: strengths.list,
+      growth_areas: growth.list,
+    };
+    kept.push("key_findings");
+    const droppedItems = strengths.droppedCount + growth.droppedCount;
+    if (droppedItems > 0) dropped.push(`${droppedItems} findings item(s)`);
+  } else if (o.key_findings !== undefined) {
+    dropped.push("key_findings");
+  }
+
+  return { prose, kept, dropped };
 }

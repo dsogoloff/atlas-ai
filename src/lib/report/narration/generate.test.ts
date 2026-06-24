@@ -193,12 +193,11 @@ describe("generateReportNarration", () => {
     );
   });
 
-  it("resolves to status:'failed' with prose absent when Sonnet returns shape-invalid JSON", async () => {
-    // Well-formed JSON but missing a required field — exercises the
-    // Piece 3 validation gate. The brief: validation failure must NOT throw;
-    // it resolves to a status:'failed' ReportNarration so the report
-    // renderer falls back to data-only across all four surfaces.
-    const malformed = {
+  it("SALVAGES the valid fields when one field is invalid (no longer all-or-nothing)", async () => {
+    // Regression guard for "report renders with NO narrative". One missing
+    // field (recommendations_lede) used to discard the ENTIRE narration; now
+    // the other three surfaces survive and only the bad field is dropped.
+    const partial = {
       placement_line: "Has placement.",
       strand_lede: "Has strand lede.",
       key_findings: {
@@ -208,7 +207,58 @@ describe("generateReportNarration", () => {
       // recommendations_lede missing
     };
     mockCallSonnet.mockResolvedValue({
-      text: JSON.stringify(malformed),
+      text: JSON.stringify(partial),
+      model: "claude-sonnet-4-6",
+      tokens: { input: 100, output: 50 },
+      elapsedMs: 1234,
+    });
+
+    const result = await generateReportNarration(aidenGrade3Report);
+
+    expect(result.status).toBe("ok");
+    expect(result.placement_line).toBe("Has placement.");
+    expect(result.strand_lede).toBe("Has strand lede.");
+    expect(result.key_findings?.growth_areas).toEqual(["Growth."]);
+    // Only the invalid field is dropped.
+    expect(result.recommendations_lede).toBeUndefined();
+  });
+
+  it("clamps an over-count / over-long findings list and keeps the rest of the narrative", async () => {
+    // The #151 enrichment made growth_areas richer; a model that returns a 4th
+    // item or one over-length item must NOT erase the whole narrative. The
+    // list is clamped to the first 3 valid items; empty / over-long items are
+    // dropped; every other field survives.
+    const overproduced = {
+      placement_line: "Has placement.",
+      strand_lede: "Has strand lede.",
+      key_findings: {
+        strengths: ["S1.", "  ", "S3."], // blank middle item dropped
+        growth_areas: ["G1.", "G2.", "G3.", "G4.", "x".repeat(700)], // >3 + over-long
+      },
+      recommendations_lede: "Has recs.",
+    };
+    mockCallSonnet.mockResolvedValue({
+      text: JSON.stringify(overproduced),
+      model: "claude-sonnet-4-6",
+      tokens: { input: 100, output: 50 },
+      elapsedMs: 1234,
+    });
+
+    const result = await generateReportNarration(aidenGrade3Report);
+
+    expect(result.status).toBe("ok");
+    expect(result.placement_line).toBe("Has placement.");
+    expect(result.recommendations_lede).toBe("Has recs.");
+    expect(result.key_findings?.strengths).toEqual(["S1.", "S3."]);
+    expect(result.key_findings?.growth_areas).toEqual(["G1.", "G2.", "G3."]);
+    expect(result.key_findings?.growth_areas.length).toBeLessThanOrEqual(3);
+  });
+
+  it("resolves to status:'failed' only when NOTHING is salvageable", async () => {
+    // Output that isn't even a JSON object → no fields to keep → status
+    // 'failed', prose absent, audit row still stamped.
+    mockCallSonnet.mockResolvedValue({
+      text: JSON.stringify("not an object"),
       model: "claude-sonnet-4-6",
       tokens: { input: 100, output: 50 },
       elapsedMs: 1234,
@@ -217,16 +267,22 @@ describe("generateReportNarration", () => {
     const result = await generateReportNarration(aidenGrade3Report);
 
     expect(result.status).toBe("failed");
-    expect(result.session_id).toBe(aidenGrade3Report.session_id);
-    expect(result.tenant_id).toBe(aidenGrade3Report.tenant_id);
-    expect(result.model).toBe("claude-sonnet-4-6");
     expect(result.placement_line).toBeUndefined();
-    expect(result.strand_lede).toBeUndefined();
     expect(result.key_findings).toBeUndefined();
-    expect(result.recommendations_lede).toBeUndefined();
-    // generated_at is still stamped on failed rows so the failure has audit.
     expect(new Date(result.generated_at).toISOString()).toBe(
       result.generated_at,
     );
+  });
+
+  it("resolves to status:'failed' when the model output is not valid JSON", async () => {
+    mockCallSonnet.mockResolvedValue({
+      text: "Sorry, I can't help with that.",
+      model: "claude-sonnet-4-6",
+      tokens: { input: 100, output: 50 },
+      elapsedMs: 1234,
+    });
+
+    const result = await generateReportNarration(aidenGrade3Report);
+    expect(result.status).toBe("failed");
   });
 });
