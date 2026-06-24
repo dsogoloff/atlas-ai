@@ -4417,6 +4417,56 @@ where q.tenant_id = t.id
 -- END l5l6-short-test-eligible
 
 
+-- BEGIN l5l6-releveling (seed mirror of supabase/migrations/20260623150000_l5l6_releveling.sql)
+-- Re-level L5/L6 rows to the source booklet Level (prior load derived level from difficulty,
+-- leaving rows a booklet too low + ZERO at 6A/6B). Source Level column: L5 1-27=4 / 28-30=5;
+-- L6 1-35=5 / 36-38=6. A/B preserved from the existing sub-letter (3A->4A, 4A->5A, 4B->5B,
+-- 5A->6A). Also fixes two content_id load errors: L5-Q22 (Time) -> l3-measurement-2 + strand
+-- measurement; L6-Q09 (add mixed numbers) -> l5-fractions-3. UPDATEs only; idempotent;
+-- does not touch short_test_eligible/content or the 8 unloaded rows.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '4A'::half_grade_level
+from t where q.tenant_id = t.id
+  and q.external_id in ('SAM-L5-Q02','SAM-L5-Q03','SAM-L5-Q15');
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set level = '4A'::half_grade_level,
+    strand = 'measurement'::strand,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l3-measurement-2')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q22';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '5A'::half_grade_level
+from t where q.tenant_id = t.id
+  and q.external_id in ('SAM-L5-Q28','SAM-L5-Q29','SAM-L5-Q30');
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '5A'::half_grade_level
+from t where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L6-Q01','SAM-L6-Q02','SAM-L6-Q03','SAM-L6-Q04','SAM-L6-Q05','SAM-L6-Q07',
+    'SAM-L6-Q08','SAM-L6-Q10','SAM-L6-Q11','SAM-L6-Q12','SAM-L6-Q13','SAM-L6-Q14',
+    'SAM-L6-Q15','SAM-L6-Q18','SAM-L6-Q21','SAM-L6-Q23','SAM-L6-Q30'
+  );
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '5B'::half_grade_level
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q20';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set level = '5A'::half_grade_level,
+    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l5-fractions-3')
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q09';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '6A'::half_grade_level
+from t where q.tenant_id = t.id
+  and q.external_id in ('SAM-L6-Q36','SAM-L6-Q37','SAM-L6-Q38');
+-- END l5l6-releveling
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
