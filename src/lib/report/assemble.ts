@@ -122,6 +122,32 @@ export function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
   }
 }
 
+/** Engine 6-value strand → V2026 sub-strand, the low-level fallback axis.
+ *  Used ONLY when sub-strand resolution via content_id yields nothing (the
+ *  young band: 0A/0B/L1/L2 questions are largely content_id-NULL because the
+ *  bridge backfill only tagged l1-l6 + 3 of 6 engine strands — migration
+ *  20260525000003). questions.strand is ALWAYS populated, so this keeps the
+ *  radar/bars/narrative non-empty instead of collapsing to all no_data.
+ *
+ *  The three 1:1 mappings (geometry/measurement/data_statistics) match the
+ *  bridge migration verbatim. The goal for the remaining three is an ACCURATE
+ *  young-band label, not axis-spread. number_sense AND operations_algorithms
+ *  both map to whole_numbers: at the young band (where this fallback fires)
+ *  "operations_algorithms" is whole-number arithmetic, NOT algebra — real
+ *  algebra content only exists at l6, so printing an "Algebra" axis on a
+ *  Grade-1/2 parent report would be inaccurate (and alarming). Collapsing both
+ *  number engine strands onto whole_numbers is correct for this band.
+ *  fractions_decimals → fractions. This is a display-axis approximation for a
+ *  young-band report, never a re-tag of the question bank. */
+const ENGINE_STRAND_TO_SUB_STRAND: Record<EngineStrand, Strand> = {
+  number_sense: "whole_numbers",
+  operations_algorithms: "whole_numbers",
+  fractions_decimals: "fractions",
+  measurement: "measurement",
+  geometry: "geometry",
+  data_statistics: "data_representation",
+};
+
 export interface AssembleSession {
   id: string;
   tenant_id: string;
@@ -187,10 +213,14 @@ export async function assembleReportContent(
   // sub-strand grid and are skipped from strand_mastery.
   const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
   const contentIdByQuestion = new Map<string, string>();
+  // questions.strand (the engine's 6-value enum) is ALWAYS populated — it
+  // backs the low-level fallback below when content_id is NULL (sparse at the
+  // young band, see migration 20260525000003).
+  const engineStrandByQuestion = new Map<string, EngineStrand>();
   if (questionIds.length > 0) {
     const { data: questionRows, error: questionsErr } = await serviceClient
       .from("questions")
-      .select("id, content_id")
+      .select("id, content_id, strand")
       .in("id", questionIds);
     if (questionsErr || !questionRows) {
       throw new AssembleError(
@@ -200,6 +230,7 @@ export async function assembleReportContent(
     }
     for (const q of questionRows) {
       if (q.content_id) contentIdByQuestion.set(q.id, q.content_id);
+      if (q.strand) engineStrandByQuestion.set(q.id, q.strand);
     }
   }
 
@@ -267,6 +298,26 @@ export async function assembleReportContent(
         if (code) subStrandByQuestion.set(qid, code);
         const name = nameByContent.get(cid);
         if (name) skillNameByQuestion.set(qid, name);
+      }
+    }
+
+    // Low-level fallback (young band: 0A/0B/L1/L2). When NOT ONE response
+    // resolved a sub-strand via content_id — which happens whenever the
+    // session's questions are all content_id-NULL (sparse at the young band,
+    // migration 20260525000003) — the sub-strand path yields nothing and the
+    // report collapses to an empty radar / no bars / no narrative. Fall back
+    // to the engine strand axis (questions.strand, ALWAYS populated), mapped
+    // onto the V2026 sub-strand axis, so the report still populates with real
+    // data. This is engaged ONLY when the content_id path produced zero
+    // resolutions — the moment ANY question resolves a sub-strand (0C/L3-L6,
+    // the working levels), the precise sub-strand path is used unchanged and
+    // this fallback never fires. No skill names here (the engine strand has no
+    // tax_content.name), so growth-signal "missed skills" stay empty under
+    // fallback — acceptable; the radar/bars/narrative are what was missing.
+    if (subStrandByQuestion.size === 0 && engineStrandByQuestion.size > 0) {
+      for (const [qid, engineStrand] of engineStrandByQuestion) {
+        const code = ENGINE_STRAND_TO_SUB_STRAND[engineStrand];
+        if (code) subStrandByQuestion.set(qid, code);
       }
     }
 

@@ -313,6 +313,131 @@ describe("assembleReportContent", () => {
     });
   });
 
+  it("populates strand_mastery from the engine strand axis when NO question resolves a sub-strand (low-level content_id gap)", async () => {
+    // Root-cause regression: at the young band (0A/0B/L1/L2) questions.content_id
+    // is sparse/NULL — the bridge backfill (20260525000003) only tags l1-l6 +
+    // 3 of 6 engine strands, and L0 is out of range entirely. With every
+    // content_id NULL, sub-strand resolution yields NOTHING, so strand_mastery
+    // collapsed to [] (empty radar, no bars, no narrative). The fallback resolves
+    // each response off questions.strand (ALWAYS populated) mapped to the V2026
+    // sub-strand axis, so the report still populates.
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q2", is_correct: false, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q3", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      // taxonomy present, but no question carries a content_id so it never
+      // resolves a sub-strand the normal way.
+      tax_sub_strands: L3_TAX_SUB_STRANDS,
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q1", content_id: null, strand: "number_sense" },
+        { id: "q2", content_id: null, strand: "geometry" },
+        { id: "q3", content_id: null, strand: "number_sense" },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      // 0A — the worst case (content_id NULL across the whole young band).
+      session: {
+        ...SESSION,
+        current_estimate: { ...VALID_PLACEMENT_JSON, overall_level: "0A" } as never,
+      },
+      child: { ...CHILD, grade_level: "K" },
+    });
+
+    // NON-EMPTY strand set with real data (the bug yielded []).
+    expect(content.strand_mastery.length).toBeGreaterThan(0);
+    const byStrand = new Map(content.strand_mastery.map((r) => [r.strand, r]));
+    // number_sense → whole_numbers (2 served, both correct).
+    expect(byStrand.get("whole_numbers")).toMatchObject({ total: 2, correct: 2 });
+    // geometry → geometry (1 served, wrong).
+    expect(byStrand.get("geometry")).toMatchObject({ total: 1, correct: 0 });
+    // At least one row is a real measured band, not all no_data.
+    expect(
+      content.strand_mastery.some((r) => r.band !== "no_data"),
+    ).toBe(true);
+  });
+
+  it("populates strand_mastery for an L1 session whose questions all lack content_id", async () => {
+    // L1 mirror of the 0A case — L1 questions are also largely content_id-NULL
+    // (number_sense / operations_algorithms are unmapped strands). The engine
+    // fallback keeps the L1 report populated.
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q2", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      tax_sub_strands: L3_TAX_SUB_STRANDS,
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q1", content_id: null, strand: "operations_algorithms" },
+        { id: "q2", content_id: null, strand: "fractions_decimals" },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: {
+        ...SESSION,
+        current_estimate: { ...VALID_PLACEMENT_JSON, overall_level: "1A" } as never,
+      },
+      child: { ...CHILD, grade_level: "1" },
+    });
+
+    expect(content.strand_mastery.length).toBeGreaterThan(0);
+    expect(
+      content.strand_mastery.some((r) => r.band !== "no_data"),
+    ).toBe(true);
+  });
+
+  it("does NOT use the engine fallback when sub-strand resolution succeeds (working-level behaviour preserved)", async () => {
+    // When content_id resolves normally (0C/L3-L6), the sub-strand path wins and
+    // the engine fallback must NOT fire — even if questions.strand is present.
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q-wn", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      tax_sub_strands: L3_TAX_SUB_STRANDS,
+      tax_content: [
+        { id: "c-wn", sub_strand_id: "ss-whole-numbers", name: "Multiplication" },
+      ],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        // content_id resolves to whole_numbers; strand says geometry. The
+        // sub-strand path must win — the row is whole_numbers, NOT geometry.
+        { id: "q-wn", content_id: "c-wn", strand: "geometry" },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: SESSION,
+      child: CHILD,
+    });
+
+    const byStrand = new Map(content.strand_mastery.map((r) => [r.strand, r]));
+    expect(byStrand.get("whole_numbers")).toMatchObject({ total: 1, correct: 1 });
+    // geometry stays no_data (the fallback did NOT mis-route the response there).
+    expect(byStrand.get("geometry")).toMatchObject({ total: 0 });
+  });
+
   it("defaults session_time_flag null to 'normal'", async () => {
     const readClient = makeFakeClient({
       responses: [],
