@@ -11,6 +11,7 @@ const baseRow = {
   strand: "operations_algorithms" as const,
   level: "2B" as const,
   difficulty: 0.0,
+  content_id: null,
 };
 
 function row(

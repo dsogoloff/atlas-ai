@@ -88,7 +88,7 @@ export async function pickQuestion(
   // src/lib/responseSubmit/handler.ts comment around the same select).
   let query = serviceClient
     .from("questions")
-    .select(`id, external_id, strand, level, difficulty, format, content`)
+    .select(`id, external_id, strand, level, difficulty, format, content, content_id`)
     .eq("tenant_id", ctx.tenantId)
     .eq("strand", request.strand)
     .eq("is_active", true);

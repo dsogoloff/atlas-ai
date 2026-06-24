@@ -49,6 +49,12 @@ export interface SessionPickContext {
   tenantId: string;
   servedQuestionIds: ReadonlyArray<string>;
   candidateLimit?: number;
+  /** SHORT-TEST sub-strand coverage governor (Task 3). Passed straight through
+   *  to the short picker's PickerContext; ignored for comprehensive picks.
+   *  Both omitted ⇒ the short picker falls back to nearest-difficulty (the
+   *  prior behaviour). See subStrandCoverage.ts for how these are built. */
+  subStrandByContentId?: ReadonlyMap<string, string>;
+  servedSubStrands?: ReadonlySet<string>;
 }
 
 /** Route to the right picker with the right level band for this session. */

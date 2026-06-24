@@ -168,6 +168,10 @@ import {
   discoverShortEligibleCounts,
 } from "@/lib/questionPicker/picker";
 import {
+  discoverServedSubStrands,
+  discoverSubStrandByContentId,
+} from "@/lib/questionPicker/subStrandCoverage";
+import {
   anchorBookletForChild,
   BOOKLET_LEVELS,
   bookletOrdinalForHalfGrade,
@@ -226,6 +230,15 @@ interface ComprehensiveContext {
  */
 interface ShortContext {
   availableByStrand: Map<Strand, number>;
+  /** Task 3 — V2026 AXIS-B sub-strand coverage governor for the short picker.
+   *  `subStrandByContentId` resolves a candidate's questions.content_id to its
+   *  sub-strand code (tenant-wide; built once per submit). The picker prefers an
+   *  eligible item whose sub-strand isn't yet in the session's served set so the
+   *  served set spreads across the sub-strands the parent report measures before
+   *  deepening any one. Empty map ⇒ no coverage signal ⇒ nearest-difficulty
+   *  fallback (prior behaviour). The session's served sub-strand set is computed
+   *  per pick (it grows as items are answered) in buildShortPickContext. */
+  subStrandByContentId: ReadonlyMap<string, string>;
 }
 
 interface HandlerInput {
@@ -382,6 +395,13 @@ export async function submitResponseHandler({
             parent.tenant_id,
             band,
           ),
+          // Task 3 — tenant-wide content_id → AXIS-B sub-strand map, built once
+          // per submit. Empty when the taxonomy isn't seeded for the tenant;
+          // the picker then degrades to nearest-difficulty.
+          subStrandByContentId: await discoverSubStrandByContentId(
+            serviceClient,
+            parent.tenant_id,
+          ),
         };
       } catch (e) {
         return fail("internal", 500, errorMessage(e));
@@ -505,6 +525,7 @@ export async function submitResponseHandler({
         childId: session.child_id,
         ip,
         sessionPick,
+        subStrandByContentId: short?.subStrandByContentId,
       },
       request.question_id,
       emptyBankStrands,
@@ -666,6 +687,7 @@ export async function submitResponseHandler({
           childId: session.child_id,
           ip,
           sessionPick,
+          subStrandByContentId: short?.subStrandByContentId,
         },
         request.question_id,
         emptyBankStrands,
@@ -774,6 +796,7 @@ export async function submitResponseHandler({
       childId: session.child_id,
       ip,
       sessionPick,
+      subStrandByContentId: short?.subStrandByContentId,
     },
     postState,
     emptyBankStrands,
@@ -1307,6 +1330,11 @@ interface PickContext {
   ip: string | null;
   /** Drives the level-lock band + picker choice on the next pick. */
   sessionPick: SessionPickParams;
+  /** Task 3 — short-test AXIS-B sub-strand coverage map (content_id →
+   *  sub-strand code), present only for short sessions with a resolvable band.
+   *  pickAndMaybeClose derives the session's served sub-strand set from it and
+   *  feeds both to pickForSession so the short picker spreads coverage. */
+  subStrandByContentId?: ReadonlyMap<string, string>;
 }
 
 type PickAndMaybeCloseResult =
@@ -1355,6 +1383,25 @@ async function pickAndMaybeClose(
 ): Promise<PickAndMaybeCloseResult> {
   const excludedStrands = new Set<Strand>(initiallyExcluded);
 
+  // Task 3 — short-test AXIS-B coverage. Resolve the session's already-served
+  // sub-strands once (the served set is stable across loop iterations: the loop
+  // only advances past exhausted engine strands, never answers an item). The
+  // short picker prefers a candidate whose sub-strand isn't in this set, so the
+  // served set spreads across the report's sub-strands before deepening any one.
+  // Absent map (comprehensive, or short with no taxonomy) ⇒ no coverage signal.
+  let servedSubStrands: ReadonlySet<string> | undefined;
+  if (ctx.subStrandByContentId && ctx.subStrandByContentId.size > 0) {
+    try {
+      servedSubStrands = await discoverServedSubStrands(
+        serviceClient,
+        ctx.sessionId,
+        ctx.subStrandByContentId,
+      );
+    } catch (e) {
+      return { kind: "error", message: errorMessage(e) };
+    }
+  }
+
   // Bounded by STRANDS.length (6 in v1). The loop terminates when either
   // the engine returns null (every strand excluded) or the picker succeeds.
   // `router` is engine.nextQuestionRequest for short sessions and the
@@ -1376,6 +1423,8 @@ async function pickAndMaybeClose(
         {
           tenantId: ctx.tenantId,
           servedQuestionIds: postState.servedQuestionIds,
+          subStrandByContentId: ctx.subStrandByContentId,
+          servedSubStrands,
         },
         ctx.sessionPick,
       );

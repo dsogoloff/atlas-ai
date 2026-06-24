@@ -43,6 +43,12 @@ export interface PickedQuestionRow {
   difficulty: number;
   format: QuestionFormat;
   content: Json;
+  /** V2026 AXIS-B linkage — `questions.content_id` (nullable; sparsely
+   *  backfilled). Resolves to a sub-strand for the short-test coverage
+   *  governor (PickerContext.subStrandByContentId). NULL → no sub-strand,
+   *  graceful fallback to engine-strand spreading. The comprehensive picker
+   *  selects it too (harmless; it just never reads it). */
+  content_id: string | null;
 }
 
 // Compile-time guard: PickedQuestionRow keys must remain a subset of the
@@ -256,6 +262,28 @@ export interface PickerContext {
    *  filter is applied (legacy/level-blind behavior). The comprehensive picker
    *  receives the ±1 band; the short picker receives the previous booklet. */
   levelBand?: readonly string[];
+  /** SHORT-TEST sub-strand coverage governor (Task 3). The short picker spreads
+   *  the served set across the V2026 AXIS-B sub-strands BEFORE deepening any one
+   *  of them — the report's radar/bars are keyed by sub-strand, so breadth here
+   *  is what makes report-visible strand coverage the governing constraint.
+   *
+   *  `subStrandByContentId` resolves a candidate's `questions.content_id` to its
+   *  V2026 sub-strand code (the join chain
+   *  questions.content_id → tax_content.sub_strand_id → tax_sub_strands.code).
+   *  `servedSubStrands` is the set of sub-strand codes already covered this
+   *  session. When both are present the picker prefers a candidate whose
+   *  sub-strand is NOT yet in `servedSubStrands`, breaking ties by the existing
+   *  nearest-difficulty order.
+   *
+   *  GRACEFUL FALLBACK (never worse than today): a candidate whose `content_id`
+   *  is NULL — or doesn't resolve to a sub-strand — is treated as "already
+   *  covered" so it sorts AFTER breadth-extending candidates but still
+   *  participates. With these omitted entirely (or no candidate resolving), the
+   *  picker degrades exactly to the prior nearest-difficulty behaviour, so the
+   *  engine-strand (AXIS-A) router still drives coverage. Ignored by the
+   *  comprehensive picker. */
+  subStrandByContentId?: ReadonlyMap<string, string>;
+  servedSubStrands?: ReadonlySet<string>;
 }
 
 /** Discriminated result. `strand-exhausted` is the only failure mode the

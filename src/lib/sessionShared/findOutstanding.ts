@@ -98,7 +98,7 @@ export async function findOutstandingQuestion(
   // See Item #11 Phase 3 enumeration.
   const { data: question, error: qErr } = await serviceClient
     .from("questions")
-    .select(`id, external_id, strand, level, difficulty, format, content`)
+    .select(`id, external_id, strand, level, difficulty, format, content, content_id`)
     .eq("id", outstandingId)
     .maybeSingle();
 

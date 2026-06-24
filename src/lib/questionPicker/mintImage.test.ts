@@ -329,6 +329,7 @@ function matchingRow(content: Json): PickedQuestionRow {
     difficulty: 0.0,
     format: "VISUAL_MATCHING",
     content,
+    content_id: null,
   };
 }
 
@@ -557,6 +558,7 @@ function tilesRow(
     difficulty: 0.0,
     format,
     content,
+    content_id: null,
   };
 }
 
