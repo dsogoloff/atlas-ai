@@ -19,7 +19,11 @@ import type { ReportContent, ReportNarration } from "@/lib/report/types";
 
 import { callSonnet } from "./llmClient";
 import { buildNarrationPrompt } from "./prompt";
-import { validateNarration } from "./validate";
+import {
+  salvageNarration,
+  validateNarration,
+  type NarrationProse,
+} from "./validate";
 
 /** Defensively strip a single outer markdown code fence pair from the model
  *  output. The system prompt instructs JSON-only, but models occasionally
@@ -37,19 +41,52 @@ export async function generateReportNarration(
   const { system, prompt } = buildNarrationPrompt(content);
   const result = await callSonnet(system, prompt);
 
-  // JSON.parse throws on malformed JSON — let it propagate (caller's job).
-  // Successful parse but shape-invalid falls through to the validation gate.
-  const parsed: unknown = JSON.parse(stripFences(result.text));
+  const failed = (): ReportNarration => ({
+    session_id: content.session_id,
+    tenant_id: content.tenant_id,
+    generated_at: new Date().toISOString(),
+    model: result.model,
+    status: "failed",
+  });
 
+  // Parse defensively. A non-JSON body used to throw out of here and the
+  // trigger swallowed it with NO row written — invisible. Now we log it and
+  // write a status:'failed' audit row instead.
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripFences(result.text));
+  } catch {
+    console.warn("[narration] model output was not valid JSON", {
+      sessionId: content.session_id,
+    });
+    return failed();
+  }
+
+  // Strict gate first (happy path). On failure, SALVAGE field-by-field rather
+  // than discarding the whole narration: the report degrades per surface, so a
+  // single over-long / surplus field should drop only itself, not erase the
+  // placement line, strand lede, and the rest. This is the fix for the
+  // "report renders with NO narrative" regression — one bad field no longer
+  // nukes everything. We log what was dropped so the cause is visible.
+  let prose: Partial<NarrationProse>;
   const validation = validateNarration(parsed);
-  if (!validation.valid) {
-    return {
-      session_id: content.session_id,
-      tenant_id: content.tenant_id,
-      generated_at: new Date().toISOString(),
-      model: result.model,
-      status: "failed",
-    };
+  if (validation.valid) {
+    prose = validation.prose;
+  } else {
+    const salvaged = salvageNarration(parsed);
+    if (salvaged.kept.length === 0) {
+      console.warn("[narration] output unusable — no fields salvageable", {
+        sessionId: content.session_id,
+        dropped: salvaged.dropped,
+      });
+      return failed();
+    }
+    console.warn("[narration] partial output — salvaged valid fields", {
+      sessionId: content.session_id,
+      kept: salvaged.kept,
+      dropped: salvaged.dropped,
+    });
+    prose = salvaged.prose;
   }
 
   // Strand-fabrication guard (BUSINESS_RULES "Claims & language" / strategy
@@ -63,7 +100,7 @@ export async function generateReportNarration(
   // growth_areas survive: they are misconception-derived response patterns,
   // not strand-mastery claims. This is a data-path guard, NOT a voice change.
   const hasStrandData = content.strand_mastery.some((s) => s.total > 0);
-  const prose = validation.prose;
+  const kf = prose.key_findings;
 
   return {
     session_id: content.session_id,
@@ -73,10 +110,12 @@ export async function generateReportNarration(
     status: "ok",
     placement_line: prose.placement_line,
     strand_lede: hasStrandData ? prose.strand_lede : undefined,
-    key_findings: {
-      strengths: hasStrandData ? prose.key_findings.strengths : [],
-      growth_areas: prose.key_findings.growth_areas,
-    },
+    key_findings: kf
+      ? {
+          strengths: hasStrandData ? kf.strengths : [],
+          growth_areas: kf.growth_areas,
+        }
+      : undefined,
     recommendations_lede: prose.recommendations_lede,
   };
 }
