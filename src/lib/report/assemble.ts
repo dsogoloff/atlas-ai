@@ -121,15 +121,18 @@ function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
  *  radar/bars/narrative non-empty instead of collapsing to all no_data.
  *
  *  The three 1:1 mappings (geometry/measurement/data_statistics) match the
- *  bridge migration verbatim. The three "ambiguous" engine strands map to a
- *  representative young-band sub-strand: number_sense → whole_numbers (the
- *  dominant young-band number skill), operations_algorithms → algebra,
- *  fractions_decimals → fractions. This spreads coverage across all three
- *  parent strands so the radar shows real axes, not a single spike. This is a
- *  display-axis approximation, never a re-tag of the question bank. */
+ *  bridge migration verbatim. The goal for the remaining three is an ACCURATE
+ *  young-band label, not axis-spread. number_sense AND operations_algorithms
+ *  both map to whole_numbers: at the young band (where this fallback fires)
+ *  "operations_algorithms" is whole-number arithmetic, NOT algebra — real
+ *  algebra content only exists at l6, so printing an "Algebra" axis on a
+ *  Grade-1/2 parent report would be inaccurate (and alarming). Collapsing both
+ *  number engine strands onto whole_numbers is correct for this band.
+ *  fractions_decimals → fractions. This is a display-axis approximation for a
+ *  young-band report, never a re-tag of the question bank. */
 const ENGINE_STRAND_TO_SUB_STRAND: Record<EngineStrand, Strand> = {
   number_sense: "whole_numbers",
-  operations_algorithms: "algebra",
+  operations_algorithms: "whole_numbers",
   fractions_decimals: "fractions",
   measurement: "measurement",
   geometry: "geometry",
