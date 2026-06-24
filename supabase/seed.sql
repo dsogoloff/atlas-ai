@@ -4421,8 +4421,9 @@ where q.tenant_id = t.id
 -- Re-level L5/L6 rows to the source booklet Level (prior load derived level from difficulty,
 -- leaving rows a booklet too low + ZERO at 6A/6B). Source Level column: L5 1-27=4 / 28-30=5;
 -- L6 1-35=5 / 36-38=6. A/B preserved from the existing sub-letter (3A->4A, 4A->5A, 4B->5B,
--- 5A->6A). Also fixes two content_id load errors: L5-Q22 (Time) -> l3-measurement-2 + strand
--- measurement; L6-Q09 (add mixed numbers) -> l5-fractions-3. UPDATEs only; idempotent;
+-- 5A->6A). Also fixes content_id load errors: L5-Q22 (Time, Level 4) -> NULL + strand
+-- measurement (no L4 Time node exists — measurement applies l0b-l3 only; founder Option B,
+-- deliberate); L6-Q09 (add mixed numbers) -> l5-fractions-3. UPDATEs only; idempotent;
 -- does not touch short_test_eligible/content or the 8 unloaded rows.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q set level = '4A'::half_grade_level
@@ -4433,7 +4434,7 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set level = '4A'::half_grade_level,
     strand = 'measurement'::strand,
-    content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l3-measurement-2')
+    content_id = null
 from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q22';
 
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
