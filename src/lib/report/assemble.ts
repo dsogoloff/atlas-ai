@@ -75,10 +75,14 @@ export function samLevelLabel(level: HalfGradeLevel): string {
   return `S.A.M Level ${booklet}`;
 }
 
-/** Half-grade → tax_level code. Best-effort 1:1; half-grades outside
- *  the V2026 L0-L6 range (7A-8B) map to null and end up with empty
- *  strand_mastery output. K maps to l0a/l0b approximately. */
-function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
+/** Half-grade → tax_level code. Best-effort 1:1. The V2026 taxonomy tops out
+ *  at l6, so half-grades above the L6 booklet (7A-8B) CLAMP to l6 rather than
+ *  mapping to null — a >L6 placement still resolves to the L6 sub-strand grid
+ *  (the highest authored level) instead of producing empty strand_mastery.
+ *  Grades 7/8 are non-selectable at intake (add-child-form), so this clamp is
+ *  defense-in-depth for any session that still lands a >L6 estimate. K maps to
+ *  l0a/l0b approximately. */
+export function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
   switch (level) {
     case "0A":
       return "l0a";
@@ -107,6 +111,11 @@ function halfGradeToTaxLevelCode(level: HalfGradeLevel): string | null {
       return "l5";
     case "6A":
     case "6B":
+    // >L6 booklets clamp to l6 (highest authored taxonomy level).
+    case "7A":
+    case "7B":
+    case "8A":
+    case "8B":
       return "l6";
     default:
       return null;

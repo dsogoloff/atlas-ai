@@ -166,9 +166,19 @@ export function AddChildForm({ cancelHref }: Props) {
               <option value="Pre-K (age 4)">Pre-K (age 4)</option>
               <option value="Pre-K (age 5)">Pre-K (age 5)</option>
               <option value="K">Kindergarten</option>
-              {Array.from({ length: 8 }, (_, i) => i + 1).map((g) => (
+              {/* Grades 1–6 are the live S.A.M. booklet range. Grades 7 and 8
+                  are greyed "(coming soon)" and non-selectable until their
+                  booklets are converted — the bank has no >L6 content yet, so a
+                  G7/G8 selection would band to an empty set. Defense-in-depth:
+                  halfGradeToTaxLevelCode clamps any 7A/8B placement to l6. */}
+              {Array.from({ length: 6 }, (_, i) => i + 1).map((g) => (
                 <option key={g} value={String(g)}>
                   Grade {g}
+                </option>
+              ))}
+              {[7, 8].map((g) => (
+                <option key={g} value={String(g)} disabled>
+                  Grade {g} (coming soon)
                 </option>
               ))}
             </select>

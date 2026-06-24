@@ -11,6 +11,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 import {
   assembleReportContent,
+  halfGradeToTaxLevelCode,
   samLevelLabel,
   type AssembleSession,
 } from "./assemble";
@@ -368,5 +369,30 @@ describe("samLevelLabel — S.A.M booklet naming (no school grade, no half-grade
   it("uses no trailing dot (matches the locked narration prompt) (D4)", () => {
     expect(samLevelLabel("3A").startsWith("S.A.M Level")).toBe(true);
     expect(samLevelLabel("3A")).not.toContain("S.A.M. Level");
+  });
+});
+
+describe("halfGradeToTaxLevelCode — V2026 tax-level mapping + >L6 clamp", () => {
+  it("maps each in-range booklet to its tax-level code", () => {
+    expect(halfGradeToTaxLevelCode("0A")).toBe("l0a");
+    expect(halfGradeToTaxLevelCode("0B")).toBe("l0b");
+    expect(halfGradeToTaxLevelCode("0C")).toBe("l0c");
+    expect(halfGradeToTaxLevelCode("KA")).toBe("l0a");
+    expect(halfGradeToTaxLevelCode("KB")).toBe("l0b");
+    expect(halfGradeToTaxLevelCode("1A")).toBe("l1");
+    expect(halfGradeToTaxLevelCode("2B")).toBe("l2");
+    expect(halfGradeToTaxLevelCode("3A")).toBe("l3");
+    expect(halfGradeToTaxLevelCode("4B")).toBe("l4");
+    expect(halfGradeToTaxLevelCode("5A")).toBe("l5");
+    expect(halfGradeToTaxLevelCode("6B")).toBe("l6");
+  });
+
+  it("CLAMPS >L6 booklets (7A-8B) to l6 instead of returning null", () => {
+    // The V2026 taxonomy tops out at l6; a >L6 estimate must still resolve to
+    // the L6 sub-strand grid rather than producing empty strand_mastery.
+    expect(halfGradeToTaxLevelCode("7A")).toBe("l6");
+    expect(halfGradeToTaxLevelCode("7B")).toBe("l6");
+    expect(halfGradeToTaxLevelCode("8A")).toBe("l6");
+    expect(halfGradeToTaxLevelCode("8B")).toBe("l6");
   });
 });
