@@ -146,6 +146,36 @@ describe("assembleReportContent", () => {
     );
   });
 
+  it("reports the ACTUAL number of questions served (adaptive — not a fixed total)", async () => {
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q2", is_correct: false, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q3", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      tax_sub_strands: [],
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q1", content_id: null },
+        { id: "q2", content_id: null },
+        { id: "q3", content_id: null },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: SESSION,
+      child: CHILD,
+    });
+
+    expect(content.metadata.questions_served).toBe(3);
+  });
+
   it("produces strand_mastery rows for the sub-strands applicable at the child's level", async () => {
     // With the level mapping 3A → l3 and three sub-strands whose
     // applies_to_level_codes contains 'l3', strand_mastery has 3 rows

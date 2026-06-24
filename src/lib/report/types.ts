@@ -141,6 +141,10 @@ export interface ReportContent {
     assessed_date_display: string; // "May 19, 2026"
     duration_display: string; // "14 minutes"
     report_id: string; // "A-2026-051901"
+    // ACTUAL questions served this session (adaptive — not a fixed total).
+    // Optional so hand-built / legacy ReportContent stays valid; the meta
+    // line renders "· N questions" only when present and > 0.
+    questions_served?: number;
   };
 
   // Drives the time-flag banner + whether scores render at all (lock R5).
