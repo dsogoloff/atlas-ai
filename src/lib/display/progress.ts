@@ -9,7 +9,8 @@ import { MAX_QUESTIONS } from "@/lib/engine/engine";
 import type { TimeFlag } from "@/lib/timeFlagging";
 
 // =============================================================================
-// Progress chrome (Item #1, Option 2: "Question N of up to 25")
+// Progress chrome — "Question N" + a filling bar (no fixed denominator).
+// The adaptive test rarely reaches its ceiling, so showing "of N" overstated.
 // =============================================================================
 
 export interface ProgressDisplay {
@@ -19,10 +20,12 @@ export interface ProgressDisplay {
    *  is the per-session total stamped by /start (short = min(short cap,
    *  eligible pool); comprehensive = engine cap), NOT a fixed 25. */
   maxQuestions: number;
-  /** Parent-facing copy: "Question 3 of up to 12" — the "up to"
-   *  hedge is load-bearing. The session can terminate earlier on
-   *  confidence-threshold-met or bank-exhausted; framing the total as the
-   *  ceiling (not the target) keeps the copy honest. */
+  /** Child-facing copy: "Question 3" — current question number only, no
+   *  denominator. The test is ADAPTIVE: the short test (soft floor 10 / hard
+   *  cap 15) almost never serves its ceiling, so "Question 3 of 15" promised
+   *  a total it won't reach. Showing only the live number + a filling bar is
+   *  honest under early termination (confidence-threshold-met / bank-exhausted)
+   *  for both test types. */
   copy: string;
   /** Bar width in percent, clamped to [0, 100]. The denominator is the
    *  session ceiling so the bar visually represents the worst-case
@@ -58,7 +61,10 @@ export function computeProgressDisplay(
   return {
     questionNumber,
     maxQuestions: total,
-    copy: `Question ${questionNumber} of up to ${total}`,
+    // No denominator — adaptive tests rarely reach the ceiling, so a fixed
+    // "of N" overstates. The filling bar (percent, ceiling-relative) conveys
+    // rough progress without promising a total.
+    copy: `Question ${questionNumber}`,
     percent,
   };
 }

@@ -8,26 +8,41 @@ import { MAX_QUESTIONS } from "@/lib/engine/engine";
 import { computeProgressDisplay, timeFlagBadge } from "./progress";
 
 describe("computeProgressDisplay", () => {
-  it("renders 'Question 1 of up to 25' for a fresh session", () => {
+  it("renders 'Question 1' (no denominator) for a fresh session", () => {
     const d = computeProgressDisplay(0);
     expect(d.questionNumber).toBe(1);
     expect(d.maxQuestions).toBe(MAX_QUESTIONS);
-    expect(d.copy).toBe(`Question 1 of up to ${MAX_QUESTIONS}`);
+    expect(d.copy).toBe("Question 1");
     expect(d.percent).toBeCloseTo((1 / MAX_QUESTIONS) * 100);
   });
 
-  it("renders 'Question 4 of up to 25' for a resume with 3 past answers", () => {
+  it("renders 'Question 4' for a resume with 3 past answers", () => {
     const d = computeProgressDisplay(3);
     expect(d.questionNumber).toBe(4);
-    expect(d.copy).toBe(`Question 4 of up to ${MAX_QUESTIONS}`);
+    expect(d.copy).toBe("Question 4");
     expect(d.percent).toBeCloseTo((4 / MAX_QUESTIONS) * 100);
   });
 
   it("clamps questionNumber to MAX_QUESTIONS at the ceiling", () => {
     const d = computeProgressDisplay(MAX_QUESTIONS - 1);
     expect(d.questionNumber).toBe(MAX_QUESTIONS);
-    expect(d.copy).toBe(`Question ${MAX_QUESTIONS} of up to ${MAX_QUESTIONS}`);
+    expect(d.copy).toBe(`Question ${MAX_QUESTIONS}`);
     expect(d.percent).toBe(100);
+  });
+
+  it("never shows a fixed total in the copy (adaptive — the ceiling is rarely reached)", () => {
+    // The deceptive "Question N of up to 15" is gone: the copy must carry no
+    // denominator, regardless of the (still ceiling-relative) bar percent.
+    for (const [count, ceiling] of [
+      [0, 15],
+      [5, 15],
+      [9, 25],
+    ] as const) {
+      const d = computeProgressDisplay(count, ceiling);
+      expect(d.copy).toBe(`Question ${d.questionNumber}`);
+      expect(d.copy).not.toMatch(/of|up to|\d+\s*\/\s*\d+/);
+      expect(d.copy).not.toContain(String(ceiling));
+    }
   });
 
   it("never exceeds MAX_QUESTIONS even if responseCount is out of range", () => {
@@ -56,14 +71,14 @@ describe("computeProgressDisplay", () => {
   it("uses the supplied per-session ceiling as the denominator", () => {
     const d = computeProgressDisplay(0, 12);
     expect(d.maxQuestions).toBe(12);
-    expect(d.copy).toBe("Question 1 of up to 12");
+    expect(d.copy).toBe("Question 1");
     expect(d.percent).toBeCloseTo((1 / 12) * 100);
   });
 
   it("clamps to a thin exhaustion-bound ceiling (e.g. L1 = 8)", () => {
     const d = computeProgressDisplay(20, 8);
     expect(d.questionNumber).toBe(8);
-    expect(d.copy).toBe("Question 8 of up to 8");
+    expect(d.copy).toBe("Question 8");
     expect(d.percent).toBe(100);
   });
 

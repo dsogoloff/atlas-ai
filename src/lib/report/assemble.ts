@@ -441,6 +441,7 @@ export async function assembleReportContent(
       assessed_date_display: formatAssessedDate(session.completed_at),
       duration_display: formatDuration(session.started_at, session.completed_at),
       report_id: session.id,
+      questions_served: overallTotal,
     },
     time_flag: timeFlag,
     placement: {

@@ -406,7 +406,11 @@ export function Footer() {
  *  Each piece is optional — gracefully degrades when fields are missing.
  *  The interpunct separator matches the reference (atlas-sample-report.html). */
 function buildMetaLine(reportContent: {
-  metadata: { assessed_date_display: string; duration_display: string };
+  metadata: {
+    assessed_date_display: string;
+    duration_display: string;
+    questions_served?: number;
+  };
 }): string | null {
   // School grade dropped from the parent meta line (D5).
   const parts: string[] = [];
@@ -415,6 +419,11 @@ function buildMetaLine(reportContent: {
   }
   if (reportContent.metadata.duration_display) {
     parts.push(`Completed in ${reportContent.metadata.duration_display}`);
+  }
+  // ACTUAL questions served (adaptive — never a fixed total).
+  const served = reportContent.metadata.questions_served;
+  if (typeof served === "number" && served > 0) {
+    parts.push(`${served} ${served === 1 ? "question" : "questions"}`);
   }
   return parts.length ? parts.join(" · ") : null;
 }

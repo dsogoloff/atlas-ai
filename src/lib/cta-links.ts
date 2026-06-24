@@ -12,8 +12,7 @@ export const CTA_LINKS = {
    *  TODO(marketing): wire the real booking URL when scheduling lands. */
   scheduleFreeClass: "#schedule-a-free-class",
 
-  /** Secondary action on the parent dashboard + end-of-report.
-   *  TODO(marketing): wire the real contact URL (form, mailto, or
-   *  inbound chat) when the support channel is chosen. */
-  questionsTalkToUs: "#questions-talk-to-us",
+  /** Secondary action on the parent dashboard + end-of-report. Wired to the
+   *  S.A.M New York support inbox. */
+  questionsTalkToUs: "mailto:hello@samnewyork.com",
 } as const;
