@@ -25,6 +25,13 @@ const RATING_LABELS: Record<number, string> = {
   5: "Extremely helpful",
 };
 
+// Secondary "email us" channel offered beneath the rating control — for
+// anything that doesn't fit a 1-5 rating. mailto with a URL-encoded subject
+// and NO body prefill. The rating island above is the primary, structured path
+// (persisted + analytics); this is a subordinate text link, not a competing CTA.
+const FEEDBACK_EMAIL_HREF =
+  "mailto:hello@samnewyork.com?subject=Assessment%20Feedback";
+
 export function ParentReportFeedback({
   sessionId,
 }: {
@@ -198,6 +205,23 @@ export function ParentReportFeedback({
           </button>
         </>
       )}
+
+      {/* Secondary email channel — always available (idle / saving / done). */}
+      <p
+        className="mt-8 text-[13px] tracking-[0.02em]"
+        style={{
+          fontFamily: "var(--font-report-sans)",
+          color: "var(--color-report-text-light)",
+        }}
+      >
+        <a
+          href={FEEDBACK_EMAIL_HREF}
+          className="underline hover:opacity-70 transition-opacity"
+          style={{ color: "var(--color-report-navy)" }}
+        >
+          Email us your feedback
+        </a>
+      </p>
     </section>
   );
 }
