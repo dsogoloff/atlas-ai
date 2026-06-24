@@ -77,6 +77,23 @@ describe("ParentIntro / common chrome", () => {
     }
   });
 
+  it("places 'About this test' ABOVE the age-variant section, in both modes", () => {
+    for (const mode of ["read-aloud", "no-assistance"] as const) {
+      const html = render(mode, "K_4");
+      const aboutIdx = html.indexOf(PARENT_INTRO_COPY.about.heading);
+      const variantIdx = html.indexOf(PARENT_INTRO_COPY.modes[mode].heading);
+      expect(aboutIdx).toBeGreaterThanOrEqual(0);
+      expect(variantIdx).toBeGreaterThanOrEqual(0);
+      expect(aboutIdx).toBeLessThan(variantIdx);
+    }
+  });
+
+  it("renders body/list text at the larger text-base size (no text-sm left)", () => {
+    const html = render("read-aloud", "K_4");
+    expect(html).toContain("text-base text-sam-gray-dark");
+    expect(html).not.toContain("text-sm");
+  });
+
   it("renders the Start button", () => {
     const html = render("read-aloud", "K_4");
     expect(html).toContain(PARENT_INTRO_COPY.startButton);
