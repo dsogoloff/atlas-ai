@@ -4468,6 +4468,18 @@ from t where q.tenant_id = t.id
 -- END l5l6-releveling
 
 
+-- BEGIN l6-q24-table-to-prose (seed mirror of supabase/migrations/20260623160000_l6_q24_table_to_prose.sql)
+-- SAM-L6-Q24 stored its source rate table as Markdown-pipe text inside the stem; the stem
+-- renderer shows it as raw inline pipes (no Markdown/table support). Re-author the stem to
+-- clean prose preserving all data (first hour $3.40; each additional ½ hour or part thereof
+-- $1.50; 11 am-1:15 pm). correct_answer unchanged ($7.90). UPDATE only; idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Parking charges at a car park are shown below. The first hour costs $3.40, and every additional ½ hour (or part thereof) costs $1.50. Tom parked his car at the car park from 11 am to 1:15 pm. How much did he pay?","correct_answer":"$7.90"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q24';
+-- END l6-q24-table-to-prose
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
