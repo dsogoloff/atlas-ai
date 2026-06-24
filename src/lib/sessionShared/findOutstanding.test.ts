@@ -54,6 +54,7 @@ function questionRow(id: string): PickedQuestionRow {
     difficulty: 0.0,
     format: "MULTIPLE_CHOICE",
     content: { stem: "s", options: ["a"] },
+    content_id: null,
   };
 }
 

@@ -31,6 +31,7 @@ const baseRow: Omit<PickedQuestionRow, "content"> = {
   level: "1B",
   difficulty: -1.3,
   format: "MULTIPLE_CHOICE",
+  content_id: null,
 };
 
 describe("serveQuestion", () => {

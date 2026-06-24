@@ -49,6 +49,7 @@ function row(over: Partial<FilterRow>): FilterRow {
     difficulty: 0.0,
     format: "MULTIPLE_CHOICE",
     content: { stem: "s", options: ["a"] },
+    content_id: null,
     tenant_id: TENANT,
     is_active: true,
     short_test_eligible: true,

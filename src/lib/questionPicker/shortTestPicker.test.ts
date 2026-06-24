@@ -57,6 +57,7 @@ function row(over: Partial<FilterRow>): FilterRow {
     difficulty: 0.0,
     format: "MULTIPLE_CHOICE",
     content: { stem: "s", options: ["a"] },
+    content_id: null,
     // filter-only columns
     tenant_id: TENANT,
     is_active: true,
@@ -71,6 +72,8 @@ function ctx(over: Partial<PickerContext> = {}): PickerContext {
     servedQuestionIds: over.servedQuestionIds ?? [],
     candidateLimit: over.candidateLimit,
     levelBand: over.levelBand,
+    subStrandByContentId: over.subStrandByContentId,
+    servedSubStrands: over.servedSubStrands,
   };
 }
 
@@ -155,5 +158,161 @@ describe("pickShortTestQuestion — served exclusion + nearest-difficulty", () =
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.question.id).toBe(near.id);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 3 — STRAND COVERAGE governs selection (AXIS-B sub-strands).
+//
+// The engine router (AXIS A) requests an engine strand; WITHIN that strand the
+// picker must spread across the V2026 sub-strands the parent report measures
+// before deepening one. These tests model a single engine strand whose eligible
+// items fan out to several sub-strands.
+// ---------------------------------------------------------------------------
+
+describe("pickShortTestQuestion — sub-strand coverage governor", () => {
+  // Two eligible items in the SAME engine strand: one whose sub-strand is
+  // already covered (ratio) but is NEAREST to target, one whose sub-strand is
+  // NOT yet covered (geometry) but is slightly farther. Pre-fix the picker would
+  // pick the nearest (deepening ratio again and never reaching geometry).
+  it("REPRO + FIX: prefers an uncovered sub-strand over a nearer covered one", async () => {
+    const coveredNearest = row({
+      id: "d1111111-1111-1111-1111-111111111111",
+      content_id: "content-ratio",
+      difficulty: 0.0,
+    });
+    const uncoveredFarther = row({
+      id: "d2222222-2222-2222-2222-222222222222",
+      content_id: "content-geometry",
+      difficulty: 0.3,
+    });
+    const result = await pickShortTestQuestion(
+      makeClient([coveredNearest, uncoveredFarther]),
+      req({ targetDifficulty: 0 }),
+      ctx({
+        subStrandByContentId: new Map([
+          ["content-ratio", "ratio"],
+          ["content-geometry", "geometry"],
+        ]),
+        servedSubStrands: new Set(["ratio"]),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    // Coverage governs over nearest-difficulty: geometry (uncovered) wins.
+    if (result.ok) expect(result.question.id).toBe(uncoveredFarther.id);
+  });
+
+  it("within the SAME coverage bucket, nearest-difficulty still tiebreaks", async () => {
+    // Both sub-strands uncovered → coverage indifferent → nearest wins.
+    const near = row({
+      id: "d3333333-3333-3333-3333-333333333333",
+      content_id: "content-geometry",
+      difficulty: 0.1,
+    });
+    const far = row({
+      id: "d4444444-4444-4444-4444-444444444444",
+      content_id: "content-algebra",
+      difficulty: 0.9,
+    });
+    const result = await pickShortTestQuestion(
+      makeClient([far, near]),
+      req({ targetDifficulty: 0 }),
+      ctx({
+        subStrandByContentId: new Map([
+          ["content-geometry", "geometry"],
+          ["content-algebra", "algebra"],
+        ]),
+        servedSubStrands: new Set(),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe(near.id);
+  });
+
+  it("GRACEFUL FALLBACK: NULL content_id never beats a coverage-extending item", async () => {
+    const uncovered = row({
+      id: "d5555555-5555-5555-5555-555555555555",
+      content_id: "content-geometry",
+      difficulty: 0.5,
+    });
+    const unresolved = row({
+      id: "d6666666-6666-6666-6666-666666666666",
+      content_id: null,
+      difficulty: 0.0, // nearer, but no sub-strand → not coverage-extending
+    });
+    const result = await pickShortTestQuestion(
+      makeClient([unresolved, uncovered]),
+      req({ targetDifficulty: 0 }),
+      ctx({
+        subStrandByContentId: new Map([["content-geometry", "geometry"]]),
+        servedSubStrands: new Set(),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe(uncovered.id);
+  });
+
+  it("GRACEFUL FALLBACK: with no coverage context, picks nearest-difficulty (prior behaviour)", async () => {
+    const near = row({
+      id: "d7777777-7777-7777-7777-777777777777",
+      content_id: "content-geometry",
+      difficulty: 0.1,
+    });
+    const far = row({
+      id: "d8888888-8888-8888-8888-888888888888",
+      content_id: "content-ratio",
+      difficulty: 0.9,
+    });
+    const result = await pickShortTestQuestion(
+      makeClient([far, near]),
+      req({ targetDifficulty: 0 }),
+      ctx(), // no subStrandByContentId / servedSubStrands
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.question.id).toBe(near.id);
+  });
+
+  it("L6 scenario: across served slots, previously-skipped sub-strands get representation", async () => {
+    // Eligible pool in one engine strand spanning 4 sub-strands; 'percentage'
+    // already covered, the other three are the symptom's skipped sub-strands.
+    // Serving with each newly-covered sub-strand added to servedSubStrands must
+    // reach geometry, ratio, AND algebra, never re-picking percentage.
+    const subStrandByContentId = new Map([
+      ["c-percentage", "percentage"],
+      ["c-geometry", "geometry"],
+      ["c-ratio", "ratio"],
+      ["c-algebra", "algebra"],
+    ]);
+    const pool = [
+      row({ id: "e0000000-0000-0000-0000-000000000001", content_id: "c-percentage", difficulty: 0.0 }),
+      row({ id: "e0000000-0000-0000-0000-000000000002", content_id: "c-geometry", difficulty: 0.2 }),
+      row({ id: "e0000000-0000-0000-0000-000000000003", content_id: "c-ratio", difficulty: 0.4 }),
+      row({ id: "e0000000-0000-0000-0000-000000000004", content_id: "c-algebra", difficulty: 0.6 }),
+    ];
+
+    const served = new Set<string>(["percentage"]);
+    const servedQuestionIds: string[] = [];
+    const reached = new Set<string>();
+
+    for (let i = 0; i < 3; i++) {
+      const result = await pickShortTestQuestion(
+        makeClient(pool),
+        req({ targetDifficulty: 0 }),
+        ctx({
+          servedQuestionIds,
+          subStrandByContentId,
+          servedSubStrands: served,
+        }),
+      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const sub = subStrandByContentId.get(result.question.content_id ?? "")!;
+      expect(sub).not.toBe("percentage"); // never re-deepens the covered one
+      reached.add(sub);
+      served.add(sub);
+      servedQuestionIds.push(result.question.id);
+    }
+
+    expect(reached).toEqual(new Set(["geometry", "ratio", "algebra"]));
   });
 });
