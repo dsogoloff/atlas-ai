@@ -39,8 +39,35 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
           {copy.screenTitle}
         </h1>
 
-        {/* Proctoring instructions for this child's grade band. */}
-        <section className="mt-6" aria-labelledby="proctor-heading">
+        {/* What the short check is / isn't (§2.4) — TOP of the screen. */}
+        <section className="mt-6" aria-labelledby="about-heading">
+          <h2
+            id="about-heading"
+            className="font-display-child text-lg font-bold text-sam-navy"
+          >
+            {copy.about.heading}
+          </h2>
+          <ul className="mt-3 flex flex-col gap-2">
+            {copy.about.points.map((point) => (
+              <li key={point} className="flex items-start gap-2 text-base text-sam-gray-dark">
+                <span
+                  className="material-symbols-outlined text-base text-sam-teal"
+                  aria-hidden="true"
+                >
+                  info
+                </span>
+                {point}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Proctoring instructions for this child's grade band — immediately
+            below About; divider above. */}
+        <section
+          className="mt-8 border-t border-sam-gray-light pt-6"
+          aria-labelledby="proctor-heading"
+        >
           <span className="inline-block rounded-full bg-sam-yellow/30 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sam-navy">
             {m.badge}
           </span>
@@ -53,10 +80,10 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
 
           {m.canPoints && (
             <div className="mt-4">
-              <p className="text-sm font-bold text-sam-navy">{m.canTitle}</p>
+              <p className="text-base font-bold text-sam-navy">{m.canTitle}</p>
               <ul className="mt-2 flex flex-col gap-2">
                 {m.canPoints.map((point) => (
-                  <li key={point} className="flex items-start gap-2 text-sm text-sam-gray-dark">
+                  <li key={point} className="flex items-start gap-2 text-base text-sam-gray-dark">
                     <span
                       className="material-symbols-outlined text-base text-sam-teal"
                       aria-hidden="true"
@@ -72,10 +99,10 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
 
           {m.dontPoints && (
             <div className="mt-4">
-              <p className="text-sm font-bold text-sam-navy">{m.dontTitle}</p>
+              <p className="text-base font-bold text-sam-navy">{m.dontTitle}</p>
               <ul className="mt-2 flex flex-col gap-2">
                 {m.dontPoints.map((point) => (
-                  <li key={point} className="flex items-start gap-2 text-sm text-sam-gray-dark">
+                  <li key={point} className="flex items-start gap-2 text-base text-sam-gray-dark">
                     <span
                       className="material-symbols-outlined text-base text-sam-red"
                       aria-hidden="true"
@@ -87,7 +114,7 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
                 ))}
               </ul>
               {m.dontNote && (
-                <p className="mt-2 text-sm font-medium italic text-sam-gray-mid">
+                <p className="mt-2 text-base font-medium italic text-sam-gray-mid">
                   {m.dontNote}
                 </p>
               )}
@@ -97,7 +124,7 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
           {m.points && (
             <ul className="mt-4 flex flex-col gap-2">
               {m.points.map((point) => (
-                <li key={point} className="flex items-start gap-2 text-sm text-sam-gray-dark">
+                <li key={point} className="flex items-start gap-2 text-base text-sam-gray-dark">
                   <span
                     className="material-symbols-outlined text-base text-sam-teal"
                     aria-hidden="true"
@@ -110,32 +137,9 @@ export function ParentIntro({ mode, tier, onStart }: Props) {
             </ul>
           )}
 
-          <p className="mt-4 rounded-2xl bg-sam-cream px-4 py-3 text-sm font-semibold text-sam-navy">
+          <p className="mt-4 rounded-2xl bg-sam-cream px-4 py-3 text-base font-semibold text-sam-navy">
             {m.summary}
           </p>
-        </section>
-
-        {/* What the short check is / isn't (§2.4). */}
-        <section className="mt-8 border-t border-sam-gray-light pt-6" aria-labelledby="about-heading">
-          <h2
-            id="about-heading"
-            className="font-display-child text-lg font-bold text-sam-navy"
-          >
-            {copy.about.heading}
-          </h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {copy.about.points.map((point) => (
-              <li key={point} className="flex items-start gap-2 text-sm text-sam-gray-dark">
-                <span
-                  className="material-symbols-outlined text-base text-sam-teal"
-                  aria-hidden="true"
-                >
-                  info
-                </span>
-                {point}
-              </li>
-            ))}
-          </ul>
         </section>
 
         <button
