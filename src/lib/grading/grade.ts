@@ -21,11 +21,75 @@ export function normalizeText(s: string, caseSensitive = false): string {
   return caseSensitive ? collapsed : collapsed.toLowerCase();
 }
 
-/** Parse a numeric entry. Strips a leading "+"; returns NaN if not a number. */
+/** Parse a numeric entry. Strips a leading "+"; returns NaN if not a number.
+ *  STRICT — used to parse authored, canonical key values (already clean). The
+ *  child's ENTERED value goes through the tolerant toRational path below. */
 export function parseNumber(s: string): number {
   const t = s.trim().replace(/^\+/, "");
   if (t === "" || !/^-?\d*\.?\d+$/.test(t)) return NaN;
   return Number(t);
+}
+
+// --- numeric equivalence (comparison only; never mutates stored responses) --
+//
+// Treats forms a child might reasonably type as equal to the canonical answer:
+//   trailing zeros / decimals   5 == 5.0 == 5.00
+//   thousands separators        5,000 == 5000
+//   internal spaces             "10 m" == "10m"
+//   decimal vs simple fraction  0.5 == 1/2   (compared as exact rationals)
+//   numeric value ± trailing unit  5 == "5m",  6 == "6 ft"
+// Anything that doesn't reduce to a number (e.g. "nine six") yields null, so
+// pure-text grading is unaffected.
+
+interface Rational {
+  num: number;
+  den: number;
+}
+
+/** "5.00" → 500/100, "5" → 5/1, "-0.25" → -25/100. Strict decimal/integer. */
+function decimalToRational(s: string): Rational | null {
+  if (!/^-?(?:\d+\.?\d*|\.\d+)$/.test(s)) return null;
+  const neg = s.startsWith("-");
+  const abs = neg ? s.slice(1) : s;
+  const dot = abs.indexOf(".");
+  if (dot === -1) return { num: (neg ? -1 : 1) * Number(abs), den: 1 };
+  const frac = abs.slice(dot + 1);
+  const den = 10 ** frac.length;
+  const digits = abs.slice(0, dot) + frac; // "5.00" → "500"
+  return { num: (neg ? -1 : 1) * Number(digits || "0"), den };
+}
+
+/** Reduce a child-typed numeric entry to an exact rational, tolerating
+ *  thousands separators, internal spaces, a trailing unit token, and simple
+ *  a/b fractions. Returns null when there is no numeric value to compare. */
+export function toRational(raw: string): Rational | null {
+  let s = raw.trim().replace(/^\+/, "");
+  if (s === "") return null;
+  s = s.replace(/\s+/g, ""); // internal spaces: "10 m" → "10m"
+  s = s.replace(/(?<=\d),(?=\d)/g, ""); // thousands separators: "5,000" → "5000"
+  // numeric core (optionally a/b) + an optional trailing unit token.
+  const m = s.match(
+    /^(-?(?:\d+\.?\d*|\.\d+)(?:\/-?(?:\d+\.?\d*|\.\d+))?)([a-zA-Z%°][a-zA-Z%°./]*)?$/,
+  );
+  if (!m) return null;
+  const core = m[1];
+  if (core.includes("/")) {
+    const [nStr, dStr] = core.split("/");
+    const n = decimalToRational(nStr);
+    const d = decimalToRational(dStr);
+    if (!n || !d || d.num === 0) return null;
+    // (n.num/n.den) ÷ (d.num/d.den)
+    return { num: n.num * d.den, den: n.den * d.num };
+  }
+  return decimalToRational(core);
+}
+
+/** True iff both strings reduce to the same exact rational value. */
+export function numericEquivalent(a: string, b: string): boolean {
+  const ra = toRational(a);
+  const rb = toRational(b);
+  if (!ra || !rb) return false;
+  return ra.num * rb.den === rb.num * ra.den;
 }
 
 function ok(reason: string): GradeResult {
@@ -42,8 +106,11 @@ export function gradeExactNumeric(
   target: number,
   tolerance = 0,
 ): GradeResult {
-  const n = parseNumber(value);
-  if (Number.isNaN(n)) return no(`"${value}" is not numeric`);
+  // Tolerant parse: accepts trailing zeros, thousands separators, a trailing
+  // unit, and a/b fractions. Comparison only — the stored response is untouched.
+  const r = toRational(value);
+  if (r === null) return no(`"${value}" is not numeric`);
+  const n = r.num / r.den;
   return Math.abs(n - target) <= tolerance
     ? ok(`${n} within ±${tolerance} of ${target}`)
     : no(`${n} ≠ ${target} (±${tolerance})`);
@@ -55,13 +122,20 @@ export function gradeExactText(
   accepted: string[] = [],
   caseSensitive = false,
 ): GradeResult {
+  const candidatesRaw = [target, ...accepted];
   const got = normalizeText(value, caseSensitive);
-  const candidates = [target, ...accepted].map((c) =>
-    normalizeText(c, caseSensitive),
-  );
-  return candidates.includes(got)
-    ? ok(`"${value}" matches`)
-    : no(`"${value}" not in accepted set`);
+  const candidates = candidatesRaw.map((c) => normalizeText(c, caseSensitive));
+  if (candidates.includes(got)) return ok(`"${value}" matches`);
+  // Numeric-equivalence fallback: lets a numeric text entry match a numeric
+  // key across separators / units / decimal-vs-fraction forms ("10 m" == "10m",
+  // 5 == "5m", 0.5 == "1/2"). Pure text answers reduce to null and are
+  // unaffected — they only matched on the normalized-text compare above.
+  for (const c of candidatesRaw) {
+    if (numericEquivalent(value, c)) {
+      return ok(`"${value}" numerically equals "${c}"`);
+    }
+  }
+  return no(`"${value}" not in accepted set`);
 }
 
 export function gradeMcIndex(index: number, target: number): GradeResult {

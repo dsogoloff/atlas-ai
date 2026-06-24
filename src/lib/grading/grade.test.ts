@@ -15,7 +15,9 @@ import {
   gradeSetEquality,
   isValidEquation,
   normalizeText,
+  numericEquivalent,
   parseNumber,
+  toRational,
 } from "./grade";
 import type { AnswerValue, CorrectAnswerModel, Equation } from "./types";
 
@@ -50,6 +52,66 @@ describe("exact-text", () => {
       gradeExactText("cylinder", "cylinder", ["a cylinder"]).correct,
     ).toBe(true);
     expect(gradeExactText("cube", "cylinder").correct).toBe(false);
+  });
+});
+
+describe("numeric equivalence (toRational / numericEquivalent)", () => {
+  it("treats trailing zeros / decimals as equal", () => {
+    expect(numericEquivalent("5", "5.00")).toBe(true);
+    expect(numericEquivalent("5.0", "5")).toBe(true);
+  });
+  it("ignores thousands separators", () => {
+    expect(numericEquivalent("5,000", "5000")).toBe(true);
+    expect(numericEquivalent("1,250", "1250")).toBe(true);
+  });
+  it("ignores internal spaces", () => {
+    expect(numericEquivalent("10 m", "10m")).toBe(true);
+  });
+  it("treats a decimal and a simple fraction as equal (exact rationals)", () => {
+    expect(numericEquivalent("0.5", "1/2")).toBe(true);
+    expect(numericEquivalent("0.25", "1/4")).toBe(true);
+    expect(numericEquivalent("0.1", "1/10")).toBe(true);
+    expect(numericEquivalent("1/3", "0.3")).toBe(false); // genuinely unequal
+  });
+  it("strips a trailing unit token from either side", () => {
+    expect(numericEquivalent("5", "5m")).toBe(true);
+    expect(numericEquivalent("6", "6 ft")).toBe(true);
+    expect(numericEquivalent("750 g", "750")).toBe(true);
+  });
+  it("returns false for non-numeric text (pure-text grading unaffected)", () => {
+    expect(numericEquivalent("nine", "9")).toBe(false);
+    expect(numericEquivalent("cylinder", "cube")).toBe(false);
+    expect(toRational("forty")).toBeNull();
+  });
+  it("does not collapse genuinely different numbers", () => {
+    expect(numericEquivalent("5", "50")).toBe(false);
+    expect(numericEquivalent("2/3", "3/4")).toBe(false);
+  });
+});
+
+describe("exact-numeric — equivalence forms", () => {
+  it("accepts trailing zeros, separators, fractions, and trailing units", () => {
+    expect(gradeExactNumeric("5.00", 5).correct).toBe(true);
+    expect(gradeExactNumeric("5,000", 5000).correct).toBe(true);
+    expect(gradeExactNumeric("1/2", 0.5).correct).toBe(true);
+    expect(gradeExactNumeric("5m", 5).correct).toBe(true);
+    expect(gradeExactNumeric("6 ft", 6).correct).toBe(true);
+  });
+  it("still rejects a genuinely wrong number", () => {
+    expect(gradeExactNumeric("5", 50).correct).toBe(false);
+  });
+});
+
+describe("exact-text — numeric equivalence fallback", () => {
+  it("matches numeric text entries across units / spaces / fraction forms", () => {
+    expect(gradeExactText("10m", "10 m").correct).toBe(true);
+    expect(gradeExactText("5m", "5").correct).toBe(true);
+    expect(gradeExactText("1/2", "0.5").correct).toBe(true);
+    expect(gradeExactText("5,000", "5000").correct).toBe(true);
+  });
+  it("leaves pure-text matching unchanged", () => {
+    expect(gradeExactText("cube", "cylinder").correct).toBe(false);
+    expect(gradeExactText("ninety-six", "Ninety-six").correct).toBe(true);
   });
 });
 
