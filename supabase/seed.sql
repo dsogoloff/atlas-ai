@@ -4623,6 +4623,22 @@ from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q34';
 -- END l5l6-image-path-wire
 
 
+-- BEGIN l5-q27-activate (seed mirror of supabase/migrations/20260625120300_l5_q27_activate.sql)
+-- Q27 was HELD (4 separate option-shape images). Founder supplied a single combined crop with
+-- in-image labels (1)-(4): circle/hexagon/heart/rectangle. Now a standard single-stimulus MC.
+-- Source-verified 2026-06-25 (worksheet page + answer key = (1) + L5-27.png). Wire image_path,
+-- sharpen image_alt, ACTIVATE (is_active=true). level 5A / STE true / content_id l4-geometry-3
+-- already correct (set elsewhere). Founder uploads l5/sam-l5-q27.png before reset. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Which of the shapes has the most lines of symmetry?","options":["(1)","(2)","(3)","(4)"],"correct_index":0,"distractor_misconceptions":{"1":"GE_SHAPE_PROPERTY","2":"GE_SHAPE_PROPERTY","3":"GE_SHAPE_PROPERTY"},"image_path":"l5/sam-l5-q27.png","image_alt":"Four labelled shapes shown together: (1) a circle, (2) a hexagon, (3) a heart, and (4) a rectangle. Identify which shape has the most lines of symmetry.","image_required":true}'::jsonb,
+    is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L5-Q27';
+-- END l5-q27-activate
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
