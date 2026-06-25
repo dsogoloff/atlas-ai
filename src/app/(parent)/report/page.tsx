@@ -40,6 +40,8 @@ import {
   resolveNarrationProse,
   type ReportNarrationRow,
 } from "@/lib/report/narration/resolve";
+import { isNarrationPending, nowMs } from "./narration-pending";
+import { PreparingReport } from "./preparing-report";
 import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -236,6 +238,45 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
 
   // ---- Branch 7: full report.
   const serviceClient = createServiceClient();
+
+  // Read the narration row first (cheap). A freshly-completed session's
+  // narration is written a few seconds AFTER completion (the trigger generates
+  // + persists post-completion), so a report opened in that gap has no row yet.
+  // Show a brief "preparing your report" interstitial that polls until the row
+  // lands, rather than flashing the pre-narration shell (generic strand lede,
+  // no Strengths / Areas). The wait is bounded (narration-pending.ts): a
+  // narration that fails or never arrives falls through to the normal report
+  // below, so the parent is never trapped on an indefinite interstitial.
+  const { data: narrationRow, error: narrationErr } = await supabase
+    .from("report_narrations")
+    .select(
+      "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
+    )
+    .eq("session_id", latestSession.id)
+    .maybeSingle();
+  if (narrationErr) {
+    console.error("[report] narration lookup failed", {
+      sessionId: latestSession.id,
+      err: narrationErr,
+    });
+  }
+
+  if (
+    isNarrationPending(
+      narrationRow != null,
+      latestSession.completed_at,
+      nowMs(),
+    )
+  ) {
+    const completed = formatDate(latestSession.completed_at);
+    return (
+      <PreparingReport
+        childName={firstName(child.name)}
+        metaLine={completed ? `Assessed ${completed}` : null}
+      />
+    );
+  }
+
   let reportContent;
   try {
     reportContent = await assembleReportContent({
@@ -255,20 +296,6 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
         body="We couldn't load this assessment. Please try again in a moment, or contact support if the problem persists."
       />
     );
-  }
-
-  const { data: narrationRow, error: narrationErr } = await supabase
-    .from("report_narrations")
-    .select(
-      "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
-    )
-    .eq("session_id", latestSession.id)
-    .maybeSingle();
-  if (narrationErr) {
-    console.error("[report] narration lookup failed", {
-      sessionId: latestSession.id,
-      err: narrationErr,
-    });
   }
 
   // Self-heal stale young-band narration. A low-level (0A/0B/L1/L2) session
