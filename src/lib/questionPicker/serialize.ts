@@ -37,6 +37,8 @@
 
 import type { Json } from "@/lib/supabase/database.types";
 
+import { spreadOptions } from "./optionOrder";
+
 import type {
   ClientFillToken,
   ClientLabeledItem,
@@ -56,7 +58,7 @@ export function toClientQuestion(
     strand: row.strand,
     level: row.level,
     format: row.format,
-    content: stripContent(row.format, row.content, image, tileImages),
+    content: stripContent(row.format, row.content, image, tileImages, row.id),
   };
 }
 
@@ -65,6 +67,7 @@ function stripContent(
   content: Json,
   image: ClientQuestionImage | undefined,
   tileImages: Record<string, ClientQuestionImage> | undefined,
+  seed: string,
 ): ClientQuestionContent {
   const obj = asObject(content);
   const stem = readString(obj, "stem");
@@ -99,7 +102,13 @@ function stripContent(
       const out: Extract<ClientQuestionContent, { select_rule: string }> = {
         stem,
         select_rule: readString(obj, "select_rule"),
-        options: readLabeledItems(obj, "options"),
+        // Select-all: spread option order so the correct options are not
+        // position-clustered (see optionOrder.ts). Graded by option id.
+        options: spreadOptions(
+          readLabeledItems(obj, "options"),
+          readIdArray(obj, "correct"),
+          seed,
+        ),
         ...(image ? { image } : {}),
       };
       const count = readOptionalInteger(obj, "count");
@@ -136,19 +145,53 @@ function stripContent(
       return ops === undefined ? out : { ...out, ops };
     }
     case "CLICK_IMAGE_SINGLE":
-    case "CLICK_IMAGE_MULTI":
     case "IMAGE_ORDERING":
       // Render-safe: stem + tiles[{id,label,image?}]. The authored answer
       // model (content._authoring.answer_model) is answer-bearing and is
       // NEVER read here — the key-by-key build below cannot leak it. Per-tile
       // raw `image_path`/`image_alt` stay server-side; the client sees only
       // the minted `image` envelope (tileImages map), same as VISUAL_MATCHING.
+      // No clustering to spread: CLICK_IMAGE_SINGLE has one correct tile;
+      // IMAGE_ORDERING is author-ordered (order is the answer).
       return {
         stem,
         tiles: readLabeledItems(obj, "tiles", tileImages),
         ...(image ? { image } : {}),
       };
+    case "CLICK_IMAGE_MULTI":
+      // Select-all over image tiles: spread tile order so the correct tiles are
+      // not position-clustered (see optionOrder.ts). The correct-id list is read
+      // ONLY to compute the order (via readAnswerModelCorrect) — it is NOT emitted;
+      // grading is server-side by tile id (`{type:"id-set",ids}`), never position.
+      return {
+        stem,
+        tiles: spreadOptions(
+          readLabeledItems(obj, "tiles", tileImages),
+          readAnswerModelCorrect(obj),
+          seed,
+        ),
+        ...(image ? { image } : {}),
+      };
   }
+}
+
+/** Correct-option ids for a select-all field (e.g. SELECT_MULTIPLE `correct`).
+ *  Read ONLY to compute display order; never emitted. Tolerant — returns [] if
+ *  absent/malformed (order then falls back to a plain deterministic shuffle). */
+function readIdArray(obj: Record<string, Json>, key: string): string[] {
+  const v = obj[key];
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+}
+
+/** Correct tile ids from a CLICK_IMAGE_MULTI authored answer model
+ *  (content._authoring.answer_model.correct). Server-side only (see readIdArray). */
+function readAnswerModelCorrect(obj: Record<string, Json>): string[] {
+  const a = obj["_authoring"];
+  if (a === null || typeof a !== "object" || Array.isArray(a)) return [];
+  const m = (a as Record<string, Json>)["answer_model"];
+  if (m === null || typeof m !== "object" || Array.isArray(m)) return [];
+  const c = (m as Record<string, Json>)["correct"];
+  return Array.isArray(c) ? c.filter((x): x is string => typeof x === "string") : [];
 }
 
 // ---------------------------------------------------------------------------
