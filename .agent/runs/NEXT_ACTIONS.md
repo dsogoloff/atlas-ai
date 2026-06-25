@@ -4,6 +4,62 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-25 — young-band narration render (PR #166 — OPEN)
+
+**Origin head entering this session: `bf792cc`** (after PRs #163/#164/#165 merged).
+One new PR opened; independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
+No migration — **no `supabase db reset` needed.**
+
+- [ ] **Dimitri: merge PR #166 (lane/young-band-narration-render)** after Vercel preview review.
+      No migration; no `supabase db reset` needed.
+      Suggested preview checks:
+      (a) Open a freshly-completed young-band session's report immediately after finishing —
+          it should show a brief "Preparing…" interstitial state, then the full narrative
+          report once the narration row lands (within ~30s); on timeout it falls through to
+          the generic-lede report (no indefinite spinner).
+      (b) An all-correct 0A floor session should place at the floor level (0A / "S.A.M Level 0A"),
+          not "S.A.M Level 8", in both the placement label and the narration prose.
+
+## 0. 2026-06-24 — intake grades-7/8 disable + low-level strand fix + short-test sub-strand coverage (PRs #159 / #160 / #161 — all OPEN)
+
+**Confirmed merged state at session start:** PRs #150, #153, #155, #156, #157, #158 all
+MERGED to ATLAS-ASSESSMENT; origin head was `e69671b`.
+
+Three new PRs opened this session (all independent off `origin/ATLAS-ASSESSMENT`; not
+stacked; all verify-bar GREEN locally). Dimitri merges attended after Vercel preview review.
+
+- [ ] **Dimitri: merge PR #159 (lane/intake-grades78-disable-l6clamp)** after Vercel
+      preview review. No migration; no `supabase db reset` needed.
+      Check: grades 7/8 greyed and non-selectable on add-child; L7/L8 intake paths clamp
+      to l6 without producing empty strand_mastery.
+
+- [ ] **Dimitri: merge PR #160 (lane/report-low-level-strand-fix)** after Vercel preview
+      review. No migration; no `supabase db reset` needed.
+      Validate on Vercel preview against:
+      - Broken 0A child `c7299380-b690-43fe-ba09-994e43a466df` — radar/bars/narrative/
+        placement should now render (was all no_data / empty).
+      - Working 0C child `0e0a3167-2dab-4691-a7b5-ac735aa75c94` — unchanged (fallback is
+        gated strictly on `subStrandByQuestion.size===0`).
+      - [ ] **PARKED — 0A readiness/placement-card suppression (needs Dimitri).**
+            The "Great news… ready for Level X" readiness line is gated on `readiness.ready`
+            (overall %) in `readiness.ts`, independently of the strand-fallback fix. For a
+            0A child the readiness line may be intentionally suppressed. Plain-English:
+            on the preview, check whether the 0A report shows a placement card / readiness
+            statement. If it is missing, confirm whether this is deliberate (0A is
+            pre-assessment placement; readiness suppressed by design) or a defect.
+
+- [ ] **Dimitri: merge PR #161 (lane/short-test-strand-coverage)** after Vercel preview
+      review. No migration; no `supabase db reset` needed.
+      Validate on Vercel preview against:
+      - L6 child `0ca3029e-e11d-40d0-8c30-c67921e1f9cd` — Geometry/Ratio/Algebra/
+        Statistics should now get representation in the short test (were being skipped
+        under the prior difficulty-only sort).
+      - [ ] **CROSS-LANE FLAG — after PR #161 merges, CONVERSION lane must regenerate
+            the served-order crosswalk.** PR #161 changes the short-test served ORDER
+            (sub-strand-aware sort); the current `served-crosswalk.{md,json}` will be
+            stale. Queue crosswalk regen in the CONVERSION lane; do NOT action in this
+            lane.
+
 ## 0. 2026-06-23 — in-question mascot extended to all tiers (PR #146 — MERGED)
 
 Trunk head **`e93d5cd`**. UI-only; no migration / no `supabase db reset`.
