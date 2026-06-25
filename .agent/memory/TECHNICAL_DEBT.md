@@ -55,6 +55,16 @@ Resolve opportunistically; don't let them sweep into unrelated commits.
 - Set `MISCONCEPTION_CLASSIFIER_LIVE=true` and confirm `ANTHROPIC_API_KEY` in Vercel — the
   classifier is live in code but stub in production until these are set.
 
+## content_id backfill sparseness limits sub-strand report fidelity (2026-06-24)
+- The bridge backfill migration (20260525000003) only tagged l1–l6 + 3 of 6 engine strands;
+  L0 rows are out of range; seeded SAM-L2 items are deliberately unmapped. As a result, the
+  engine-strand fallback introduced in PR #160 fires for any session at young-band/L1/L2 and
+  sub-strand breadth coverage in PR #161 is limited to items that actually carry `content_id`.
+  A fuller content_id backfill onto the V2026 taxonomy (covering L0 + all SAM-L2 rows) is a
+  separate future lane; it would improve radar fidelity and sub-strand coverage for these
+  cohorts without any behavior regression (both changes gate cleanly on `content_id` being
+  populated).
+
 ## Ops gap — no report-narration regen mechanism
 - There is no operator path to regenerate a report narration without having the child
   re-take the assessment. `docs/ops-runbook.md` §3 documents this as a KNOWN GAP. A small

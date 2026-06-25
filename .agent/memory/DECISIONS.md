@@ -3,6 +3,98 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-25
+
+* ⚑ **Pre-narration gap closed with a bounded polling interstitial (founder Option 1)
+  (PR #166, lane/young-band-narration-render, 2026-06-25).** Root cause: `report_narrations`
+  is written ~8s after session completion by a background job; a report opened in that
+  window had no narration row and rendered the pre-narration shell (generic strand lede,
+  no Strengths/Areas). Fix: `src/app/(parent)/report/page.tsx` (Server Component) reads the
+  narration row first; when a freshly-completed session has no row yet, `isNarrationPending`
+  in new `narration-pending.ts` returns true (bounded by `NARRATION_WAIT_BOUND_MS` = 30s
+  after `session.completed_at`). While pending, a brief `<PreparingReport>` interstitial
+  renders (`preparing-report.tsx`) which issues a client-side `router.refresh()` to poll.
+  Once the row lands the full report reveals. On failure or after the 30s bound the existing
+  generic-lede report is shown — never an indefinite spinner. New `nowMs()` helper isolates
+  the impure clock read from the Server Component render scope (react-compiler purity).
+  Founder was presented two options; chose Option 1 (interstitial + refresh polling) over
+  Option 2 (server-side polling before render). Design constraint: no indefinite spinner;
+  any narration timeout degrades gracefully to the existing fallback path.
+
+* **Railed-placement fix applied as a served-ceiling clamp at the `assembleReportContent`
+  layer, shared by report label and narration prompt (PR #166, 2026-06-25).** Root cause
+  CONFIRMED: `engine.ts` `placementEstimate` computes `overallLevel = LEVELS[argmax(avg
+  posterior)]` across the full 0A…8B axis. A floor/sparse all-correct run has no ceiling
+  items to pull the posterior down, so the argmax rails to the top index (8B), producing
+  "S.A.M Level 8" for a 0A child. That railed level also propagated into the narration
+  prompt via `assembleReportContent → generateReportNarration`. Decision: apply the fix
+  as a ceiling clamp at the `assembleReportContent` placement-resolution layer
+  (`clampLevelToServedCeiling(level, ceiling)` in `src/lib/report/assemble.ts`), bounding
+  the resolved level by the highest level actually served (`questions.level`, newly
+  selected). This single choke point corrects both the placement label and the narrated
+  level with no engine recalibration. NO change to `engine.ts`. Normal multi-level runs
+  where a ceiling item was served are entirely unchanged (the clamp only ever LOWERS a
+  railed estimate). Raw engine level continues to drive `taxLevelCode` (sub-strand
+  grid/radar), so visuals are unchanged. Rationale for not fixing in `engine.ts`: the
+  engine's posterior is mathematically correct for the items it was asked — the issue is
+  that an under-stimulated (floor/sparse) run has not enough information, and the
+  appropriate correction is to cap the reported output to what was actually measured,
+  not to recalibrate the model.
+
+## 2026-06-24
+
+* **Confirmed merge state (session start):** PRs #150, #153, #155, #156, #157, #158 all
+  MERGED to ATLAS-ASSESSMENT; origin head `e69671b`.
+
+* **Grades 7/8 disabled in add-child intake with "(coming soon)"; `halfGradeToTaxLevelCode`
+  clamps >L6 to l6 (PR #159, lane/intake-grades78-disable-l6clamp, 2026-06-24).** This
+  change had been dispatched in a prior session but no PR was returned; recreated this
+  session. The add-child grade selector now greys grades 7 and 8 and renders them
+  "(coming soon)" non-selectable, preventing intake of children at levels the platform
+  does not yet serve. `halfGradeToTaxLevelCode` previously returned null for 7A/7B/8A/8B,
+  which downstream caused empty `strand_mastery` rows in the report; it now clamps to `l6`
+  as the ceiling. Function exported; unit test added. No migration. Verify GREEN (CI SUCCESS).
+
+* **Low-level reports (0A/0B/L1/L2) now populate strand section via engine-strand fallback
+  when content_id resolution yields zero sub-strands (PR #160,
+  lane/report-low-level-strand-fix, 2026-06-24).** Root cause: `strand_mastery` is keyed
+  on the V2026 sub-strand axis resolved through `questions.content_id →
+  tax_content.sub_strand_id`. The bridge backfill migration (20260525000003) only tagged
+  l1–l6 + 3 of 6 engine strands; L0 rows are outside its range; seeded SAM-L2 items are
+  deliberately unmapped. When no response resolves a sub-strand, every `strand_mastery` row
+  is `no_data` and the report renders an empty radar, no bars, and a generic lede —
+  observable for 0A/0B/L1/L2 while 0C/L3-L6 populate. The fix adds a fallback: when
+  `subStrandByQuestion.size === 0`, the engine 6-strand axis (`questions.strand`, always
+  populated) is mapped onto V2026 sub-strands (`number_sense` &
+  `operations_algorithms` → `whole_numbers`; `fractions_decimals` → `fractions`;
+  `geometry`/`measurement`/`data_statistics` 1:1). The gate (`size === 0`) preserves
+  existing behavior for all working levels. 0A + L1 regression tests added. Note: the
+  readiness/placement-card suppression for 0A (controlled independently by `readiness.ts`)
+  was left untouched and queued for Dimitri to confirm on preview. No migration. Verify
+  GREEN (CI SUCCESS).
+
+* **Short-test picker is now sub-strand-aware (AXIS-B breadth-first before deepening)
+  (PR #161, lane/short-test-strand-coverage, 2026-06-24).** Root cause: the picker
+  operated on the 6-value engine strand (AXIS A) only; it was blind to the 12 V2026
+  sub-strands (AXIS B) that the report measures. Within a strand the picker chose purely
+  by nearest difficulty, so it repeatedly deepened one sub-strand and skipped uncovered
+  siblings (e.g. an L6 test left Geometry/Ratio/Algebra/Statistics unassessed). Fix: a
+  new sort stage in the short picker sorts eligible candidates PRIMARY by sub-strand
+  coverage (an item whose AXIS-B sub-strand has not yet been served this session sorts
+  first) and SECONDARY by the existing nearest-difficulty order; this spreads breadth
+  across sub-strands before deepening, within the existing 10/15 bounds. The
+  `short_test_eligible` flag, the band, and the AXIS-A router are all untouched. NULL
+  `content_id` is treated as already-covered, so items without a sub-strand tag degrade
+  gracefully to the prior difficulty-only sort. New file
+  `src/lib/questionPicker/subStrandCoverage.ts`; wired through handler → pickForSession →
+  short picker; types updated; new + updated tests. Verify GREEN locally (1284 tests); CI
+  pending at session close. Cross-lane follow-up required: after PR #161 merges, the
+  CONVERSION lane must regenerate the served-order crosswalk (served ORDER changes).
+
+* **Technical debt noted: report-visible sub-strand coverage (both #160 fallback fidelity
+  and #161 breadth) is bounded by the sparse content_id backfill.** A fuller content_id
+  backfill onto the V2026 taxonomy is a separate lane; queued in TECHNICAL_DEBT.md.
+
 ## 2026-06-23
 
 * **In-question footer mascot extended to ALL tiers (PR #146, lane/inquestion-mascot-all-tiers).**

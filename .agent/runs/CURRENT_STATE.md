@@ -4,6 +4,91 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering this session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
+
+- **PR #166 — lane/young-band-narration-render — OPEN.**
+  "fix(report): preparing-report interstitial + clamp railed placement to served floor".
+  Off `ATLAS-ASSESSMENT` head `bf792cc`; independent, not stacked. Verify GREEN: 1336 tests /
+  102 files, tsc 0, lint 0 errors (2 known font warnings). Codex manual/skipped (relay unauth).
+
+  **Task 1 — pre-narration interstitial.** `report_narrations` is persisted ~8s AFTER session
+  completion; a report opened in that gap rendered the pre-narration shell (generic strand lede,
+  no Strengths/Areas). This was a TIMING artifact, not a band gate. `src/app/(parent)/report/page.tsx`
+  now reads the narration row first; while a freshly-completed session has no row yet
+  (`narration-pending.ts` `isNarrationPending`, bounded 30s via `NARRATION_WAIT_BOUND_MS`) it
+  renders a brief polling interstitial (`preparing-report.tsx` `PreparingReport`, client
+  `router.refresh()`) and reveals the full report once the row lands. A failed/never-arriving
+  narration falls through to the existing generic-lede report after the bound — never an
+  indefinite spinner. New `nowMs()` helper keeps the impure clock read out of the Server Component
+  render scope (react-hooks/react-compiler purity lint). Founder chose Option 1 (interstitial).
+
+  **Task 2 — clamp placement to measured floor.** Root cause CONFIRMED: `engine.ts`
+  `placementEstimate` sets `overallLevel = LEVELS[argmax(avg posterior)]` over the full
+  0A…8B axis; a floor/sparse all-correct run has no ceiling items to pull the posterior down,
+  so the mode rails to the top index (8B) → "S.A.M Level 8" for a 0A child, and that railed
+  level also fed the narration prompt. New `clampLevelToServedCeiling(level, ceiling)` in
+  `src/lib/report/assemble.ts` bounds the resolved level by the highest level actually served
+  (`questions.level`, newly selected). Applied to `placement.sam_level` in `assembleReportContent`
+  — the shared choke point feeding both the report label and the narration prompt. NO `engine.ts`
+  change. Normal multi-level runs (a ceiling item served) unchanged; the clamp only ever lowers
+  a railed estimate. Raw engine level still drives `taxLevelCode` (sub-strand grid/radar), so
+  visuals unchanged.
+
+  Files: `src/app/(parent)/report/page.tsx` (M), `src/lib/report/assemble.ts` (M) +
+  `assemble.test.ts` (M), new `src/app/(parent)/report/narration-pending.ts` + `.test.ts`,
+  new `src/app/(parent)/report/preparing-report.tsx`.
+
+---
+
+**As of:** 2026-06-24 (three new PRs opened: intake grades-7/8 disable + >L6 clamp, low-level strand fix, short-test sub-strand coverage) — confirmed merge state as of session start: PRs #150, #153, #155, #156, #157, #158 all MERGED; origin head was **`e69671b`**. Three new lane PRs opened this session (all independent off `origin/ATLAS-ASSESSMENT`, not stacked); all verify-bar GREEN locally. No migration in any of the three — **no `supabase db reset` needed.**
+
+- **PR #159 — lane/intake-grades78-disable-l6clamp — OPEN, CI GREEN.**
+  "feat(intake): grey grades 7/8 '(coming soon)' + clamp >L6 tax-level to l6".
+  The grades-7/8-disable + >L6 clamp had NOT previously shipped (dispatched last session,
+  no PR returned); recreated this session. Add-child intake now greys grades 7 and 8 with a
+  "(coming soon)" label, making them non-selectable. `halfGradeToTaxLevelCode` now clamps
+  7A/7B/8A/8B → l6 instead of returning null (null was producing empty `strand_mastery`
+  rows). `halfGradeToTaxLevelCode` exported; unit test added. Verify GREEN (CI SUCCESS).
+
+- **PR #160 — lane/report-low-level-strand-fix — OPEN, CI GREEN.**
+  "fix(report): low-level reports populate strand section via engine-strand fallback".
+  Root cause: `strand_mastery` is keyed by the V2026 sub-strand axis (resolved via
+  `questions.content_id` → `tax_content.sub_strand_id`), but `content_id` is sparse/NULL at
+  the young band (bridge backfill migration 20260525000003 only tagged l1–l6 + 3 of 6 engine
+  strands; L0 is out of range; seeded SAM-L2 items `number_sense`/`operations_algorithms` are
+  deliberately unmapped). When no response resolves a sub-strand, `scoredResponses` is empty
+  → every `strand_mastery` row is `no_data` → report renders empty radar/no bars/generic lede
+  for 0A/0B/L1/L2 while 0C/L3-L6 populate.
+  Fix: when `content_id` resolution yields zero sub-strands, fall back to the engine 6-strand
+  axis (`questions.strand`, always populated) mapped onto V2026 sub-strands
+  (`number_sense` & `operations_algorithms` → `whole_numbers`; `fractions_decimals` →
+  `fractions`; `geometry`/`measurement`/`data_statistics` 1:1). Gated strictly on
+  `subStrandByQuestion.size === 0` so working levels (0C/L3-L6) are behavior-preserved.
+  Added 0A + L1 regression tests (non-empty strand set). Verify GREEN (CI SUCCESS).
+  NOTE: the "Great news… ready for Level X" readiness line is gated SEPARATELY on
+  `readiness.ready` (overall %) in `readiness.ts` — possibly a deliberate 0A readiness
+  suppression; left untouched, for Dimitri to confirm on preview.
+
+- **PR #161 — lane/short-test-strand-coverage — OPEN (verify GREEN locally, 1284 tests; CI pending at time of writing).**
+  "fix(short-test): sub-strand coverage governs short-test selection".
+  Root cause: the short-test router/picker operated only on the 6-value engine strand (AXIS A);
+  the picker never selected `content_id` so was blind to the 12 V2026 sub-strands (AXIS B)
+  the report measures. Coverage-first routing spread across engine strands, but within a strand
+  the picker chose purely by nearest difficulty, so it re-deepened one sub-strand and skipped
+  uncovered siblings (L6 test left Geometry/Ratio/Algebra/Statistics unassessed).
+  Fix: short-test picker is now sub-strand-aware — sorts eligible candidates PRIMARY by
+  coverage (item whose AXIS-B sub-strand is not yet served this session sorts first),
+  SECONDARY by existing nearest-difficulty order; spreads breadth-first across sub-strands
+  before deepening, within 10/15 bounds. `short_test_eligible` and the band are untouched;
+  AXIS-A router intact; NULL `content_id` treated as already-covered (degrades to prior
+  behaviour, never regresses). New file `src/lib/questionPicker/subStrandCoverage.ts`; wired
+  through handler → pickForSession → short picker; types updated; new + updated tests.
+  Verify GREEN locally (1284 tests); CI verify-bar was pending at time of writing.
+  CROSS-LANE FLAG: this change alters short-test served ORDER; after #161 merges the
+  CONVERSION lane must regenerate the served-order crosswalk.
+
+---
+
 **As of:** 2026-06-23 (in-question mascot extended to all tiers) — trunk head is **`e93d5cd`**
 (PR #146 merged). UI-only change; no migration — **no `supabase db reset` needed.**
 
@@ -379,6 +464,10 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Young-band narration render: interstitial + placement clamp (PR #166) | OPEN PR #166 | lane/young-band-narration-render, off ATLAS-ASSESSMENT head `bf792cc`. No migration. Pre-narration polling interstitial (bounded 30s, degrades to generic-lede on timeout); railed-placement clamp in `assembleReportContent` (`clampLevelToServedCeiling`). New files: `narration-pending.ts` + test, `preparing-report.tsx`; modified: `report/page.tsx`, `assemble.ts` + test. Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped. |
+| Intake grades-7/8 disable + >L6 clamp (PR #159) | OPEN PR #159 — CI GREEN | lane/intake-grades78-disable-l6clamp, off origin/ATLAS-ASSESSMENT. No migration. Grades 7/8 greyed "(coming soon)" non-selectable; `halfGradeToTaxLevelCode` clamps 7A/7B/8A/8B → l6 (was returning null → empty strand_mastery). Exported + unit-tested. Verify GREEN. |
+| Low-level strand report fix (PR #160) | OPEN PR #160 — CI GREEN | lane/report-low-level-strand-fix, off origin/ATLAS-ASSESSMENT. No migration. Engine-strand fallback when content_id yields zero sub-strands; gated on `subStrandByQuestion.size===0`. 0A + L1 regression tests. Verify GREEN. NOTE: 0A readiness/placement-card behavior (possibly deliberate suppression in readiness.ts) left for Dimitri to confirm on preview. |
+| Short-test sub-strand coverage (PR #161) | OPEN PR #161 — CI pending | lane/short-test-strand-coverage, off origin/ATLAS-ASSESSMENT. No migration. New `src/lib/questionPicker/subStrandCoverage.ts`; sub-strand-aware sort (AXIS-B coverage primary, difficulty secondary). NULL content_id degrades gracefully. Verify GREEN locally (1284 tests). CROSS-LANE: after merge, CONVERSION lane must regenerate served-order crosswalk. |
 | Crosswalk regen — {prev,current} band (PR #140) | OPEN PR #140 — CI running | lane/crosswalk-regen-band-20260622, off trunk `17fa2bf`. Docs/artifacts only: regenerated `served-crosswalk.md/json` against new {previous,current} sampling band (PR #139). No migration, no seed, no supabase db reset. Verify GREEN 1232/91. CLOSES CONVERSION Task C(c). Dimitri: merge at leisure. |
 | Young-band + L3 QA defects (PR #134) | OPEN PR #134 — CI GREEN | lane/young-l3-qa-defects-20260622, off trunk `f95920c`. Migrations `20260622120000` (3 UPDATEs: L0A-Q11/L0B-Q02 pattern stimuli, L0C-Q13 days stem+image) + `20260622130000` (L0C-Q04 fact-family EQUATION_SET→MULTI_BLANK). Cake = SOURCE_MAP re-point (no DB). Seed parity PASS (72). Founder: upload 3 new stimulus images + re-point cake, `supabase db reset`. ONE parked item: L4-Q21 source PNG (rectangle dims). |
 | Picker short outcome (PR #119) | MERGED (`c3ad839`) | lane/picker-short-outcome, base ATLAS-ASSESSMENT off `ce9a676`. `ShortTestOutcome` type + persistence + stratified short draw. Migration `20260621130000` (nullable `short_test_outcome`). Verify GREEN 1220/91. `supabase db reset` after. |
