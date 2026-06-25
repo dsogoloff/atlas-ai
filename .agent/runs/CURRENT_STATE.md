@@ -4,7 +4,69 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering this session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
+**As of:** 2026-06-25 (CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path) — origin head entering this session: **`f5947d5`** (after PR #168 merged). One new lane PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked. Three new migrations — **`supabase db reset` required after merge.**
+
+- **PR #169 — lane/l5l6-booklet-reband-load-images — OPEN.**
+  "feat(conversion): L5/L6 booklet re-band + load 6 missing rows + wire image_path".
+  Off `ATLAS-ASSESSMENT` head `f5947d5`; independent, not stacked. Verify GREEN: 1336 tests /
+  102 files, tsc 0, lint 0 errors (2 known warnings). Seed↔migration parity PASS (78 migrations).
+  convert:upload-activation-images --check PASS (all 15 new keys resolve to source on disk).
+  Codex manual/skipped (relay unauth).
+
+  **LOCKED DECISION — L5/L6 band at BOOKLET LEVEL, not difficulty or per-question Level column.**
+  Founder-locked: SAM-L5-* → 5A; SAM-L6-* → 6A (booklet floors). Supersedes the
+  already-merged `20260623150000_l5l6_releveling` (which had banded by the per-question
+  "Level" column: L5 review→4A/4B, L6 review→5A/5B, A/B preserved). Content_id (skill
+  node) untouched. Clears the prior "Level review (founder/picker decision)" follow-up from
+  the l5l6-conversion-status-2026-06-23 work.
+
+  **Three migrations + seed.sql mirror (3 BEGIN/END blocks appended after the
+  l6-q24-table-to-prose block):**
+  1. `20260625120000_l5l6_booklet_reband.sql` — re-band ALL SAM-L5-* → 5A and
+     SAM-L6-* → 6A.
+  2. `20260625120100_l5l6_load_missing_rows.sql` — load 6 gradeable rows previously skipped:
+     SAM-L5-Q01 (place-value MC, ans (3)=600); SAM-L5-Q10 (order fractions DRAG_DROP,
+     3,10/3,14/4,9/2 increasing); SAM-L5-Q16 (order decimals DRAG_DROP, 3.716,3.671,3.617,3
+     decreasing); SAM-L5-Q18 (decimal→fraction MC, ans (3)=8 7/20); SAM-L6-Q22 (0.052 kg→g
+     NUMERIC, ans 52); SAM-L6-Q27 (fraction>50% MC, ans (4)=3/5). Banded to booklet level
+     (5A/6A); short_test_eligible=true for all six (Short Test column = Y; key-driven; none
+     manual). Ordering items authored as DRAG_DROP. SAM-L5-Q26 ALSO corrected: worksheet
+     shows only figures A and B (loaded row had fabricated options C/D) → options ["A","B"],
+     correct_index 1 (answer key = B).
+  3. `20260625120200_l5l6_image_path_wire.sql` — wire single-stimulus image_path for 15
+     inactive L5/L6 image rows (L5 Q08/Q14/Q25/Q26; L6 Q14/Q15/Q16/Q19/Q25/Q26/Q30/Q31/
+     Q32/Q33/Q34); rows STAY is_active=false (activation-ready). SOURCE_MAP entries added in
+     `scripts/conversion/activation-image-set.ts` (new L5_SRC/L6_SRC dirs). Every crop PNG
+     + worksheet page source-verified.
+
+  **HELD / EXCLUDED (not fabricated):**
+  - SAM-L5-Q27 HELD — 4 options are each a separate shape image; no single stimulus exists;
+    per-tile minting for image-option MC not yet in serveQuestion.ts.
+  - SAM-L6-Q18 excluded — text-only (cube volume), already active.
+
+  **Also added:** `scripts/conversion/purge-staging.ts` + `convert:purge-staging` npm script
+  (founder-run, dry-run default, --apply to delete) to clear 15 stray full-page renders in
+  `question-images/conversion-staging/` bucket prefix.
+
+  **Files changed:** package.json (M), scripts/conversion/activation-image-set.ts (M),
+  scripts/conversion/purge-staging.ts (A), supabase/migrations/20260625120000/120100/120200
+  (A x3), supabase/seed.sql (M).
+
+  **Founder post-merge actions (attended):**
+  (a) `supabase db reset` (applies 3 new migrations).
+  (b) `pnpm convert:upload-activation-images` to push the 15 new L5/L6 image crops to the
+      private bucket, then flip those rows `is_active=true` once images are confirmed present
+      (separate activation step).
+  (c) `pnpm convert:purge-staging --apply` to clear the conversion-staging/ renders.
+
+  **BATCHED GATE ITEMS for Dimitri (in PR body, non-blocking):**
+  (1) Confirm 5A/6A is the intended booklet half-grade (A/B collapse reversible via one UPDATE).
+  (2) SAM-L5-Q27 — provide composite 4-shape crop OR defer until image-option per-tile minting
+      lands in serveQuestion.ts.
+
+---
+
+**As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering that session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
 
 - **PR #166 — lane/young-band-narration-render — OPEN.**
   "fix(report): preparing-report interstitial + clamp railed placement to served floor".
@@ -464,6 +526,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| CONVERSION L5/L6 booklet re-band + load 6 rows + wire image_path (PR #169) | OPEN PR #169 | lane/l5l6-booklet-reband-load-images, off ATLAS-ASSESSMENT head `f5947d5`. 3 migrations: `20260625120000` (re-band all SAM-L5/L6 to booklet floor 5A/6A) + `20260625120100` (load 6 skipped rows) + `20260625120200` (wire image_path for 15 inactive rows). Seed parity PASS (78). Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Requires `supabase db reset` after merge. SAM-L5-Q27 HELD (image-option per-tile not yet wired). |
 | Young-band narration render: interstitial + placement clamp (PR #166) | OPEN PR #166 | lane/young-band-narration-render, off ATLAS-ASSESSMENT head `bf792cc`. No migration. Pre-narration polling interstitial (bounded 30s, degrades to generic-lede on timeout); railed-placement clamp in `assembleReportContent` (`clampLevelToServedCeiling`). New files: `narration-pending.ts` + test, `preparing-report.tsx`; modified: `report/page.tsx`, `assemble.ts` + test. Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped. |
 | Intake grades-7/8 disable + >L6 clamp (PR #159) | OPEN PR #159 — CI GREEN | lane/intake-grades78-disable-l6clamp, off origin/ATLAS-ASSESSMENT. No migration. Grades 7/8 greyed "(coming soon)" non-selectable; `halfGradeToTaxLevelCode` clamps 7A/7B/8A/8B → l6 (was returning null → empty strand_mastery). Exported + unit-tested. Verify GREEN. |
 | Low-level strand report fix (PR #160) | OPEN PR #160 — CI GREEN | lane/report-low-level-strand-fix, off origin/ATLAS-ASSESSMENT. No migration. Engine-strand fallback when content_id yields zero sub-strands; gated on `subStrandByQuestion.size===0`. 0A + L1 regression tests. Verify GREEN. NOTE: 0A readiness/placement-card behavior (possibly deliberate suppression in readiness.ts) left for Dimitri to confirm on preview. |

@@ -5,6 +5,45 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-25
 
+* ⚑ **LOCKED — L5/L6 content bands at BOOKLET LEVEL, not difficulty or per-question Level
+  column (PR #169, lane/l5l6-booklet-reband-load-images, 2026-06-25).** Founder-locked
+  decision: SAM-L5-* rows band to 5A (L5 booklet floor); SAM-L6-* rows band to 6A (L6
+  booklet floor). The A/B difficulty suffix (derived from the per-question "Level" column
+  in the source worksheet) is dropped and collapsed to the booklet floor. Content_id (skill
+  sub-strand node) is untouched. This SUPERSEDES the already-merged
+  `20260623150000_l5l6_releveling` migration, which had banded by the per-question Level
+  column (L5 review→4A/4B, L6 review→5A/5B, A/B preserved for non-review items). The
+  superseding re-band is in migration `20260625120000_l5l6_booklet_reband.sql`. Rationale:
+  L5/L6 review content bands at the BOOKLET LEVEL, not at the difficulty/question-granularity
+  level. The A/B collapse is reversible via one UPDATE if the decision changes. This decision
+  resolves the "Level review (founder/picker decision)" follow-up from the
+  l5l6-conversion-status-2026-06-23 session.
+
+* **L5/L6 conversion: 6 skipped rows loaded; 15 inactive image rows wired; SAM-L5-Q26
+  options corrected (PR #169, 2026-06-25).** Six gradeable rows that the prior pipeline run
+  had skipped are now loaded at booklet-level band (5A/6A): SAM-L5-Q01 (place-value MC),
+  SAM-L5-Q10 (order fractions DRAG_DROP), SAM-L5-Q16 (order decimals DRAG_DROP),
+  SAM-L5-Q18 (decimal→fraction MC), SAM-L6-Q22 (unit conversion NUMERIC), SAM-L6-Q27
+  (fraction>50% MC). All six are short_test_eligible=true (Short Test column = Y in the
+  source key; key-driven, not manual). Ordering items authored as DRAG_DROP. Separately,
+  single-stimulus image_path values were wired for 15 inactive L5/L6 image rows (L5
+  Q08/Q14/Q25/Q26; L6 Q14/Q15/Q16/Q19/Q25/Q26/Q30/Q31/Q32/Q33/Q34); those rows remain
+  is_active=false (activation-ready once images are uploaded). SAM-L5-Q26 corrected: the
+  loaded row had fabricated options C/D that do not appear on the worksheet; worksheet shows
+  only figures A and B, so options are ["A","B"] with correct_index 1 (answer key = B). All
+  content source-verified against worksheet pages + answer-key PDFs + Question Summary this
+  session. SAM-L5-Q27 HELD: 4 options are each a separate shape image; no single stimulus
+  exists; per-tile minting for image-option MC not yet in serveQuestion.ts. SAM-L6-Q18
+  excluded (text-only, cube volume, already active). Three migrations + seed.sql mirror
+  (78 total); parity PASS. Verify GREEN 1336 tests / 102 files, tsc 0, lint 0 errors.
+  Codex manual/skipped (relay unauth).
+
+* **`purge-staging.ts` utility added for clearing stray conversion-staging/ bucket renders
+  (PR #169, 2026-06-25).** `scripts/conversion/purge-staging.ts` + `convert:purge-staging`
+  npm script. Founder-run; dry-run default; --apply flag to execute deletes. Targets the 15
+  full-page renders under `question-images/conversion-staging/` that were uploaded during
+  prior pipeline runs and are now superseded by the curated per-question crops.
+
 * ⚑ **Pre-narration gap closed with a bounded polling interstitial (founder Option 1)
   (PR #166, lane/young-band-narration-render, 2026-06-25).** Root cause: `report_narrations`
   is written ~8s after session completion by a background job; a report opened in that

@@ -4,6 +4,41 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-25 — CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path (PR #169 — OPEN)
+
+**Origin head entering this session: `f5947d5`** (after PR #168 merged).
+One new PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
+Three new migrations — **`supabase db reset` required after merge.**
+
+LOCKED DECISION (founder): L5/L6 content bands at BOOKLET LEVEL — SAM-L5-* → 5A, SAM-L6-* → 6A.
+Supersedes `20260623150000_l5l6_releveling` (difficulty/Level-column banding). Clears the prior
+"Level review (founder/picker decision)" follow-up from the l5l6-conversion-status-2026-06-23 work.
+
+- [ ] **Dimitri: merge PR #169 (lane/l5l6-booklet-reband-load-images)** after Vercel preview review.
+      Then, in order:
+      (a) Run `supabase db reset` (applies migrations `20260625120000`, `20260625120100`,
+          `20260625120200`).
+      (b) Run `pnpm convert:upload-activation-images` to push the 15 new L5/L6 image crops
+          (L5 Q08/Q14/Q25/Q26; L6 Q14/Q15/Q16/Q19/Q25/Q26/Q30/Q31/Q32/Q33/Q34) to the private
+          `question-images` bucket. Then flip those 15 rows `is_active=true` (separate activation
+          step — confirm images are present in the bucket first).
+      (c) Run `pnpm convert:purge-staging --apply` to clear the 15 stray full-page renders in
+          `question-images/conversion-staging/` bucket prefix.
+
+- [ ] **BATCHED GATE ITEMS for Dimitri (in PR #169 body, non-blocking before merge):**
+      (1) Confirm 5A/6A is the intended booklet half-grade for L5/L6 content. The A/B collapse
+          (i.e. dropping difficulty-derived A/B suffixes in favour of the booklet floor) is
+          reversible via a single UPDATE if you want to restore A/B splits later.
+      (2) SAM-L5-Q27 — this row is HELD (not loaded). Its 4 answer options are each a separate
+          shape image (circle/hexagon/heart/rectangle); there is no single stimulus, and per-tile
+          image minting for image-option MC is not yet in serveQuestion.ts. Decision: provide a
+          composite 4-shape crop, OR defer until per-tile minting lands.
+
+- [ ] **PARKED — SAM-L5-Q27 (needs Dimitri / architecture).** Row held; not loaded. Options:
+      (a) Founder provides a composite 4-shape crop (all four shapes in one image) — then load
+          as a standard CLICK_IMAGE_SINGLE or similar; (b) defer until image-option per-tile
+          minting is built into serveQuestion.ts. No build until directed.
+
 ## 0. 2026-06-25 — young-band narration render (PR #166 — OPEN)
 
 **Origin head entering this session: `bf792cc`** (after PRs #163/#164/#165 merged).
@@ -682,7 +717,13 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
     (864 tests / 52 files, tsc 0, lint 2 known warnings). Phase 3 NOT started (stopped per
     instruction).
 - [ ] Remaining digitization: L7 (parked); image curation for the new inactive image-
-  essential rows; recover the L5/L6 symbol-font MC options skipped by the guard.
+  essential rows.
+  - [x] **L5/L6 banding + missing-row load + image_path wire — DONE (PR #169, 2026-06-25).**
+        6 previously-skipped L5/L6 rows loaded; 15 image rows wired (activation-ready);
+        all SAM-L5/L6-* re-banded to booklet level (5A/6A) per founder's LOCKED decision.
+        SAM-L5-Q27 HELD (image-option per-tile not yet wired — see parked item above).
+        The "Level review (founder/picker decision)" follow-up from l5l6-conversion-status-2026-06-23
+        is resolved by the founder's booklet-level decision.
 
 ## 4b. Assessment mascot (DONE-pending-merge 2026-06-10 — PR #34, lane/assessment-mascot)
 - [x] Dachshund mascot integrated into the child flow (3 poses at stable paths:
