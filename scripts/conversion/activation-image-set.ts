@@ -25,6 +25,8 @@ const L2_SRC = process.env.L2_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scr
 const L2_GEN = process.env.L2_GEN_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-l2/scripts/conversion/output/l2-art-generated";
 const L3_SRC = process.env.L3_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/3";
 const L4_SRC = process.env.L4_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/4";
+const L5_SRC = process.env.L5_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/5";
+const L6_SRC = process.env.L6_SRC_DIR ?? "C:/Users/Acer/PROJECTS/atlas-ai-trunk/scripts/conversion/source/6";
 
 export interface Entry {
   bucket: string;
@@ -176,6 +178,27 @@ export const SOURCE_MAP: Record<string, string> = {
   "l4/sam-l4-q20.png": `${L4_SRC}/L4-20.png`,
   "l4/sam-l4-q21.png": `${L4_SRC}/L4-21.png`,
   "l4/sam-l4-q23.png": `${L4_SRC}/L4-23.png`,
+  // L5 — single per-question stimulus crops (source/5). Q08/Q14/Q25/Q26 wired image_path but
+  // held is_active=false (activation-ready) by migration 20260625120200; founder uploads + flips.
+  // Q27 is the founder's combined 4-shape crop (single stimulus, in-image labels 1-4); it is
+  // ACTIVATED by migration 20260625120300 — its file must be uploaded before reset.
+  "l5/sam-l5-q08.png": `${L5_SRC}/L5-8.png`,
+  "l5/sam-l5-q14.png": `${L5_SRC}/L5-14.png`,
+  "l5/sam-l5-q25.png": `${L5_SRC}/L5-25.png`,
+  "l5/sam-l5-q26.png": `${L5_SRC}/L5-26.png`,
+  "l5/sam-l5-q27.png": `${L5_SRC}/L5-27.png`,
+  // L6 — single per-question stimulus crops (source/6).
+  "l6/sam-l6-q14.png": `${L6_SRC}/L6-14.png`,
+  "l6/sam-l6-q15.png": `${L6_SRC}/L6-15.png`,
+  "l6/sam-l6-q16.png": `${L6_SRC}/L6-16.png`,
+  "l6/sam-l6-q19.png": `${L6_SRC}/L6-19.png`,
+  "l6/sam-l6-q25.png": `${L6_SRC}/L6-25.png`,
+  "l6/sam-l6-q26.png": `${L6_SRC}/L6-26.png`,
+  "l6/sam-l6-q30.png": `${L6_SRC}/L6-30.png`,
+  "l6/sam-l6-q31.png": `${L6_SRC}/L6-31.png`,
+  "l6/sam-l6-q32.png": `${L6_SRC}/L6-32.png`,
+  "l6/sam-l6-q33.png": `${L6_SRC}/L6-33.png`,
+  "l6/sam-l6-q34.png": `${L6_SRC}/L6-34.png`,
 };
 
 /** Every `"image_path":"KEY"` referenced in seed.sql (held rows carry none). */

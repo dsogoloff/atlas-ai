@@ -4,7 +4,90 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering this session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
+**As of:** 2026-06-25 (CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path + SAM-L5-Q27 activation) — origin head entering this session: **`f5947d5`** (after PR #168 merged). One new lane PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked. Four new migrations — **`supabase db reset` required after merge. CRITICAL: upload l5/sam-l5-q27.png to the private question-images bucket BEFORE or with `supabase db reset` — Q27 is now is_active=true and will 500 at serve time if the image is absent.**
+
+- **PR #169 — lane/l5l6-booklet-reband-load-images — OPEN.**
+  "feat(conversion): L5/L6 booklet re-band + load 6 missing rows + wire image_path".
+  Off `ATLAS-ASSESSMENT` head `f5947d5`; independent, not stacked. Verify GREEN: 1336 tests /
+  102 files, tsc 0, lint 0 errors (2 known warnings). Seed↔migration parity PASS (79 migrations).
+  convert:upload-activation-images --check PASS (l5 now 5 keys, all source files present).
+  Codex manual/skipped (relay unauth). A follow-up commit on this same open lane activated
+  SAM-L5-Q27 (founder supplied the combined 4-shape crop; see below).
+
+  **LOCKED DECISION — L5/L6 band at BOOKLET LEVEL, not difficulty or per-question Level column.**
+  Founder-locked: SAM-L5-* → 5A; SAM-L6-* → 6A (booklet floors). Supersedes the
+  already-merged `20260623150000_l5l6_releveling` (which had banded by the per-question
+  "Level" column: L5 review→4A/4B, L6 review→5A/5B, A/B preserved). Content_id (skill
+  node) untouched. Clears the prior "Level review (founder/picker decision)" follow-up from
+  the l5l6-conversion-status-2026-06-23 work.
+
+  **Three migrations + seed.sql mirror (3 BEGIN/END blocks appended after the
+  l6-q24-table-to-prose block):**
+  1. `20260625120000_l5l6_booklet_reband.sql` — re-band ALL SAM-L5-* → 5A and
+     SAM-L6-* → 6A.
+  2. `20260625120100_l5l6_load_missing_rows.sql` — load 6 gradeable rows previously skipped:
+     SAM-L5-Q01 (place-value MC, ans (3)=600); SAM-L5-Q10 (order fractions DRAG_DROP,
+     3,10/3,14/4,9/2 increasing); SAM-L5-Q16 (order decimals DRAG_DROP, 3.716,3.671,3.617,3
+     decreasing); SAM-L5-Q18 (decimal→fraction MC, ans (3)=8 7/20); SAM-L6-Q22 (0.052 kg→g
+     NUMERIC, ans 52); SAM-L6-Q27 (fraction>50% MC, ans (4)=3/5). Banded to booklet level
+     (5A/6A); short_test_eligible=true for all six (Short Test column = Y; key-driven; none
+     manual). Ordering items authored as DRAG_DROP. SAM-L5-Q26 ALSO corrected: worksheet
+     shows only figures A and B (loaded row had fabricated options C/D) → options ["A","B"],
+     correct_index 1 (answer key = B).
+  3. `20260625120200_l5l6_image_path_wire.sql` — wire single-stimulus image_path for 15
+     inactive L5/L6 image rows (L5 Q08/Q14/Q25/Q26; L6 Q14/Q15/Q16/Q19/Q25/Q26/Q30/Q31/
+     Q32/Q33/Q34); rows STAY is_active=false (activation-ready). SOURCE_MAP entries added in
+     `scripts/conversion/activation-image-set.ts` (new L5_SRC/L6_SRC dirs). Every crop PNG
+     + worksheet page source-verified.
+  4. `20260625120300_l5_q27_activate.sql` — **SAM-L5-Q27 ACTIVATED** (follow-up commit).
+     UPDATE sets content (image_path l5/sam-l5-q27.png + sharpened image_alt) and
+     is_active=true. Stem/options/correct_index unchanged and already correct: "Which of the
+     shapes has the most lines of symmetry?"; options ["(1)","(2)","(3)","(4)"]; correct_index
+     0 (circle has infinitely many lines of symmetry). Banding 5A; short_test_eligible=true;
+     content_id l4-geometry-3 (Symmetry node) — all already correct, untouched. Seed.sql
+     mirror block `l5-q27-activate` appended after `l5l6-image-path-wire`. SOURCE_MAP entry
+     `l5/sam-l5-q27.png` added in `scripts/conversion/activation-image-set.ts`. Source-
+     verified against worksheet page-13 + answer-key PDF + new L5-27.png crop supplied by
+     founder (single combined crop showing all four shapes with in-image labels (1)-(4):
+     circle/hexagon/heart/rectangle — resolves the per-tile problem; Q27 is now a standard
+     single-stimulus MC whose options reference the in-image labels).
+
+  **HELD / EXCLUDED (not fabricated):**
+  - SAM-L5-Q27 — RESOLVED/ACTIVATED. Was HELD because 4 options were each a separate shape
+    image with no single stimulus. Founder supplied a combined 4-shape crop (L5-27.png) with
+    in-image labels (1)-(4), making this a standard single-stimulus MC. Now is_active=true.
+    **CRITICAL: the founder must upload l5/sam-l5-q27.png to the private question-images
+    bucket before or with `supabase db reset` — Q27 is ACTIVE and will 500 if image absent.**
+  - SAM-L6-Q18 excluded — text-only (cube volume), already active.
+
+  **Also added:** `scripts/conversion/purge-staging.ts` + `convert:purge-staging` npm script
+  (founder-run, dry-run default, --apply to delete) to clear 15 stray full-page renders in
+  `question-images/conversion-staging/` bucket prefix.
+
+  **Files changed (initial 3-migration commit):** package.json (M),
+  scripts/conversion/activation-image-set.ts (M), scripts/conversion/purge-staging.ts (A),
+  supabase/migrations/20260625120000/120100/120200 (A x3), supabase/seed.sql (M).
+  **Files changed (Q27 activation follow-up commit):** scripts/conversion/activation-image-set.ts
+  (M), supabase/migrations/20260625120300_l5_q27_activate.sql (A), supabase/seed.sql (M).
+
+  **Founder post-merge actions (attended):**
+  (a) **CRITICAL FIRST:** Run `pnpm convert:upload-activation-images` to upload
+      `l5/sam-l5-q27.png` (the combined 4-shape crop) to the private `question-images` bucket.
+      This MUST happen before or with `supabase db reset` — SAM-L5-Q27 is now is_active=true
+      and will 500 at serve time if the image is absent in the bucket.
+  (b) `supabase db reset` (applies 4 new migrations: 120000, 120100, 120200, 120300).
+  (c) `pnpm convert:upload-activation-images` also pushes the 15 activation-ready L5/L6 image
+      crops (those rows remain is_active=false; flip them individually once images confirmed).
+  (d) `pnpm convert:purge-staging --apply` to clear the conversion-staging/ renders.
+
+  **BATCHED GATE ITEMS for Dimitri (in PR body, non-blocking):**
+  (1) Confirm 5A/6A is the intended booklet half-grade (A/B collapse reversible via one UPDATE).
+  (2) SAM-L5-Q27 — RESOLVED. Founder supplied the combined 4-shape crop (scripts/conversion/
+      source/5/L5-27.png); Q27 activated via migration 20260625120300. No open gate item.
+
+---
+
+**As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering that session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
 
 - **PR #166 — lane/young-band-narration-render — OPEN.**
   "fix(report): preparing-report interstitial + clamp railed placement to served floor".
@@ -464,6 +547,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| CONVERSION L5/L6 booklet re-band + load 6 rows + wire image_path (PR #169) | OPEN PR #169 | lane/l5l6-booklet-reband-load-images, off ATLAS-ASSESSMENT head `f5947d5`. 3 migrations: `20260625120000` (re-band all SAM-L5/L6 to booklet floor 5A/6A) + `20260625120100` (load 6 skipped rows) + `20260625120200` (wire image_path for 15 inactive rows). Seed parity PASS (78). Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Requires `supabase db reset` after merge. SAM-L5-Q27 HELD (image-option per-tile not yet wired). |
 | Young-band narration render: interstitial + placement clamp (PR #166) | OPEN PR #166 | lane/young-band-narration-render, off ATLAS-ASSESSMENT head `bf792cc`. No migration. Pre-narration polling interstitial (bounded 30s, degrades to generic-lede on timeout); railed-placement clamp in `assembleReportContent` (`clampLevelToServedCeiling`). New files: `narration-pending.ts` + test, `preparing-report.tsx`; modified: `report/page.tsx`, `assemble.ts` + test. Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped. |
 | Intake grades-7/8 disable + >L6 clamp (PR #159) | OPEN PR #159 — CI GREEN | lane/intake-grades78-disable-l6clamp, off origin/ATLAS-ASSESSMENT. No migration. Grades 7/8 greyed "(coming soon)" non-selectable; `halfGradeToTaxLevelCode` clamps 7A/7B/8A/8B → l6 (was returning null → empty strand_mastery). Exported + unit-tested. Verify GREEN. |
 | Low-level strand report fix (PR #160) | OPEN PR #160 — CI GREEN | lane/report-low-level-strand-fix, off origin/ATLAS-ASSESSMENT. No migration. Engine-strand fallback when content_id yields zero sub-strands; gated on `subStrandByQuestion.size===0`. 0A + L1 regression tests. Verify GREEN. NOTE: 0A readiness/placement-card behavior (possibly deliberate suppression in readiness.ts) left for Dimitri to confirm on preview. |
