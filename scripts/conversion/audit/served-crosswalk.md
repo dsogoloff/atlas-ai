@@ -10,6 +10,16 @@ whole set (items never reached within the cap show position '—'). Two canonica
 shown (all-correct / all-incorrect) which bracket any real play-through. Match founder QA
 notes by CONTENT.
 
+This replay models PR #161: within a router-chosen AXIS-A strand the picker is
+sub-strand-coverage-governed — it serves an item whose AXIS-B sub-strand has NOT yet
+been covered this session BEFORE deepening an already-covered sub-strand (breadth-first
+across sub-strands), with the prior nearest-difficulty order as the within-group tiebreak.
+Sub-strands are resolved entirely offline from `seed.sql`: each question's content_id
+assignment (content_key INSERTs + the SAM-L2 backfill + the content_id UPDATEs) →
+`tax_content.code` → `sub_strand_code`. Rows with a NULL/unresolvable content_id don't
+extend coverage (they sort after breadth-extending items), so order can only ever match
+or refine the pre-#161 nearest-difficulty selection, never regress it.
+
 ## QA Zero-A (Pre-K (age 5)) — band {0A,0B} — eligible 30 (prev-band {previous-only} eligible 17 → now 30 (band widened to {previous,current})) — served 10/10 (cap 15)
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
@@ -50,24 +60,24 @@ notes by CONTENT.
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
 | 1 | 1 | SAM-L0B-Q14 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 4 pieces of sushi on a tray. There are 6 pieces of sushi … |
-| 2 | 2 | SAM-L0C-Q11A | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 comes ___ 30. |
+| 2 | 2 | SAM-L0C-Q05 | IMAGE_ORDERING | number_sense | 0B | -2 | Put the pictures in order by size, from smallest to biggest. |
 | 3 | 3 | SAM-L0C-Q13 | CLICK_IMAGE_SINGLE | measurement | 0B | -2 | Read aloud the days of the week from Monday. A part of the page is … |
 | 4 | 4 | SAM-L1-Q01 | CLICK_IMAGE_MULTI | geometry | KA | -2 | Tap the things that have the same color. |
-| 5 | 7 | SAM-L1-Q02 | CLICK_IMAGE_SINGLE | measurement | KA | -2 | Click on the bigger animal. |
-| 6 | 8 | SAM-L1-Q07 | CLICK_IMAGE_SINGLE | geometry | KA | -2 | Match to complete the picture. |
-| 7 | 5 | SAM-L0B-Q15 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? |
-| 8 | 6 | SAM-L0C-Q11B | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 is ___ than 30. |
+| 5 | — | SAM-L0C-Q11A | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 comes ___ 30. |
+| 6 | 7 | SAM-L1-Q02 | CLICK_IMAGE_SINGLE | measurement | KA | -2 | Click on the bigger animal. |
+| 7 | 8 | SAM-L1-Q07 | CLICK_IMAGE_SINGLE | geometry | KA | -2 | Match to complete the picture. |
+| 8 | 5 | SAM-L0B-Q15 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | Diana baked 10 cookies. Paul ate 7 cookies. How many cookies are left? |
 | 9 | — | SAM-L1-Q03 | MULTIPLE_CHOICE | measurement | KA | -2 | Which is longer, the toy car or the toy plane? |
-| 10 | 9 | SAM-L0C-Q09 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 14 blue beads and 5 green beads on Sally's necklace. How … |
-| — | 10 | SAM-L0C-Q03 | SELECT_MULTIPLE | number_sense | 0B | -2 | Tap the boxes that make 10. |
-| — | — | SAM-L0C-Q05 | IMAGE_ORDERING | number_sense | 0B | -2 | Put the pictures in order by size, from smallest to biggest. |
+| 10 | — | SAM-L0C-Q11B | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 31 is ___ than 30. |
+| — | 6 | SAM-L0C-Q03 | SELECT_MULTIPLE | number_sense | 0B | -2 | Tap the boxes that make 10. |
 | — | — | SAM-L0C-Q08 | MULTI_BLANK | number_sense | 0B | -2 | Skip count by 2s. Fill in the missing numbers. |
+| — | 9 | SAM-L0C-Q09 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 14 blue beads and 5 green beads on Sally's necklace. How … |
 | — | — | SAM-L0C-Q10 | NUMERIC_ENTRY | operations_algorithms | 0B | -1.8 | There are 18 birds. 6 of the birds are blue. How many birds are yel… |
 | — | — | SAM-L0C-Q14 | NUMERIC_ENTRY | number_sense | 0C | -2 | How many pairs of the same bikes are there? Write the number. |
 | — | — | SAM-L0C-Q15 | SELECT_MULTIPLE | number_sense | 0C | -1.8 | Tap the odd numbers. |
 | — | — | SAM-L0C-Q16 | MULTI_BLANK | number_sense | 0C | -1.8 | Break apart 32. Fill in the boxes. |
 | — | — | SAM-L1-Q17 | IMAGE_ORDERING | number_sense | KB | -2 | The pictures show what Tom does in one day. Put them in order from … |
-| — | — | SAM-L0C-Q04 | MULTI_BLANK | number_sense | 0B | -2 | Complete the fact family. |
+| — | 10 | SAM-L0C-Q04 | MULTI_BLANK | number_sense | 0B | -2 | Complete the fact family. |
 | — | — | SAM-L0C-Q11C | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 comes ___ 36. |
 | — | — | SAM-L0C-Q11D | CLICK_IMAGE_SINGLE | number_sense | 0B | -1.8 | Look at the number line. 33 is ___ than 36. |
 
@@ -186,7 +196,7 @@ notes by CONTENT.
 | 6 | 6 | SAM-L4-Q21 | MULTIPLE_CHOICE | geometry | 2A | -1 | What is the area of the rectangle below? |
 | 7 | 12 | SAM-L3-Q14 | DRAG_DROP | fractions_decimals | 2A | -1.2 | Arrange the fractions in order. Begin with the smallest. 10/11, 6/1… |
 | 8 | 11 | SAM-L4-Q16 | MULTIPLE_CHOICE | geometry | 2A | -1.2 | Which one of the angles below is smaller than a right angle? |
-| 9 | — | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
+| 9 | 8 | SAM-L4-Q08 | NUMERIC_ENTRY | operations_algorithms | 3A | -0.5 | A box of grapes cost $5.60. Mrs Singh bought two such boxes of grap… |
 | 10 | — | SAM-L4-Q15 | TEXT_ENTRY | measurement | 3B | 0.2 | Aaron and Billy took part in a marathon. When Aaron had run 5 km 25… |
 | 11 | 10 | SAM-L3-Q17 | NUMERIC_ENTRY | data_statistics | 2A | -1.2 | The picture graph below shows the favourite fruits of some Class 2 … |
 | 12 | — | SAM-L3-Q22 | MULTIPLE_CHOICE | number_sense | 3B | 0.2 | What is the greatest 4-digit even number? |
@@ -201,7 +211,7 @@ notes by CONTENT.
 | — | — | SAM-L2-Q22 | NUMERIC_ENTRY | number_sense | 2B | -0.7 | What comes next in the number pattern below? '
        '860, 840, 8… |
 | — | 7 | SAM-L2-Q18 | NUMERIC_ENTRY | number_sense | 2A | -1.2 | How many are there? |
-| — | 8 | SAM-L3-Q07 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.2 | Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes ar… |
+| — | — | SAM-L3-Q07 | MULTIPLE_CHOICE | operations_algorithms | 2A | -1.2 | Mrs Li packs 30 cupcakes equally into 5 boxes. How many cupcakes ar… |
 | — | 9 | SAM-L3-Q09 | MULTIPLE_CHOICE | measurement | 2A | -1.2 | Kelvin had dinner at the time shown below. What time did he have di… |
 | — | — | SAM-L3-Q10 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | A gardener planted 75 orchids, 25 lilies and 50 roses. How many flo… |
 | — | — | SAM-L3-Q11 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | Which of the following is equal to 18? |
@@ -215,13 +225,13 @@ notes by CONTENT.
 | — | — | SAM-L4-Q05 | MULTIPLE_CHOICE | number_sense | 2A | -1.2 | The sum of 562 and 3379 is ___. |
 | — | — | SAM-L4-Q06 | NUMERIC_ENTRY | number_sense | 3B | 0.2 | What is the missing digit (■) in the following subtraction?    8 5 … |
 | — | — | SAM-L4-Q07 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.3 | A school library has 2540 fiction books. It has 1651 more fiction b… |
-| — | — | SAM-L4-Q08 | NUMERIC_ENTRY | operations_algorithms | 3A | -0.5 | A box of grapes cost $5.60. Mrs Singh bought two such boxes of grap… |
 | — | — | SAM-L4-Q09 | MULTIPLE_CHOICE | operations_algorithms | 3A | -0.5 | Mr Lee has 60 mangoes. He puts as many mangoes as possible equally … |
 | — | — | SAM-L4-Q10 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | Multiply 324 by 5. |
+| — | — | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
 | — | — | SAM-L4-Q13 | MULTIPLE_CHOICE | measurement | 2A | -1 | What is the volume of liquid in the jug shown below? |
 | — | — | SAM-L4-Q22 | TEXT_ENTRY | measurement | 3B | 0.2 | Mr Davis took 6 h 50 min to complete a marathon. He crossed the fin… |
 
-## QA Level 4 (Grade 4) — band {3A,3B,4A,4B} — eligible 18 (prev-band {previous-only} eligible 13 → now 18 (band widened to {previous,current})) — served 10/10 (cap 15)
+## QA Level 4 (Grade 4) — band {3A,3B,4A,4B} — eligible 35 (prev-band {previous-only} eligible 13 → now 35 (band widened to {previous,current})) — served 11/11 (cap 15)
 
 | pos(correct) | pos(incorrect) | external_id | format | strand | level | diff | stem |
 |---|---|---|---|---|---|---|---|
@@ -229,20 +239,37 @@ notes by CONTENT.
 | 2 | 2 | SAM-L4-Q08 | NUMERIC_ENTRY | operations_algorithms | 3A | -0.5 | A box of grapes cost $5.60. Mrs Singh bought two such boxes of grap… |
 | 3 | 3 | SAM-L4-Q14 | MULTIPLE_CHOICE | measurement | 3A | -0.5 | 6 kg 27 g = ___ g |
 | 4 | 4 | SAM-L4-Q20 | MULTI_BLANK | data_statistics | 3A | -0.5 | The bar graph below shows the scores of five basketball teams in a … |
-| 5 | — | SAM-L4-Q27 | NUMERIC_ENTRY | operations_algorithms | 4B | 0.8 | Name one number that can divide both 54 and 72. |
-| 6 | 7 | SAM-L4-Q15 | TEXT_ENTRY | measurement | 3B | 0.2 | Aaron and Billy took part in a marathon. When Aaron had run 5 km 25… |
-| 7 | — | SAM-L4-Q26 | NUMERIC_ENTRY | number_sense | 4A | 0.4 | Round 42 750 to the nearest hundred. |
-| 8 | 8 | SAM-L4-Q22 | TEXT_ENTRY | measurement | 3B | 0.2 | Mr Davis took 6 h 50 min to complete a marathon. He crossed the fin… |
-| 9 | — | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
-| 10 | — | SAM-L4-Q23 | NUMERIC_ENTRY | number_sense | 4A | 0.3 | Write the number shown. |
-| — | 5 | SAM-L3-Q21 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | What is the missing number below? 7602 = ___ hundreds 2 ones |
+| 5 | 5 | SAM-L5-Q11 | NUMERIC_ENTRY | fractions_decimals | 4A | 0.2 | A baker had 200 eggs. He used 1/8 of the eggs to bake some cakes. H… |
+| 6 | 6 | SAM-L5-Q13 | MULTIPLE_CHOICE | geometry | 4B | 0.8 | Alan is facing north-east now. If he makes a 270° anti-clockwise tu… |
+| 7 | — | SAM-L4-Q27 | NUMERIC_ENTRY | operations_algorithms | 4B | 0.8 | Name one number that can divide both 54 and 72. |
+| 8 | — | SAM-L4-Q15 | TEXT_ENTRY | measurement | 3B | 0.2 | Aaron and Billy took part in a marathon. When Aaron had run 5 km 25… |
+| 9 | — | SAM-L5-Q04 | NUMERIC_ENTRY | number_sense | 4B | 0.8 | Michelle wrote a 2-digit number that is smaller than 50. The number… |
+| 10 | — | SAM-L5-Q17 | MULTIPLE_CHOICE | fractions_decimals | 4B | 0.8 | What is the difference between 267.96 and 45.8? Round off your answ… |
+| 11 | 7 | SAM-L5-Q24 | NUMERIC_ENTRY | geometry | 4B | 0.8 | A rectangular plot of farming land has a perimeter of 276 m. If its… |
+| — | — | SAM-L3-Q21 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | What is the missing number below? 7602 = ___ hundreds 2 ones |
 | — | — | SAM-L3-Q22 | MULTIPLE_CHOICE | number_sense | 3B | 0.2 | What is the greatest 4-digit even number? |
 | — | — | SAM-L4-Q06 | NUMERIC_ENTRY | number_sense | 3B | 0.2 | What is the missing digit (■) in the following subtraction?    8 5 … |
-| — | 10 | SAM-L4-Q07 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.3 | A school library has 2540 fiction books. It has 1651 more fiction b… |
-| — | 6 | SAM-L4-Q09 | MULTIPLE_CHOICE | operations_algorithms | 3A | -0.5 | Mr Lee has 60 mangoes. He puts as many mangoes as possible equally … |
-| — | 9 | SAM-L4-Q10 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | Multiply 324 by 5. |
+| — | — | SAM-L4-Q07 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.3 | A school library has 2540 fiction books. It has 1651 more fiction b… |
+| — | 10 | SAM-L4-Q09 | MULTIPLE_CHOICE | operations_algorithms | 3A | -0.5 | Mr Lee has 60 mangoes. He puts as many mangoes as possible equally … |
+| — | — | SAM-L4-Q10 | NUMERIC_ENTRY | number_sense | 3A | -0.5 | Multiply 324 by 5. |
+| — | — | SAM-L4-Q12 | NUMERIC_ENTRY | operations_algorithms | 3B | 0.4 | There were 1569 men at a concert. There were 4 times as many women … |
+| — | — | SAM-L4-Q22 | TEXT_ENTRY | measurement | 3B | 0.2 | Mr Davis took 6 h 50 min to complete a marathon. He crossed the fin… |
+| — | — | SAM-L4-Q23 | NUMERIC_ENTRY | number_sense | 4A | 0.3 | Write the number shown. |
 | — | — | SAM-L4-Q24 | NUMERIC_ENTRY | number_sense | 4A | 0.2 | What is the value of the digit '8' in 82 149? |
 | — | — | SAM-L4-Q25 | DRAG_DROP | number_sense | 4A | 0.3 | Arrange the numbers in ascending order. 9148   62 753   7265   62 009 |
+| — | — | SAM-L4-Q26 | NUMERIC_ENTRY | number_sense | 4A | 0.4 | Round 42 750 to the nearest hundred. |
+| — | — | SAM-L5-Q02 | NUMERIC_ENTRY | number_sense | 4A | -1.8 | Which is greater, 12 357 or 13 275? |
+| — | 9 | SAM-L5-Q03 | NUMERIC_ENTRY | number_sense | 4A | -1.5 | Estimate the value of 119 + 172. |
+| — | — | SAM-L5-Q05 | MULTIPLE_CHOICE | number_sense | 4A | 0.2 | What is the product of 3049 and 7? |
+| — | — | SAM-L5-Q06 | NUMERIC_ENTRY | number_sense | 4A | 0.3 | What is the product of 762 and 95? |
+| — | — | SAM-L5-Q07 | MULTIPLE_CHOICE | number_sense | 4A | 0.3 | 4981 ÷ 6 = |
+| — | — | SAM-L5-Q09 | NUMERIC_ENTRY | fractions_decimals | 4A | 0.4 | Patricia used 1¹⁄₂ kg of sugar, 1¹⁄₄ kg of flour and 1¹⁄₆ kg of but… |
+| — | 8 | SAM-L5-Q15 | MULTIPLE_CHOICE | fractions_decimals | 4A | -1.2 | What is the missing number? 8.035 = 8 + ___ + 0.005 |
+| — | — | SAM-L5-Q19 | MULTIPLE_CHOICE | fractions_decimals | 4A | 0.2 | The best estimate for 89.5 ÷ 5 is ___. |
+| — | — | SAM-L5-Q20 | NUMERIC_ENTRY | fractions_decimals | 4B | 0.8 | Ivan bought 8 similar drawing pencils at $20. He also bought a pain… |
+| — | — | SAM-L5-Q21 | NUMERIC_ENTRY | fractions_decimals | 4B | 0.8 | Jacky bought a bag of rice at $14.65 and 6 oranges at $0.40 each. H… |
+| — | 11 | SAM-L5-Q22 | NUMERIC_ENTRY | measurement | 4A | -1.2 | ________ seconds = 2 minutes |
+| — | — | SAM-L5-Q23 | NUMERIC_ENTRY | fractions_decimals | 4B | 0.8 | A bus leaves Singapore at 19 30. It will take 6 hours and 15 minute… |
 
 ---
 Length: every short test stops in the 10–15 range — soft floor 10, HARD cap
