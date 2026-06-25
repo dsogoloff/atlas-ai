@@ -23,6 +23,7 @@ import { CompletionScreen } from "./components/CompletionScreen";
 import { ResumeBanner } from "./components/ResumeBanner";
 import { ErrorPanel } from "./components/ErrorPanel";
 import { DevTestModeChooser } from "./components/DevTestModeChooser";
+import { ChildHandoff } from "./components/ChildHandoff";
 import { ParentIntro } from "./components/ParentIntro";
 import { Welcome } from "./components/Welcome";
 
@@ -30,11 +31,12 @@ interface Props {
   childId: string;
   childName: string;
   tier: Tier;
-  /** DEV-ONLY. True iff ENABLE_COMPREHENSIVE_PILOT is on (read server-side in
-   *  page.tsx). When false (always, in prod) the session auto-starts a SHORT
-   *  test with no extra UI — the default path is unchanged. When true, the
-   *  pre-start DevTestModeChooser gates the auto-start so QA can pick the test
-   *  type. The server re-checks the same flag, so this is convenience UI only. */
+  /** True iff ENABLE_COMPREHENSIVE_PILOT is on (read server-side in page.tsx).
+   *  When false (always, in prod) the parent sees a "pass the screen to your
+   *  child" handoff (ChildHandoff) that proceeds into the SHORT test — no type
+   *  selection. When true (DEV/QA), the pre-start DevTestModeChooser is shown at
+   *  the same gate so QA can pick short vs comprehensive. The server re-checks
+   *  the same flag, so the chooser is convenience UI only, not a boundary. */
   comprehensivePilotEnabled?: boolean;
   /** True iff ENABLE_PARENT_INTRO is on (read server-side). When true, a
    *  pre-start parent intro / instructions screen gates the auto-start; when
@@ -59,18 +61,18 @@ export function AssessmentClient({
   // released ONLY by the child tapping the Welcome screen — so the test begins
   // on the tap, never auto-advances. Earlier gates just unlock the screens in
   // front of Welcome: the parent intro (ENABLE_PARENT_INTRO) shows first, then
-  // the DEV pilot chooser (ENABLE_COMPREHENSIVE_PILOT), then the child Welcome.
-  // (The beta welcome no longer lives here — it is shown ONCE during onboarding,
-  // between COPPA and child setup; see the add-child route.) `introAcknowledged`
-  // / `testModeChosen` default true when their gate is off, so the default
-  // short-test path goes straight to Welcome.
+  // the handoff gate, then the child Welcome. The handoff gate always shows one
+  // screen — in production (pilot flag off) the parent-facing ChildHandoff into
+  // the short test; with the pilot flag on (DEV/QA) the DevTestModeChooser so
+  // comprehensive stays reachable. (The beta welcome no longer lives here — it
+  // is shown ONCE during onboarding, between COPPA and child setup; see the
+  // add-child route.) `introAcknowledged` defaults true when the intro gate is
+  // off, so that gate is skipped on the default path.
   const [startConfirmed, setStartConfirmed] = useState(false);
   const [introAcknowledged, setIntroAcknowledged] = useState(
     !parentIntroEnabled,
   );
-  const [testModeChosen, setTestModeChosen] = useState(
-    !comprehensivePilotEnabled,
-  );
+  const [testModeChosen, setTestModeChosen] = useState(false);
   const [comprehensive, setComprehensive] = useState(false);
   // Bumped once per accepted answer submit; drives the K-4 footer mascot's
   // celebrate beat in QuestionShell (the only per-question mascot mount).
@@ -163,17 +165,22 @@ export function AssessmentClient({
         />
       );
     }
-    // Gate 2 (DEV-ONLY): pilot flag on → let QA pick the test type. Never
-    // reached in production (flag off → testModeChosen true at init). Choosing
-    // advances to Welcome; it does not start the session.
-    if (comprehensivePilotEnabled && !testModeChosen) {
-      return (
+    // Gate 2: the handoff. In production (pilot flag off) the parent gets the
+    // "pass the screen to your child" handoff (ChildHandoff), which proceeds
+    // into the SHORT test — no type selection. With the pilot flag on (DEV/QA)
+    // the test-type chooser is shown here instead, so the comprehensive run
+    // stays reachable. Either path only advances to Welcome; neither starts the
+    // session (the short default keeps `comprehensive` false).
+    if (!testModeChosen) {
+      return comprehensivePilotEnabled ? (
         <DevTestModeChooser
           tier={tier}
           comprehensive={comprehensive}
           onChange={setComprehensive}
           onStart={() => setTestModeChosen(true)}
         />
+      ) : (
+        <ChildHandoff tier={tier} onContinue={() => setTestModeChosen(true)} />
       );
     }
     // Gate 3: the child Welcome — the first child-facing screen. Static; the
