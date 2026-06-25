@@ -22,6 +22,7 @@
     "convert:apply-activation": "tsx scripts/conversion/apply-activation.ts",
     "convert:upload-activation-images": "tsx scripts/conversion/upload-activation-images.ts",
     "convert:verify-images": "tsx scripts/conversion/verify-images.ts",
+    "convert:purge-staging": "tsx scripts/conversion/purge-staging.ts",
     "seed:check-activation-parity": "tsx scripts/conversion/seed-activation-parity.ts",
     "seed:regen-activations": "tsx scripts/conversion/regen-seed-activations.ts"
   },

@@ -4480,6 +4480,149 @@ from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q24';
 -- END l6-q24-table-to-prose
 
 
+-- BEGIN l5l6-booklet-reband (seed mirror of supabase/migrations/20260625120000_l5l6_booklet_reband.sql)
+-- Founder decision (locked): L5/L6 review content bands at BOOKLET LEVEL — not difficulty and
+-- not the per-question "Level" column. Every Level 5 booklet item -> 5A; every Level 6 booklet
+-- item -> 6A. SUPERSEDES the l5l6-releveling block above (which banded by the Level column:
+-- L5 review -> 4A/4B, L6 review -> 5A/5B). A/B (difficulty-derived) is dropped to the booklet
+-- floor. content_id (skill node) untouched. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '5A'::half_grade_level
+from t where q.tenant_id = t.id and q.external_id like 'SAM-L5-%';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '6A'::half_grade_level
+from t where q.tenant_id = t.id and q.external_id like 'SAM-L6-%';
+-- END l5l6-booklet-reband
+
+
+-- BEGIN l5l6-load-missing-rows (seed mirror of supabase/migrations/20260625120100_l5l6_load_missing_rows.sql)
+-- The 6 gradeable L5/L6 rows the prior run skipped, authored + source-verified 2026-06-25
+-- (worksheet page + answer-key PDF + Question Summary). Banded to BOOKLET level (5A/6A);
+-- content_id = source skill node; short_test_eligible = true (Short=Y, key-driven). The two
+-- ordering items are DRAG_DROP (id-keyed order grading). Idempotent (on conflict).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active, short_test_eligible, content_id)
+select t.id, v.external_id, v.strand::strand, v.level::half_grade_level,
+       v.difficulty, v.format::question_format,
+       v.content::jsonb, v.misconception_tags,
+       v.word_count, v.operation_type::operation_type, v.num_operations,
+       v.representation::representation_kind,
+       v.is_active, v.short_test_eligible,
+       (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = v.content_key)
+from t,
+  (values
+    ('SAM-L5-Q01', 'number_sense', '5A', 0.0, 'MULTIPLE_CHOICE',
+     '{"stem":"What is the missing number?\n25 608 = 20 000 + 5000 + ___ + 8","options":["6","60","600","6000"],"correct_index":2,"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION","1":"NS_PLACE_VALUE_CONFUSION","3":"NS_PLACE_VALUE_CONFUSION"}}',
+     array['NS_PLACE_VALUE_CONFUSION'],
+     12, 'IDENTIFY', 1, 'SYMBOLIC', true, true, 'l4-whole_numbers-1'),
+
+    ('SAM-L5-Q10', 'fractions_decimals', '5A', 0.5, 'DRAG_DROP',
+     '{"stem":"Arrange the following in increasing order.","items":["9/2","10/3","3","14/4"],"correct_order":["3","10/3","14/4","9/2"]}',
+     array['FR_NUM_DENOM_INDEPENDENT','NS_MAGNITUDE_MISJUDGE'],
+     6, 'IDENTIFY', 1, 'SYMBOLIC', true, true, 'l4-fractions-1'),
+
+    ('SAM-L5-Q16', 'fractions_decimals', '5A', 0.4, 'DRAG_DROP',
+     '{"stem":"Arrange the decimals in decreasing order.","items":["3.671","3","3.617","3.716"],"correct_order":["3.716","3.671","3.617","3"]}',
+     array['NS_MAGNITUDE_MISJUDGE','NS_PLACE_VALUE_CONFUSION'],
+     6, 'IDENTIFY', 1, 'SYMBOLIC', true, true, 'l4-decimals-1'),
+
+    ('SAM-L5-Q18', 'fractions_decimals', '5A', 0.6, 'MULTIPLE_CHOICE',
+     '{"stem":"Express 8.35 as a fraction in its simplest form.","options":["835/100","8 35/10","8 7/20","8 3/4"],"correct_index":2,"distractor_misconceptions":{"0":"FR_FRACTION_AS_TWO_NUMS","1":"NS_PLACE_VALUE_CONFUSION","3":"NS_PLACE_VALUE_CONFUSION"}}',
+     array['FR_FRACTION_AS_TWO_NUMS','NS_PLACE_VALUE_CONFUSION'],
+     8, 'DECIMAL_OP', 1, 'SYMBOLIC', true, true, 'l4-decimals-3'),
+
+    ('SAM-L6-Q22', 'fractions_decimals', '6A', 0.3, 'NUMERIC_ENTRY',
+     '{"stem":"Express 0.052 kg in grams.","correct_answer":"52","accepted_answers":["52 g"]}',
+     array['MD_UNIT_CONFUSION','NS_PLACE_VALUE_CONFUSION'],
+     5, 'DECIMAL_OP', 1, 'SYMBOLIC', true, true, 'l5-decimals-2'),
+
+    ('SAM-L6-Q27', 'fractions_decimals', '6A', 0.4, 'MULTIPLE_CHOICE',
+     '{"stem":"Which of the following fractions is greater than 50%?","options":["1/2","2/5","3/8","3/5"],"correct_index":3,"distractor_misconceptions":{"0":"FR_NUM_DENOM_INDEPENDENT","1":"FR_NUM_DENOM_INDEPENDENT","2":"FR_NUM_DENOM_INDEPENDENT"}}',
+     array['FR_NUM_DENOM_INDEPENDENT'],
+     8, 'PERCENT_OP', 1, 'SYMBOLIC', true, true, 'l5-percentage-2')
+  ) as v(external_id, strand, level, difficulty, format, content,
+         misconception_tags, word_count, operation_type, num_operations,
+         representation, is_active, short_test_eligible, content_key)
+on conflict (tenant_id, external_id) do nothing;
+-- END l5l6-load-missing-rows
+
+
+-- BEGIN l5l6-image-path-wire (seed mirror of supabase/migrations/20260625120200_l5l6_image_path_wire.sql)
+-- Wire the single per-question stimulus image_path for inactive L5/L6 image-essential rows
+-- (crops in source/5 + source/6; SOURCE_MAP in scripts/conversion/activation-image-set.ts).
+-- Rows STAY is_active=false (activation-ready); founder uploads the bucket images then flips
+-- active. Every crop + worksheet page source-verified 2026-06-25. SAM-L5-Q26 also corrected:
+-- only figures A and B exist (loaded row had fabricated C/D) -> options ["A","B"], correct 1
+-- (answer key = B). HELD (no single-stimulus source): SAM-L5-Q27 (4 separate option images).
+-- SAM-L6-Q18 is text-only. Idempotent (jsonb || overwrites the key on re-run).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l5/sam-l5-q08.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q08';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l5/sam-l5-q14.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q14';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l5/sam-l5-q25.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q25';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"In which of the following figures is the dotted line a line of symmetry?","options":["A","B"],"correct_index":1,"distractor_misconceptions":{"0":"GE_SHAPE_PROPERTY"},"image_path":"l5/sam-l5-q26.png","image_alt":"Two figures: A is a rectangle with a diagonal line drawn across it; B is a regular pentagon with a line drawn through one vertex. Identify which dotted line is a true line of symmetry.","image_required":true}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q26';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q14.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q14';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q15.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q15';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q16.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q16';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q19.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q19';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q25.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q25';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q26.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q26';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q30.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q30';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q31.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q31';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q32.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q32';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q33.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q33';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q34.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q34';
+-- END l5l6-image-path-wire
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
