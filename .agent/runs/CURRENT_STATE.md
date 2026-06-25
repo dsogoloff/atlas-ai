@@ -4,14 +4,15 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-25 (CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path) — origin head entering this session: **`f5947d5`** (after PR #168 merged). One new lane PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked. Three new migrations — **`supabase db reset` required after merge.**
+**As of:** 2026-06-25 (CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path + SAM-L5-Q27 activation) — origin head entering this session: **`f5947d5`** (after PR #168 merged). One new lane PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked. Four new migrations — **`supabase db reset` required after merge. CRITICAL: upload l5/sam-l5-q27.png to the private question-images bucket BEFORE or with `supabase db reset` — Q27 is now is_active=true and will 500 at serve time if the image is absent.**
 
 - **PR #169 — lane/l5l6-booklet-reband-load-images — OPEN.**
   "feat(conversion): L5/L6 booklet re-band + load 6 missing rows + wire image_path".
   Off `ATLAS-ASSESSMENT` head `f5947d5`; independent, not stacked. Verify GREEN: 1336 tests /
-  102 files, tsc 0, lint 0 errors (2 known warnings). Seed↔migration parity PASS (78 migrations).
-  convert:upload-activation-images --check PASS (all 15 new keys resolve to source on disk).
-  Codex manual/skipped (relay unauth).
+  102 files, tsc 0, lint 0 errors (2 known warnings). Seed↔migration parity PASS (79 migrations).
+  convert:upload-activation-images --check PASS (l5 now 5 keys, all source files present).
+  Codex manual/skipped (relay unauth). A follow-up commit on this same open lane activated
+  SAM-L5-Q27 (founder supplied the combined 4-shape crop; see below).
 
   **LOCKED DECISION — L5/L6 band at BOOKLET LEVEL, not difficulty or per-question Level column.**
   Founder-locked: SAM-L5-* → 5A; SAM-L6-* → 6A (booklet floors). Supersedes the
@@ -38,31 +39,51 @@
      Q32/Q33/Q34); rows STAY is_active=false (activation-ready). SOURCE_MAP entries added in
      `scripts/conversion/activation-image-set.ts` (new L5_SRC/L6_SRC dirs). Every crop PNG
      + worksheet page source-verified.
+  4. `20260625120300_l5_q27_activate.sql` — **SAM-L5-Q27 ACTIVATED** (follow-up commit).
+     UPDATE sets content (image_path l5/sam-l5-q27.png + sharpened image_alt) and
+     is_active=true. Stem/options/correct_index unchanged and already correct: "Which of the
+     shapes has the most lines of symmetry?"; options ["(1)","(2)","(3)","(4)"]; correct_index
+     0 (circle has infinitely many lines of symmetry). Banding 5A; short_test_eligible=true;
+     content_id l4-geometry-3 (Symmetry node) — all already correct, untouched. Seed.sql
+     mirror block `l5-q27-activate` appended after `l5l6-image-path-wire`. SOURCE_MAP entry
+     `l5/sam-l5-q27.png` added in `scripts/conversion/activation-image-set.ts`. Source-
+     verified against worksheet page-13 + answer-key PDF + new L5-27.png crop supplied by
+     founder (single combined crop showing all four shapes with in-image labels (1)-(4):
+     circle/hexagon/heart/rectangle — resolves the per-tile problem; Q27 is now a standard
+     single-stimulus MC whose options reference the in-image labels).
 
   **HELD / EXCLUDED (not fabricated):**
-  - SAM-L5-Q27 HELD — 4 options are each a separate shape image; no single stimulus exists;
-    per-tile minting for image-option MC not yet in serveQuestion.ts.
+  - SAM-L5-Q27 — RESOLVED/ACTIVATED. Was HELD because 4 options were each a separate shape
+    image with no single stimulus. Founder supplied a combined 4-shape crop (L5-27.png) with
+    in-image labels (1)-(4), making this a standard single-stimulus MC. Now is_active=true.
+    **CRITICAL: the founder must upload l5/sam-l5-q27.png to the private question-images
+    bucket before or with `supabase db reset` — Q27 is ACTIVE and will 500 if image absent.**
   - SAM-L6-Q18 excluded — text-only (cube volume), already active.
 
   **Also added:** `scripts/conversion/purge-staging.ts` + `convert:purge-staging` npm script
   (founder-run, dry-run default, --apply to delete) to clear 15 stray full-page renders in
   `question-images/conversion-staging/` bucket prefix.
 
-  **Files changed:** package.json (M), scripts/conversion/activation-image-set.ts (M),
-  scripts/conversion/purge-staging.ts (A), supabase/migrations/20260625120000/120100/120200
-  (A x3), supabase/seed.sql (M).
+  **Files changed (initial 3-migration commit):** package.json (M),
+  scripts/conversion/activation-image-set.ts (M), scripts/conversion/purge-staging.ts (A),
+  supabase/migrations/20260625120000/120100/120200 (A x3), supabase/seed.sql (M).
+  **Files changed (Q27 activation follow-up commit):** scripts/conversion/activation-image-set.ts
+  (M), supabase/migrations/20260625120300_l5_q27_activate.sql (A), supabase/seed.sql (M).
 
   **Founder post-merge actions (attended):**
-  (a) `supabase db reset` (applies 3 new migrations).
-  (b) `pnpm convert:upload-activation-images` to push the 15 new L5/L6 image crops to the
-      private bucket, then flip those rows `is_active=true` once images are confirmed present
-      (separate activation step).
-  (c) `pnpm convert:purge-staging --apply` to clear the conversion-staging/ renders.
+  (a) **CRITICAL FIRST:** Run `pnpm convert:upload-activation-images` to upload
+      `l5/sam-l5-q27.png` (the combined 4-shape crop) to the private `question-images` bucket.
+      This MUST happen before or with `supabase db reset` — SAM-L5-Q27 is now is_active=true
+      and will 500 at serve time if the image is absent in the bucket.
+  (b) `supabase db reset` (applies 4 new migrations: 120000, 120100, 120200, 120300).
+  (c) `pnpm convert:upload-activation-images` also pushes the 15 activation-ready L5/L6 image
+      crops (those rows remain is_active=false; flip them individually once images confirmed).
+  (d) `pnpm convert:purge-staging --apply` to clear the conversion-staging/ renders.
 
   **BATCHED GATE ITEMS for Dimitri (in PR body, non-blocking):**
   (1) Confirm 5A/6A is the intended booklet half-grade (A/B collapse reversible via one UPDATE).
-  (2) SAM-L5-Q27 — provide composite 4-shape crop OR defer until image-option per-tile minting
-      lands in serveQuestion.ts.
+  (2) SAM-L5-Q27 — RESOLVED. Founder supplied the combined 4-shape crop (scripts/conversion/
+      source/5/L5-27.png); Q27 activated via migration 20260625120300. No open gate item.
 
 ---
 

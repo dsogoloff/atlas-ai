@@ -38,6 +38,29 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   (78 total); parity PASS. Verify GREEN 1336 tests / 102 files, tsc 0, lint 0 errors.
   Codex manual/skipped (relay unauth).
 
+* **SAM-L5-Q27 activated after founder supplied a combined 4-shape crop (follow-up commit on
+  PR #169 lane, 2026-06-25).** SAM-L5-Q27 had been HELD in the prior commit because its four
+  answer choices were each a separate shape image (circle/hexagon/heart/rectangle) with no
+  single stimulus, and per-tile image minting for image-option MC is not yet in
+  serveQuestion.ts. The founder supplied a single combined crop at
+  `scripts/conversion/source/5/L5-27.png` showing all four shapes with in-image labels
+  (1)-(4), resolving the per-tile problem: Q27 is now a standard single-stimulus MC whose
+  text options reference the in-image labels. Migration `20260625120300_l5_q27_activate.sql`
+  + seed.sql mirror block (`l5-q27-activate`, appended after `l5l6-image-path-wire`): UPDATE
+  sets content (image_path `l5/sam-l5-q27.png` + sharpened image_alt) and is_active=true.
+  Stem/options/correct_index already correct and unchanged: "Which of the shapes has the most
+  lines of symmetry?"; options ["(1)","(2)","(3)","(4)"]; correct_index 0 (circle has
+  infinitely many lines of symmetry). Banding 5A; short_test_eligible=true; content_id
+  l4-geometry-3 (Symmetry node) — all already set by prior migrations, untouched. SOURCE_MAP
+  entry `l5/sam-l5-q27.png` added in `scripts/conversion/activation-image-set.ts` (l5 now
+  5 keys). Source-verified: worksheet page-13 + answer-key PDF + new L5-27.png crop. Verify
+  GREEN 1336 tests / 102 files, tsc 0, lint 0 errors, seed↔migration parity PASS (79
+  migrations), convert:upload-activation-images --check PASS. Codex manual/skipped (relay
+  unauth). NOTE: unlike the other 15 image rows (is_active=false, activation-ready), Q27 is
+  now LIVE (is_active=true); founder must upload l5/sam-l5-q27.png to the private
+  question-images bucket BEFORE or with `supabase db reset` post-merge, or the active row
+  will 500 at serve time.
+
 * **`purge-staging.ts` utility added for clearing stray conversion-staging/ bucket renders
   (PR #169, 2026-06-25).** `scripts/conversion/purge-staging.ts` + `convert:purge-staging`
   npm script. Founder-run; dry-run default; --apply flag to execute deletes. Targets the 15
