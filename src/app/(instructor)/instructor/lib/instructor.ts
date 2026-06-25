@@ -47,3 +47,56 @@ export async function resolveInstructor(
     name: data.name,
   };
 }
+
+export type StaffKind = "instructor" | "admin";
+
+/** Unified staff identity for surfaces shared between the instructor portal
+ *  and the tenant-wide admin view. An instructor is center-scoped (carries
+ *  center_id); an admin is tenant-scoped (no center). `id` is the
+ *  instructors/admins row id — present for both, but only instructors author
+ *  pedagogical_notes, so write paths still resolve via resolveInstructor. */
+export interface StaffIdentity {
+  kind: StaffKind;
+  /** instructors.id (instructor) / admins.id (admin). */
+  id?: string;
+  tenant_id: string;
+  /** The instructor's center; undefined for an admin (tenant-wide scope). */
+  center_id?: string;
+  name: string;
+}
+
+/** Resolves the calling user to a staff identity — an ACTIVE instructor first
+ *  (the common, center-scoped path), else an ACTIVE admin (tenant-scoped).
+ *  Returns null when the caller is neither (treated as "no staff access").
+ *  Each read is RLS-scoped to the caller's own row (instructors_self_select /
+ *  admins_self_select), so this never returns another user's identity. The
+ *  ACTIVE gate mirrors the DB helpers (app_current_instructor_id /
+ *  app_current_admin_tenant_id), which only resolve ACTIVE rows. */
+export async function resolveStaff(
+  client: SupabaseClient<Database>,
+): Promise<StaffIdentity | null> {
+  const instructor = await resolveInstructor(client);
+  if (instructor) {
+    return {
+      kind: "instructor",
+      id: instructor.id,
+      tenant_id: instructor.tenant_id,
+      center_id: instructor.center_id,
+      name: instructor.name,
+    };
+  }
+
+  const { data, error } = await client
+    .from("admins")
+    .select("id, tenant_id, name, status")
+    .maybeSingle();
+
+  if (error || !data || data.status !== "ACTIVE") return null;
+
+  return {
+    kind: "admin",
+    id: data.id,
+    tenant_id: data.tenant_id,
+    name: data.name,
+  };
+}

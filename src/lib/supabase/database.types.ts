@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["admin_status"]
+          tenant_id: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["admin_status"]
+          tenant_id: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["admin_status"]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics_events: {
         Row: {
           child_id: string | null
@@ -1285,6 +1323,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      app_current_admin_tenant_id: { Args: never; Returns: string }
       app_current_instructor_id: { Args: never; Returns: string }
       app_current_parent_id: { Args: never; Returns: string }
       app_current_tenant_id: { Args: never; Returns: string }
@@ -1303,6 +1342,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_status: "ACTIVE" | "INACTIVE"
       analytics_event_name:
         | "landing_viewed"
         | "parent_consent_completed"
@@ -1538,6 +1578,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_status: ["ACTIVE", "INACTIVE"],
       assessment_status: ["IN_PROGRESS", "COMPLETED"],
       center_status: ["ACTIVE", "INACTIVE"],
       half_grade_level: [

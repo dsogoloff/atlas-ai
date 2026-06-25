@@ -41,6 +41,11 @@ export interface RosterRow {
    *  estimate, e.g. "S.A.M Level 3A". Null until a completed session with a
    *  valid placement exists. */
   placementLabel: string | null;
+  /** Display name of the child's home center, joined via children.home_center_id.
+   *  Null when the child has no home center. The instructor roster is a single
+   *  center (so this is constant); the admin roster spans the tenant, so the
+   *  Center column distinguishes rows. */
+  centerName: string | null;
 }
 
 type SessionRow = Pick<
@@ -48,16 +53,20 @@ type SessionRow = Pick<
   "child_id" | "status" | "completed_at" | "current_estimate"
 >;
 
-/** Builds the instructor's roster. Returns rows sorted by child name.
+/** Builds the staff roster. Returns rows sorted by center, then child name.
  *  Children with no assessment session yet appear with status
- *  "not_started" and a null placement — the instructor sees the full
- *  assigned roster, not only assessed children. */
+ *  "not_started" and a null placement — staff see the full assigned roster,
+ *  not only assessed children. SCOPE is RLS's job, not this function's: an
+ *  instructor's client returns only their center's children, an admin's
+ *  client returns the whole tenant — the same code, narrower or wider input.
+ *  fetchRoster never filters by center, so it can't narrow (or widen) what
+ *  RLS exposed. */
 export async function fetchRoster(
   client: SupabaseClient<Database>,
 ): Promise<RosterRow[]> {
   const { data: children, error: childrenErr } = await client
     .from("children")
-    .select("id, name, grade_level")
+    .select("id, name, grade_level, home_center_id")
     .order("name", { ascending: true });
 
   if (childrenErr || !children || children.length === 0) return [];
@@ -69,8 +78,9 @@ export async function fetchRoster(
     .in("child_id", childIds);
 
   const sessionsByChild = groupSessions(sessions ?? []);
+  const centerNameById = await fetchCenterNames(client, children);
 
-  return children.map((child) => {
+  const rows = children.map((child) => {
     const childSessions = sessionsByChild.get(child.id) ?? [];
     const latestCompleted = pickLatestCompleted(childSessions);
 
@@ -93,8 +103,46 @@ export async function fetchRoster(
       placementLabel: latestCompleted
         ? placementLabelFor(latestCompleted.current_estimate)
         : null,
+      centerName: child.home_center_id
+        ? (centerNameById.get(child.home_center_id) ?? null)
+        : null,
     };
   });
+
+  // Sort by center, then name. Children with no center sort last (sentinel).
+  return rows.sort((a, b) => {
+    const ca = a.centerName ?? "￿";
+    const cb = b.centerName ?? "￿";
+    const byCenter = ca.localeCompare(cb);
+    return byCenter !== 0 ? byCenter : a.name.localeCompare(b.name);
+  });
+}
+
+type ChildCenterRef = { home_center_id: string | null };
+
+/** Resolves home_center_id → center display name for the roster's children
+ *  via the same RLS-scoped client (centers_tenant_select makes centers
+ *  readable to any tenant member). Returns an empty map when no child has a
+ *  home center. */
+async function fetchCenterNames(
+  client: SupabaseClient<Database>,
+  children: ChildCenterRef[],
+): Promise<Map<string, string>> {
+  const centerIds = Array.from(
+    new Set(
+      children
+        .map((c) => c.home_center_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  if (centerIds.length === 0) return new Map();
+
+  const { data: centers } = await client
+    .from("centers")
+    .select("id, name")
+    .in("id", centerIds);
+
+  return new Map((centers ?? []).map((c) => [c.id, c.name]));
 }
 
 function groupSessions(rows: SessionRow[]): Map<string, SessionRow[]> {
