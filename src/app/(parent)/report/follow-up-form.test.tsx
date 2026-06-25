@@ -14,7 +14,7 @@ const noop = () => {};
 
 // renderToString escapes apostrophes (' → &#x27;); decode so assertions match
 // the verbatim copy strings (e.g. "Child's school").
-function render(schoolFieldEnabled: boolean) {
+function render(schoolFieldEnabled: boolean, optedIn = false) {
   return renderToString(
     <FollowUpForm
       schoolFieldEnabled={schoolFieldEnabled}
@@ -31,10 +31,16 @@ function render(schoolFieldEnabled: boolean) {
       setParentPhone={noop}
       zip=""
       setZip={noop}
-      optedIn={false}
+      optedIn={optedIn}
       setOptedIn={noop}
     />,
   ).replace(/&#x27;/g, "'");
+}
+
+// The submit <button> is the only button rendered by FollowUpForm; grab its
+// opening tag so we can assert the disabled gating without a DOM.
+function submitButtonTag(optedIn: boolean): string {
+  return render(true, optedIn).match(/<button\b[^>]*>/)?.[0] ?? "";
 }
 
 describe("FollowUpForm — school field gating", () => {
@@ -67,5 +73,21 @@ describe("FollowUpForm — required opt-in + zip", () => {
   it("always renders the required zip field (both gate states)", () => {
     expect(render(false)).toContain(READINESS_COPY.form.zipLabel);
     expect(render(true)).toContain(READINESS_COPY.form.zipLabel);
+  });
+});
+
+describe("FollowUpForm — submit gated on the opt-in checkbox", () => {
+  it("disables Submit while the opt-in checkbox is UNCHECKED", () => {
+    const tag = submitButtonTag(false);
+    // React renders the native boolean attribute as `disabled=""` (distinct
+    // from aria-disabled="false"/"true", which never produces `disabled=""`).
+    expect(tag).toMatch(/\bdisabled=""/);
+    expect(tag).toContain('aria-disabled="true"');
+  });
+
+  it("enables Submit once the opt-in checkbox is CHECKED", () => {
+    const tag = submitButtonTag(true);
+    expect(tag).not.toMatch(/\bdisabled=""/);
+    expect(tag).toContain('aria-disabled="false"');
   });
 });

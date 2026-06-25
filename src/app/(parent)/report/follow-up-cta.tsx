@@ -155,16 +155,21 @@ export function FollowUpForm({
       {schoolFieldEnabled && (
         <Field label={C.form.schoolLabel} value={schoolName} onChange={setSchoolName} />
       )}
-      {/* Explicit, REQUIRED opt-in — the form cannot submit unchecked. */}
+      {/* Explicit, REQUIRED opt-in — the form cannot submit unchecked. Submit
+          stays disabled (below) until this is checked. */}
       <CheckboxField label={C.form.optInLabel} checked={optedIn} onChange={setOptedIn} required />
       {error && (
         <p role="alert" className="text-sm font-medium text-sam-red">
           {C.form.errorMessage}
         </p>
       )}
+      {/* Submit is gated on the opt-in checkbox: greyed + non-interactive
+          (disabled → cursor-not-allowed + opacity-60) until `optedIn`, and also
+          while a submit is in flight. aria-disabled mirrors it for AT. */}
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || !optedIn}
+        aria-disabled={submitting || !optedIn}
         className="inline-flex items-center justify-center rounded-full bg-sam-teal px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sam-teal/90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? C.form.submittingButton : C.form.submitButton}
