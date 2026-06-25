@@ -40,7 +40,7 @@ import {
 } from "@/app/(parent)/report/strand-labels";
 
 import { InstructorNotice, InstructorTopBar } from "../../_components/shell";
-import { resolveInstructor } from "../../lib/instructor";
+import { resolveStaff } from "../../lib/instructor";
 import { fetchNotesForChild } from "../../lib/notes";
 import { NotesPanel } from "./notes-panel";
 import { ReportViewTracker } from "./report-view-tracker";
@@ -74,23 +74,29 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
     return (
       <InstructorNotice
         title="Sign in required"
-        body="Please sign in to your instructor account to view this student."
+        body="Please sign in to your staff account to view this student."
       />
     );
   }
 
-  const instructor = await resolveInstructor(supabase);
-  if (!instructor) {
+  // Shared detail: an instructor (center-scoped) OR an admin (tenant-scoped)
+  // may view. Notes authoring stays instructor-only (admins don't author).
+  const staff = await resolveStaff(supabase);
+  if (!staff) {
     return (
       <InstructorNotice
-        title="Instructor access required"
-        body="Your account doesn't have an active instructor profile."
+        title="Staff access required"
+        body="Your account doesn't have an active instructor or admin profile."
       />
     );
   }
+  const isInstructor = staff.kind === "instructor";
+  const roleLabel = isInstructor ? "Instructor" : "Admin";
+  const rosterHref = isInstructor ? "/instructor" : "/admin";
 
-  // RLS scopes this read to children at the instructor's center. A child at
-  // another center (or another tenant) returns null → no-access notice.
+  // RLS scopes this read to children the caller can see — an instructor's
+  // center (+ grace), or an admin's whole tenant. A child outside scope
+  // returns null → no-access notice.
   const { data: child } = await supabase
     .from("children")
     .select("id, name, grade_level, birth_year, home_center_id")
@@ -100,18 +106,27 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
   if (!child) {
     return (
       <InstructorNotice
+        roleLabel={roleLabel}
+        homeHref={rosterHref}
         title="Student not available"
-        body="This student isn't assigned to your center, or the link is stale."
+        body="This student isn't in your scope, or the link is stale."
       />
     );
   }
 
-  // Notes-write is allowed only at the child's CURRENT center (the RLS
-  // write policy forbids writes during prior-center grace). Mirror that in
-  // the UI so grace-period notes render read-only with a clear reason.
-  const canWriteNotes = child.home_center_id === instructor.center_id;
+  // Notes-write is instructor-only, and only at the child's CURRENT center
+  // (the RLS write policy forbids writes during prior-center grace). Admins
+  // never author notes — they see them read-only.
+  const canWriteNotes =
+    isInstructor && child.home_center_id === staff.center_id;
 
-  const notes = await fetchNotesForChild(supabase, child.id, instructor.id);
+  // `mine` tagging needs the author id; an admin has none, so pass a sentinel
+  // that matches no note (admins see every note as a read-only colleague note).
+  const notes = await fetchNotesForChild(
+    supabase,
+    child.id,
+    isInstructor ? (staff.id ?? "") : "",
+  );
 
   // Latest COMPLETED session (RLS-scoped).
   const { data: session } = await supabase
@@ -191,10 +206,14 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
 
   return (
     <>
-      <InstructorTopBar instructorName={instructor.name} />
+      <InstructorTopBar
+        instructorName={staff.name}
+        roleLabel={roleLabel}
+        homeHref={rosterHref}
+      />
       <main className="flex-grow w-full px-6 py-8 md:py-10 max-w-4xl mx-auto">
         <Link
-          href="/instructor"
+          href={rosterHref}
           className="inline-flex items-center gap-2 text-sam-navy/60 hover:text-sam-red transition-colors mb-6 font-headline-adult"
         >
           <span className="material-symbols-outlined text-xl">arrow_back</span>
@@ -241,7 +260,10 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           </>
         )}
 
-        {report && session && (
+        {/* Report-viewed tracking + the usefulness rating are instructor-only
+            affordances (the rating is authored by an instructor; the admin
+            view is read-only oversight). */}
+        {isInstructor && report && session && (
           <>
             <ReportViewTracker sessionId={session.id} />
             <UsefulnessPanel sessionId={session.id} />
@@ -252,6 +274,11 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           childId={child.id}
           notes={notes}
           canWrite={canWriteNotes}
+          readOnlyMessage={
+            isInstructor
+              ? undefined
+              : "Admins can read center notes for oversight but don't author them."
+          }
         />
       </main>
     </>

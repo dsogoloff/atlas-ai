@@ -32,6 +32,7 @@ const VALID_PLACEMENT_3A = {
 function makeClient(tables: {
   children?: unknown[];
   assessment_sessions?: unknown[];
+  centers?: unknown[];
 }): SupabaseClient<Database> {
   const fake = {
     from(table: string) {
@@ -162,5 +163,54 @@ describe("fetchRoster", () => {
   it("returns an empty roster when the client exposes no children", async () => {
     const client = makeClient({ children: [], assessment_sessions: [] });
     expect(await fetchRoster(client)).toEqual([]);
+  });
+
+  it("attaches centerName and sorts by center then name across every center the client exposes", async () => {
+    // Admin scope: the RLS-scoped client returns children across MULTIPLE
+    // centers (an instructor's client would return only their own center's —
+    // same code, narrower input). fetchRoster must label each row with its
+    // center and sort by center, then name, so the admin roster groups by
+    // center. Rows are given out of order to prove fetchRoster sorts.
+    const client = makeClient({
+      children: [
+        { id: "c-2", name: "Zoe Tan", grade_level: "2", home_center_id: "ctr-brooklyn" },
+        { id: "c-1", name: "Aiden Park", grade_level: "3", home_center_id: "ctr-queens" },
+        { id: "c-3", name: "Bea Ng", grade_level: "1", home_center_id: "ctr-brooklyn" },
+      ],
+      assessment_sessions: [],
+      centers: [
+        { id: "ctr-brooklyn", name: "Brooklyn" },
+        { id: "ctr-queens", name: "Queens" },
+      ],
+    });
+
+    const roster = await fetchRoster(client);
+
+    // Tenant-wide: children from BOTH centers are present (fetchRoster never
+    // narrows by center — scoping is RLS's job, not this function's).
+    expect(roster).toHaveLength(3);
+    // Brooklyn before Queens; within Brooklyn, Bea before Zoe.
+    expect(roster.map((r) => r.name)).toEqual([
+      "Bea Ng",
+      "Zoe Tan",
+      "Aiden Park",
+    ]);
+    expect(roster.map((r) => r.centerName)).toEqual([
+      "Brooklyn",
+      "Brooklyn",
+      "Queens",
+    ]);
+  });
+
+  it("leaves centerName null when the child has no home center", async () => {
+    const client = makeClient({
+      children: [{ id: "c-aaaa", name: "Aiden Park", grade_level: "3" }],
+      assessment_sessions: [],
+      centers: [],
+    });
+
+    const roster = await fetchRoster(client);
+
+    expect(roster[0].centerName).toBeNull();
   });
 });

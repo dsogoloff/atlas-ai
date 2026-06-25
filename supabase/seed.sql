@@ -1044,6 +1044,65 @@ set home_center_id = (
 )
 where id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
+-- =============================================================================
+-- Dev ADMIN (tenant-wide) — a third, separate login from the parent and the
+-- instructor.  admin@atlas.local / admin-password.  An admin sees EVERY child
+-- in the tenant across all centers; the seed children already belong to the
+-- dev tenant, so the admin roster shows them. Ids keep the v4/variant nibbles
+-- (4 at pos 13, 8 at pos 17) per the seed-UUID note above. Idempotent via
+-- on-conflict.
+-- =============================================================================
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  is_sso_user, is_anonymous,
+  confirmation_token, recovery_token, email_change_token_new, email_change
+)
+values (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'admin@atlas.local',
+  crypt('admin-password', gen_salt('bf', 10)),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"name":"Dev Admin"}'::jsonb,
+  now(),
+  now(),
+  false,
+  false,
+  '', '', '', ''
+)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+)
+values (
+  gen_random_uuid(),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'email',
+  '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","email":"admin@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
+  now(), now(), now()
+)
+on conflict (provider_id, provider) do nothing;
+
+-- Admin profile at the dev tenant (no center — admins are tenant-wide).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into admins (id, auth_user_id, tenant_id, email, name, status)
+select
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  t.id,
+  'admin@atlas.local',
+  'Dev Admin',
+  'ACTIVE'::admin_status
+from t
+on conflict (id) do nothing;
+
 -- A COMPLETED assessment for the dev child. current_estimate is the persisted
 -- PlacementEstimate (overall_level '2B' -> "S.A.M Level 2B"; tier K_4).
 -- session_time_flag 'normal' -> full report, no caveat banner.
