@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { Json } from "@/lib/supabase/database.types";
 
+import { gradeSelectAll } from "@/lib/grading/grade";
+
 import { toClientQuestion } from "./serialize";
-import type { PickedQuestionRow } from "./types";
+import type { ClientQuestionContent, PickedQuestionRow } from "./types";
 
 const baseRow = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -133,15 +135,16 @@ describe("toClientQuestion / SELECT_MULTIPLE", () => {
         correct: ["a", "c"],
       }),
     );
-    expect(out.content).toEqual({
-      stem: "Pick all even numbers",
-      select_rule: "all",
-      options: [
-        { id: "a", label: "2" },
-        { id: "b", label: "3" },
-        { id: "c", label: "4" },
-      ],
-    });
+    const c = out.content as Extract<ClientQuestionContent, { select_rule: string }>;
+    expect(c.stem).toBe("Pick all even numbers");
+    expect(c.select_rule).toBe("all");
+    // Options are spread at serve time (order may change to de-cluster the correct
+    // options); grading is by id, so assert the SET is preserved, not the order.
+    expect([...c.options].sort((x, y) => (x.id < y.id ? -1 : 1))).toEqual([
+      { id: "a", label: "2" },
+      { id: "b", label: "3" },
+      { id: "c", label: "4" },
+    ]);
     expect(Object.keys(out.content).sort()).toEqual([
       "options",
       "select_rule",
@@ -593,5 +596,48 @@ describe("toClientQuestion / image-input formats", () => {
       image: { url: "https://signed/t1", alt: "shape one", required: true },
     });
     expect(content.tiles[1]).toEqual({ id: "t2", label: "square" });
+  });
+
+  it("CLICK_IMAGE_MULTI: serves the same-colour tiles UN-clustered (correct not all one column)", () => {
+    // The SAM-L1-Q01 defect: 6 tiles, reds {t1,t3,t5}. Authored in t1..t6 order
+    // they fill positions 1/3/5 = one column of the 2-col grid.
+    const out = toClientQuestion(
+      row("CLICK_IMAGE_MULTI", {
+        stem: "Tap the things that have the same colour.",
+        tiles: ["t1", "t2", "t3", "t4", "t5", "t6"].map((id) => ({ id, label: id })),
+        _authoring: { answer_model: { rule: "select-all", correct: ["t1", "t3", "t5"] } },
+      }),
+    );
+    const c = out.content as Extract<ClientQuestionContent, { tiles: { id: string }[] }>;
+    // Grading is by tile id: the served SET must equal the authored set.
+    expect(c.tiles.map((t) => t.id).sort()).toEqual(["t1", "t2", "t3", "t4", "t5", "t6"]);
+    // Position is non-informative: the three correct tiles are NOT all in one
+    // 2-col column and NOT a contiguous run.
+    const reds = new Set(["t1", "t3", "t5"]);
+    const pos = c.tiles.flatMap((t, i) => (reds.has(t.id) ? [i] : []));
+    const cols = new Set(pos.map((p) => p % 2));
+    expect(cols.size).toBeGreaterThan(1);
+    expect(pos[pos.length - 1] - pos[0]).not.toBe(pos.length - 1);
+    // Answer model still never crosses the wire.
+    expect(JSON.stringify(out.content)).not.toContain("answer_model");
+    expect(JSON.stringify(out.content)).not.toContain("select-all");
+  });
+
+  it("CLICK_IMAGE_MULTI: grading maps by tile identity, not displayed position", () => {
+    const CORRECT = ["t1", "t3", "t5"];
+    const out = toClientQuestion(
+      row("CLICK_IMAGE_MULTI", {
+        stem: "Tap the things that have the same colour.",
+        tiles: ["t1", "t2", "t3", "t4", "t5", "t6"].map((id) => ({ id, label: id })),
+        _authoring: { answer_model: { rule: "select-all", correct: CORRECT } },
+      }),
+    );
+    const c = out.content as Extract<ClientQuestionContent, { tiles: { id: string }[] }>;
+    // Selecting the correct tiles BY ID (wherever they now sit) scores correct.
+    expect(gradeSelectAll(CORRECT, CORRECT).correct).toBe(true);
+    // Selecting the served left column (positions 0,2,4) no longer wins — the
+    // correct tiles were spread out, so position is not a shortcut.
+    const leftColumn = c.tiles.filter((_, i) => i % 2 === 0).map((t) => t.id);
+    expect(gradeSelectAll(leftColumn, CORRECT).correct).toBe(false);
   });
 });
