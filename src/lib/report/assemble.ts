@@ -58,12 +58,32 @@ import {
 } from "@/lib/responseSubmit/types";
 import type { Database } from "@/lib/supabase/database.types";
 import { deriveTier } from "@/lib/tier/derive";
+import { levelIndex } from "@/lib/engine/levels";
 
 type HalfGradeLevel = Database["public"]["Enums"]["half_grade_level"];
 type SessionTimeFlag = Database["public"]["Enums"]["session_time_flag"];
 
 // Exported for reuse by the instructor roster, which needs the canonical
 // S.A.M-level label per child without re-running the full report assembly.
+/** Clamp a placement level so it never exceeds the highest level actually
+ *  SERVED in the session. The engine's placementEstimate (engine.ts) takes the
+ *  mode of the across-strand average posterior over the full 0A…8B axis; a
+ *  floor/sparse run that only served floor items and got them all correct has
+ *  no ceiling items to pull the posterior down, so the mode can rail to the top
+ *  index (8B) — placing a 0A child at "S.A.M Level 8". A child can't be placed
+ *  above the hardest level they were actually shown, so we bound the resolved
+ *  level by the served ceiling. `ceiling === null` (no served level known)
+ *  leaves the level unchanged, and a normal multi-level run (ceiling ≥ the
+ *  estimate) is returned unchanged — the clamp only ever lowers a railed
+ *  estimate, never raises one. */
+export function clampLevelToServedCeiling(
+  level: HalfGradeLevel,
+  ceiling: HalfGradeLevel | null,
+): HalfGradeLevel {
+  if (!ceiling) return level;
+  return levelIndex(ceiling) < levelIndex(level) ? ceiling : level;
+}
+
 export function samLevelLabel(level: HalfGradeLevel): string {
   // S.A.M-LEVEL (booklet) naming — the parent/placement axis (0A, 0B, 0C,
   // 1, 2 … 8), derived from the row's half_grade via levelBand's booklet axis.
@@ -207,20 +227,26 @@ export async function assembleReportContent(
     );
   }
 
-  // ---- questions (service-role; compliance §8 — projection is id +
-  // content_id only). content_id keys into tax_content for the V2026
-  // sub-strand axis. Questions without content_id can't be placed on the
-  // sub-strand grid and are skipped from strand_mastery.
+  // ---- questions (service-role; compliance §8 — projection is taxonomy
+  // metadata only: id, content_id, strand, level. No question content / PII.).
+  // content_id keys into tax_content for the V2026 sub-strand axis. Questions
+  // without content_id can't be placed on the sub-strand grid and are skipped
+  // from strand_mastery. `level` (half-grade) feeds the served-ceiling clamp
+  // on the placement label below.
   const questionIds = Array.from(new Set(responses.map((r) => r.question_id)));
   const contentIdByQuestion = new Map<string, string>();
   // questions.strand (the engine's 6-value enum) is ALWAYS populated — it
   // backs the low-level fallback below when content_id is NULL (sparse at the
   // young band, see migration 20260525000003).
   const engineStrandByQuestion = new Map<string, EngineStrand>();
+  // Highest level actually served this session (by the engine half-grade axis),
+  // used to clamp a railed placement label (see clampLevelToServedCeiling).
+  let servedCeiling: HalfGradeLevel | null = null;
+  let servedCeilingIdx = -1;
   if (questionIds.length > 0) {
     const { data: questionRows, error: questionsErr } = await serviceClient
       .from("questions")
-      .select("id, content_id, strand")
+      .select("id, content_id, strand, level")
       .in("id", questionIds);
     if (questionsErr || !questionRows) {
       throw new AssembleError(
@@ -231,6 +257,13 @@ export async function assembleReportContent(
     for (const q of questionRows) {
       if (q.content_id) contentIdByQuestion.set(q.id, q.content_id);
       if (q.strand) engineStrandByQuestion.set(q.id, q.strand);
+      if (q.level) {
+        const idx = levelIndex(q.level);
+        if (idx > servedCeilingIdx) {
+          servedCeilingIdx = idx;
+          servedCeiling = q.level;
+        }
+      }
     }
   }
 
@@ -505,7 +538,16 @@ export async function assembleReportContent(
     },
     time_flag: timeFlag,
     placement: {
-      sam_level: samLevelLabel(placement.overallLevel),
+      // Clamp the displayed/narrated level to the levels actually served: a
+      // floor/sparse run can rail the engine estimate to the axis top (8B) with
+      // no ceiling items to pull it down (see clampLevelToServedCeiling). This
+      // fixes BOTH the report label and the value fed to the narration prompt
+      // (which reads placement.sam_level), so no more "working at S.A.M Level 8"
+      // on a 0A child. The raw engine level still drives taxLevelCode (the
+      // sub-strand grid / radar) above, so the visuals are unchanged.
+      sam_level: samLevelLabel(
+        clampLevelToServedCeiling(placement.overallLevel, servedCeiling),
+      ),
       overall_percentage: overallPercentage,
       tier,
     },

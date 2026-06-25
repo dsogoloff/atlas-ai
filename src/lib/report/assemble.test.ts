@@ -11,6 +11,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 import {
   assembleReportContent,
+  clampLevelToServedCeiling,
   halfGradeToTaxLevelCode,
   samLevelLabel,
   type AssembleSession,
@@ -519,5 +520,102 @@ describe("halfGradeToTaxLevelCode — V2026 tax-level mapping + >L6 clamp", () =
     expect(halfGradeToTaxLevelCode("7B")).toBe("l6");
     expect(halfGradeToTaxLevelCode("8A")).toBe("l6");
     expect(halfGradeToTaxLevelCode("8B")).toBe("l6");
+  });
+});
+
+describe("clampLevelToServedCeiling — floor/sparse runs can't rail above what was served", () => {
+  it("lowers a railed estimate to the highest level actually served", () => {
+    // A pure-0A run that gets every floor item correct has no ceiling items to
+    // pull the posterior down, so the engine mode rails to the axis top (8B).
+    // The served ceiling is 0A, so the placement clamps back to the floor.
+    expect(clampLevelToServedCeiling("8B", "0A")).toBe("0A");
+    expect(clampLevelToServedCeiling("8B", "0B")).toBe("0B");
+  });
+
+  it("leaves a normal multi-level estimate unchanged (ceiling >= estimate)", () => {
+    // When ceiling items WERE served (ceiling at/above the estimate), the
+    // estimate is trustworthy and must pass through untouched.
+    expect(clampLevelToServedCeiling("3A", "5B")).toBe("3A");
+    expect(clampLevelToServedCeiling("3A", "3A")).toBe("3A");
+    expect(clampLevelToServedCeiling("8B", "8B")).toBe("8B");
+  });
+
+  it("leaves the estimate unchanged when no served ceiling is known (null)", () => {
+    // No served-level info (e.g. zero questions resolved) → never clamp.
+    expect(clampLevelToServedCeiling("8B", null)).toBe("8B");
+    expect(clampLevelToServedCeiling("0A", null)).toBe("0A");
+  });
+});
+
+describe("assembleReportContent — placement clamped to the served floor", () => {
+  // A railed estimate (engine mode at 8B) on a session that only served floor
+  // (0A) items must place — and narrate — at the floor, not the axis top. The
+  // narration prompt reads placement.sam_level, so clamping here fixes BOTH the
+  // label and the narrated level.
+  const RAILED_PLACEMENT_JSON = {
+    ...VALID_PLACEMENT_JSON,
+    overall_level: "8B",
+  };
+  const RAILED_SESSION: AssembleSession = {
+    ...SESSION,
+    current_estimate: RAILED_PLACEMENT_JSON as never,
+  };
+
+  it("clamps the railed 8B estimate to the floor when only 0A items were served", async () => {
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q2", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      tax_sub_strands: [],
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q1", content_id: null, strand: "number_sense", level: "0A" },
+        { id: "q2", content_id: null, strand: "number_sense", level: "0A" },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: RAILED_SESSION,
+      child: CHILD,
+    });
+
+    // Was "S.A.M Level 8" before the clamp; now floors to 0A.
+    expect(content.placement.sam_level).toBe("S.A.M Level 0A");
+  });
+
+  it("does NOT clamp when a ceiling item was actually served (normal multi-level run)", async () => {
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q2", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      tax_sub_strands: [],
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q1", content_id: null, strand: "number_sense", level: "0A" },
+        { id: "q2", content_id: null, strand: "number_sense", level: "8B" },
+      ],
+    });
+
+    const content = await assembleReportContent({
+      readClient,
+      serviceClient,
+      session: RAILED_SESSION,
+      child: CHILD,
+    });
+
+    // An 8B item was served, so the 8B estimate is trustworthy — unchanged.
+    expect(content.placement.sam_level).toBe("S.A.M Level 8");
   });
 });
