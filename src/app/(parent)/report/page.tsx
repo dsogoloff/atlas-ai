@@ -30,7 +30,16 @@ import { redirect } from "next/navigation";
 import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import { firstName } from "@/lib/format/firstName";
 import { assembleReportContent } from "@/lib/report/assemble";
-import { resolveNarrationProse } from "@/lib/report/narration/resolve";
+import { generateReportNarration } from "@/lib/report/narration/generate";
+import { upsertNarration } from "@/lib/report/narration/persist";
+import {
+  narrationToRow,
+  shouldRegenerateNarration,
+} from "@/lib/report/narration/refresh";
+import {
+  resolveNarrationProse,
+  type ReportNarrationRow,
+} from "@/lib/report/narration/resolve";
 import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -226,11 +235,12 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   }
 
   // ---- Branch 7: full report.
+  const serviceClient = createServiceClient();
   let reportContent;
   try {
     reportContent = await assembleReportContent({
       readClient: supabase,
-      serviceClient: createServiceClient(),
+      serviceClient,
       session: latestSession,
       child,
     });
@@ -260,8 +270,45 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
       err: narrationErr,
     });
   }
+
+  // Self-heal stale young-band narration. A low-level (0A/0B/L1/L2) session
+  // narrated BEFORE #160 was cached when sub-strand resolution was empty, so
+  // generate.ts's anti-fabrication guard suppressed strand_lede + strengths —
+  // the report shows a blank "Strand Performance" and no Strengths even though
+  // #160's engine-strand fallback now gives the freshly assembled content real
+  // strand data. The radar/bars already reflect that (assembled live above);
+  // the narrative does not, because it is read from the cached row. When the
+  // cached row is strand-suppressed yet the live content HAS strand data,
+  // regenerate once from the already-assembled content and re-cache so the
+  // low-level report narrates the way working levels (0C/L3-L6) do. Only adopt
+  // a regenerated narration that actually filled the strand prose — never
+  // clobber a partially-useful row with a failed/empty one. Fail-soft: any
+  // error serves the cached row (data-only), never blocks the render.
+  let effectiveNarrationRow: ReportNarrationRow | null = narrationRow ?? null;
+  if (shouldRegenerateNarration(effectiveNarrationRow, reportContent)) {
+    try {
+      const fresh = await generateReportNarration(reportContent);
+      if (fresh.status === "ok" && fresh.strand_lede) {
+        const { error: healErr } = await upsertNarration(serviceClient, fresh);
+        if (healErr) {
+          console.error("[report] narration self-heal upsert failed", {
+            sessionId: latestSession.id,
+            err: healErr,
+          });
+        } else {
+          effectiveNarrationRow = narrationToRow(fresh);
+        }
+      }
+    } catch (err) {
+      console.error("[report] narration self-heal failed — serving cached", {
+        sessionId: latestSession.id,
+        err: err instanceof Error ? err.message : "unknown",
+      });
+    }
+  }
+
   const narrationProse = resolveNarrationProse(
-    narrationRow ?? null,
+    effectiveNarrationRow,
     reportContent.time_flag,
   );
 

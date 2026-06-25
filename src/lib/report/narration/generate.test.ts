@@ -193,6 +193,66 @@ describe("generateReportNarration", () => {
     );
   });
 
+  // Regression for the blank low-level narrative (#160 follow-up). A populated
+  // young-band session (0A/0B/L1/L2) assembles real strand_mastery via #160's
+  // engine-strand fallback — Whole Numbers / Geometry assessed, the rest not.
+  // Because at least one sub-strand has total > 0, the anti-fabrication guard
+  // must NOT suppress: the narrative generates strand_lede + strengths the same
+  // way it does for working levels (0C/L3-L6), not the generic data-only
+  // fallback. (This proves the narration INPUT honours the fallback; the live
+  // blank-narrative symptom was a stale cached row, healed at report-view.)
+  function youngBandFallbackContent(samLevel: string): ReportContent {
+    return {
+      ...aidenGrade3Report,
+      placement: { ...aidenGrade3Report.placement, sam_level: samLevel },
+      strand_mastery: [
+        { strand: "whole_numbers", correct: 8, total: 10, percentage: 80, band: "mastery" },
+        { strand: "geometry", correct: 5, total: 8, percentage: 63, band: "progressing" },
+        { strand: "fractions", correct: 0, total: 0, percentage: 0, band: "no_data" },
+        { strand: "measurement", correct: 0, total: 0, percentage: 0, band: "no_data" },
+        { strand: "data_representation", correct: 0, total: 0, percentage: 0, band: "no_data" },
+      ],
+    };
+  }
+
+  it.each([
+    ["S.A.M Level 0A"],
+    ["S.A.M Level 1"],
+  ])(
+    "narrates a populated young-band session (%s) — strand_lede + strengths survive, not the generic fallback",
+    async (samLevel) => {
+      const canned = {
+        placement_line: "A solid start.",
+        strand_lede: "Whole Numbers is a clear strength so far.",
+        key_findings: {
+          strengths: ["Whole Numbers: confident and accurate."],
+          growth_areas: ["Geometry: a few shape questions to revisit."],
+        },
+        recommendations_lede: "Here's where to go next.",
+      };
+      mockCallSonnet.mockResolvedValue({
+        text: JSON.stringify(canned),
+        model: "claude-sonnet-4-6",
+        tokens: { input: 100, output: 50 },
+        elapsedMs: 1234,
+      });
+
+      const result = await generateReportNarration(
+        youngBandFallbackContent(samLevel),
+      );
+
+      expect(result.status).toBe("ok");
+      // Strand prose is NOT suppressed — the guard sees total > 0.
+      expect(result.strand_lede).toBe(canned.strand_lede);
+      expect(result.key_findings?.strengths.length).toBeGreaterThan(0);
+      // At least one strength OR area present (non-empty "What We Noticed").
+      expect(
+        (result.key_findings?.strengths.length ?? 0) +
+          (result.key_findings?.growth_areas.length ?? 0),
+      ).toBeGreaterThan(0);
+    },
+  );
+
   it("SALVAGES the valid fields when one field is invalid (no longer all-or-nothing)", async () => {
     // Regression guard for "report renders with NO narrative". One missing
     // field (recommendations_lede) used to discard the ENTIRE narration; now
