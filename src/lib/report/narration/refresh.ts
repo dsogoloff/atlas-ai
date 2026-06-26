@@ -43,16 +43,65 @@ export function narrationRowIsStrandSuppressed(
   return noLede && noStrengths;
 }
 
-/** Regenerate when the cached narration is strand-suppressed yet the live
- *  content now carries strand data (#160's fallback populated strand_mastery
- *  after the row was cached). Once regenerated WITH strand data the new row
- *  carries strand_lede, so this predicate is false on the next view —
- *  idempotent, no regenerate loop. */
+/** True when a cached row is the self-heal "already attempted" sentinel — a
+ *  status:"failed" row. The report-page self-heal persists exactly this after a
+ *  regeneration fails so the NEXT view renders the data-only fallback instead
+ *  of regenerating again. This is the at-most-once guard: a deterministically
+ *  failing session settles on a failed marker rather than looping. */
+export function narrationRowIsSelfHealAttempted(
+  row: ReportNarrationRow | null,
+): boolean {
+  return row !== null && row.status === "failed";
+}
+
+/** Regenerate the cached narration in exactly two recoverable shapes, and never
+ *  more than once per session:
+ *
+ *   1. NO cached row at all + live content has strand data — the completion-time
+ *      trigger (attemptNarration) threw before persisting (e.g. a transient
+ *      callSonnet failure as the session completed). This is the L4 defect:
+ *      the report rendered data-only with no strengths/growth narrative and the
+ *      old self-heal (strand-suppressed rows only) never recovered it. Heal once.
+ *   2. A strand-suppressed "ok" row + live content now has strand data — the
+ *      #160 pre-fallback young-band case. Heal once (the regenerated row carries
+ *      strand_lede, so this is false on the next view — idempotent).
+ *
+ *  Guards (no loop, no fabrication):
+ *   - status:"failed" marker → false. After a failed self-heal the page persists
+ *     this marker; a second view sees it and settles into the data-only fallback.
+ *   - content without strand data → false. Regeneration would only be suppressed
+ *     again by generate.ts's anti-fabrication guard. */
 export function shouldRegenerateNarration(
   row: ReportNarrationRow | null,
   content: ReportContent,
 ): boolean {
-  return narrationRowIsStrandSuppressed(row) && contentHasStrandData(content);
+  // Never regenerate something the anti-fabrication guard would re-suppress.
+  if (!contentHasStrandData(content)) return false;
+  // At-most-once guard: a failed marker is terminal.
+  if (narrationRowIsSelfHealAttempted(row)) return false;
+  // No row → completion-time trigger threw before persisting. Heal once.
+  if (row === null) return true;
+  // Stale strand-suppressed young-band row. Heal once.
+  return narrationRowIsStrandSuppressed(row);
+}
+
+/** A status:"failed" ReportNarration carrying only the keys (session_id,
+ *  tenant_id) — no prose. The report-page self-heal upserts this after a
+ *  regeneration fails so report_narrations holds a row whose presence stops the
+ *  next view from regenerating (shouldRegenerateNarration → false). The Piece 4
+ *  resolver treats status:"failed" as no prose, so the report renders the
+ *  existing graceful data-only fallback. */
+export function failedNarrationMarker(
+  content: ReportContent,
+  model: string,
+): ReportNarration {
+  return {
+    session_id: content.session_id,
+    tenant_id: content.tenant_id,
+    generated_at: new Date().toISOString(),
+    model,
+    status: "failed",
+  };
 }
 
 /** Project a freshly generated ReportNarration onto the report_narrations row
