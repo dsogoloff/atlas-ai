@@ -1049,8 +1049,13 @@ where id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 -- instructor.  admin@atlas.local / admin-password.  An admin sees EVERY child
 -- in the tenant across all centers; the seed children already belong to the
 -- dev tenant, so the admin roster shows them. Ids keep the v4/variant nibbles
--- (4 at pos 13, 8 at pos 17) per the seed-UUID note above. Idempotent via
--- on-conflict.
+-- (4 at pos 13, 8 at pos 17) per the seed-UUID note above. The admin auth user
+-- id MUST stay distinct from every other seeded auth.users id — in particular
+-- the dev PARENT (aaaa…). A collision here is silent: `on conflict (id) do
+-- nothing` skips the admin insert, leaving no admin auth user / identity (the
+-- admins profile row still inserts, dangling onto the colliding user), so
+-- admin@atlas.local login is rejected. Digit-9 id is unused elsewhere in seed.
+-- Idempotent via on-conflict.
 -- =============================================================================
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -1059,7 +1064,7 @@ insert into auth.users (
   confirmation_token, recovery_token, email_change_token_new, email_change
 )
 values (
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  '99999999-9999-4999-8999-999999999999',
   '00000000-0000-0000-0000-000000000000',
   'authenticated',
   'authenticated',
@@ -1082,10 +1087,10 @@ insert into auth.identities (
 )
 values (
   gen_random_uuid(),
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  '99999999-9999-4999-8999-999999999999',
+  '99999999-9999-4999-8999-999999999999',
   'email',
-  '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","email":"admin@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
+  '{"sub":"99999999-9999-4999-8999-999999999999","email":"admin@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
   now(), now(), now()
 )
 on conflict (provider_id, provider) do nothing;
@@ -1095,7 +1100,7 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 insert into admins (id, auth_user_id, tenant_id, email, name, status)
 select
   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  '99999999-9999-4999-8999-999999999999',
   t.id,
   'admin@atlas.local',
   'Dev Admin',
