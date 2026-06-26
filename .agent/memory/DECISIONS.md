@@ -3,6 +3,26 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-26
+
+* **Migration version collision resolved by renaming the later file, not the canonical anchor
+  (PR #174, lane/fix-migration-version-collision, 2026-06-26).** Two migration files held
+  version prefix 20260625120000 after PRs #169 and #170 merged independently on the same day.
+  Decision: keep `20260625120000_l5l6_booklet_reband.sql` unchanged — it anchors the
+  120000–120300 batch and is referenced by siblings (`load_missing_rows`, `q27_activate`
+  comments) and the seed.sql mirror header. Rename the later admin file to the next free
+  slot: `20260625120000_admins_tenant_view.sql` → `20260625120400_admins_tenant_view.sql`
+  (git mv; rename only; content unchanged). The admin migration had no seed mirror and no
+  version-keyed references; no later migration depends on the admins table; DDL order is
+  preserved. Zero duplicate version prefixes remain across all 81 migration files. Verify
+  GREEN: 1359 tests / 104 files, tsc 0, lint 0 errors (2 known warnings), seed↔migration
+  parity PASS (81 migrations). Codex manual/skipped (relay unauth).
+  Recurring lesson (3rd incident): parallel `lane/*` branches independently pick timestamp-
+  style version prefixes and can collide when two lanes pick the same minute and both merge.
+  The `schema_migrations` PK is on version, so a duplicate breaks `supabase db reset` only
+  AFTER both merge (each lane's own reset passes in isolation). No automated guard exists
+  in CI; see TECHNICAL_DEBT.md.
+
 ## 2026-06-25
 
 * ⚑ **LOCKED — L5/L6 content bands at BOOKLET LEVEL, not difficulty or per-question Level

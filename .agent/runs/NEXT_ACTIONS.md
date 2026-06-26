@@ -4,13 +4,33 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-06-26 — CONVERSION: L5/L6 geometry activation (PR #172 — OPEN)
+## 0. 2026-06-26 — fix: migration version collision (PR #174 — OPEN)
 
-**Trunk head entering this session: `db1e9ac`** (after PRs #169 and #170 merged).
-One new PR opened (#172); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
-One new migration — **`supabase db reset` required after merge.**
+**Trunk head entering this session: `861bc43`** (after PRs #169–#173 merged).
+One new PR opened (#174); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN.
+Rename-only fix — no schema or data change.
 
-- [ ] **Dimitri: merge PR #172 (lane/l5l6-geometry-activation)** after Vercel preview review.
+- [ ] **Dimitri: merge PR #174 (lane/fix-migration-version-collision)** after review.
+      No migration data change; no `supabase db reset` needed as part of the merge itself.
+      After merge: run `supabase db reset` to confirm the PK collision (version 20260625120000)
+      is resolved and reset applies cleanly end-to-end.
+
+- [x] **RESOLVED — duplicate migration version 20260625120000.** `supabase db reset` was
+      failing with `duplicate key value violates unique constraint "schema_migrations_pkey"`.
+      Root cause: PR #169 and PR #170 (two same-day lanes) independently assigned version
+      20260625120000. Fix: kept `20260625120000_l5l6_booklet_reband.sql` (canonical anchor
+      for the 120000–120300 batch + referenced by siblings and seed mirror); renamed
+      `20260625120000_admins_tenant_view.sql` → `20260625120400_admins_tenant_view.sql`
+      (git mv; rename only; content unchanged). Zero duplicate version prefixes remain across
+      all 81 migration files. See CURRENT_STATE and TECHNICAL_DEBT for the recurring-lesson
+      note (3rd duplicate-migration-version incident).
+
+## 0. 2026-06-26 — CONVERSION: L5/L6 geometry activation (PR #172 — MERGED `861bc43`)
+
+**Trunk head entering that session: `db1e9ac`** (after PRs #169 and #170 merged).
+PR #172 opened then merged as part of the PRs #169–#173 batch; trunk head now `861bc43`.
+
+- [x] **Dimitri: merge PR #172 (lane/l5l6-geometry-activation)** — MERGED (`861bc43`).
       Then, in order:
       (a) `supabase db reset` — applies `20260626120000_l5l6_geometry_activation.sql`; seed
           rebuilds the 13 newly activated rows as active.

@@ -51,6 +51,26 @@ Resolve opportunistically; don't let them sweep into unrelated commits.
 ## Tooling versions (post-MVP, don't update mid-build)
 - Supabase CLI update nag (v2.102 available; 2.98.2 installed).
 
+## No automated duplicate-migration-version guard (recurring — 3rd incident, 2026-06-26)
+
+Parallel `lane/*` branches independently pick timestamp-style version prefixes and can
+collide when two lanes pick the same minute and both merge to trunk. The
+`schema_migrations` primary key is on `version`, so a duplicate breaks `supabase db reset`
+only AFTER both PRs merge — each lane's isolated reset passes cleanly. CI's `verify-bar`
+does not run `supabase db reset`, so it does not catch duplicate versions.
+
+**Mitigation (manual, no tooling yet):** when opening a conversion or DDL lane, check
+existing migration version prefixes AND the version numbers in other open lane branches
+before assigning a new one. If two same-day lanes are open, stagger by at least 100 (e.g.
+120000 vs 120400 or pick a higher offset).
+
+**Tooling gap:** there is no CI step that validates uniqueness of migration version prefixes
+across the full `supabase/migrations/` directory. A lightweight script (e.g. check for
+duplicate `YYYYMMDDHHMMSS` prefixes via glob + sort) would catch this class of defect
+before merge. This is a low-effort, high-value addition to the verify bar or as a
+pre-commit hook — not yet built. Prior incidents: version 20260620120000 (noted in earlier
+CURRENT_STATE history) and an earlier dup-migration incident; this session was the third.
+
 ## Deploy-time (later)
 - Set `MISCONCEPTION_CLASSIFIER_LIVE=true` and confirm `ANTHROPIC_API_KEY` in Vercel — the
   classifier is live in code but stub in production until these are set.

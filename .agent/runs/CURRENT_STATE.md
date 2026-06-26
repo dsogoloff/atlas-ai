@@ -4,9 +4,47 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-26 (CONVERSION: L5/L6 geometry activation) — trunk head entering this session: **`db1e9ac`** (after PRs #169 and #170 merged). One new lane PR opened (#172); independent off `ATLAS-ASSESSMENT`, not stacked. One migration — **`supabase db reset` required after merge.**
+**As of:** 2026-06-26 (fix: migration version collision — PR #174) — trunk head entering this session: **`861bc43`** (after PRs #169–#173 merged, including PR #172 lane/l5l6-geometry-activation now MERGED). One new lane PR opened (#174); independent off `ATLAS-ASSESSMENT`, not stacked. Rename-only fix — **no `supabase db reset` needed mid-lane; founder runs reset post-merge to confirm PK collision is resolved.**
 
-- **PR #172 — lane/l5l6-geometry-activation — OPEN.**
+- **PR #174 — lane/fix-migration-version-collision — OPEN.**
+  "fix(migrations): resolve duplicate version 20260625120000 (db reset failure)".
+  Off `ATLAS-ASSESSMENT` head `861bc43`; independent, not stacked. Verify GREEN: 1359 tests /
+  104 files, tsc 0 errors, lint 0 errors (2 known warnings). Seed↔migration parity PASS (81
+  migrations; parity guard uses a directory glob so the rename is transparent). Codex
+  manual/skipped (relay unauth).
+
+  **Problem:** `supabase db reset` failed — `duplicate key value violates unique constraint
+  "schema_migrations_pkey" Key (version)=(20260625120000) already exists`. Two migration files
+  were committed with the same version prefix from two same-day lanes that merged independently:
+  - `20260625120000_l5l6_booklet_reband.sql` (PR #169, 17:39) — anchors the L5/L6 batch
+    120000–120300; referenced by siblings and the seed.sql mirror header.
+  - `20260625120000_admins_tenant_view.sql` (PR #170, 18:06) — admins table + tenant-wide
+    admin SELECT path (DDL).
+  The 120100/120200/120300 batch members are unique; this was the only collision.
+
+  **Fix:** Kept the canonical `20260625120000_l5l6_booklet_reband.sql` unchanged (anchors
+  the batch + referenced by siblings and seed mirror). Renamed the later admin migration to
+  the next free version slot:
+  `20260625120000_admins_tenant_view.sql` → `20260625120400_admins_tenant_view.sql` (git mv;
+  rename only; content unchanged). The three existing "20260625120000" references in
+  `load_missing_rows` + `q27_activate` comments and the seed.sql mirror header all point to
+  the L5/L6 reband file (kept unchanged); no reference updates were needed. The admin migration
+  had no seed mirror and no version-keyed references; no later migration depends on the admins
+  table. Order safety confirmed: nothing between 120000 and 120400 touches admins; all 0626+
+  migrations still run after 120400. Zero duplicate version prefixes remain across all 81
+  migration files.
+
+  **Files:** `supabase/migrations/20260625120000_admins_tenant_view.sql` →
+  `supabase/migrations/20260625120400_admins_tenant_view.sql` (git mv; rename only).
+
+  **Founder post-merge action (attended):**
+  Run `supabase db reset` — the PK collision is resolved; reset should now apply cleanly.
+
+---
+
+**As of:** 2026-06-26 (CONVERSION: L5/L6 geometry activation) — trunk head entering that session: **`db1e9ac`** (after PRs #169 and #170 merged). PR #172 opened and subsequently MERGED (`861bc43`, included in the PRs #169–#173 batch above).
+
+- **PR #172 — lane/l5l6-geometry-activation — MERGED (`861bc43`).**
   "fix(conversion): activate L5/L6 image rows so short test serves geometry".
   Off `ATLAS-ASSESSMENT` head `db1e9ac`; independent, not stacked. Verify GREEN: 1342 tests /
   103 files, tsc 0 errors, lint 0 errors (2 known warnings). Seed↔migration parity PASS (81
