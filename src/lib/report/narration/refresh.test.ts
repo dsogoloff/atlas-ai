@@ -11,6 +11,8 @@ import type { ReportContent } from "@/lib/report/types";
 import type { ReportNarrationRow } from "./resolve";
 import {
   contentHasStrandData,
+  failedNarrationMarker,
+  narrationRowIsSelfHealAttempted,
   narrationRowIsStrandSuppressed,
   narrationToRow,
   shouldRegenerateNarration,
@@ -113,8 +115,46 @@ describe("shouldRegenerateNarration", () => {
     expect(shouldRegenerateNarration(suppressedRow, thinContent)).toBe(false);
   });
 
-  it("false: no cached narration row", () => {
-    expect(shouldRegenerateNarration(null, youngBandContent)).toBe(false);
+  it("true: NO cached narration row + content has strand data (the L4 case — completion-time trigger threw before persisting)", () => {
+    expect(shouldRegenerateNarration(null, youngBandContent)).toBe(true);
+  });
+
+  it("false: no cached row but content is thin — regeneration would only be suppressed again", () => {
+    expect(shouldRegenerateNarration(null, thinContent)).toBe(false);
+  });
+
+  it("at-most-once guard: a status:failed marker is terminal — does NOT regenerate even with strand data", () => {
+    // View 1 (no row) regenerates and, on failure, persists this failed marker.
+    expect(shouldRegenerateNarration(null, youngBandContent)).toBe(true);
+    // View 2 sees the marker and must settle into the data-only fallback.
+    const failedMarker: ReportNarrationRow = { ...suppressedRow, status: "failed" };
+    expect(shouldRegenerateNarration(failedMarker, youngBandContent)).toBe(false);
+  });
+});
+
+describe("narrationRowIsSelfHealAttempted", () => {
+  it("true only for a status:failed marker row (the once-guard sentinel)", () => {
+    expect(
+      narrationRowIsSelfHealAttempted({ ...suppressedRow, status: "failed" }),
+    ).toBe(true);
+    expect(narrationRowIsSelfHealAttempted(suppressedRow)).toBe(false);
+    expect(narrationRowIsSelfHealAttempted(fullRow)).toBe(false);
+    expect(narrationRowIsSelfHealAttempted(null)).toBe(false);
+  });
+});
+
+describe("failedNarrationMarker", () => {
+  it("builds a status:failed audit row carrying the session + tenant, with no prose", () => {
+    const marker = failedNarrationMarker(youngBandContent, "narration-self-heal");
+    expect(marker.status).toBe("failed");
+    expect(marker.session_id).toBe(youngBandContent.session_id);
+    expect(marker.tenant_id).toBe(youngBandContent.tenant_id);
+    expect(marker.model).toBe("narration-self-heal");
+    expect(marker.placement_line).toBeUndefined();
+    expect(marker.strand_lede).toBeUndefined();
+    expect(marker.key_findings).toBeUndefined();
+    // generated_at is a valid ISO8601 timestamp for the audit row.
+    expect(Number.isNaN(Date.parse(marker.generated_at))).toBe(false);
   });
 });
 
