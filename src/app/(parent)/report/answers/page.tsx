@@ -53,10 +53,10 @@ import type { Database, Json } from "@/lib/supabase/database.types";
 // Phase 8: question.strand is the engine's 6-value enum (DB column type),
 // not the new V2026 sub-strand axis — so look up the legacy strand labels.
 import { ENGINE_STRAND_LABELS } from "../strand-labels";
+import { humanizeChildAnswer, humanizeCorrectAnswer } from "./humanize";
 
 export const dynamic = "force-dynamic";
 
-type QuestionFormat = Database["public"]["Enums"]["question_format"];
 type Strand = Database["public"]["Enums"]["strand"];
 
 const UUID_RE =
@@ -230,12 +230,13 @@ export default async function AnswerLogPage({ searchParams }: AnswersPageProps) 
               );
             }
 
-            const correct = extractCorrectAnswer(
+            const correct = humanizeCorrectAnswer(
               question.format,
               question.content,
             );
-            const childAnswer = formatChildAnswer(
+            const childAnswer = humanizeChildAnswer(
               question.format,
+              question.content,
               r.answer_given,
             );
             const misconceptions = r.detected_misconceptions
@@ -327,86 +328,6 @@ function extractStem(content: Json): string {
   }
   const stem = (content as Record<string, Json>).stem;
   return typeof stem === "string" ? stem : "(question unavailable)";
-}
-
-function extractCorrectAnswer(format: QuestionFormat, content: Json): string {
-  if (
-    content === null ||
-    typeof content !== "object" ||
-    Array.isArray(content)
-  ) {
-    return "—";
-  }
-  const obj = content as Record<string, Json>;
-  switch (format) {
-    case "MULTIPLE_CHOICE": {
-      const options = obj.options;
-      const idx = obj.correct_index;
-      if (
-        Array.isArray(options) &&
-        typeof idx === "number" &&
-        Number.isInteger(idx) &&
-        idx >= 0 &&
-        idx < options.length
-      ) {
-        const opt = options[idx];
-        return typeof opt === "string" ? opt : "—";
-      }
-      return "—";
-    }
-    case "NUMERIC_ENTRY":
-    case "TEXT_ENTRY": {
-      // Same content key for both typed-entry formats. Any-of
-      // NUMERIC_ENTRY keys keep correct_answer as the human-readable
-      // form ("1, 2, 3, 6, 9 or 18") — what the parent should see.
-      const ans = obj.correct_answer;
-      return typeof ans === "string" ? ans : "—";
-    }
-    case "DRAG_DROP": {
-      const order = obj.correct_order;
-      if (Array.isArray(order)) {
-        return order
-          .filter((x): x is string => typeof x === "string")
-          .join(" → ");
-      }
-      return "—";
-    }
-    // Structured-input formats (SELECT_MULTIPLE / VISUAL_MATCHING /
-    // MULTI_BLANK / EQUATION_SET / CLICK_IMAGE_SINGLE / CLICK_IMAGE_MULTI /
-    // IMAGE_ORDERING): their correct-answer models are multi-field and
-    // id-keyed; a human-readable parent rendering is a separate concern from
-    // input wiring. Show a placeholder until then.
-    case "SELECT_MULTIPLE":
-    case "VISUAL_MATCHING":
-    case "MULTI_BLANK":
-    case "EQUATION_SET":
-    case "CLICK_IMAGE_SINGLE":
-    case "CLICK_IMAGE_MULTI":
-    case "IMAGE_ORDERING":
-      return "—";
-  }
-}
-
-// Drag-drop answers are stored as JSON-encoded arrays in answer_given.
-// MC + numeric are stored as plain strings. Parse only when format is DD.
-function formatChildAnswer(format: QuestionFormat, answerGiven: string): string {
-  if (format === "DRAG_DROP") {
-    try {
-      const parsed: unknown = JSON.parse(answerGiven);
-      if (
-        Array.isArray(parsed) &&
-        parsed.every((x): x is string => typeof x === "string")
-      ) {
-        return parsed.join(" → ");
-      }
-    } catch {
-      // Fall through to raw display.
-    }
-  }
-  // MULTIPLE_CHOICE: answer_given is the chosen option's text (handler
-  // stores it as-text, not as index). NUMERIC_ENTRY / TEXT_ENTRY: child's
-  // typed string. All render verbatim.
-  return answerGiven;
 }
 
 function formatSeconds(s: number): string {
