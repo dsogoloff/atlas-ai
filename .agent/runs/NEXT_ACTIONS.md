@@ -4,7 +4,34 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-06-25 — CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path + SAM-L5-Q27 activation (PR #169 — OPEN)
+## 0. 2026-06-26 — CONVERSION: L5/L6 geometry activation (PR #172 — OPEN)
+
+**Trunk head entering this session: `db1e9ac`** (after PRs #169 and #170 merged).
+One new PR opened (#172); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
+One new migration — **`supabase db reset` required after merge.**
+
+- [ ] **Dimitri: merge PR #172 (lane/l5l6-geometry-activation)** after Vercel preview review.
+      Then, in order:
+      (a) `supabase db reset` — applies `20260626120000_l5l6_geometry_activation.sql`; seed
+          rebuilds the 13 newly activated rows as active.
+      (b) Confirm the L5/L6 crops are present in the private `question-images` bucket. Per
+          the QA report they are already uploaded; an active row whose bucket file is absent
+          will 500 at serve time.
+      Check: run a short test for an L5 or L6 child — geometry, area_volume, and percentage
+      sub-strands should now appear (were previously unserved because all 15 image rows were
+      is_active=false).
+
+- [x] **RESOLVED — CROSS-LANE FLAG (PR #161): served-order crosswalk regenerated (PR #170,
+      MERGED `db1e9ac`, lane/regen-served-crosswalk-substrand).** Artifacts
+      `scripts/conversion/audit/served-crosswalk.{md,json}` regenerated to reflect the
+      sub-strand-aware served order. Closes the PR #161 cross-lane follow-up.
+
+- [x] **RESOLVED — the 15 PR #169 image rows "activation-ready (is_active=false)":** 13 of
+      those 15 rows are now activated by PR #172 (geometry, area_volume, percentage sub-strands).
+      The two intentionally left inactive: SAM-L5-Q08 (line graph, data_statistics) and
+      SAM-L6-Q26 (percentage, rectangles shaded) — not in ATLAS's activation list.
+
+## 0. 2026-06-25 — CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path + SAM-L5-Q27 activation (PR #169 — MERGED)
 
 **Origin head entering this session: `f5947d5`** (after PR #168 merged).
 One new PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
@@ -16,7 +43,7 @@ LOCKED DECISION (founder): L5/L6 content bands at BOOKLET LEVEL — SAM-L5-* →
 Supersedes `20260623150000_l5l6_releveling` (difficulty/Level-column banding). Clears the prior
 "Level review (founder/picker decision)" follow-up from the l5l6-conversion-status-2026-06-23 work.
 
-- [ ] **Dimitri: merge PR #169 (lane/l5l6-booklet-reband-load-images)** after Vercel preview review.
+- [x] **Dimitri: merge PR #169 (lane/l5l6-booklet-reband-load-images)** — MERGED `db1e9ac`.
       Then, in order:
       (a) **CRITICAL FIRST:** Run `pnpm convert:upload-activation-images` to upload
           `l5/sam-l5-q27.png` (combined 4-shape crop) to the private `question-images` bucket.
@@ -47,7 +74,7 @@ Supersedes `20260623150000_l5l6_releveling` (difficulty/Level-column banding). C
       is_active=true; short_test_eligible=true; banding 5A; content_id l4-geometry-3. Verify
       GREEN 1336 tests / 102 files, seed↔migration parity PASS (79 migrations).
 
-## 0. 2026-06-25 — young-band narration render (PR #166 — OPEN)
+## 0. 2026-06-25 — young-band narration render (PR #166 — MERGED)
 
 **Origin head entering this session: `bf792cc`** (after PRs #163/#164/#165 merged).
 One new PR opened; independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.

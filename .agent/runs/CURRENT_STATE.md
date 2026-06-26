@@ -4,9 +4,64 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-26 (CONVERSION: L5/L6 geometry activation) — trunk head entering this session: **`db1e9ac`** (after PRs #169 and #170 merged). One new lane PR opened (#172); independent off `ATLAS-ASSESSMENT`, not stacked. One migration — **`supabase db reset` required after merge.**
+
+- **PR #172 — lane/l5l6-geometry-activation — OPEN.**
+  "fix(conversion): activate L5/L6 image rows so short test serves geometry".
+  Off `ATLAS-ASSESSMENT` head `db1e9ac`; independent, not stacked. Verify GREEN: 1342 tests /
+  103 files, tsc 0 errors, lint 0 errors (2 known warnings). Seed↔migration parity PASS (81
+  migrations). convert:upload-activation-images --check PASS. Codex manual/skipped (relay unauth).
+
+  **Root cause (cross-lane QA from ATLAS):** L5/L6 short test served no geometry. The
+  sub-strand-aware picker (PR #161) filters `is_active` FIRST; the 15 image rows wired by
+  PR #169 remained `is_active=false` even though image_path was set, crops are uploaded to
+  the private question-images bucket, and `short_test_eligible=true`. Fix: activate 13 of
+  those 15 rows.
+
+  **Migration `20260626120000_l5l6_geometry_activation.sql` + seed.sql mirror block
+  (`l5l6-geometry-activation`, appended after `l5-q27-activate`). `image_path` already
+  persisted from PR #169; UPDATEs flip ONLY the `is_active` bit:**
+  - L5: Q14, Q25, Q26
+  - L6: Q14, Q15, Q16, Q19, Q25, Q30, Q31, Q32, Q33, Q34
+
+  `content_id` was source-accurate and NON-NULL on every row; NOT changed by this PR.
+
+  Sub-strands resolved: geometry (L5-Q14 → l4-geometry-2 Squares/Rectangles; L5-Q26 →
+  l4-geometry-3 Symmetry; L6-Q31/Q32/Q33/Q34 → l6-geometry-1 Angles); area_volume (L5-Q25
+  → l4-area_volume-1; L6-Q14/Q15/Q16 → l5-area_volume-1 area; L6-Q19/Q25 → l5-area_volume-4
+  volume); percentage (L6-Q30 → l5-percentage-3 pie chart — NOT geometry; activated keeping
+  its existing correct percentage tag). Every crop source-verified this session (worksheet
+  page + answer key + PNG on disk), including L6-Q30/Q31/Q32/Q33/Q34 (previously API-rejected
+  when viewed; confirmed present on disk via image preflight).
+
+  Not changed: SAM-L5-Q27 (already active via PR #169); SAM-L5-Q24 and SAM-L6-Q18
+  (text-based, already active). Still inactive (intentionally): SAM-L5-Q08 (line graph,
+  data_statistics) and SAM-L6-Q26 (percentage, rectangles shaded) — not in ATLAS's list.
+  HELD: SAM-L6-Q17 — manual drawing task (Short=N); L6-17-1/17_2.png crops are the
+  answer-key solution illustration, not a clickable stimulus; no gradeable row to activate.
+
+  Files: supabase/migrations/20260626120000_l5l6_geometry_activation.sql (A),
+  supabase/seed.sql (M).
+
+  **Founder post-merge actions (attended):**
+  (a) `supabase db reset` — applies `20260626120000_l5l6_geometry_activation.sql`; seed
+      rebuilds these rows active.
+  (b) Confirm the L5/L6 crops are present in the private `question-images` bucket — per the
+      QA report they are already uploaded; a now-active row whose bucket file is absent 500s
+      at serve time.
+
+- **PR #170 — lane/regen-served-crosswalk-substrand — MERGED (`db1e9ac`).**
+  "chore(audit): model PR #161 sub-strand coverage in served-order crosswalk".
+  Docs/artifacts only; no migration, no seed change, no `supabase db reset` needed.
+  Regenerated `scripts/conversion/audit/served-crosswalk.{md,json}` to reflect the
+  sub-strand-aware served order introduced by PR #161. Closes the CROSS-LANE FLAG from
+  PR #161.
+
+---
+
 **As of:** 2026-06-25 (CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path + SAM-L5-Q27 activation) — origin head entering this session: **`f5947d5`** (after PR #168 merged). One new lane PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked. Four new migrations — **`supabase db reset` required after merge. CRITICAL: upload l5/sam-l5-q27.png to the private question-images bucket BEFORE or with `supabase db reset` — Q27 is now is_active=true and will 500 at serve time if the image is absent.**
 
-- **PR #169 — lane/l5l6-booklet-reband-load-images — OPEN.**
+- **PR #169 — lane/l5l6-booklet-reband-load-images — MERGED (`db1e9ac`).**
   "feat(conversion): L5/L6 booklet re-band + load 6 missing rows + wire image_path".
   Off `ATLAS-ASSESSMENT` head `f5947d5`; independent, not stacked. Verify GREEN: 1336 tests /
   102 files, tsc 0, lint 0 errors (2 known warnings). Seed↔migration parity PASS (79 migrations).
@@ -89,7 +144,7 @@
 
 **As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering that session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
 
-- **PR #166 — lane/young-band-narration-render — OPEN.**
+- **PR #166 — lane/young-band-narration-render — MERGED (`1640570`).**
   "fix(report): preparing-report interstitial + clamp railed placement to served floor".
   Off `ATLAS-ASSESSMENT` head `bf792cc`; independent, not stacked. Verify GREEN: 1336 tests /
   102 files, tsc 0, lint 0 errors (2 known font warnings). Codex manual/skipped (relay unauth).

@@ -4698,6 +4698,32 @@ where q.tenant_id = t.id
 -- END l5-q27-activate
 
 
+-- BEGIN l5l6-geometry-activation (seed mirror of supabase/migrations/20260626120000_l5l6_geometry_activation.sql)
+-- ATLAS QA: L5/L6 short test served no geometry — root cause was ACTIVATION (rows is_active=false
+-- though image_path wired in #169, crops uploaded, short_test_eligible=true; picker filters
+-- is_active first). Flip is_active=true. image_path already persisted; content_id source-accurate
+-- and unchanged (geometry: L5-Q14/Q26, L6-Q31/32/33/34; area_volume: L5-Q25, L6-Q14/15/16/19/25;
+-- percentage: L6-Q30). Q27 already active; L5-Q24/L6-Q18 text rows already active; L6-Q17 manual
+-- draw never loaded (held). Crops re-source-verified 2026-06-26. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L5-Q14','SAM-L5-Q25','SAM-L5-Q26'
+  );
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L6-Q14','SAM-L6-Q15','SAM-L6-Q16','SAM-L6-Q19','SAM-L6-Q25',
+    'SAM-L6-Q30','SAM-L6-Q31','SAM-L6-Q32','SAM-L6-Q33','SAM-L6-Q34'
+  );
+-- END l5l6-geometry-activation
+
+
 -- =============================================================================
 -- LOCAL-DEV QA SEED — DO NOT SHIP
 -- =============================================================================
