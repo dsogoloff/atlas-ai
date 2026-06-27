@@ -4,6 +4,59 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-27 — CONVERSION: prod bring-up step 1 (PR #181 — OPEN)
+
+**Trunk head entering this session: `25b5a7c`** (after PRs up to #174 merged).
+Analysis-only session; no prod connection, no writes, no DB commands made. One new PR
+opened (#181); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN (1371
+tests / 105 files). Artifacts are in `scripts/conversion/prod-bringup/`.
+
+PROD = atlas-assessment (project ref `ntfaqzueppqymfkefadm`), the LIVE DB.
+NOT atlas-assessment-2 (dead). All actions below are founder-gated on prod
+`service_role` creds + explicit go-ahead; manual Studio/uploader path only.
+
+- [ ] **Dimitri: merge PR #181 (lane/prod-bringup-schema-analysis)** — docs/artifacts only;
+      no migration, no seed change, no DB command. Merge at leisure; no `supabase db reset`
+      needed.
+
+- [ ] **PARKED — prod bring-up step 1 inspection (needs Dimitri / prod creds).**
+      Run `01-inspect-prod-schema.sql` in prod Studio (atlas-assessment,
+      ref `ntfaqzueppqymfkefadm`). Paste results back to unblock step 2 and confirm which
+      catch-up sections apply. KEY question: does prod `strand` enum have lowercase values
+      (number_sense/operations_algorithms/…) or the OLD uppercase
+      (NUMBER_SENSE/OPERATIONS/…)? If uppercase, a separate destructive recast migration is
+      required BEFORE the bank can load — cannot proceed to step 4 until confirmed.
+
+- [ ] **PARKED — prod bring-up step 2: apply additive schema catch-up (needs step 1 results
+      + Dimitri go-ahead).**
+      After reviewing step 1 inspection output, apply `02-catchup-additive-schema.sql` in
+      prod Studio. Script is idempotent (IF NOT EXISTS guards throughout); safe to run
+      multiple times. Each statement is tagged with its source migration for traceability.
+
+- [ ] **PARKED — prod bring-up step 3: create question-images bucket in prod (needs
+      Dimitri).**
+      Create the `question-images` bucket in prod Supabase Storage (private; follows
+      migration `20260512000000` DDL). This is a manual Studio action — there is no
+      additive-only SQL for bucket creation.
+
+- [ ] **PARKED — prod bring-up step 4: retarget uploader + upload crops (needs Dimitri).**
+      Set prod URL + service_role key in `.env.prod.local`. Run
+      `pnpm convert:upload-activation-images` targeting prod. Images-first then activate
+      image-essential rows individually once files are confirmed present in the bucket.
+
+- [ ] **PARKED — prod bring-up step 5: audited prod bank load 0A-L4 (needs Dimitri
+      go-ahead).**
+      Run the audited bank loader against prod. Includes taxonomy reference-data seed
+      (tax_content rows so content_id FKs resolve). NEVER run the dev `seed.sql` against
+      prod. L5/L6 geometry activation held until their images are in the prod bucket.
+
+- [ ] **PARKED — prod bring-up step 6: verify clean serve path (needs Dimitri).**
+      Confirm no missing-image 500s on prod; prod content matches audited bank; no
+      dev/QA seed contamination.
+
+- [ ] **NOTE (not CONVERSION's task):** ATLAS must set prod env vars (narration +
+      lead-notify). Founder handles deliverability/DMARC + Supabase paid plan upgrade.
+
 ## 0. 2026-06-26 — fix: migration version collision (PR #174 — OPEN)
 
 **Trunk head entering this session: `861bc43`** (after PRs #169–#173 merged).

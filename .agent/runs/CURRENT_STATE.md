@@ -4,6 +4,67 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-27 (CONVERSION: prod bring-up step 1 — schema inspection + additive catch-up SQL) — trunk head entering this session: **`25b5a7c`** (after PRs up to #174 merged). One new lane PR opened (#181); independent off `ATLAS-ASSESSMENT`, not stacked. Analysis-only session — no prod connection, no writes, no DB commands. Verify bar GREEN: 1371 tests / 105 files, tsc 0, lint 0 errors (2 known warnings), seed↔migration parity PASS (81 migrations). Codex manual/skipped (relay unauth).
+
+- **PR #181 — lane/prod-bringup-schema-analysis — OPEN.**
+  "docs(prod-bringup): step 1 — prod schema inspection + additive catch-up SQL (analysis only)".
+  Off `ATLAS-ASSESSMENT` head `25b5a7c`; independent, not stacked.
+
+  **Context:** This is STEP 1 of a multi-step PRODUCTION bring-up cross-lane from ATLAS.
+  PROD = atlas-assessment (project ref `ntfaqzueppqymfkefadm`) — the LIVE DB. NOT
+  atlas-assessment-2 (dead). Prod was hand-applied via Studio (no CI); its schema is behind
+  repo migrations and the `supabase_migrations.schema_migrations` log may be stale. All
+  artifacts trust `information_schema`/`pg_catalog`, NOT the migration log.
+
+  **Confirmed prod gaps (from ATLAS):** `questions.short_test_eligible` column missing;
+  `question-images` storage bucket missing.
+
+  **Key non-additive finding (NOT in catch-up script, flagged for inspection):**
+  Migration `20260511000200` recasts the `strand` enum from uppercase
+  (NUMBER_SENSE/OPERATIONS/WORD_PROBLEMS/FRACTIONS_DECIMALS/GEOMETRY/MEASUREMENT_DATA) to
+  lowercase (number_sense/operations_algorithms/fractions_decimals/measurement/geometry/
+  data_statistics). If prod still has the OLD uppercase enum, the bank will NOT load and a
+  separate reviewed (destructive) recast migration is required. Inspection step 1 reports
+  prod's actual strand values. (Likely already lowercase since the running app depends on
+  it.)
+
+  **Deliverables (3 new files, for founder to run MANUALLY in prod Studio):**
+  - `scripts/conversion/prod-bringup/01-inspect-prod-schema.sql` — 100% READ-ONLY
+    inspection (enum types+values incl. strand, questions columns, serve/report tables,
+    assessment_sessions columns, constraints, active question counts by level, taxonomy
+    row count, question-images bucket + object count). Founder runs first; results decide
+    which catch-up sections apply.
+  - `scripts/conversion/prod-bringup/02-catchup-additive-schema.sql` — ADDITIVE-ONLY
+    idempotent schema catch-up (CREATE/ADD ... IF NOT EXISTS; guarded ADD CONSTRAINT/
+    CREATE POLICY; no DROP, no destructive ALTER, no data). Brings prod schema to what
+    the 0A-L4 loader + serve + report expect. Each statement tagged with its source
+    migration. Ordered: types→tables→columns/FK→constraints.
+  - `scripts/conversion/prod-bringup/README.md` — bring-up order, migration→object
+    coverage table, excluded non-additive contingencies.
+
+  **Migrations covered in catch-up script:** 20260507000000 (norm tags+types),
+  20260610170000/20260614120000/20260615120000 (8 extra question_format values),
+  20260616120000 (0A/0B/0C), 20260616120050 (short_test_eligible — confirmed missing),
+  20260525000001 (V2026 taxonomy tables), 20260525000003 (content_id FK),
+  20260611090000 (assessment_test_type + test_type), 20260621130000 (short_test_outcome),
+  20260510000000 (engine_prior_version), 20260612090000 (responses unique),
+  20260613120000 (held-rows CHECK), 20260525000000/20260526000000 (report_narrations +
+  key_findings cols), 20260625120400 (admins — likely already live).
+
+  **Also excluded from catch-up:** question-images bucket (bring-up step 2); taxonomy
+  reference rows + question-bank rows (data, bring-up step 4 — content_id stays NULL
+  until tax_content rows exist). No L5/L6-specific schema (L5/L6 is data-only; 5A/6A
+  are base `half_grade_level` values).
+
+  **Files:** scripts/conversion/prod-bringup/01-inspect-prod-schema.sql (A),
+  02-catchup-additive-schema.sql (A), README.md (A).
+
+  **Founder actions (all gated on prod service_role creds + explicit go-ahead; manual
+  Studio/uploader path; additive+reviewed):**
+  See NEXT_ACTIONS prod bring-up sequence.
+
+---
+
 **As of:** 2026-06-26 (fix: migration version collision — PR #174) — trunk head entering this session: **`861bc43`** (after PRs #169–#173 merged, including PR #172 lane/l5l6-geometry-activation now MERGED). One new lane PR opened (#174); independent off `ATLAS-ASSESSMENT`, not stacked. Rename-only fix — **no `supabase db reset` needed mid-lane; founder runs reset post-merge to confirm PK collision is resolved.**
 
 - **PR #174 — lane/fix-migration-version-collision — OPEN.**
@@ -640,6 +701,7 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| CONVERSION prod bring-up step 1 — schema inspection + additive catch-up SQL (PR #181) | OPEN PR #181 | lane/prod-bringup-schema-analysis, off ATLAS-ASSESSMENT head `25b5a7c`. Analysis only. 3 new files: scripts/conversion/prod-bringup/{01-inspect-prod-schema.sql,02-catchup-additive-schema.sql,README.md}. Verify GREEN 1371/105, tsc 0, lint 0 errors (2 known warnings), seed↔migration parity PASS (81 migrations). Founder gated on prod creds + explicit go-ahead for each step. |
 | CONVERSION L5/L6 booklet re-band + load 6 rows + wire image_path (PR #169) | OPEN PR #169 | lane/l5l6-booklet-reband-load-images, off ATLAS-ASSESSMENT head `f5947d5`. 3 migrations: `20260625120000` (re-band all SAM-L5/L6 to booklet floor 5A/6A) + `20260625120100` (load 6 skipped rows) + `20260625120200` (wire image_path for 15 inactive rows). Seed parity PASS (78). Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Requires `supabase db reset` after merge. SAM-L5-Q27 HELD (image-option per-tile not yet wired). |
 | Young-band narration render: interstitial + placement clamp (PR #166) | OPEN PR #166 | lane/young-band-narration-render, off ATLAS-ASSESSMENT head `bf792cc`. No migration. Pre-narration polling interstitial (bounded 30s, degrades to generic-lede on timeout); railed-placement clamp in `assembleReportContent` (`clampLevelToServedCeiling`). New files: `narration-pending.ts` + test, `preparing-report.tsx`; modified: `report/page.tsx`, `assemble.ts` + test. Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped. |
 | Intake grades-7/8 disable + >L6 clamp (PR #159) | OPEN PR #159 — CI GREEN | lane/intake-grades78-disable-l6clamp, off origin/ATLAS-ASSESSMENT. No migration. Grades 7/8 greyed "(coming soon)" non-selectable; `halfGradeToTaxLevelCode` clamps 7A/7B/8A/8B → l6 (was returning null → empty strand_mastery). Exported + unit-tested. Verify GREEN. |
