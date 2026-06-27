@@ -83,10 +83,22 @@ Where the **strand recast** sits: **Section A1**, first, as a single atomic self
 `DO` block — it recasts only if prod still holds the old uppercase labels and otherwise
 changes nothing, so the bank's lowercase strand values will load.
 
-What the **destructive section** does: **Section Z** previews then `DELETE`s the existing
-placeholder `questions` rows (expected ~5 per inspection §8), refusing to run unless
-`responses` and `question_access_log` are empty. It is the only data-destructive statement
-in the file and clears the bank for the Step-7 audited load.
+**Strand collapse-collision pre-clear (A1):** the recast collapses both `OPERATIONS` and
+`WORD_PROBLEMS` into `operations_algorithms`. The only unique/PK constraint on a
+strand-typed column anywhere in the schema is `curriculum_recommendations
+UNIQUE(tenant_id, strand, level)`, so two placeholder rows (`OPERATIONS@2B`,
+`WORD_PROBLEMS@2B`) would collapse to the same key and the index rebuild fails with
+`23505` (observed in prod). A1 therefore `DELETE`s `curriculum_recommendations`
+(pre-load scaffolding Option B discards) **before** the cast, gated on the same
+prod-empty predicate as Section Z. Collision check of the other strand-typed tables:
+`questions` — unique is `(tenant_id, external_id)`, its strand index is non-unique → no
+collision; `misconceptions` — unique is `(tenant_id, code)` → no collision.
+
+What the **destructive sections** do: **A1** clears `curriculum_recommendations`
+placeholder rows (above); **Section Z** previews then `DELETE`s the existing placeholder
+`questions` rows (expected ~5 per inspection §8). Both refuse to run unless `responses`
+and `question_access_log` are empty. They are the only data-destructive statements in the
+file and clear the bank for the Step-7 audited load.
 
 ## Not in `04-…` (separate steps)
 

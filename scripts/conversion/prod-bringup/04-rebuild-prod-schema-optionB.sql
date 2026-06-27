@@ -48,9 +48,28 @@
 --   MEASUREMENT_DATA   -> measurement
 -- Columns recast: questions.strand, misconceptions.strand,
 --   curriculum_recommendations.strand (each guarded by table existence).
+--
+-- COLLAPSE-COLLISION PRE-CLEAR: the OPERATIONS + WORD_PROBLEMS -> operations_algorithms
+-- merge makes two old strand values identical. The ONLY unique/PK constraint on a
+-- strand-typed column in the whole schema is
+--   curriculum_recommendations UNIQUE (tenant_id, strand, level)  [initial_schema]
+-- so two placeholder rows (OPERATIONS@2B, WORD_PROBLEMS@2B) collapse to the same key
+-- and the index rebuild during ALTER ... TYPE fails with 23505 (observed in prod).
+-- Since Option B discards curriculum_recommendations (pre-load scaffolding), A1 DELETEs
+-- those rows BEFORE the cast — gated on the SAME prod-empty predicate as Section Z
+-- (responses AND question_access_log empty), so it never touches a DB with real
+-- child activity. Collision check for the other strand-typed tables:
+--   * questions             — UNIQUE is (tenant_id, external_id); the strand index
+--                             (tenant_id, strand, level) is NON-unique -> NO collision.
+--   * misconceptions        — UNIQUE is (tenant_id, code); strand not in a key -> NO collision.
+--   * curriculum_recommendations — UNIQUE (tenant_id, strand, level) -> COLLISION (pre-cleared here).
 -- =====================================================================
 do $$
-declare is_upper boolean;
+declare
+  is_upper boolean;
+  n_resp   bigint := 0;
+  n_log    bigint := 0;
+  n_cr     bigint := 0;
 begin
   select exists (
     select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
@@ -63,6 +82,28 @@ begin
   end if;
 
   raise notice 'A1 strand recast: old uppercase enum detected — recasting to lowercase scheme.';
+
+  -- SAFETY GATE (matches Section Z): refuse to clear/recast if any real child
+  -- activity exists. With prod proven placeholder-only (§03) these are both 0.
+  if to_regclass('public.responses') is not null then
+    execute 'select count(*) from responses' into n_resp;
+  end if;
+  if to_regclass('public.question_access_log') is not null then
+    execute 'select count(*) from question_access_log' into n_log;
+  end if;
+  if n_resp <> 0 or n_log <> 0 then
+    raise exception
+      'ABORT A1: responses=% , question_access_log=% are NOT empty — prod is not placeholder-only. Refusing to clear curriculum_recommendations or recast strand. Nothing changed.',
+      n_resp, n_log;
+  end if;
+
+  -- PRE-CLEAR curriculum_recommendations (placeholder data discarded by Option B)
+  -- to avoid the OPERATIONS/WORD_PROBLEMS collapse violating UNIQUE(tenant_id,strand,level).
+  if to_regclass('public.curriculum_recommendations') is not null then
+    execute 'select count(*) from curriculum_recommendations' into n_cr;
+    raise notice 'A1 pre-clear: deleting % curriculum_recommendations placeholder row(s) before recast.', n_cr;
+    execute 'delete from curriculum_recommendations';
+  end if;
 
   -- Clean up any leftover temp type from a prior aborted run.
   execute 'drop type if exists strand_new';
