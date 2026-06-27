@@ -62,7 +62,10 @@ export default function LandingPage() {
               <span className="flex flex-col leading-tight">
                 <span className="font-headline-adult text-sam-navy text-lg">
                   Atlas Assessment
-                  <sup className="align-super text-[0.8em] font-semibold">
+                  <sup
+                    className="font-semibold"
+                    style={{ fontSize: "1em", top: "-0.3em" }}
+                  >
                     ™
                   </sup>
                 </span>
