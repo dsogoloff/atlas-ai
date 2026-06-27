@@ -27,6 +27,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { resolveStaff } from "@/app/(instructor)/instructor/lib/instructor";
 import { CTA_LINKS } from "@/lib/cta-links";
 import { firstName } from "@/lib/format/firstName";
 import { createClient } from "@/lib/supabase/server";
@@ -54,6 +55,15 @@ export default async function ParentDashboardPage() {
     .select("id, name")
     .maybeSingle();
   if (parentErr || !parent) {
+    // A signed-in admin/instructor legitimately has no parent row — route them
+    // to their own portal instead of the orphan error (staff used to land here
+    // and hit "Account profile not found"). resolveStaff is RLS-scoped to the
+    // caller's own row; only a caller who is neither a parent NOR active staff
+    // falls through to the genuine-orphan branch below.
+    const staff = await resolveStaff(supabase);
+    if (staff?.kind === "admin") redirect("/admin");
+    if (staff?.kind === "instructor") redirect("/instructor");
+
     // Orphan auth user — parents-row insert failed at signup time. Same
     // bug class Phase 2's add-child action surfaces. Log + render a
     // minimal full-screen error; user contacts support. No TopAppBar
