@@ -1,11 +1,12 @@
 "use server";
 
-// Sign-out server action for the parent dashboard profile menu.
+// Shared sign-out server action.
 //
 // supabase.auth.signOut() clears the auth cookie via the same cookie store
 // createClient() wires for login (login/actions.ts). After clearing, redirect
-// to /login — the public entry. Phase 1 Q7 deferred the profile dropdown /
-// logout; this wires the logout half so the parent can actually sign out.
+// to /login — the public entry. Shared by the parent dashboard profile menu and
+// the staff (instructor + admin) top bar, so it lives in @/lib/auth rather than
+// any one feature folder.
 
 import { redirect } from "next/navigation";
 

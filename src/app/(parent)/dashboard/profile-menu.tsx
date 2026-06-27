@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { signOutAction } from "./auth-actions";
+import { signOutAction } from "@/lib/auth/sign-out";
 
 interface ProfileMenuProps {
   /** Shown as a quiet label at the top of the menu, for "who am I signed in as". */
