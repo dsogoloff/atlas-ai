@@ -6,6 +6,8 @@
 
 import Link from "next/link";
 
+import { signOutAction } from "@/lib/auth/sign-out";
+
 // The chrome is shared by the instructor portal and the tenant-wide admin
 // view. `roleLabel` / `homeHref` default to the instructor surface so every
 // existing instructor caller is unchanged; the admin view passes "Admin" /
@@ -29,10 +31,28 @@ export function InstructorTopBar({
           {roleLabel}
         </span>
       </Link>
+      {/* Right cluster — staff name + Sign out. Shown only when a name is
+          present, i.e. a signed-in staff surface (instructor portal / admin
+          view). The no-access InstructorNotice renders the bar WITHOUT a name,
+          so it gets no sign-out (it has no session context). */}
       {instructorName && (
-        <span className="text-sm font-headline-adult text-sam-navy/70">
-          {instructorName}
-        </span>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <span className="text-sm font-headline-adult text-sam-navy/70">
+            {instructorName}
+          </span>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              aria-label="Sign out"
+              className="inline-flex items-center gap-1.5 text-sm font-headline-adult text-sam-navy/70 hover:text-sam-red border border-sam-gray-light hover:border-sam-red rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">
+                logout
+              </span>
+              Sign out
+            </button>
+          </form>
+        </div>
       )}
     </header>
   );
