@@ -99,7 +99,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
   // returns null → no-access notice.
   const { data: child } = await supabase
     .from("children")
-    .select("id, name, grade_level, birth_year, home_center_id")
+    .select("id, name, grade_level, birth_year, home_center_id, parent_id")
     .eq("id", childId)
     .maybeSingle();
 
@@ -113,6 +113,16 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
       />
     );
   }
+
+  // Parent / account panel — ADMIN ONLY. A service-role read scoped to exactly
+  // the viewed child's parent_id, run only AFTER the staff gate confirmed an
+  // admin (a single keyed row, not a scan) — the page already uses the service
+  // client for report assembly. The instructor view stays parent-PII-free
+  // (compliance §6.2 / §10.3): this never runs for kind === "instructor".
+  const parentAccount =
+    staff.kind === "admin"
+      ? await fetchParentAccount(createServiceClient(), child.parent_id)
+      : null;
 
   // Notes-write is instructor-only, and only at the child's CURRENT center
   // (the RLS write policy forbids writes during prior-center grace). Admins
@@ -219,6 +229,14 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           <span className="material-symbols-outlined text-xl">arrow_back</span>
           <span>Back to roster</span>
         </Link>
+
+        {parentAccount && (
+          <ParentAccountPanel
+            account={parentAccount}
+            gradeLevel={child.grade_level}
+            birthYear={child.birth_year}
+          />
+        )}
 
         {report ? (
           <>
@@ -418,6 +436,56 @@ async function fetchStrandCoverage(
 }
 
 // =============================================================================
+// Parent / account (ADMIN ONLY) — the viewed child's parent account.
+//
+// Read via the service client, scoped to exactly one parent row (the viewed
+// child's parent_id), and only ever invoked after resolveStaff confirmed an
+// admin. The instructor surface never calls this, so no parent PII reaches a
+// center-scoped instructor (compliance §6.2 / §10.3). The parents table has no
+// phone/address columns — we project only what exists; home_center_id resolves
+// to a center name when set, and is omitted (not blank-rendered) when null.
+// =============================================================================
+
+interface ParentAccountData {
+  name: string;
+  email: string;
+  createdAt: string;
+  /** subscription_tier enum (e.g. "PILOT"). */
+  plan: string;
+  centerName: string | null;
+}
+
+async function fetchParentAccount(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  parentId: string,
+): Promise<ParentAccountData | null> {
+  const { data: parent } = await serviceClient
+    .from("parents")
+    .select("name, email, created_at, subscription_tier, home_center_id")
+    .eq("id", parentId)
+    .maybeSingle();
+  if (!parent) return null;
+
+  let centerName: string | null = null;
+  if (parent.home_center_id) {
+    const { data: center } = await serviceClient
+      .from("centers")
+      .select("name")
+      .eq("id", parent.home_center_id)
+      .maybeSingle();
+    centerName = center?.name ?? null;
+  }
+
+  return {
+    name: parent.name,
+    email: parent.email,
+    createdAt: parent.created_at,
+    plan: parent.subscription_tier,
+    centerName,
+  };
+}
+
+// =============================================================================
 // Presentation
 // =============================================================================
 
@@ -443,6 +511,74 @@ function proficiencyTextColor(pct: number): string {
   if (pct >= 75) return "text-sam-teal";
   if (pct >= 50) return "text-[#b45309]";
   return "text-sam-red";
+}
+
+/** Deterministic short date for "Account created" (fixed locale + UTC so the
+ *  render is stable across server timezones). new Date(iso) is pure. */
+function formatAccountDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function ParentAccountPanel({
+  account,
+  gradeLevel,
+  birthYear,
+}: {
+  account: ParentAccountData;
+  gradeLevel: string | null;
+  birthYear: number | null;
+}) {
+  // Only rows whose data exists are rendered — omit (never blank-render) the
+  // home center when unset and the child fields when null.
+  const rows: Array<{ label: string; value: string }> = [
+    { label: "Parent", value: account.name },
+    { label: "Email", value: account.email },
+    { label: "Account created", value: formatAccountDate(account.createdAt) },
+    ...(account.centerName
+      ? [{ label: "Home center", value: account.centerName }]
+      : []),
+    { label: "Plan", value: account.plan },
+    ...(gradeLevel ? [{ label: "Grade", value: gradeLevel }] : []),
+    ...(birthYear !== null
+      ? [{ label: "Birth year", value: String(birthYear) }]
+      : []),
+  ];
+
+  return (
+    <section
+      className={`mt-2 mb-8 bg-white rounded-[24px] p-6 ${CARD}`}
+      aria-label="Parent and account"
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <span className="material-symbols-outlined text-sam-navy" aria-hidden="true">
+          account_circle
+        </span>
+        <h2 className="font-headline-adult text-[18px] text-sam-navy">
+          Parent / account
+        </h2>
+        <span className="text-[10px] uppercase tracking-wider bg-sam-navy/5 text-sam-navy/70 rounded-full px-2.5 py-0.5">
+          Admin only
+        </span>
+      </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+        {rows.map((row) => (
+          <div key={row.label} className="flex flex-col">
+            <dt className="text-[11px] uppercase tracking-wider text-sam-gray-mid">
+              {row.label}
+            </dt>
+            <dd className="font-headline-adult text-sam-navy break-words">
+              {row.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 function StudentSummaryHeader({
