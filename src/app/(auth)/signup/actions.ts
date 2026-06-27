@@ -93,12 +93,15 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
     email: data.email,
     password: data.password,
     options: {
-      // After the parent clicks the email link, Supabase redirects them
-      // to /auth/callback, which exchanges the code for a session,
-      // writes the verification_clicked + verification_succeeded audit
-      // rows, then forwards to /coppa.
+      // Email confirmation uses the token-hash (verifyOtp) flow, NOT PKCE: the
+      // "Confirm signup" template links to
+      //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/coppa
+      // which verifies server-side with no device-bound code_verifier cookie
+      // (the PKCE /auth/callback exchange failed cross-device and on link
+      // pre-fetch with verify_failed). emailRedirectTo is kept aligned with that
+      // /auth/confirm destination; the template controls the actual link + next.
       emailRedirectTo: origin
-        ? `${origin}/auth/callback?next=/coppa`
+        ? `${origin}/auth/confirm?next=/coppa`
         : undefined,
     },
   });
