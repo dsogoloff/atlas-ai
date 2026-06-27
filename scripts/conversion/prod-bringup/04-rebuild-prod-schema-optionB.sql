@@ -440,7 +440,9 @@ end $$;
 -- Z1. PREVIEW FIRST — what would be deleted. Expect a small count (~5 placeholder
 --     rows per inspection §8). If this returns more than a couple dozen rows, STOP:
 --     that is not placeholder junk — escalate before deleting anything.
-select id, external_id, level, question_format, is_active, created_at
+--     NOTE: the enum column on `questions` is named `format` (type question_format),
+--     not `question_format` — aliased below for a readable header.
+select id, external_id, level, format as question_format, is_active, created_at
 from questions
 order by created_at;
 
