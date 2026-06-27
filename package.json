@@ -22,6 +22,8 @@
     "convert:apply-activation": "tsx scripts/conversion/apply-activation.ts",
     "convert:upload-activation-images": "tsx scripts/conversion/upload-activation-images.ts",
     "convert:upload-activation-images:prod": "tsx scripts/conversion/upload-activation-images.ts --prod",
+    "convert:load-bank:prod:dry": "tsx scripts/conversion/prod-bringup/05-load-bank-prod.ts",
+    "convert:load-bank:prod": "tsx scripts/conversion/prod-bringup/05-load-bank-prod.ts --prod",
     "convert:verify-images": "tsx scripts/conversion/verify-images.ts",
     "convert:purge-staging": "tsx scripts/conversion/purge-staging.ts",
     "seed:check-activation-parity": "tsx scripts/conversion/seed-activation-parity.ts",

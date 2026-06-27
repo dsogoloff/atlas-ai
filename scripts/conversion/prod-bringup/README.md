@@ -45,6 +45,20 @@ nothing destructive runs until prod is shown to hold zero real families.
    single data-destructive step (clear placeholder question rows), fenced and safety-gated
    on `responses`/`question_access_log` being empty. *(Review artifact — DO NOT apply blindly.)*
 
+5. **`05-load-bank-prod.ts`** — the audited bank loader (the final content step). It does
+   NOT replay seed.sql (no `exec_sql` RPC / no prod DB password). Instead it reads the
+   **audited LOCAL DB** (the source of truth — final `is_active`/`short_test_eligible`/
+   `content`/`content_id` exist only as the materialized seed result) and **upserts**
+   `tax_*` then `questions` into prod via PostgREST. Reading only those tables structurally
+   excludes every parent/child/session/consent/QA row; the one dev artifact in `questions`
+   (`PLACEHOLDER-Q-IMG-GRID-001`) is dropped by prefix. FKs + `content_id` are remapped by
+   natural CODE across DBs; upserts key on `(tenant_id, code)` / `(tenant_id, external_id)`
+   so re-runs converge. Default = **DRY/COUNT** (reads local + prod read-only, prints the
+   per-level parity table, NO writes); `--prod` performs the live upsert behind the same
+   `.env.prod.local` gate + PROD-TARGET banner as the image uploader.
+   - `pnpm convert:load-bank:prod:dry` — dry run / parity table (no writes).
+   - `pnpm convert:load-bank:prod` — live prod upsert (founder-gated; run after review).
+
 ## Order of the wider bring-up (Option B)
 
 1. **Inspect schema** — run `01-…`. Confirm the `strand` enum case + which gaps exist.
