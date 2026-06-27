@@ -199,6 +199,14 @@ export default function LandingPage() {
             <div className="col-span-1 md:col-span-2 bg-sam-yellow/10 p-8 rounded-[32px] border border-sam-yellow/30 relative overflow-hidden">
               <div className="relative z-10">
                 <h3 className="font-display-child text-sam-navy text-2xl mb-4">
+                  Parents&rsquo; Report
+                </h3>
+                <p className="text-sam-gray-dark max-w-sm mb-8">
+                  A clear, plain-language summary for families — your
+                  child&rsquo;s strengths, where to focus next, and the
+                  recommended starting level.
+                </p>
+                <h3 className="font-display-child text-sam-navy text-2xl mb-4">
                   Instructor Dashboard
                 </h3>
                 <p className="text-sam-gray-dark max-w-sm">
