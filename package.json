@@ -21,6 +21,7 @@
     "convert:apply-l0-overlay": "tsx scripts/conversion/apply-l0-overlay.ts",
     "convert:apply-activation": "tsx scripts/conversion/apply-activation.ts",
     "convert:upload-activation-images": "tsx scripts/conversion/upload-activation-images.ts",
+    "convert:upload-activation-images:prod": "tsx scripts/conversion/upload-activation-images.ts --prod",
     "convert:verify-images": "tsx scripts/conversion/verify-images.ts",
     "convert:purge-staging": "tsx scripts/conversion/purge-staging.ts",
     "seed:check-activation-parity": "tsx scripts/conversion/seed-activation-parity.ts",
