@@ -3,6 +3,45 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-27
+
+* **Prod bring-up schema analysis completed as analysis-only artifacts (PR #181,
+  lane/prod-bringup-schema-analysis, 2026-06-27).** Analysis-only session; no prod
+  connection, no writes, no DB commands. PROD = atlas-assessment (project ref
+  `ntfaqzueppqymfkefadm`), the LIVE DB — not atlas-assessment-2 (dead). Prod was
+  hand-applied via Studio (no CI); schema is behind repo migrations; the
+  `schema_migrations` log may be stale. All artifacts trust `information_schema`/
+  `pg_catalog`, not the migration log. Two confirmed prod gaps carried in from ATLAS:
+  `questions.short_test_eligible` column missing; `question-images` storage bucket
+  missing. Deliverables: `scripts/conversion/prod-bringup/01-inspect-prod-schema.sql`
+  (100% read-only inspection — enum types+values, questions columns, serve/report tables,
+  assessment_sessions columns, constraints, active question counts by level, taxonomy
+  row count, bucket + object count); `scripts/conversion/prod-bringup/02-catchup-additive-schema.sql`
+  (ADDITIVE-ONLY idempotent catch-up; no DROP, no destructive ALTER, no data; each
+  statement tagged with its source migration; ordered types→tables→columns/FK→constraints);
+  `scripts/conversion/prod-bringup/README.md` (bring-up order, migration→object coverage
+  table, excluded non-additive contingencies). Migrations covered in the catch-up script:
+  20260507000000, 20260610170000/20260614120000/20260615120000, 20260616120000,
+  20260616120050, 20260525000001, 20260525000003, 20260611090000, 20260621130000,
+  20260510000000, 20260612090000, 20260613120000, 20260525000000/20260526000000,
+  20260625120400. Key non-additive finding flagged but NOT in catch-up script: migration
+  `20260511000200` recasts the `strand` enum uppercase→lowercase; if prod still has the
+  old uppercase enum the bank will not load and a separate reviewed destructive recast
+  migration is required. The inspection step 1 reports prod's actual strand values.
+  Also excluded: question-images bucket (step 2); taxonomy reference rows + question-bank
+  rows (step 4 data). No L5/L6-specific schema (L5/L6 is data-only; 5A/6A are base
+  `half_grade_level` values). Verify GREEN: 1371 tests / 105 files, tsc 0, lint 0 errors
+  (2 known warnings), seed↔migration parity PASS (81 migrations; artifacts live under
+  scripts/, not supabase/migrations/, so parity/CI are unaffected). Codex manual/skipped
+  (relay unauth). All prod bring-up actions are founder-gated on prod service_role creds
+  + explicit go-ahead; manual Studio/uploader path throughout.
+
+* **Open / unconfirmed (needs Dimitri) — prod strand enum case (prod bring-up, 2026-06-27).**
+  The inspection script will report whether prod's `strand` enum values are lowercase
+  (correct, matches current bank) or uppercase (legacy, would block bank load). If
+  uppercase, a non-additive destructive recast migration must be written and reviewed
+  before the bank load can proceed. Cannot auto-resolve; inspection output needed.
+
 ## 2026-06-26
 
 * **Migration version collision resolved by renaming the later file, not the canonical anchor

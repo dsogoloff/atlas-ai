@@ -12,15 +12,35 @@
 -- log may NOT reflect actual schema. THIS SCRIPT TRUSTS information_schema / pg_catalog,
 -- not the migration log. Paste the whole block; copy each result back for review. The
 -- results decide which sections of 02-catchup-additive-schema.sql are actually needed.
+--
+-- No statement here depends on the migration log (section 0 is guarded), so the whole
+-- block runs cleanly even with no log. Every read targets pg_catalog / information_schema
+-- (which never error — they return zero rows for absent objects) or the guaranteed
+-- `questions` table, so nothing cascade-fails. If Studio ever aborts on an unexpected
+-- error, each numbered section (0–10) is independent and can be run on its own.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
 -- 0. (Optional cross-check) what the migration LOG claims — may be stale/wrong.
+--    PROD HAS NO MIGRATION LOG (hand-built via Studio) — confirmed 2026-06-27:
+--    `relation "supabase_migrations.schema_migrations" does not exist`. So this is
+--    GUARDED: it reports a NOTICE instead of erroring, and (if the log ever does
+--    exist) RAISE NOTICEs the latest versions. Either way it never aborts the script.
 -- ---------------------------------------------------------------------
-select version
-from supabase_migrations.schema_migrations
-order by version desc
-limit 25;
+do $$
+declare v text;
+begin
+  if to_regclass('supabase_migrations.schema_migrations') is not null then
+    raise notice 'migration log present — latest versions:';
+    for v in execute
+      'select version from supabase_migrations.schema_migrations order by version desc limit 25'
+    loop
+      raise notice '  %', v;
+    end loop;
+  else
+    raise notice 'no migration log (supabase_migrations.schema_migrations absent) — hand-built prod, expected. Trusting information_schema / pg_catalog below.';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------
 -- 1. ENUM TYPES + their current values (the highest-risk gap).
