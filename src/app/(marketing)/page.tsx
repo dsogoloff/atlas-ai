@@ -34,7 +34,7 @@ export default function LandingPage() {
               width={3887}
               height={2182}
               priority
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
         </div>
