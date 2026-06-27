@@ -149,7 +149,7 @@ export default async function AddChildPage({ searchParams }: Props) {
       </main>
 
       <footer className="p-6 text-center text-sam-gray-mid/50 text-caption font-caption">
-        © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
+        © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
       </footer>
     </BetaWelcomeGate>
   );
