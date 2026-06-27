@@ -119,7 +119,7 @@ export default async function SignupPage() {
       </main>
       <footer className="w-full py-stack-md flex justify-center border-t border-sam-gray-light/30">
         <p className="font-caption text-caption text-sam-gray-mid/60">
-          © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
+          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
         </p>
       </footer>
     </>
