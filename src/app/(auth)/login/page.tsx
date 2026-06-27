@@ -19,16 +19,10 @@ interface Props {
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  // Anonymous-only gate (Phase 3 D2 + P3). If already signed in, send
-  // straight to the dashboard regardless of any ?next= param — keeps
-  // the gate simple and avoids gluing redirect logic to a malformed URL.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) {
-    redirect("/dashboard");
-  }
 
   // Validate ?next= same-origin (mirror auth/callback/route.ts:30).
   // Defaults to /dashboard when absent, malformed, or pointing off-origin.
@@ -37,6 +31,15 @@ export default async function LoginPage({ searchParams }: Props) {
     nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
       ? nextRaw
       : "/dashboard";
+
+  // Anonymous-only gate (Phase 3 D2 + P3). If already signed in, honour the
+  // VALIDATED next so /login?next=/admin sends an authenticated staff user to
+  // their portal (it previously hard-redirected to /dashboard, landing a
+  // signed-in admin/instructor on the parent dashboard, which then errored).
+  // next is already same-origin-guarded above, so this can't bounce off-origin.
+  if (user) {
+    redirect(next);
+  }
 
   return (
     <>
