@@ -278,7 +278,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-container-max mx-auto px-gutter mt-12 pt-8 border-t border-sam-gray-light text-center text-xs text-sam-gray-mid">
-          © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
+          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
         </div>
       </footer>
     </>
