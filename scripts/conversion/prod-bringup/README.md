@@ -45,6 +45,51 @@ nothing destructive runs until prod is shown to hold zero real families.
    single data-destructive step (clear placeholder question rows), fenced and safety-gated
    on `responses`/`question_access_log` being empty. *(Review artifact — DO NOT apply blindly.)*
 
+5. **`05-load-bank-prod.ts`** — the audited bank loader (the final content step). It does
+   NOT replay seed.sql (no `exec_sql` RPC / no prod DB password). Instead it reads the
+   **audited LOCAL DB** (the source of truth — final `is_active`/`short_test_eligible`/
+   `content`/`content_id` exist only as the materialized seed result) and **upserts**
+   `tax_*` then `questions` into prod via PostgREST. Reading only those tables structurally
+   excludes every parent/child/session/consent/QA row; the one dev artifact in `questions`
+   (`PLACEHOLDER-Q-IMG-GRID-001`) is dropped by prefix. FKs + `content_id` are remapped by
+   natural CODE across DBs; upserts key on `(tenant_id, code)` / `(tenant_id, external_id)`
+   so re-runs converge. Default = **DRY/COUNT** (reads local + prod read-only, prints the
+   per-level parity table, NO writes); `--prod` performs the live upsert behind the same
+   `.env.prod.local` gate + PROD-TARGET banner as the image uploader.
+   - `pnpm convert:load-bank:prod:dry` — dry run / parity table (no writes).
+   - `pnpm convert:load-bank:prod` — live prod upsert (founder-gated; run after review).
+
+6. **`introspect.ts`** — shared schema-introspection lib for `06`/`07`. Reads **local** via
+   direct Postgres (`pg`, full `pg_catalog`/`pg_policies`) and **prod** read-only via the
+   **PostgREST OpenAPI** spec (`GET /rest/v1/`). *(Prod has no DB password and no `exec_sql`
+   RPC — PostgREST is the only prod read channel; it exposes tables/columns/types/nullability
+   and enum values, but **not** RLS policy bodies, constraints, or indexes.)*
+
+7. **`06-gen-prod-schema-catchup.ts`** — **idempotent, additive-only catch-up GENERATOR.**
+   Treats the post-reset **local** DB as the canonical *expected* schema and diffs prod
+   against it, then writes:
+   - `catchup.generated.sql` — guarded additive DDL only: `CREATE TYPE` (DO-guarded),
+     `ALTER TYPE … ADD VALUE IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS` (+ owned sequences
+     for serial cols, + `ENABLE RLS`), `ALTER TABLE … ADD COLUMN IF NOT EXISTS`, `ENABLE ROW
+     LEVEL SECURITY`, and DO-block-guarded `CREATE POLICY` for every local policy (skipped at
+     apply time if already in `pg_policies`). New-table constraints/indexes are emitted
+     best-effort. **No DROP, no retype, no NOT-NULL tightening of existing columns.**
+   - `catchup.review.md` — everything NOT auto-fixed (type/nullability divergence on a shared
+     column, NOT-NULL-without-default added as nullable, prod-only objects) flagged for the
+     founder. **Applies nothing** — the founder applies the SQL in prod Studio.
+   - `pnpm convert:prod-catchup:gen`
+
+8. **`07-verify-prod-schema.ts`** — re-introspects prod (read-only) and asserts **PROD ⊇ LOCAL**
+   for every table / column / enum-value. Table-by-table PASS/FAIL; **exits nonzero** on any
+   missing expected item; prod-only items are INFO. RLS-policy superset is reported **SKIPPED**
+   (not machine-verifiable via PostgREST — eyeball in Studio after applying Section 5).
+   - `pnpm convert:prod-catchup:verify`
+
+> **Channel asymmetry (06/07):** local is read via full SQL, prod only via PostgREST. Prod
+> RLS/constraints can't be *read*, but the generated DDL is **self-guarding at apply time**
+> (`IF NOT EXISTS` / DO-block `pg_policies` checks), so idempotency holds against prod's real
+> catalog regardless. This limitation is reported in the summary, `catchup.review.md`, and 07.
+
 ## Order of the wider bring-up (Option B)
 
 1. **Inspect schema** — run `01-…`. Confirm the `strand` enum case + which gaps exist.
