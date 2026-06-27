@@ -54,13 +54,13 @@ export default function LandingPage() {
           <div className="col-span-12 lg:col-span-6 space-y-stack-md">
             <div className="inline-flex items-center gap-3">
               <span
-                className="material-symbols-outlined text-sam-navy text-[22px]"
+                className="material-symbols-outlined text-sam-navy text-[28px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 stars
               </span>
               <span className="flex flex-col leading-tight">
-                <span className="font-headline-adult text-sam-navy text-lg">
+                <span className="font-headline-adult text-sam-navy text-2xl">
                   Atlas Assessment
                   <sup
                     className="font-semibold"
@@ -69,7 +69,7 @@ export default function LandingPage() {
                     ™
                   </sup>
                 </span>
-                <span className="font-body-regular text-sam-gray-mid text-caption">
+                <span className="font-body-regular text-sam-gray-mid text-base">
                   Powered by Inspirea Labs
                 </span>
               </span>
