@@ -49,16 +49,17 @@ begin
   end loop;
 end $$;
 
--- Same counts as a copyable RESULT SET (only for tables that exist; absent
--- tables simply contribute no row here, never an error).
-select t.tbl,
-       (select count(*) from parents)             as n_rows
-from (values ('parents')) t(tbl)            where to_regclass('public.parents') is not null
-union all select 'children',            (select count(*) from children)            where to_regclass('public.children') is not null
-union all select 'assessment_sessions', (select count(*) from assessment_sessions) where to_regclass('public.assessment_sessions') is not null
-union all select 'responses',           (select count(*) from responses)           where to_regclass('public.responses') is not null
-union all select 'question_access_log',  (select count(*) from question_access_log)  where to_regclass('public.question_access_log') is not null
-union all select 'consent_records',     (select count(*) from consent_records)     where to_regclass('public.consent_records') is not null
+-- Same counts as a copyable RESULT SET — but ONLY for tables guaranteed present
+-- on the live DB. A possibly-absent table (consent_records, report_narrations,
+-- tax_*) CANNOT appear here: a static `from consent_records` fails at PARSE time
+-- even behind a `where to_regclass(...)` guard, because Postgres resolves the
+-- relation before the guard runs. Those absent tables are reported by the DO
+-- block above (dynamic EXECUTE), never by a hard reference.
+select 'parents'             as tbl, count(*) as n_rows from parents
+union all select 'children',            count(*) from children
+union all select 'assessment_sessions', count(*) from assessment_sessions
+union all select 'responses',           count(*) from responses
+union all select 'question_access_log', count(*) from question_access_log
 order by tbl;
 
 
