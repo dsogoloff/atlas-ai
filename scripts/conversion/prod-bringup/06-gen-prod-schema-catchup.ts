@@ -24,10 +24,11 @@
 //   * catchup.review.md      — divergences / prod-only objects / NOT-NULL gaps to review.
 //   * stdout                 — summary counts + explicit prod state of the flagged objects.
 //
-// CHANNEL ASYMMETRY (see introspect.ts): local is read via full SQL; prod via the
-// PostgREST OpenAPI spec (no prod DB password exists). Prod RLS policies / constraints
-// are therefore NOT readable — handled by emitting self-guarding DDL that is idempotent
-// at apply time. This is reported, never hidden.
+// CHANNELS (see introspect.ts): both local and prod are read via DIRECT Postgres now —
+// prod through PROD_DATABASE_URL (real pg_catalog/pg_policies), matching 07/09. The diff
+// is therefore exact: only genuinely-missing tables/columns/enums/policies are emitted.
+// Emitted DDL stays guarded/idempotent regardless. This is presence/additive-only; column
+// attribute drift (type/nullable/default) is handled by 07 (verify) + 09 (remediation).
 //
 // Run:  tsx scripts/conversion/prod-bringup/06-gen-prod-schema-catchup.ts
 
@@ -35,7 +36,7 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  introspectLocal, introspectProd, localConnString, prodCreds,
+  introspectLocal, introspectProdSql, localConnString, prodConnString,
   normalizeType, stripSchema, type Schema, type Column, type Policy,
 } from "./introspect";
 
@@ -224,9 +225,10 @@ function buildSql(local: Schema, prod: Schema, d: Diff, stamp: string): { sql: s
   out.push("-- converge and nothing fails on existing objects/rows. No DROP, no retype, no");
   out.push("-- NOT NULL tightening of existing columns. Divergences are in catchup.review.md.");
   out.push("--");
-  out.push("-- NOTE: prod RLS policies + constraints are NOT readable via PostgREST (no prod DB");
-  out.push("-- password). Section 5 therefore emits ALL local policies guarded by a pg_policies");
-  out.push("-- check evaluated AT APPLY TIME in prod — already-present policies are skipped.");
+  out.push("-- Prod is read via DIRECT Postgres (PROD_DATABASE_URL) — real pg_catalog/pg_policies.");
+  out.push("-- Section 5 emits only the RLS-enables and policies prod is actually MISSING (still");
+  out.push("-- guarded, so safe to re-run). Attribute-level drift (type/nullable/default) is out of");
+  out.push("-- scope here — that is 07 (verify) + 09 (remediation).");
   out.push("-- ============================================================================");
   out.push("");
 
@@ -276,15 +278,20 @@ function buildSql(local: Schema, prod: Schema, d: Diff, stamp: string): { sql: s
   }
   out.push("");
 
-  // 5. RLS enable + policies
+  // 5. RLS enable + policies — diffed against real prod (direct Postgres). Emit only what
+  //    prod is actually missing; statements stay guarded so they remain safe to re-run.
   out.push("-- ---------------------------------------------------------------------------");
-  out.push("-- SECTION 5 — RLS: ENABLE (idempotent) + guarded CREATE POLICY (all local policies)");
+  out.push("-- SECTION 5 — RLS: ENABLE (missing only) + guarded CREATE POLICY (missing only)");
   out.push("-- ---------------------------------------------------------------------------");
-  const rlsTables = [...local.rlsEnabled].sort();
+  const rlsTables = [...local.rlsEnabled].filter((t) => !prod.rlsEnabled.has(t)).sort();
+  if (rlsTables.length === 0) out.push("-- (RLS already enabled on all expected tables)");
   for (const t of rlsTables) out.push(`ALTER TABLE public.${q(t)} ENABLE ROW LEVEL SECURITY;`);
   out.push("");
-  const policies = [...local.policies].sort((a, b) => (a.table + a.name).localeCompare(b.table + b.name));
-  if (policies.length === 0) out.push("-- (no local policies)");
+  const prodPolKeys = new Set(prod.policies.map((p) => `${p.table}.${p.name}`));
+  const policies = [...local.policies]
+    .filter((p) => !prodPolKeys.has(`${p.table}.${p.name}`))
+    .sort((a, b) => (a.table + a.name).localeCompare(b.table + b.name));
+  if (policies.length === 0) out.push("-- (all local policies already present in prod)");
   for (const p of policies) {
     out.push(renderPolicy(p));
     out.push("");
@@ -318,9 +325,10 @@ function buildReview(d: Diff, prod: Schema, notNullReviews: string[], stamp: str
   };
 
   m.push("# Prod schema catch-up — REVIEW (human decision required)", "");
-  m.push(`_Generated: ${stamp}. Source = LOCAL (canonical). Target = PROD (read-only via PostgREST)._`, "");
-  m.push("Everything below is **NOT** auto-fixed by `catchup.generated.sql` because it is either");
-  m.push("non-additive, lossy, or unverifiable from prod. Decide each manually.", "");
+  m.push(`_Generated: ${stamp}. Source = LOCAL (canonical). Target = PROD (read-only, direct Postgres)._`, "");
+  m.push("Everything below is **NOT** auto-fixed by `catchup.generated.sql` because it is");
+  m.push("non-additive or lossy. Decide each manually. (Attribute drift — type/nullable/default —");
+  m.push("is covered by 07/09, not here; this file is presence/additive only.)", "");
 
   section("Column TYPE divergence (exists in both, differing type)", d.typeDivergences);
   section("Column NULLABILITY divergence (exists in both)", d.nullabilityDivergences);
@@ -329,17 +337,13 @@ function buildReview(d: Diff, prod: Schema, notNullReviews: string[], stamp: str
   section("PROD-only COLUMNS (exist in prod, absent in local — NOT dropped)", d.prodOnlyColumns.map((c) => `\`${c}\``));
   section("PROD-only enum VALUES (present in prod, absent in local — INFO)", d.prodOnlyEnumValues);
 
-  m.push("## Channel limitations (read before trusting the diff)", "");
-  m.push("- **RLS policies:** prod's `pg_policies` is **not readable** via PostgREST. Section 5 of");
-  m.push("  the generated SQL emits *all* local policies guarded by an apply-time `pg_policies`");
-  m.push("  check, so already-present policies are skipped — but this report **cannot** list which");
-  m.push("  policies prod is actually missing. Verify in Studio after applying.");
-  m.push("- **Constraints / indexes:** not readable from prod via PostgREST. Only NEW-table");
-  m.push("  constraints/indexes are emitted (Section 6). Existing-table constraint/index drift is");
-  m.push("  **not** detected here.");
-  m.push(`- **Enum completeness:** prod enum values are read only from enum-typed *exposed columns*`);
-  m.push("  (PostgREST OpenAPI). An enum type used by no column would read as \"missing\" and be");
-  m.push("  emitted as a guarded `CREATE TYPE` (safe — skipped at apply time if it already exists).");
+  m.push("## Scope notes", "");
+  m.push("- **RLS policies:** prod's `pg_policies` IS read (direct Postgres); Section 5 emits only");
+  m.push("  the policies/RLS-enables prod is actually missing (still guarded, safe to re-run).");
+  m.push("- **Constraints / indexes:** only NEW-table constraints/indexes are emitted (Section 6);");
+  m.push("  existing-table constraint/index drift is not reconciled here.");
+  m.push("- **Attribute drift** (type / nullability / default on shared columns) is handled by");
+  m.push("  07 (verify) + 09 (remediation), not this additive catch-up.");
   m.push("");
   return m.join("\n");
 }
@@ -353,14 +357,18 @@ function printSummary(local: Schema, prod: Schema, d: Diff): void {
   const w = process.stdout;
   w.write("\n=== PROD SCHEMA CATCH-UP — SUMMARY (analysis only, nothing applied) ===\n");
   w.write(`  source(local): ${local.tables.size} tables, ${local.enums.size} enums, ${local.policies.length} policies\n`);
-  w.write(`  target(prod) : ${prod.tables.size} tables, ${prod.enums.size} enum types (via PostgREST OpenAPI)\n\n`);
+  w.write(`  target(prod) : ${prod.tables.size} tables, ${prod.enums.size} enum types, ${prod.policies.length} policies (direct Postgres)\n\n`);
 
+  const prodPolKeys = new Set(prod.policies.map((p) => `${p.table}.${p.name}`));
+  const missingPolicies = local.policies.filter((p) => !prodPolKeys.has(`${p.table}.${p.name}`)).length;
+  const missingRls = [...local.rlsEnabled].filter((t) => !prod.rlsEnabled.has(t)).length;
   const rows: Array<[string, number]> = [
     ["Missing enum TYPES", d.missingEnumTypes.length],
     ["Missing enum VALUES", d.missingEnumValues.reduce((n, e) => n + e.values.length, 0)],
     ["Missing TABLES", d.missingTables.length],
     ["Missing COLUMNS", d.missingColumns.length],
-    ["Policies emitted (guarded, all local)", local.policies.length],
+    ["Missing POLICIES (emitted, guarded)", missingPolicies],
+    ["Missing RLS-enable (emitted)", missingRls],
     ["-- review: TYPE divergences", d.typeDivergences.length],
     ["-- review: NULLABILITY divergences", d.nullabilityDivergences.length],
     ["-- review: NOT NULL added nullable", d.notNullGaps.length],
@@ -398,12 +406,12 @@ function printSummary(local: Schema, prod: Schema, d: Diff): void {
 async function main(): Promise<void> {
   const stamp = new Date().toISOString();
   const dsn = localConnString();
-  const { url, key } = prodCreds();
+  const prodDsn = prodConnString();
   process.stdout.write(`[catchup] local: ${dsn.replace(/:[^:@/]*@/, ":****@")}\n`);
-  process.stdout.write(`[catchup] prod : ${url} (read-only, PostgREST)\n`);
+  process.stdout.write(`[catchup] prod : ${prodDsn.replace(/:[^:@/]*@/, ":****@")} (DIRECT Postgres, read-only)\n`);
 
   const local = await introspectLocal(dsn);
-  const prod = await introspectProd(url, key);
+  const prod = await introspectProdSql(prodDsn);
 
   const d = computeDiff(local, prod);
   const { sql, notNullReviews } = buildSql(local, prod, d, stamp);

@@ -117,6 +117,19 @@ export function localConnString(): string {
   return dsn;
 }
 
+/** Prod DIRECT Postgres DSN from the gitignored .env.prod.local (PROD_DATABASE_URL).
+ *  This is the high-fidelity prod read channel — full pg_catalog/pg_policies, unlike the
+ *  PostgREST OpenAPI spec which only exposes API-granted tables. Refuses a local DSN. */
+export function prodConnString(): string {
+  const env = parseEnvFile(".env.prod.local");
+  const dsn = process.env.PROD_DATABASE_URL || env.PROD_DATABASE_URL || "";
+  if (!dsn) throw new Error(".env.prod.local is missing PROD_DATABASE_URL (direct Postgres DSN).");
+  if (/127\.0\.0\.1|localhost/.test(dsn)) {
+    throw new Error(`PROD_DATABASE_URL points at localhost (${dsn}); refusing — that is not prod.`);
+  }
+  return dsn;
+}
+
 /** Prod PostgREST creds from the gitignored .env.prod.local. Refuses a local/empty URL. */
 export function prodCreds(): { url: string; key: string } {
   const env = parseEnvFile(".env.prod.local");
@@ -155,10 +168,19 @@ export function normalizeType(t: string): string {
   return stripSchema(t).replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-// --------------------------------------------------------------------------- LOCAL
+// ------------------------------------------------------------- SQL (local + prod)
 
-export async function introspectLocal(connString: string): Promise<Schema> {
-  const client = new pg.Client({ connectionString: connString });
+/** Full-fidelity schema introspection over a direct Postgres connection. Works for any
+ *  database (local OR prod-direct). `ssl` should be set for remote/prod hosts. */
+export async function introspectSql(
+  connString: string,
+  source: "local" | "prod",
+  opts: { ssl?: boolean } = {},
+): Promise<Schema> {
+  const client = new pg.Client({
+    connectionString: connString,
+    ...(opts.ssl ? { ssl: { rejectUnauthorized: false } } : {}),
+  });
   await client.connect();
   try {
     const tables = new Map<string, Map<string, Column>>();
@@ -252,10 +274,20 @@ export async function introspectLocal(connString: string): Promise<Schema> {
       indexes.push({ table: r.tbl, name: r.idx, def: r.def, isPrimary: r.isprimary, backsConstraint: r.backs !== null });
     }
 
-    return { source: "local", tables, enums, policies, rlsEnabled, constraints, indexes, enumsComplete: true, policiesReadable: true };
+    return { source, tables, enums, policies, rlsEnabled, constraints, indexes, enumsComplete: true, policiesReadable: true };
   } finally {
     await client.end();
   }
+}
+
+/** Local canonical schema (no SSL). */
+export function introspectLocal(connString: string): Promise<Schema> {
+  return introspectSql(connString, "local");
+}
+
+/** Prod schema via DIRECT Postgres (SSL). High-fidelity — replaces the OpenAPI channel. */
+export function introspectProdSql(connString: string): Promise<Schema> {
+  return introspectSql(connString, "prod", { ssl: true });
 }
 
 // ---------------------------------------------------------------------------- PROD
