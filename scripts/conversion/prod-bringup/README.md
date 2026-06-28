@@ -59,11 +59,17 @@ nothing destructive runs until prod is shown to hold zero real families.
    - `pnpm convert:load-bank:prod:dry` — dry run / parity table (no writes).
    - `pnpm convert:load-bank:prod` — live prod upsert (founder-gated; run after review).
 
-6. **`introspect.ts`** — shared schema-introspection lib for `06`/`07`. Reads **local** via
-   direct Postgres (`pg`, full `pg_catalog`/`pg_policies`) and **prod** read-only via the
-   **PostgREST OpenAPI** spec (`GET /rest/v1/`). *(Prod has no DB password and no `exec_sql`
-   RPC — PostgREST is the only prod read channel; it exposes tables/columns/types/nullability
-   and enum values, but **not** RLS policy bodies, constraints, or indexes.)*
+6. **`introspect.ts`** — shared schema-introspection lib. Reads **local** via direct Postgres
+   (`pg`, full `pg_catalog`/`pg_policies`). Prod has **two** channels:
+   - `introspectProdSql()` — **DIRECT Postgres** via `PROD_DATABASE_URL` (in `.env.prod.local`),
+     full `pg_catalog`/`information_schema` (real types, nullability, defaults, enums, policies).
+     **This is the high-fidelity channel used by `07`/`09`.**
+   - `introspectProd()` — the legacy **PostgREST OpenAPI** channel (used by `06`). Lower
+     fidelity: only exposes API-granted tables (it under-reports — e.g. 20 of 24 tables) and
+     no policy bodies/constraints. *(Recommend re-pointing `06` at `introspectProdSql` too.)*
+
+   `compare.ts` — full attribute comparison (`fullCompare`) + the AUTO-SAFE/REVIEW type-change
+   classifier (`classifyTypeChange`: widen/narrow/incompatible), shared by `07` and `09`.
 
 7. **`06-gen-prod-schema-catchup.ts`** — **idempotent, additive-only catch-up GENERATOR.**
    Treats the post-reset **local** DB as the canonical *expected* schema and diffs prod
@@ -79,16 +85,28 @@ nothing destructive runs until prod is shown to hold zero real families.
      founder. **Applies nothing** — the founder applies the SQL in prod Studio.
    - `pnpm convert:prod-catchup:gen`
 
-8. **`07-verify-prod-schema.ts`** — re-introspects prod (read-only) and asserts **PROD ⊇ LOCAL**
-   for every table / column / enum-value. Table-by-table PASS/FAIL; **exits nonzero** on any
-   missing expected item; prod-only items are INFO. RLS-policy superset is reported **SKIPPED**
-   (not machine-verifiable via PostgREST — eyeball in Studio after applying Section 5).
+8. **`07-verify-prod-schema.ts`** — **FULL attribute comparison** (prod **direct Postgres** vs
+   canonical local). For every local public table it compares each column on `data_type` (incl.
+   numeric precision/scale + varchar length via `format_type`), `is_nullable`, `column_default`,
+   and compares enum TYPES end to end. Reports **table-by-table / column-by-column:
+   MATCH / DRIFT(detail) / MISSING**; **exits nonzero** on any DRIFT or MISSING. Prod-only
+   tables/columns/enum-values are INFO (additive — prod may hold extra).
    - `pnpm convert:prod-catchup:verify`
 
-> **Channel asymmetry (06/07):** local is read via full SQL, prod only via PostgREST. Prod
-> RLS/constraints can't be *read*, but the generated DDL is **self-guarding at apply time**
-> (`IF NOT EXISTS` / DO-block `pg_policies` checks), so idempotency holds against prod's real
-> catalog regardless. This limitation is reported in the summary, `catchup.review.md`, and 07.
+9. **`09-gen-prod-type-remediation.ts`** — classifies every column DRIFT and writes:
+   - `remediation.generated.sql` — **AUTO-SAFE only** (can't fail on existing rows / no data
+     loss), idempotent: type **widening**/lossless casts (`ALTER COLUMN … TYPE … USING (…)`,
+     guarded to skip if already applied), **loosen** NOT NULL → NULL, **add a missing** default,
+     missing enum **values**.
+   - `remediation.review.md` — drifts that could fail/lose data (NOT auto-emitted): narrowing/
+     lossy/incompatible casts, **tighten** NULL → NOT NULL (backfill first), default change/drop,
+     and prod-only / missing objects (INFO; missing → use `06`).
+   - `pnpm convert:prod-catchup:remediate`
+
+> **Channels:** `06` still reads prod via PostgREST (presence-level, under-reports unexposed
+> tables). `07`/`09` read prod via **direct Postgres** (`PROD_DATABASE_URL`) for full-fidelity
+> attribute drift. Generated DDL stays self-guarding/idempotent so it's safe to re-run; all
+> three apply NOTHING — the founder applies the SQL in prod Studio.
 
 ## Order of the wider bring-up (Option B)
 

@@ -26,6 +26,7 @@
     "convert:load-bank:prod": "tsx scripts/conversion/prod-bringup/05-load-bank-prod.ts --prod",
     "convert:prod-catchup:gen": "tsx scripts/conversion/prod-bringup/06-gen-prod-schema-catchup.ts",
     "convert:prod-catchup:verify": "tsx scripts/conversion/prod-bringup/07-verify-prod-schema.ts",
+    "convert:prod-catchup:remediate": "tsx scripts/conversion/prod-bringup/09-gen-prod-type-remediation.ts",
     "convert:verify-images": "tsx scripts/conversion/verify-images.ts",
     "convert:purge-staging": "tsx scripts/conversion/purge-staging.ts",
     "seed:check-activation-parity": "tsx scripts/conversion/seed-activation-parity.ts",

@@ -1,116 +1,86 @@
-// Atlas Assessment — PROD schema VERIFIER (prod ⊇ local expected).
+// Atlas Assessment — PROD schema VERIFIER (FULL attribute comparison).
 //
-// Re-introspects PROD (read-only, PostgREST) and LOCAL (canonical, full SQL) and asserts
-// that PROD is a SUPERSET of the local expected schema: every local table, every local
-// column, and every local enum value must exist in prod. Prints table-by-table PASS/FAIL
-// and EXITS NONZERO if any expected item is missing. Prod-only objects are INFO, never
-// failures (prod is allowed to have extra).
+// Reads PROD via DIRECT Postgres (PROD_DATABASE_URL — real pg_catalog/information_schema,
+// NOT PostgREST) and LOCAL (127.0.0.1:54322, canonical expected). For EVERY public table
+// present in local it compares, column-by-column:
+//   * data_type — incl. numeric precision/scale and varchar length (format_type)
+//   * is_nullable
+//   * column_default
+//   * for enum-typed columns, the full enum value set (via end-to-end enum comparison)
+// and compares enum TYPES end to end.
 //
-// POLICY caveat: prod's pg_policies is NOT readable via PostgREST (no prod DB password),
-// so RLS-policy superset cannot be machine-verified here — it is reported SKIPPED with the
-// local policy count and must be eyeballed in Studio. This is surfaced loudly, not hidden.
+// Reports table-by-table / column-by-column: MATCH / DRIFT(detail) / MISSING.
+// EXITS NONZERO on any DRIFT or MISSING. Prod-only tables/columns/enum-values are INFO
+// (additive philosophy — prod is allowed to hold extra). This replaces presence-only.
 //
 // Run:  tsx scripts/conversion/prod-bringup/07-verify-prod-schema.ts
 
-import {
-  introspectLocal, introspectProd, localConnString, prodCreds,
-  normalizeType, type Schema,
-} from "./introspect";
+import { introspectLocal, introspectProdSql, localConnString, prodConnString } from "./introspect";
+import { fullCompare, type ColVerdict } from "./compare";
 
-function pad(s: string | number, n: number) { return String(s).padEnd(n); }
-
-interface TableResult {
-  table: string;
-  status: "PASS" | "FAIL";
-  missingCols: string[];
-  typeInfo: string[];
-  total: number;
-}
-
-function verify(local: Schema, prod: Schema): { results: TableResult[]; enumFails: string[]; enumPass: string[]; prodOnlyTables: string[]; prodOnlyCols: string[] } {
-  const results: TableResult[] = [];
-  for (const [t, lcols] of [...local.tables].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const pcols = prod.tables.get(t);
-    if (!pcols) {
-      results.push({ table: t, status: "FAIL", missingCols: ["<entire table missing>"], typeInfo: [], total: lcols.size });
-      continue;
-    }
-    const missingCols: string[] = [];
-    const typeInfo: string[] = [];
-    for (const [cn, lc] of lcols) {
-      const pc = pcols.get(cn);
-      if (!pc) { missingCols.push(cn); continue; }
-      if (normalizeType(lc.type) !== normalizeType(pc.type)) typeInfo.push(`${cn} (local ${lc.type} / prod ${pc.type})`);
-    }
-    results.push({ table: t, status: missingCols.length ? "FAIL" : "PASS", missingCols, typeInfo, total: lcols.size });
-  }
-
-  const enumFails: string[] = [];
-  const enumPass: string[] = [];
-  for (const [name, lvals] of [...local.enums].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const pvals = prod.enums.get(name);
-    if (!pvals) { enumFails.push(`${name} — type not visible in prod (no exposed column or missing)`); continue; }
-    const pset = new Set(pvals);
-    const missing = lvals.filter((v) => !pset.has(v));
-    if (missing.length) enumFails.push(`${name} — missing values: ${missing.join(", ")}`);
-    else enumPass.push(`${name} (${lvals.length})`);
-  }
-
-  const prodOnlyTables: string[] = [];
-  for (const t of prod.tables.keys()) if (!local.tables.has(t)) prodOnlyTables.push(t);
-  const prodOnlyCols: string[] = [];
-  for (const [t, pcols] of prod.tables) {
-    const lcols = local.tables.get(t);
-    if (!lcols) continue;
-    for (const cn of pcols.keys()) if (!lcols.has(cn)) prodOnlyCols.push(`${t}.${cn}`);
-  }
-
-  return { results, enumFails, enumPass, prodOnlyTables, prodOnlyCols };
+function driftDetail(v: Extract<ColVerdict, { kind: "DRIFT" }>): string {
+  const d = v.drift;
+  const parts: string[] = [];
+  if (d.type) parts.push(`type: ${d.type.prod} -> ${d.type.local}`);
+  if (d.nullable) parts.push(`nullable: prod ${d.nullable.prod ? "NULL" : "NOT NULL"} -> local ${d.nullable.local ? "NULL" : "NOT NULL"}`);
+  if (d.default) parts.push(`default: prod ${d.default.prod ?? "∅"} -> local ${d.default.local ?? "∅"}`);
+  return parts.join("; ");
 }
 
 async function main(): Promise<void> {
-  const dsn = localConnString();
-  const { url, key } = prodCreds();
-  process.stdout.write(`[verify] local: ${dsn.replace(/:[^:@/]*@/, ":****@")}\n`);
-  process.stdout.write(`[verify] prod : ${url} (read-only, PostgREST)\n\n`);
+  const localDsn = localConnString();
+  const prodDsn = prodConnString();
+  process.stdout.write(`[verify] local: ${localDsn.replace(/:[^:@/]*@/, ":****@")}\n`);
+  process.stdout.write(`[verify] prod : ${prodDsn.replace(/:[^:@/]*@/, ":****@")} (DIRECT Postgres, read-only)\n\n`);
 
-  const local = await introspectLocal(dsn);
-  const prod = await introspectProd(url, key);
-  const v = verify(local, prod);
+  const local = await introspectLocal(localDsn);
+  const prod = await introspectProdSql(prodDsn);
+  const diff = fullCompare(local, prod);
 
   const w = process.stdout;
-  w.write("=== PROD ⊇ LOCAL — TABLES/COLUMNS ===\n");
-  for (const r of v.results) {
-    const tail = r.status === "PASS"
-      ? `(${r.total} cols)${r.typeInfo.length ? `  INFO type: ${r.typeInfo.join("; ")}` : ""}`
-      : `MISSING: ${r.missingCols.join(", ")}`;
-    w.write(`  ${pad(r.status, 5)} ${pad(r.table, 28)} ${tail}\n`);
+  let matchCount = 0, driftCount = 0, missingCount = 0;
+
+  w.write("=== TABLE-BY-TABLE / COLUMN-BY-COLUMN (prod vs local expected) ===\n");
+  for (const t of diff.tables) {
+    const drifts = t.columns.filter((c) => c.verdict.kind === "DRIFT").length;
+    const missing = t.columns.filter((c) => c.verdict.kind === "MISSING").length;
+    const hdr = !t.present
+      ? "MISSING TABLE"
+      : `${t.columns.length} cols — ${t.columns.length - drifts - missing} match, ${drifts} drift, ${missing} missing`;
+    w.write(`\n■ ${t.table}  [${hdr}]\n`);
+    for (const c of t.columns) {
+      if (c.verdict.kind === "MATCH") { matchCount++; w.write(`    MATCH   ${c.column}\n`); }
+      else if (c.verdict.kind === "MISSING") { missingCount++; w.write(`    MISSING ${c.column}\n`); }
+      else { driftCount++; w.write(`    DRIFT   ${c.column} — ${driftDetail(c.verdict)}\n`); }
+    }
+    if (t.prodOnlyColumns.length) w.write(`    INFO    prod-only columns (kept): ${t.prodOnlyColumns.join(", ")}\n`);
   }
 
-  w.write("\n=== PROD ⊇ LOCAL — ENUM VALUES ===\n");
-  for (const e of v.enumPass) w.write(`  PASS  ${e}\n`);
-  for (const e of v.enumFails) w.write(`  FAIL  ${e}\n`);
+  w.write("\n=== ENUM TYPES (end to end) ===\n");
+  let enumDrift = 0;
+  for (const e of diff.enums) {
+    if (e.status === "MATCH") {
+      w.write(`  MATCH   ${e.name} (${e.localValues.length})${e.extraInProd.length ? `  INFO prod-only values: ${e.extraInProd.join(", ")}` : ""}\n`);
+    } else if (e.status === "MISSING") {
+      enumDrift++; w.write(`  MISSING ${e.name} — type absent in prod (local values: ${e.localValues.join(", ")})\n`);
+    } else {
+      enumDrift++; w.write(`  DRIFT   ${e.name} — prod missing values: ${e.missingInProd.join(", ")}${e.extraInProd.length ? `; prod-only: ${e.extraInProd.join(", ")}` : ""}\n`);
+    }
+  }
 
-  w.write("\n=== RLS POLICIES ===\n");
-  w.write(`  SKIPPED — prod pg_policies not readable via PostgREST. Local defines ${local.policies.length} policies;\n`);
-  w.write("           verify in prod Studio after applying catchup.generated.sql Section 5.\n");
-
-  if (v.prodOnlyTables.length || v.prodOnlyCols.length) {
+  if (diff.prodOnlyTables.length || diff.prodOnlyEnums.length) {
     w.write("\n=== PROD-ONLY (INFO — not failures) ===\n");
-    if (v.prodOnlyTables.length) w.write(`  tables : ${v.prodOnlyTables.join(", ")}\n`);
-    if (v.prodOnlyCols.length) w.write(`  columns: ${v.prodOnlyCols.join(", ")}\n`);
+    if (diff.prodOnlyTables.length) w.write(`  tables: ${diff.prodOnlyTables.join(", ")}\n`);
+    if (diff.prodOnlyEnums.length) w.write(`  enum types: ${diff.prodOnlyEnums.join(", ")}\n`);
   }
 
-  const tableFails = v.results.filter((r) => r.status === "FAIL");
-  const missingItemCount = tableFails.reduce((n, r) => n + r.missingCols.length, 0) + v.enumFails.length;
   w.write("\n=== RESULT ===\n");
-  if (missingItemCount === 0) {
-    w.write("  PASS — prod is a superset of the local expected schema (tables/columns/enum-values).\n");
-    w.write("  (RLS policies SKIPPED — verify in Studio.)\n");
+  w.write(`  columns: ${matchCount} MATCH, ${driftCount} DRIFT, ${missingCount} MISSING; enum issues: ${enumDrift}\n`);
+  const failures = driftCount + missingCount + enumDrift;
+  if (failures === 0) {
+    w.write("  PASS — prod matches the local expected schema at full attribute fidelity.\n");
   } else {
-    w.write(`  FAIL — ${missingItemCount} expected item(s) missing in prod `);
-    w.write(`(${tableFails.length} table(s)/columns, ${v.enumFails.length} enum issue(s)).\n`);
-    w.write("  Apply catchup.generated.sql in prod Studio, then re-run this verifier.\n");
+    w.write(`  FAIL — ${failures} attribute drift/missing item(s). Run 09 to generate remediation, review, apply in Studio, re-verify.\n`);
     process.exitCode = 1;
   }
 }
