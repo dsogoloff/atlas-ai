@@ -4,6 +4,54 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-28 (answer-key audit + SAM-L4-Q17 authored + CI manifest guard) — PR #191 (lane/bank-source-invariant-fix) MERGED. PR #192 (lane/l4-q17-answer-key-audit) OPEN, verify-bar GREEN, awaiting Dimitri's attended merge after Vercel preview review.
+
+- **PR #191 — lane/bank-source-invariant-fix — MERGED.**
+  "fix(bank): source-level is_active=false ⟹ short_test_eligible=false invariant + CI guard".
+  Fixed local seed half-flagging (is_active=false rows allowed short_test_eligible=true at source);
+  added CHECK constraint `questions_inactive_not_short_eligible`; added short-eligible-invariant
+  parity test. Now in ATLAS-ASSESSMENT.
+
+- **PR #192 — lane/l4-q17-answer-key-audit — OPEN (verify-bar GREEN).**
+  "feat(conversion): full answer-key audit + SAM-L4-Q17 authored + CI key-manifest guard".
+  Three deliverables:
+
+  1. FULL ANSWER AUDIT (all 9 booklets L0A/L0B/L0C/L1-L6, 187 active items):
+     165 MATCH, 2 documented overrides (founder-confirmed), 10 UNGRADEABLE_FROM_KEY
+     (open/observational young-band key cells), 10 NO_KEY_ENTRY (blank key cells).
+     ZERO accidental wrong answers. Every active booklet has a covering key.
+     Key PDFs for ALL levels (including L0A-L4, previously absent) now present in
+     scripts/conversion/source/**. Level 2 has a key but no worksheet docx.
+     - Override 1 (founder-confirmed): SAM-L3-Q17 — stored 25 vs printed key 3;
+       picture-graph (9-4)x5=25; printed key wrong; bank is correct.
+     - Override 2 (founder-confirmed): SAM-L0B-Q06 — stored {7,8} vs key "colour 7
+       and 6"; founder reinterpretation of contradictory worksheet.
+     - Founder-acknowledged: 7 L6 fraction/decimal items (SAM-L6-Q09/Q10/Q11/Q12/Q13/
+       Q15/Q16) are COMPUTED not key-verified (blank key cells). Also 3 L1
+       (Q07/Q13/Q15) no-key-entry. All logged in manifest with L6-awareness note.
+
+  2. SAM-L4-Q17 AUTHORED (was absent from local AND prod):
+     TEXT_ENTRY "name a pair of perpendicular lines", answer "AF and GC"
+     (founder-confirmed from L4 key), order-tolerant accepted set (AF=FA, GC=CG, slot
+     order), level 4A, strand geometry, content_id l3-geometry-2, image
+     l4/sam-l4-q17.png, is_active=true, short_test_eligible=true.
+     Engine extension: TEXT_ENTRY judging now honors content.accepted_answers (mirrors
+     NUMERIC_ENTRY any-of; server-side only) in src/lib/responseSubmit/correctness.ts.
+     Mirrored in seed.sql + migration 20260628120000; image wired in activation-image-set.ts.
+
+  3. CI GUARD (standing guard against recurrence; key PDFs are licensed/untracked/ABSENT
+     in CI so full per-answer CI re-parse is not feasible):
+     - scripts/conversion/verify-answer-keys.ts (`pnpm convert:verify-keys`) — local
+       key-presence check per active booklet.
+     - scripts/conversion/answer-key-manifest.ts + audit/answer-key-manifest.json —
+       committed 217-entry per-item key-verification manifest (id-set derived from seed).
+     - src/lib/conversion/answer-key-manifest.test.ts — CI: fails if a new/edited
+       question has no manifest entry; fails if manifest records a key contradiction
+       without an explicit override allowlist entry.
+  Verify bar GREEN.
+
+---
+
 **As of:** 2026-06-27 (prod schema reconciliation + bank-flag loader) — PR #186 (prod-bringup batch 1: introspect + 06-gen-catchup + catchup artifacts) MERGED at dfb82a6 (now in ATLAS-ASSESSMENT). PR #188 (batch 2: full-attribute rewrite 07, 09 remediation, compare.ts, accepted-drift allowlist, 06→direct Postgres) OPEN, verify-bar CI GREEN, Vercel preview pass, awaiting Dimitri's attended merge.
 
 - **PR #188 — lane/prod-bringup-inspect-fix — OPEN (CI GREEN, Vercel preview pass).**

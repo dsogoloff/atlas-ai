@@ -3,6 +3,50 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-28
+
+* **Full answer-key audit completed across all 9 booklets (L0A/L0B/L0C/L1-L6); committed
+  answer-key-manifest + CI override-allowlist guard adopted as the recurrence control
+  (PR #192, lane/l4-q17-answer-key-audit, 2026-06-28).** Licensed key PDFs are untracked
+  and absent from CI; a full per-answer CI re-parse is not feasible. Recurrence guard
+  adopted: a committed per-item manifest (`audit/answer-key-manifest.json`, 217 entries,
+  id-set derived from seed) + a CI test (`answer-key-manifest.test.ts`) that fails if a
+  new/edited question has no manifest entry and fails if the manifest records a key
+  contradiction without an explicit override allowlist entry. 187 active items audited:
+  165 MATCH, 2 confirmed overrides, 10 UNGRADEABLE_FROM_KEY (open/observational young-band
+  key cells), 10 NO_KEY_ENTRY (blank key cells). ZERO accidental wrong answers; every active
+  booklet has a covering key. Key PDFs for ALL levels now present in
+  scripts/conversion/source/**. Level 2 has a key but no worksheet docx.
+
+* ⚑ **Two key overrides CONFIRMED BY FOUNDER to stand (PR #192, 2026-06-28):**
+  (1) SAM-L3-Q17 — stored answer 25 vs printed key 3. Picture-graph question: (9-4)x5=25.
+  The printed key is wrong; the bank answer is correct. Founder confirmed.
+  (2) SAM-L0B-Q06 — stored accepted {7,8} vs key "colour 7 and 6". Founder reinterpretation
+  of a contradictory worksheet. Both overrides are recorded in the manifest override
+  allowlist; the CI guard will fail any future key contradiction not in the allowlist.
+
+* ⚑ **FOUNDER-ACKNOWLEDGED — 7 L6 fraction/decimal items are COMPUTED, not key-verified
+  (PR #192, 2026-06-28).** SAM-L6-Q09/Q10/Q11/Q12/Q13/Q15/Q16 have blank key cells.
+  Answers are mathematically derived (fraction/decimal computation); logged in the manifest
+  with an L6-awareness note. Also 3 L1 items (Q07/Q13/Q15) have no key entry. These are
+  not defects but are tracked explicitly as unverified-from-key.
+
+* **SAM-L4-Q17 authored and activated (PR #192, lane/l4-q17-answer-key-audit, 2026-06-28).**
+  Row was absent from local AND prod. TEXT_ENTRY question: "name a pair of perpendicular
+  lines"; answer "AF and GC" (founder-confirmed from the now-present L4 key); order-tolerant
+  accepted set (AF=FA, GC=CG, slot order). Level 4A; strand geometry; content_id
+  l3-geometry-2; image l4/sam-l4-q17.png; is_active=true; short_test_eligible=true.
+  Engine extension: TEXT_ENTRY judging now honors content.accepted_answers (mirrors
+  NUMERIC_ENTRY any-of; server-side only) in src/lib/responseSubmit/correctness.ts.
+  Mirrored in seed.sql + migration 20260628120000; image wired in activation-image-set.ts.
+  Verify bar GREEN.
+
+* **Bank source invariant enforced at DB and CI levels (PR #191, lane/bank-source-invariant-fix,
+  MERGED, 2026-06-28).** Fixed local seed half-flagging where is_active=false rows could have
+  short_test_eligible=true at source. Added CHECK constraint
+  `questions_inactive_not_short_eligible`; added a short-eligible-invariant parity test.
+  Now in ATLAS-ASSESSMENT.
+
 ## 2026-06-27
 
 * **Prod bring-up schema analysis completed as analysis-only artifacts (PR #181,
