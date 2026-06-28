@@ -4,6 +4,78 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-27 — prod schema reconciliation + bank-flag loader (PRs #186 MERGED / #188 OPEN)
+
+PR #186 (prod-bringup batch 1: introspect + 06-gen-catchup + catchup artifacts) MERGED at
+`dfb82a6` (now in ATLAS-ASSESSMENT). PR #188 (batch 2: full-attribute rewrite 07, 09
+remediation, compare.ts, accepted-drift allowlist, 06→direct Postgres) OPEN, verify-bar CI
+GREEN, Vercel preview pass.
+
+- [ ] **Dimitri: merge PR #188 (lane/prod-bringup-inspect-fix)** after Vercel preview
+      review. No migration; no `supabase db reset` needed (tooling-only; no app DB schema
+      change). `catchup.generated.sql` and `remediation.generated.sql` are both empty —
+      nothing is applied to prod by this merge. Merging lands the verified introspection +
+      verification + remediation tooling (`introspect.ts` direct-Postgres path, `compare.ts`,
+      `07`, `09`) in ATLAS-ASSESSMENT for future use.
+
+- [ ] **OPEN QUESTION — prod bank upsert status (needs Dimitri to confirm).** Plain-English:
+      has the live `--prod` upsert (`05-load-bank-prod.ts --prod`) been executed against the
+      production database? If yes, do prod's per-level `is_active` / `short_test_eligible`
+      counts match the audited local bank? This session only ran read-only introspection;
+      whether the loader has run live against prod is unconfirmed. Dimitri to confirm before
+      this item can be marked resolved.
+
+- [ ] **POST-BETA (not a beta gate): retire the 4 accepted-for-beta nullable drifts.**
+      `responses` columns `expected_time_sec`, `time_ratio`, `time_flag_config_version`,
+      `used_fallback` are NOT NULL in local but NULLABLE in prod. Tightening was deferred
+      past beta because it requires a data backfill first. After beta: (a) backfill any NULL
+      rows in prod for these columns, (b) run `ALTER COLUMN … SET NOT NULL` for each, (c)
+      re-run `07-verify-prod-schema.ts` to confirm green without the allowlist entries. Do
+      not action until explicitly directed post-beta.
+
+## 0. 2026-06-26 — answer-log humanize + L4 narrative self-heal (PRs #171 / #173 — OPEN)
+
+Two independent lane PRs opened off `ATLAS-ASSESSMENT`; not stacked; both verify-bar GREEN
+(1346 tests). No migration in either — **no `supabase db reset` needed.**
+
+- [ ] **Dimitri: merge PR #171 (lane/answer-log-humanize)** after Vercel preview review.
+      No migration; no `supabase db reset` needed.
+      Suggested preview check: open the answer log on a completed session that used image-tap
+      or select-multiple questions — answers should show readable option/tile labels, not raw
+      JSON `{"tappedId":"…"}` strings. MC / numeric / text / drag-drop answers unchanged.
+
+- [ ] **Dimitri: merge PR #173 (lane/l4-narrative-fix)** after Vercel preview review.
+      No migration; no `supabase db reset` needed.
+      Suggested preview check: open the report for a session that previously showed no
+      strengths/growth narrative due to a missed narration write (e.g., session
+      `7a903c1e-2218-4e9f-99d6-98833d00ec3f` on the dev DB if available). On first load the
+      page should trigger a one-time re-generation attempt; if it succeeds, the full
+      narrative renders; if it fails, the page settles into the data-only fallback (no
+      infinite loop or blank screen on subsequent views). Confirm that sessions with an
+      already-present narration row are not affected.
+
+## 0. 2026-06-25 — admin tenant view (PR #170 — OPEN)
+
+**Origin head entering this session: `bf792cc`** (after PRs #163/#164/#165 merged).
+One new PR opened; independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN.
+Migration present — **`supabase db reset` required after merge.**
+
+- [ ] **Dimitri: merge PR #170 (lane/admin-tenant-view)** after Vercel preview review,
+      then run `supabase db reset` (applies migration `20260625120000_admins_tenant_view.sql`
+      — adds admins table, admin_status enum, app_current_admin_tenant_id SECURITY DEFINER
+      function, and additive SELECT policies on children/assessment_sessions/
+      pedagogical_notes; seeds dev admin admin@atlas.local / admin-password).
+      Suggested preview checks:
+      (a) Sign in as admin@atlas.local / admin-password → /admin — should show the
+          tenant-wide roster WITH a Center column listing all children across all centers.
+      (b) Click a roster row — should open the shared student detail at
+          /instructor/student/[childId].
+      (c) On the student detail as admin: notes are read-only (no add-note form, no
+          usefulness rating, no report-viewed tracking); report / strand bars /
+          misconceptions / item review all render normally.
+      (d) Sign in as a normal instructor — roster shows center-only children (unchanged),
+          can still author notes (unchanged).
+
 ## 0. 2026-06-27 — CONVERSION: prod bring-up step 1 (PR #181 — OPEN)
 
 **Trunk head entering this session: `25b5a7c`** (after PRs up to #174 merged).

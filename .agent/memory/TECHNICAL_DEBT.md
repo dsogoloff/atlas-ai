@@ -15,10 +15,12 @@ Resolve opportunistically; don't let them sweep into unrelated commits.
   assessment).**
 
 ## Migrations / types
-- `database.types.ts` was hand-edited across lanes; it auto-merged clean and passes
-  typecheck. Optional: regenerate against local DB
+- `database.types.ts` was hand-edited across lanes (most recently PR #170 added admins
+  table types, admin_status enum, and app_current_admin_tenant_id function); it
+  auto-merged clean and passes typecheck. Optional: regenerate against local DB
   (`pnpm supabase gen types typescript --local > src/lib/database.types.ts`) — the CLI
-  (2.98.2) emits non-TS junk lines top/bottom that must be hand-trimmed, then `pnpm typecheck`.
+  (2.98.2) emits non-TS junk lines top/bottom that must be hand-trimmed, then
+  `pnpm typecheck`.
 - `timeFlagging` has a `DEFAULT_FALLBACK_TAGS` hatch (grep `REMOVE-WHEN-TAGS-LAND`) masking
   missing item tags; remove once the bank ships fully-tagged items and the schema
   constraint is trusted.
