@@ -32,6 +32,8 @@
     "convert:verify-images": "tsx scripts/conversion/verify-images.ts",
     "convert:purge-staging": "tsx scripts/conversion/purge-staging.ts",
     "seed:check-activation-parity": "tsx scripts/conversion/seed-activation-parity.ts",
+    "convert:verify-keys": "tsx scripts/conversion/verify-answer-keys.ts",
+    "seed:answer-key-manifest": "tsx scripts/conversion/answer-key-manifest.ts --write",
     "seed:regen-activations": "tsx scripts/conversion/regen-seed-activations.ts"
   },
   "dependencies": {
