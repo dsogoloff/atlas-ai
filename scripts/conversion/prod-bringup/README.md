@@ -63,10 +63,10 @@ nothing destructive runs until prod is shown to hold zero real families.
    (`pg`, full `pg_catalog`/`pg_policies`). Prod has **two** channels:
    - `introspectProdSql()` — **DIRECT Postgres** via `PROD_DATABASE_URL` (in `.env.prod.local`),
      full `pg_catalog`/`information_schema` (real types, nullability, defaults, enums, policies).
-     **This is the high-fidelity channel used by `07`/`09`.**
-   - `introspectProd()` — the legacy **PostgREST OpenAPI** channel (used by `06`). Lower
-     fidelity: only exposes API-granted tables (it under-reports — e.g. 20 of 24 tables) and
-     no policy bodies/constraints. *(Recommend re-pointing `06` at `introspectProdSql` too.)*
+     **This is the channel used by `06`, `07`, and `09`.**
+   - `introspectProd()` — the legacy **PostgREST OpenAPI** channel, retained as a no-DB-password
+     fallback. Lower fidelity: only API-granted tables (under-reports — e.g. 20 of 24) and no
+     policy bodies/constraints. Not used by the current scripts.
 
    `compare.ts` — full attribute comparison (`fullCompare`) + the AUTO-SAFE/REVIEW type-change
    classifier (`classifyTypeChange`: widen/narrow/incompatible), shared by `07` and `09`.
@@ -103,10 +103,16 @@ nothing destructive runs until prod is shown to hold zero real families.
      and prod-only / missing objects (INFO; missing → use `06`).
    - `pnpm convert:prod-catchup:remediate`
 
-> **Channels:** `06` still reads prod via PostgREST (presence-level, under-reports unexposed
-> tables). `07`/`09` read prod via **direct Postgres** (`PROD_DATABASE_URL`) for full-fidelity
-> attribute drift. Generated DDL stays self-guarding/idempotent so it's safe to re-run; all
-> three apply NOTHING — the founder applies the SQL in prod Studio.
+> **Channels:** `06`, `07`, and `09` all read prod via **direct Postgres** (`PROD_DATABASE_URL`).
+> `06` is presence/additive (missing tables/columns/enums/policies); `07`/`09` cover attribute
+> drift (type/nullable/default). Generated DDL stays self-guarding/idempotent so it's safe to
+> re-run; all apply NOTHING — the founder applies the SQL in prod Studio.
+>
+> **Accepted-for-beta drifts:** `compare.ts` carries an `ACCEPTED_DRIFTS` allowlist (the 4
+> `responses` NOT-NULL tightenings + 5 prod-only defaults, founder-signed-off). `07` shows
+> them as `ACCEPTED` and does **not** fail on them; `09` lists them under "accepted — no
+> action" and emits no remediation. As of the latest run prod is fully caught up (0 missing,
+> 0 unexpected drift) — `07` exits 0.
 
 ## Order of the wider bring-up (Option B)
 

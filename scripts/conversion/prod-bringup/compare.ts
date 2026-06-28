@@ -138,6 +138,35 @@ function parseType(t: string): ParsedType {
   return { base: s };
 }
 
+// --------------------------------------------------------- accepted-for-beta drifts
+//
+// Founder-accepted drifts (beta sign-off): real differences between prod and the canonical
+// local schema that are KNOWINGLY tolerated for beta. 07 still SHOWS them (as ACCEPTED) but
+// does NOT count them as failures, and 09 routes them to an "accepted — no action" list
+// instead of review/remediation. Keyed `table.column:dimension` (dimension ∈ type|nullable|
+// default). Prod-only columns/tables are already INFO (never failures) so need no entry.
+
+export type DriftDim = "type" | "nullable" | "default";
+
+export const ACCEPTED_DRIFTS: ReadonlySet<string> = new Set([
+  // responses: timing columns are NOT NULL in canonical local but NULLABLE in prod
+  // (pre-existing rows; tightening deferred past beta — needs a backfill first).
+  "responses.expected_time_sec:nullable",
+  "responses.time_ratio:nullable",
+  "responses.time_flag_config_version:nullable",
+  "responses.used_fallback:nullable",
+  // prod-only defaults retained (additive philosophy; harmless for beta).
+  "responses.time_flag:default",
+  "questions.word_count:default",
+  "questions.operation_type:default",
+  "questions.num_operations:default",
+  "questions.representation:default",
+]);
+
+export function isAcceptedDrift(table: string, column: string, dim: DriftDim): boolean {
+  return ACCEPTED_DRIFTS.has(`${table}.${column}:${dim}`);
+}
+
 export type TypeChange = "SAME" | "WIDEN" | "NARROW" | "INCOMPATIBLE";
 
 /** Classify the cast prod.type -> local.type (we bring prod UP to the canonical local). */

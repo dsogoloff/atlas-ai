@@ -1,28 +1,33 @@
 # Prod type/constraint remediation — REVIEW (human decision required)
 
-_Generated: 2026-06-28T01:57:35.640Z. Source = LOCAL (canonical). Target = PROD (direct Postgres)._
+_Generated: 2026-06-28T02:40:11.401Z. Source = LOCAL (canonical). Target = PROD (direct Postgres)._
 
 These drifts are **NOT** in `remediation.generated.sql` because applying them could fail
 on existing rows, lose data, or change intent. Decide each manually.
 
+## Accepted for beta (no action, no remediation)
+
+- `questions.word_count` default: prod `0` -> local `∅` — accepted for beta (kept).
+- `questions.operation_type` default: prod `'ADDITION'::operation_type` -> local `∅` — accepted for beta (kept).
+- `questions.num_operations` default: prod `1` -> local `∅` — accepted for beta (kept).
+- `questions.representation` default: prod `'SYMBOLIC'::representation_kind` -> local `∅` — accepted for beta (kept).
+- `responses.expected_time_sec` nullable: prod NULL -> local NOT NULL — accepted for beta (tightening deferred).
+- `responses.time_ratio` nullable: prod NULL -> local NOT NULL — accepted for beta (tightening deferred).
+- `responses.time_flag` default: prod `'NORMAL'::time_flag` -> local `∅` — accepted for beta (kept).
+- `responses.time_flag_config_version` nullable: prod NULL -> local NOT NULL — accepted for beta (tightening deferred).
+- `responses.used_fallback` nullable: prod NULL -> local NOT NULL — accepted for beta (tightening deferred).
+
 ## Lossy / narrowing / incompatible type casts
 
-- `responses.time_taken_seconds`: prod `numeric` -> local `numeric(10,3)` — **NARROW** cast (lossy/uncertain); decide manually.
+_None._
 
 ## Tighten NULL -> NOT NULL (backfill first)
 
-- `responses.expected_time_sec`: prod NULLABLE -> local NOT NULL — **backfill nulls first**, then `ALTER COLUMN expected_time_sec SET NOT NULL`.
-- `responses.time_ratio`: prod NULLABLE -> local NOT NULL — **backfill nulls first**, then `ALTER COLUMN time_ratio SET NOT NULL`.
-- `responses.time_flag_config_version`: prod NULLABLE -> local NOT NULL — **backfill nulls first**, then `ALTER COLUMN time_flag_config_version SET NOT NULL`.
-- `responses.used_fallback`: prod NULLABLE -> local NOT NULL — **backfill nulls first**, then `ALTER COLUMN used_fallback SET NOT NULL`.
+_None._
 
 ## Default change / drop (new-row semantics)
 
-- `questions.word_count`: prod has default `0`, local has none — kept (additive). Drop manually only if intended.
-- `questions.operation_type`: prod has default `'ADDITION'::operation_type`, local has none — kept (additive). Drop manually only if intended.
-- `questions.num_operations`: prod has default `1`, local has none — kept (additive). Drop manually only if intended.
-- `questions.representation`: prod has default `'SYMBOLIC'::representation_kind`, local has none — kept (additive). Drop manually only if intended.
-- `responses.time_flag`: prod has default `'NORMAL'::time_flag`, local has none — kept (additive). Drop manually only if intended.
+_None._
 
 ## Prod-only objects (kept — additive, INFO)
 

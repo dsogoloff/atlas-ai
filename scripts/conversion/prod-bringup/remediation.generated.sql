@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Atlas Assessment — PROD type/constraint REMEDIATION (GENERATED, AUTO-SAFE only)
--- Generated: 2026-06-28T01:57:35.640Z
+-- Generated: 2026-06-28T02:40:11.401Z
 -- Source (canonical EXPECTED): LOCAL 127.0.0.1:54322 (post-reset full migration set)
 -- Target: PROD atlas-assessment / ntfaqzueppqymfkefadm
 --

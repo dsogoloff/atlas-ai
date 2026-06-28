@@ -26,7 +26,7 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { introspectLocal, introspectProdSql, localConnString, prodConnString } from "./introspect";
-import { fullCompare, classifyTypeChange, type FullDiff } from "./compare";
+import { fullCompare, classifyTypeChange, isAcceptedDrift, type FullDiff } from "./compare";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SQL_OUT = path.join(HERE, "remediation.generated.sql");
@@ -37,6 +37,7 @@ const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
 interface Auto { kind: "type" | "nullable" | "default" | "enum"; table?: string; col?: string; sql: string; note: string }
 interface Review { kind: string; detail: string }
+interface Accepted { detail: string }
 
 /** Guarded ALTER COLUMN TYPE — only rewrites if the column type still differs from target. */
 function guardedAlterType(table: string, col: string, target: string): string {
@@ -52,9 +53,10 @@ function guardedAlterType(table: string, col: string, target: string): string {
   ].join("\n");
 }
 
-function classify(diff: FullDiff): { autos: Auto[]; reviews: Review[] } {
+function classify(diff: FullDiff): { autos: Auto[]; reviews: Review[]; accepted: Accepted[] } {
   const autos: Auto[] = [];
   const reviews: Review[] = [];
+  const accepted: Accepted[] = [];
 
   // Missing tables / columns -> 06's job (INFO only).
   for (const t of diff.tables) {
@@ -72,7 +74,9 @@ function classify(diff: FullDiff): { autos: Auto[]; reviews: Review[] } {
       const ref = `${t.table}.${c.column}`;
 
       // --- type ---
-      if (d.type) {
+      if (d.type && isAcceptedDrift(t.table, c.column, "type")) {
+        accepted.push({ detail: `\`${ref}\` type: prod \`${d.type.prod}\` -> local \`${d.type.local}\` — accepted for beta.` });
+      } else if (d.type) {
         const change = classifyTypeChange(d.type.prod, d.type.local);
         if (change === "WIDEN") {
           autos.push({ kind: "type", table: t.table, col: c.column, sql: guardedAlterType(t.table, c.column, d.type.local), note: `${ref}: ${d.type.prod} -> ${d.type.local} (widen/lossless)` });
@@ -82,7 +86,9 @@ function classify(diff: FullDiff): { autos: Auto[]; reviews: Review[] } {
       }
 
       // --- nullable ---
-      if (d.nullable) {
+      if (d.nullable && isAcceptedDrift(t.table, c.column, "nullable")) {
+        accepted.push({ detail: `\`${ref}\` nullable: prod ${d.nullable.prod ? "NULL" : "NOT NULL"} -> local ${d.nullable.local ? "NULL" : "NOT NULL"} — accepted for beta (tightening deferred).` });
+      } else if (d.nullable) {
         if (d.nullable.local === true && d.nullable.prod === false) {
           autos.push({ kind: "nullable", table: t.table, col: c.column, sql: `ALTER TABLE public.${q(t.table)} ALTER COLUMN ${q(c.column)} DROP NOT NULL;`, note: `${ref}: loosen NOT NULL -> NULL` });
         } else {
@@ -91,7 +97,9 @@ function classify(diff: FullDiff): { autos: Auto[]; reviews: Review[] } {
       }
 
       // --- default ---
-      if (d.default) {
+      if (d.default && isAcceptedDrift(t.table, c.column, "default")) {
+        accepted.push({ detail: `\`${ref}\` default: prod \`${d.default.prod ?? "∅"}\` -> local \`${d.default.local ?? "∅"}\` — accepted for beta (kept).` });
+      } else if (d.default) {
         if (d.default.prod === null && d.default.local !== null) {
           autos.push({ kind: "default", table: t.table, col: c.column, sql: `ALTER TABLE public.${q(t.table)} ALTER COLUMN ${q(c.column)} SET DEFAULT ${d.default.local};`, note: `${ref}: add missing default ${d.default.local}` });
         } else if (d.default.local === null && d.default.prod !== null) {
@@ -122,7 +130,7 @@ function classify(diff: FullDiff): { autos: Auto[]; reviews: Review[] } {
   for (const n of diff.prodOnlyTables) reviews.push({ kind: "PROD-ONLY-TABLE", detail: `\`${n}\` exists in prod, absent in local — kept (additive).` });
   for (const n of diff.prodOnlyEnums) reviews.push({ kind: "PROD-ONLY-ENUM", detail: `enum \`${n}\` exists in prod, absent in local — kept (additive).` });
 
-  return { autos, reviews };
+  return { autos, reviews, accepted };
 }
 
 function buildSql(autos: Auto[], stamp: string): string {
@@ -157,12 +165,17 @@ function buildSql(autos: Auto[], stamp: string): string {
   return out.join("\n");
 }
 
-function buildReview(reviews: Review[], stamp: string): string {
+function buildReview(reviews: Review[], accepted: Accepted[], stamp: string): string {
   const m: string[] = [];
   m.push("# Prod type/constraint remediation — REVIEW (human decision required)", "");
   m.push(`_Generated: ${stamp}. Source = LOCAL (canonical). Target = PROD (direct Postgres)._`, "");
   m.push("These drifts are **NOT** in `remediation.generated.sql` because applying them could fail");
   m.push("on existing rows, lose data, or change intent. Decide each manually.", "");
+
+  m.push("## Accepted for beta (no action, no remediation)", "");
+  if (accepted.length === 0) m.push("_None._");
+  else for (const a of accepted) m.push(`- ${a.detail}`);
+  m.push("");
 
   const groups: Array<[string, string[]]> = [
     ["Lossy / narrowing / incompatible type casts", ["TYPE-NARROW", "TYPE-INCOMPATIBLE"]],
@@ -191,16 +204,17 @@ async function main(): Promise<void> {
   const local = await introspectLocal(localDsn);
   const prod = await introspectProdSql(prodDsn);
   const diff = fullCompare(local, prod);
-  const { autos, reviews } = classify(diff);
+  const { autos, reviews, accepted } = classify(diff);
 
   writeFileSync(SQL_OUT, buildSql(autos, stamp), "utf8");
-  writeFileSync(REVIEW_OUT, buildReview(reviews, stamp), "utf8");
+  writeFileSync(REVIEW_OUT, buildReview(reviews, accepted, stamp), "utf8");
 
   const w = process.stdout;
   w.write("\n=== REMEDIATION CLASSIFICATION (analysis only, nothing applied) ===\n");
   const byKind = (k: string) => autos.filter((a) => a.kind === k).length;
   w.write(`  AUTO-SAFE: ${autos.length}  (type-widen ${byKind("type")}, drop-not-null ${byKind("nullable")}, add-default ${byKind("default")}, enum-value ${byKind("enum")})\n`);
   w.write(`  REVIEW   : ${reviews.length}\n`);
+  w.write(`  ACCEPTED (beta, no action): ${accepted.length}\n`);
   if (autos.length) {
     w.write("\n  AUTO-SAFE items:\n");
     for (const a of autos) w.write(`    [${a.kind}] ${a.note}\n`);
@@ -208,6 +222,10 @@ async function main(): Promise<void> {
   if (reviews.length) {
     w.write("\n  REVIEW items:\n");
     for (const r of reviews) w.write(`    [${r.kind}] ${r.detail.replace(/`/g, "")}\n`);
+  }
+  if (accepted.length) {
+    w.write("\n  ACCEPTED-for-beta (no action):\n");
+    for (const a of accepted) w.write(`    ${a.detail.replace(/`/g, "")}\n`);
   }
   w.write(`\n  wrote: ${path.relative(process.cwd(), SQL_OUT)}\n`);
   w.write(`  wrote: ${path.relative(process.cwd(), REVIEW_OUT)}\n`);
