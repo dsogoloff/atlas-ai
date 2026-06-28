@@ -40,7 +40,7 @@ import {
 } from "@/app/(parent)/report/strand-labels";
 
 import { InstructorNotice, InstructorTopBar } from "../../_components/shell";
-import { resolveInstructor } from "../../lib/instructor";
+import { resolveStaff } from "../../lib/instructor";
 import { fetchNotesForChild } from "../../lib/notes";
 import { NotesPanel } from "./notes-panel";
 import { ReportViewTracker } from "./report-view-tracker";
@@ -74,44 +74,69 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
     return (
       <InstructorNotice
         title="Sign in required"
-        body="Please sign in to your instructor account to view this student."
+        body="Please sign in to your staff account to view this student."
       />
     );
   }
 
-  const instructor = await resolveInstructor(supabase);
-  if (!instructor) {
+  // Shared detail: an instructor (center-scoped) OR an admin (tenant-scoped)
+  // may view. Notes authoring stays instructor-only (admins don't author).
+  const staff = await resolveStaff(supabase);
+  if (!staff) {
     return (
       <InstructorNotice
-        title="Instructor access required"
-        body="Your account doesn't have an active instructor profile."
+        title="Staff access required"
+        body="Your account doesn't have an active instructor or admin profile."
       />
     );
   }
+  const isInstructor = staff.kind === "instructor";
+  const roleLabel = isInstructor ? "Instructor" : "Admin";
+  const rosterHref = isInstructor ? "/instructor" : "/admin";
 
-  // RLS scopes this read to children at the instructor's center. A child at
-  // another center (or another tenant) returns null → no-access notice.
+  // RLS scopes this read to children the caller can see — an instructor's
+  // center (+ grace), or an admin's whole tenant. A child outside scope
+  // returns null → no-access notice.
   const { data: child } = await supabase
     .from("children")
-    .select("id, name, grade_level, birth_year, home_center_id")
+    .select("id, name, grade_level, birth_year, home_center_id, parent_id")
     .eq("id", childId)
     .maybeSingle();
 
   if (!child) {
     return (
       <InstructorNotice
+        roleLabel={roleLabel}
+        homeHref={rosterHref}
         title="Student not available"
-        body="This student isn't assigned to your center, or the link is stale."
+        body="This student isn't in your scope, or the link is stale."
       />
     );
   }
 
-  // Notes-write is allowed only at the child's CURRENT center (the RLS
-  // write policy forbids writes during prior-center grace). Mirror that in
-  // the UI so grace-period notes render read-only with a clear reason.
-  const canWriteNotes = child.home_center_id === instructor.center_id;
+  // Parent / account panel — ADMIN ONLY. A service-role read scoped to exactly
+  // the viewed child's parent_id, run only AFTER the staff gate confirmed an
+  // admin (a single keyed row, not a scan) — the page already uses the service
+  // client for report assembly. The instructor view stays parent-PII-free
+  // (compliance §6.2 / §10.3): this never runs for kind === "instructor".
+  const parentAccount =
+    staff.kind === "admin"
+      ? await fetchParentAccount(createServiceClient(), child.parent_id)
+      : null;
 
-  const notes = await fetchNotesForChild(supabase, child.id, instructor.id);
+  // Notes-write is instructor-only, and only at the child's CURRENT center
+  // (the RLS write policy forbids writes during prior-center grace). Admins
+  // never author notes — they see them read-only.
+  const canWriteNotes =
+    isInstructor && child.home_center_id === staff.center_id;
+
+  // `mine` tagging needs the author id; an admin has none, so pass a sentinel
+  // that matches no note (admins see every note as a read-only colleague note).
+  const notes = await fetchNotesForChild(
+    supabase,
+    child.id,
+    isInstructor ? (staff.id ?? "") : "",
+  );
 
   // Latest COMPLETED session (RLS-scoped).
   const { data: session } = await supabase
@@ -191,15 +216,27 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
 
   return (
     <>
-      <InstructorTopBar instructorName={instructor.name} />
+      <InstructorTopBar
+        instructorName={staff.name}
+        roleLabel={roleLabel}
+        homeHref={rosterHref}
+      />
       <main className="flex-grow w-full px-6 py-8 md:py-10 max-w-4xl mx-auto">
         <Link
-          href="/instructor"
+          href={rosterHref}
           className="inline-flex items-center gap-2 text-sam-navy/60 hover:text-sam-red transition-colors mb-6 font-headline-adult"
         >
           <span className="material-symbols-outlined text-xl">arrow_back</span>
           <span>Back to roster</span>
         </Link>
+
+        {parentAccount && (
+          <ParentAccountPanel
+            account={parentAccount}
+            gradeLevel={child.grade_level}
+            birthYear={child.birth_year}
+          />
+        )}
 
         {report ? (
           <>
@@ -241,7 +278,10 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           </>
         )}
 
-        {report && session && (
+        {/* Report-viewed tracking + the usefulness rating are instructor-only
+            affordances (the rating is authored by an instructor; the admin
+            view is read-only oversight). */}
+        {isInstructor && report && session && (
           <>
             <ReportViewTracker sessionId={session.id} />
             <UsefulnessPanel sessionId={session.id} />
@@ -252,6 +292,11 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
           childId={child.id}
           notes={notes}
           canWrite={canWriteNotes}
+          readOnlyMessage={
+            isInstructor
+              ? undefined
+              : "Admins can read center notes for oversight but don't author them."
+          }
         />
       </main>
     </>
@@ -391,6 +436,56 @@ async function fetchStrandCoverage(
 }
 
 // =============================================================================
+// Parent / account (ADMIN ONLY) — the viewed child's parent account.
+//
+// Read via the service client, scoped to exactly one parent row (the viewed
+// child's parent_id), and only ever invoked after resolveStaff confirmed an
+// admin. The instructor surface never calls this, so no parent PII reaches a
+// center-scoped instructor (compliance §6.2 / §10.3). The parents table has no
+// phone/address columns — we project only what exists; home_center_id resolves
+// to a center name when set, and is omitted (not blank-rendered) when null.
+// =============================================================================
+
+interface ParentAccountData {
+  name: string;
+  email: string;
+  createdAt: string;
+  /** subscription_tier enum (e.g. "PILOT"). */
+  plan: string;
+  centerName: string | null;
+}
+
+async function fetchParentAccount(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  parentId: string,
+): Promise<ParentAccountData | null> {
+  const { data: parent } = await serviceClient
+    .from("parents")
+    .select("name, email, created_at, subscription_tier, home_center_id")
+    .eq("id", parentId)
+    .maybeSingle();
+  if (!parent) return null;
+
+  let centerName: string | null = null;
+  if (parent.home_center_id) {
+    const { data: center } = await serviceClient
+      .from("centers")
+      .select("name")
+      .eq("id", parent.home_center_id)
+      .maybeSingle();
+    centerName = center?.name ?? null;
+  }
+
+  return {
+    name: parent.name,
+    email: parent.email,
+    createdAt: parent.created_at,
+    plan: parent.subscription_tier,
+    centerName,
+  };
+}
+
+// =============================================================================
 // Presentation
 // =============================================================================
 
@@ -416,6 +511,74 @@ function proficiencyTextColor(pct: number): string {
   if (pct >= 75) return "text-sam-teal";
   if (pct >= 50) return "text-[#b45309]";
   return "text-sam-red";
+}
+
+/** Deterministic short date for "Account created" (fixed locale + UTC so the
+ *  render is stable across server timezones). new Date(iso) is pure. */
+function formatAccountDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function ParentAccountPanel({
+  account,
+  gradeLevel,
+  birthYear,
+}: {
+  account: ParentAccountData;
+  gradeLevel: string | null;
+  birthYear: number | null;
+}) {
+  // Only rows whose data exists are rendered — omit (never blank-render) the
+  // home center when unset and the child fields when null.
+  const rows: Array<{ label: string; value: string }> = [
+    { label: "Parent", value: account.name },
+    { label: "Email", value: account.email },
+    { label: "Account created", value: formatAccountDate(account.createdAt) },
+    ...(account.centerName
+      ? [{ label: "Home center", value: account.centerName }]
+      : []),
+    { label: "Plan", value: account.plan },
+    ...(gradeLevel ? [{ label: "Grade", value: gradeLevel }] : []),
+    ...(birthYear !== null
+      ? [{ label: "Birth year", value: String(birthYear) }]
+      : []),
+  ];
+
+  return (
+    <section
+      className={`mt-2 mb-8 bg-white rounded-[24px] p-6 ${CARD}`}
+      aria-label="Parent and account"
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <span className="material-symbols-outlined text-sam-navy" aria-hidden="true">
+          account_circle
+        </span>
+        <h2 className="font-headline-adult text-[18px] text-sam-navy">
+          Parent / account
+        </h2>
+        <span className="text-[10px] uppercase tracking-wider bg-sam-navy/5 text-sam-navy/70 rounded-full px-2.5 py-0.5">
+          Admin only
+        </span>
+      </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+        {rows.map((row) => (
+          <div key={row.label} className="flex flex-col">
+            <dt className="text-[11px] uppercase tracking-wider text-sam-gray-mid">
+              {row.label}
+            </dt>
+            <dd className="font-headline-adult text-sam-navy break-words">
+              {row.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 function StudentSummaryHeader({

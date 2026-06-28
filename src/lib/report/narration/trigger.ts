@@ -40,6 +40,7 @@ import { emit } from "@/lib/analytics/emit";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { assembleReportContent } from "@/lib/report/assemble";
 import { generateReportNarration } from "@/lib/report/narration/generate";
+import { upsertNarration } from "@/lib/report/narration/persist";
 import type { Database } from "@/lib/supabase/database.types";
 
 export async function attemptNarration(
@@ -88,24 +89,9 @@ export async function attemptNarration(
 
     // 4. Upsert into report_narrations keyed on session_id (PK). On
     // conflict, overwrite — re-completion or retry produces a fresh row
-    // rather than erroring.
-    const { error: upsertErr } = await serviceClient
-      .from("report_narrations")
-      .upsert(
-        {
-          session_id: narration.session_id,
-          tenant_id: narration.tenant_id,
-          generated_at: narration.generated_at,
-          model: narration.model,
-          status: narration.status,
-          placement_line: narration.placement_line ?? null,
-          strand_lede: narration.strand_lede ?? null,
-          findings_strengths: narration.key_findings?.strengths ?? null,
-          findings_growth_areas: narration.key_findings?.growth_areas ?? null,
-          recommendations_lede: narration.recommendations_lede ?? null,
-        },
-        { onConflict: "session_id" },
-      );
+    // rather than erroring. Shared with the report-page self-heal via
+    // upsertNarration so the column mapping stays in one place.
+    const { error: upsertErr } = await upsertNarration(serviceClient, narration);
     if (upsertErr) {
       console.error("[narration] upsert failed", {
         sessionId,

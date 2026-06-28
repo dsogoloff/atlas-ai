@@ -3,7 +3,65 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-27
+
+* **Prod bring-up schema analysis completed as analysis-only artifacts (PR #181,
+  lane/prod-bringup-schema-analysis, 2026-06-27).** Analysis-only session; no prod
+  connection, no writes, no DB commands. PROD = atlas-assessment (project ref
+  `ntfaqzueppqymfkefadm`), the LIVE DB — not atlas-assessment-2 (dead). Prod was
+  hand-applied via Studio (no CI); schema is behind repo migrations; the
+  `schema_migrations` log may be stale. All artifacts trust `information_schema`/
+  `pg_catalog`, not the migration log. Two confirmed prod gaps carried in from ATLAS:
+  `questions.short_test_eligible` column missing; `question-images` storage bucket
+  missing. Deliverables: `scripts/conversion/prod-bringup/01-inspect-prod-schema.sql`
+  (100% read-only inspection — enum types+values, questions columns, serve/report tables,
+  assessment_sessions columns, constraints, active question counts by level, taxonomy
+  row count, bucket + object count); `scripts/conversion/prod-bringup/02-catchup-additive-schema.sql`
+  (ADDITIVE-ONLY idempotent catch-up; no DROP, no destructive ALTER, no data; each
+  statement tagged with its source migration; ordered types→tables→columns/FK→constraints);
+  `scripts/conversion/prod-bringup/README.md` (bring-up order, migration→object coverage
+  table, excluded non-additive contingencies). Migrations covered in the catch-up script:
+  20260507000000, 20260610170000/20260614120000/20260615120000, 20260616120000,
+  20260616120050, 20260525000001, 20260525000003, 20260611090000, 20260621130000,
+  20260510000000, 20260612090000, 20260613120000, 20260525000000/20260526000000,
+  20260625120400. Key non-additive finding flagged but NOT in catch-up script: migration
+  `20260511000200` recasts the `strand` enum uppercase→lowercase; if prod still has the
+  old uppercase enum the bank will not load and a separate reviewed destructive recast
+  migration is required. The inspection step 1 reports prod's actual strand values.
+  Also excluded: question-images bucket (step 2); taxonomy reference rows + question-bank
+  rows (step 4 data). No L5/L6-specific schema (L5/L6 is data-only; 5A/6A are base
+  `half_grade_level` values). Verify GREEN: 1371 tests / 105 files, tsc 0, lint 0 errors
+  (2 known warnings), seed↔migration parity PASS (81 migrations; artifacts live under
+  scripts/, not supabase/migrations/, so parity/CI are unaffected). Codex manual/skipped
+  (relay unauth). All prod bring-up actions are founder-gated on prod service_role creds
+  + explicit go-ahead; manual Studio/uploader path throughout.
+
+* **Open / unconfirmed (needs Dimitri) — prod strand enum case (prod bring-up, 2026-06-27).**
+  The inspection script will report whether prod's `strand` enum values are lowercase
+  (correct, matches current bank) or uppercase (legacy, would block bank load). If
+  uppercase, a non-additive destructive recast migration must be written and reviewed
+  before the bank load can proceed. Cannot auto-resolve; inspection output needed.
+
 ## 2026-06-26
+
+* **Migration version collision resolved by renaming the later file, not the canonical anchor
+  (PR #174, lane/fix-migration-version-collision, 2026-06-26).** Two migration files held
+  version prefix 20260625120000 after PRs #169 and #170 merged independently on the same day.
+  Decision: keep `20260625120000_l5l6_booklet_reband.sql` unchanged — it anchors the
+  120000–120300 batch and is referenced by siblings (`load_missing_rows`, `q27_activate`
+  comments) and the seed.sql mirror header. Rename the later admin file to the next free
+  slot: `20260625120000_admins_tenant_view.sql` → `20260625120400_admins_tenant_view.sql`
+  (git mv; rename only; content unchanged). The admin migration had no seed mirror and no
+  version-keyed references; no later migration depends on the admins table; DDL order is
+  preserved. Zero duplicate version prefixes remain across all 81 migration files. Verify
+  GREEN: 1359 tests / 104 files, tsc 0, lint 0 errors (2 known warnings), seed↔migration
+  parity PASS (81 migrations). Codex manual/skipped (relay unauth).
+  Recurring lesson (3rd incident): parallel `lane/*` branches independently pick timestamp-
+  style version prefixes and can collide when two lanes pick the same minute and both merge.
+  The `schema_migrations` PK is on version, so a duplicate breaks `supabase db reset` only
+  AFTER both merge (each lane's own reset passes in isolation). No automated guard exists
+  in CI; see TECHNICAL_DEBT.md.
+
 
 * **Answer log now resolves tap/id-set answers to readable labels via a dedicated
   `humanize.ts` module; raw JSON never surfaces to parents (PR #171,
@@ -68,6 +126,68 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   prop for the read-only state. Report content, strand bars, misconceptions, and item
   review render for both instructor and admin. Compliance is unchanged (no parent PII
   exposed; licensed question content gated).
+
+* ⚑ **LOCKED — L5/L6 content bands at BOOKLET LEVEL, not difficulty or per-question Level
+  column (PR #169, lane/l5l6-booklet-reband-load-images, 2026-06-25).** Founder-locked
+  decision: SAM-L5-* rows band to 5A (L5 booklet floor); SAM-L6-* rows band to 6A (L6
+  booklet floor). The A/B difficulty suffix (derived from the per-question "Level" column
+  in the source worksheet) is dropped and collapsed to the booklet floor. Content_id (skill
+  sub-strand node) is untouched. This SUPERSEDES the already-merged
+  `20260623150000_l5l6_releveling` migration, which had banded by the per-question Level
+  column (L5 review→4A/4B, L6 review→5A/5B, A/B preserved for non-review items). The
+  superseding re-band is in migration `20260625120000_l5l6_booklet_reband.sql`. Rationale:
+  L5/L6 review content bands at the BOOKLET LEVEL, not at the difficulty/question-granularity
+  level. The A/B collapse is reversible via one UPDATE if the decision changes. This decision
+  resolves the "Level review (founder/picker decision)" follow-up from the
+  l5l6-conversion-status-2026-06-23 session.
+
+* **L5/L6 conversion: 6 skipped rows loaded; 15 inactive image rows wired; SAM-L5-Q26
+  options corrected (PR #169, 2026-06-25).** Six gradeable rows that the prior pipeline run
+  had skipped are now loaded at booklet-level band (5A/6A): SAM-L5-Q01 (place-value MC),
+  SAM-L5-Q10 (order fractions DRAG_DROP), SAM-L5-Q16 (order decimals DRAG_DROP),
+  SAM-L5-Q18 (decimal→fraction MC), SAM-L6-Q22 (unit conversion NUMERIC), SAM-L6-Q27
+  (fraction>50% MC). All six are short_test_eligible=true (Short Test column = Y in the
+  source key; key-driven, not manual). Ordering items authored as DRAG_DROP. Separately,
+  single-stimulus image_path values were wired for 15 inactive L5/L6 image rows (L5
+  Q08/Q14/Q25/Q26; L6 Q14/Q15/Q16/Q19/Q25/Q26/Q30/Q31/Q32/Q33/Q34); those rows remain
+  is_active=false (activation-ready once images are uploaded). SAM-L5-Q26 corrected: the
+  loaded row had fabricated options C/D that do not appear on the worksheet; worksheet shows
+  only figures A and B, so options are ["A","B"] with correct_index 1 (answer key = B). All
+  content source-verified against worksheet pages + answer-key PDFs + Question Summary this
+  session. SAM-L5-Q27 HELD: 4 options are each a separate shape image; no single stimulus
+  exists; per-tile minting for image-option MC not yet in serveQuestion.ts. SAM-L6-Q18
+  excluded (text-only, cube volume, already active). Three migrations + seed.sql mirror
+  (78 total); parity PASS. Verify GREEN 1336 tests / 102 files, tsc 0, lint 0 errors.
+  Codex manual/skipped (relay unauth).
+
+* **SAM-L5-Q27 activated after founder supplied a combined 4-shape crop (follow-up commit on
+  PR #169 lane, 2026-06-25).** SAM-L5-Q27 had been HELD in the prior commit because its four
+  answer choices were each a separate shape image (circle/hexagon/heart/rectangle) with no
+  single stimulus, and per-tile image minting for image-option MC is not yet in
+  serveQuestion.ts. The founder supplied a single combined crop at
+  `scripts/conversion/source/5/L5-27.png` showing all four shapes with in-image labels
+  (1)-(4), resolving the per-tile problem: Q27 is now a standard single-stimulus MC whose
+  text options reference the in-image labels. Migration `20260625120300_l5_q27_activate.sql`
+  + seed.sql mirror block (`l5-q27-activate`, appended after `l5l6-image-path-wire`): UPDATE
+  sets content (image_path `l5/sam-l5-q27.png` + sharpened image_alt) and is_active=true.
+  Stem/options/correct_index already correct and unchanged: "Which of the shapes has the most
+  lines of symmetry?"; options ["(1)","(2)","(3)","(4)"]; correct_index 0 (circle has
+  infinitely many lines of symmetry). Banding 5A; short_test_eligible=true; content_id
+  l4-geometry-3 (Symmetry node) — all already set by prior migrations, untouched. SOURCE_MAP
+  entry `l5/sam-l5-q27.png` added in `scripts/conversion/activation-image-set.ts` (l5 now
+  5 keys). Source-verified: worksheet page-13 + answer-key PDF + new L5-27.png crop. Verify
+  GREEN 1336 tests / 102 files, tsc 0, lint 0 errors, seed↔migration parity PASS (79
+  migrations), convert:upload-activation-images --check PASS. Codex manual/skipped (relay
+  unauth). NOTE: unlike the other 15 image rows (is_active=false, activation-ready), Q27 is
+  now LIVE (is_active=true); founder must upload l5/sam-l5-q27.png to the private
+  question-images bucket BEFORE or with `supabase db reset` post-merge, or the active row
+  will 500 at serve time.
+
+* **`purge-staging.ts` utility added for clearing stray conversion-staging/ bucket renders
+  (PR #169, 2026-06-25).** `scripts/conversion/purge-staging.ts` + `convert:purge-staging`
+  npm script. Founder-run; dry-run default; --apply flag to execute deletes. Targets the 15
+  full-page renders under `question-images/conversion-staging/` that were uploaded during
+  prior pipeline runs and are now superseded by the curated per-question crops.
 
 * ⚑ **Pre-narration gap closed with a bounded polling interstitial (founder Option 1)
   (PR #166, lane/young-band-narration-render, 2026-06-25).** Root cause: `report_narrations`

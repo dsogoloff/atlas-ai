@@ -16,10 +16,15 @@ export function NotesPanel({
   childId,
   notes,
   canWrite,
+  readOnlyMessage,
 }: {
   childId: string;
   notes: NoteView[];
   canWrite: boolean;
+  /** Shown in place of the add-note form when canWrite is false. Defaults to
+   *  the instructor prior-center grace explanation; the admin (read-only
+   *  oversight) view passes its own. */
+  readOnlyMessage?: string;
 }) {
   return (
     <section className="mt-12">
@@ -34,8 +39,8 @@ export function NotesPanel({
         <NewNoteForm childId={childId} />
       ) : (
         <p className="text-sm text-sam-gray-mid bg-sam-gray-light/40 rounded-xl px-4 py-3 mb-4">
-          This student is at another center within the grace window. You can
-          read existing notes but can&rsquo;t add or edit them.
+          {readOnlyMessage ??
+            "This student is at another center within the grace window. You can read existing notes but can’t add or edit them."}
         </p>
       )}
 

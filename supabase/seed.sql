@@ -1044,6 +1044,70 @@ set home_center_id = (
 )
 where id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
+-- =============================================================================
+-- Dev ADMIN (tenant-wide) — a third, separate login from the parent and the
+-- instructor.  admin@atlas.local / admin-password.  An admin sees EVERY child
+-- in the tenant across all centers; the seed children already belong to the
+-- dev tenant, so the admin roster shows them. Ids keep the v4/variant nibbles
+-- (4 at pos 13, 8 at pos 17) per the seed-UUID note above. The admin auth user
+-- id MUST stay distinct from every other seeded auth.users id — in particular
+-- the dev PARENT (aaaa…). A collision here is silent: `on conflict (id) do
+-- nothing` skips the admin insert, leaving no admin auth user / identity (the
+-- admins profile row still inserts, dangling onto the colliding user), so
+-- admin@atlas.local login is rejected. Digit-9 id is unused elsewhere in seed.
+-- Idempotent via on-conflict.
+-- =============================================================================
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  is_sso_user, is_anonymous,
+  confirmation_token, recovery_token, email_change_token_new, email_change
+)
+values (
+  '99999999-9999-4999-8999-999999999999',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'admin@atlas.local',
+  crypt('admin-password', gen_salt('bf', 10)),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"name":"Dev Admin"}'::jsonb,
+  now(),
+  now(),
+  false,
+  false,
+  '', '', '', ''
+)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+)
+values (
+  gen_random_uuid(),
+  '99999999-9999-4999-8999-999999999999',
+  '99999999-9999-4999-8999-999999999999',
+  'email',
+  '{"sub":"99999999-9999-4999-8999-999999999999","email":"admin@atlas.local","email_verified":true,"phone_verified":false}'::jsonb,
+  now(), now(), now()
+)
+on conflict (provider_id, provider) do nothing;
+
+-- Admin profile at the dev tenant (no center — admins are tenant-wide).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into admins (id, auth_user_id, tenant_id, email, name, status)
+select
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  '99999999-9999-4999-8999-999999999999',
+  t.id,
+  'admin@atlas.local',
+  'Dev Admin',
+  'ACTIVE'::admin_status
+from t
+on conflict (id) do nothing;
+
 -- A COMPLETED assessment for the dev child. current_estimate is the persisted
 -- PlacementEstimate (overall_level '2B' -> "S.A.M Level 2B"; tier K_4).
 -- session_time_flag 'normal' -> full report, no caveat banner.
@@ -4478,6 +4542,191 @@ update questions q
 set content = '{"stem":"Parking charges at a car park are shown below. The first hour costs $3.40, and every additional ½ hour (or part thereof) costs $1.50. Tom parked his car at the car park from 11 am to 1:15 pm. How much did he pay?","correct_answer":"$7.90"}'::jsonb
 from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q24';
 -- END l6-q24-table-to-prose
+
+
+-- BEGIN l5l6-booklet-reband (seed mirror of supabase/migrations/20260625120000_l5l6_booklet_reband.sql)
+-- Founder decision (locked): L5/L6 review content bands at BOOKLET LEVEL — not difficulty and
+-- not the per-question "Level" column. Every Level 5 booklet item -> 5A; every Level 6 booklet
+-- item -> 6A. SUPERSEDES the l5l6-releveling block above (which banded by the Level column:
+-- L5 review -> 4A/4B, L6 review -> 5A/5B). A/B (difficulty-derived) is dropped to the booklet
+-- floor. content_id (skill node) untouched. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '5A'::half_grade_level
+from t where q.tenant_id = t.id and q.external_id like 'SAM-L5-%';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set level = '6A'::half_grade_level
+from t where q.tenant_id = t.id and q.external_id like 'SAM-L6-%';
+-- END l5l6-booklet-reband
+
+
+-- BEGIN l5l6-load-missing-rows (seed mirror of supabase/migrations/20260625120100_l5l6_load_missing_rows.sql)
+-- The 6 gradeable L5/L6 rows the prior run skipped, authored + source-verified 2026-06-25
+-- (worksheet page + answer-key PDF + Question Summary). Banded to BOOKLET level (5A/6A);
+-- content_id = source skill node; short_test_eligible = true (Short=Y, key-driven). The two
+-- ordering items are DRAG_DROP (id-keyed order grading). Idempotent (on conflict).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+insert into questions
+  (tenant_id, external_id, strand, level, difficulty, format,
+   content, misconception_tags,
+   word_count, operation_type, num_operations, representation,
+   is_active, short_test_eligible, content_id)
+select t.id, v.external_id, v.strand::strand, v.level::half_grade_level,
+       v.difficulty, v.format::question_format,
+       v.content::jsonb, v.misconception_tags,
+       v.word_count, v.operation_type::operation_type, v.num_operations,
+       v.representation::representation_kind,
+       v.is_active, v.short_test_eligible,
+       (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = v.content_key)
+from t,
+  (values
+    ('SAM-L5-Q01', 'number_sense', '5A', 0.0, 'MULTIPLE_CHOICE',
+     '{"stem":"What is the missing number?\n25 608 = 20 000 + 5000 + ___ + 8","options":["6","60","600","6000"],"correct_index":2,"distractor_misconceptions":{"0":"NS_PLACE_VALUE_CONFUSION","1":"NS_PLACE_VALUE_CONFUSION","3":"NS_PLACE_VALUE_CONFUSION"}}',
+     array['NS_PLACE_VALUE_CONFUSION'],
+     12, 'IDENTIFY', 1, 'SYMBOLIC', true, true, 'l4-whole_numbers-1'),
+
+    ('SAM-L5-Q10', 'fractions_decimals', '5A', 0.5, 'DRAG_DROP',
+     '{"stem":"Arrange the following in increasing order.","items":["9/2","10/3","3","14/4"],"correct_order":["3","10/3","14/4","9/2"]}',
+     array['FR_NUM_DENOM_INDEPENDENT','NS_MAGNITUDE_MISJUDGE'],
+     6, 'IDENTIFY', 1, 'SYMBOLIC', true, true, 'l4-fractions-1'),
+
+    ('SAM-L5-Q16', 'fractions_decimals', '5A', 0.4, 'DRAG_DROP',
+     '{"stem":"Arrange the decimals in decreasing order.","items":["3.671","3","3.617","3.716"],"correct_order":["3.716","3.671","3.617","3"]}',
+     array['NS_MAGNITUDE_MISJUDGE','NS_PLACE_VALUE_CONFUSION'],
+     6, 'IDENTIFY', 1, 'SYMBOLIC', true, true, 'l4-decimals-1'),
+
+    ('SAM-L5-Q18', 'fractions_decimals', '5A', 0.6, 'MULTIPLE_CHOICE',
+     '{"stem":"Express 8.35 as a fraction in its simplest form.","options":["835/100","8 35/10","8 7/20","8 3/4"],"correct_index":2,"distractor_misconceptions":{"0":"FR_FRACTION_AS_TWO_NUMS","1":"NS_PLACE_VALUE_CONFUSION","3":"NS_PLACE_VALUE_CONFUSION"}}',
+     array['FR_FRACTION_AS_TWO_NUMS','NS_PLACE_VALUE_CONFUSION'],
+     8, 'DECIMAL_OP', 1, 'SYMBOLIC', true, true, 'l4-decimals-3'),
+
+    ('SAM-L6-Q22', 'fractions_decimals', '6A', 0.3, 'NUMERIC_ENTRY',
+     '{"stem":"Express 0.052 kg in grams.","correct_answer":"52","accepted_answers":["52 g"]}',
+     array['MD_UNIT_CONFUSION','NS_PLACE_VALUE_CONFUSION'],
+     5, 'DECIMAL_OP', 1, 'SYMBOLIC', true, true, 'l5-decimals-2'),
+
+    ('SAM-L6-Q27', 'fractions_decimals', '6A', 0.4, 'MULTIPLE_CHOICE',
+     '{"stem":"Which of the following fractions is greater than 50%?","options":["1/2","2/5","3/8","3/5"],"correct_index":3,"distractor_misconceptions":{"0":"FR_NUM_DENOM_INDEPENDENT","1":"FR_NUM_DENOM_INDEPENDENT","2":"FR_NUM_DENOM_INDEPENDENT"}}',
+     array['FR_NUM_DENOM_INDEPENDENT'],
+     8, 'PERCENT_OP', 1, 'SYMBOLIC', true, true, 'l5-percentage-2')
+  ) as v(external_id, strand, level, difficulty, format, content,
+         misconception_tags, word_count, operation_type, num_operations,
+         representation, is_active, short_test_eligible, content_key)
+on conflict (tenant_id, external_id) do nothing;
+-- END l5l6-load-missing-rows
+
+
+-- BEGIN l5l6-image-path-wire (seed mirror of supabase/migrations/20260625120200_l5l6_image_path_wire.sql)
+-- Wire the single per-question stimulus image_path for inactive L5/L6 image-essential rows
+-- (crops in source/5 + source/6; SOURCE_MAP in scripts/conversion/activation-image-set.ts).
+-- Rows STAY is_active=false (activation-ready); founder uploads the bucket images then flips
+-- active. Every crop + worksheet page source-verified 2026-06-25. SAM-L5-Q26 also corrected:
+-- only figures A and B exist (loaded row had fabricated C/D) -> options ["A","B"], correct 1
+-- (answer key = B). HELD (no single-stimulus source): SAM-L5-Q27 (4 separate option images).
+-- SAM-L6-Q18 is text-only. Idempotent (jsonb || overwrites the key on re-run).
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l5/sam-l5-q08.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q08';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l5/sam-l5-q14.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q14';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l5/sam-l5-q25.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q25';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"In which of the following figures is the dotted line a line of symmetry?","options":["A","B"],"correct_index":1,"distractor_misconceptions":{"0":"GE_SHAPE_PROPERTY"},"image_path":"l5/sam-l5-q26.png","image_alt":"Two figures: A is a rectangle with a diagonal line drawn across it; B is a regular pentagon with a line drawn through one vertex. Identify which dotted line is a true line of symmetry.","image_required":true}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L5-Q26';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q14.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q14';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q15.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q15';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q16.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q16';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q19.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q19';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q25.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q25';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q26.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q26';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q30.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q30';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q31.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q31';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q32.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q32';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q33.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q33';
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set content = q.content || '{"image_path":"l6/sam-l6-q34.png"}'::jsonb
+from t where q.tenant_id = t.id and q.external_id = 'SAM-L6-Q34';
+-- END l5l6-image-path-wire
+
+
+-- BEGIN l5-q27-activate (seed mirror of supabase/migrations/20260625120300_l5_q27_activate.sql)
+-- Q27 was HELD (4 separate option-shape images). Founder supplied a single combined crop with
+-- in-image labels (1)-(4): circle/hexagon/heart/rectangle. Now a standard single-stimulus MC.
+-- Source-verified 2026-06-25 (worksheet page + answer key = (1) + L5-27.png). Wire image_path,
+-- sharpen image_alt, ACTIVATE (is_active=true). level 5A / STE true / content_id l4-geometry-3
+-- already correct (set elsewhere). Founder uploads l5/sam-l5-q27.png before reset. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q
+set content = '{"stem":"Which of the shapes has the most lines of symmetry?","options":["(1)","(2)","(3)","(4)"],"correct_index":0,"distractor_misconceptions":{"1":"GE_SHAPE_PROPERTY","2":"GE_SHAPE_PROPERTY","3":"GE_SHAPE_PROPERTY"},"image_path":"l5/sam-l5-q27.png","image_alt":"Four labelled shapes shown together: (1) a circle, (2) a hexagon, (3) a heart, and (4) a rectangle. Identify which shape has the most lines of symmetry.","image_required":true}'::jsonb,
+    is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id = 'SAM-L5-Q27';
+-- END l5-q27-activate
+
+
+-- BEGIN l5l6-geometry-activation (seed mirror of supabase/migrations/20260626120000_l5l6_geometry_activation.sql)
+-- ATLAS QA: L5/L6 short test served no geometry — root cause was ACTIVATION (rows is_active=false
+-- though image_path wired in #169, crops uploaded, short_test_eligible=true; picker filters
+-- is_active first). Flip is_active=true. image_path already persisted; content_id source-accurate
+-- and unchanged (geometry: L5-Q14/Q26, L6-Q31/32/33/34; area_volume: L5-Q25, L6-Q14/15/16/19/25;
+-- percentage: L6-Q30). Q27 already active; L5-Q24/L6-Q18 text rows already active; L6-Q17 manual
+-- draw never loaded (held). Crops re-source-verified 2026-06-26. Idempotent.
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L5-Q14','SAM-L5-Q25','SAM-L5-Q26'
+  );
+
+with t as (select id from tenants where slug = 'inspirea_singapore_math')
+update questions q set is_active = true
+from t
+where q.tenant_id = t.id
+  and q.external_id in (
+    'SAM-L6-Q14','SAM-L6-Q15','SAM-L6-Q16','SAM-L6-Q19','SAM-L6-Q25',
+    'SAM-L6-Q30','SAM-L6-Q31','SAM-L6-Q32','SAM-L6-Q33','SAM-L6-Q34'
+  );
+-- END l5l6-geometry-activation
 
 
 -- =============================================================================

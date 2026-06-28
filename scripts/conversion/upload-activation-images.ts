@@ -16,9 +16,15 @@
 //     exits non-zero on FAIL (this catches "upload silently no-op'd / empty bucket").
 //
 // Run:
-//   pnpm convert:upload-activation-images          upload + post-upload audit gate
+//   pnpm convert:upload-activation-images          upload to LOCAL + post-upload audit gate
 //   pnpm convert:upload-activation-images --check  derive + map/disk pre-flight only (no Supabase)
+//   pnpm convert:upload-activation-images:prod     upload to PROD (loads .env.prod.local; --prod baked in)
 // Audit-only (anytime after reset+upload): pnpm convert:verify-images
+//
+// TARGET SAFETY: prod is reachable ONLY via the explicit --prod flag (the
+// :prod script). A default run loads .env.local and refuses any non-local URL,
+// so it can never accidentally point at prod. Prod creds live ONLY in the
+// gitignored .env.prod.local — never in .env.local or the repo.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFile } from "node:fs/promises";
@@ -39,8 +45,8 @@ import {
 } from "./activation-image-set";
 
 /** Minimal dotenv loader (no dependency): only fills keys not already in env. */
-function loadEnvFile(): string | null {
-  const candidate = process.env.ENV_FILE ?? path.join(REPO_ROOT, ".env.local");
+function loadEnvFile(fileName: string): string | null {
+  const candidate = process.env.ENV_FILE ?? path.join(REPO_ROOT, fileName);
   if (!existsSync(candidate)) return null;
   for (const raw of readFileSync(candidate, "utf8").split(/\r?\n/)) {
     const line = raw.trim();
@@ -63,6 +69,7 @@ function fmtBytes(n: number): string {
 
 async function main(): Promise<void> {
   const checkOnly = process.argv.includes("--check");
+  const prod = process.argv.includes("--prod");
 
   // --- Derive the required set from the DB source of truth ------------------
   const required = activeImagePaths();
@@ -99,15 +106,34 @@ async function main(): Promise<void> {
   }
 
   // --- Connect ------------------------------------------------------------
-  const envFile = loadEnvFile();
+  // Target selection is EXPLICIT. Default (no flag) loads .env.local and refuses
+  // any non-local URL — so a normal run can NEVER reach prod (the default env file
+  // holds no prod creds, and the guard below blocks a non-local URL regardless).
+  // Prod is reachable ONLY via the explicit --prod flag, which loads the dedicated,
+  // gitignored .env.prod.local (the only place prod creds live).
+  const envFile = loadEnvFile(prod ? ".env.prod.local" : ".env.local");
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const isLocal = /127\.0\.0\.1|localhost/.test(url);
   if (!key) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set (env or .env.local). Set it and re-run, or use --check.");
-  }
-  if (!/127\.0\.0\.1|localhost/.test(url) && process.env.ALLOW_NONLOCAL !== "true") {
     throw new Error(
-      `Refusing non-local SUPABASE_URL (${url}). LOCAL QA uploader; set ALLOW_NONLOCAL=true for a reviewed prod run.`,
+      prod
+        ? "SUPABASE_SERVICE_ROLE_KEY not set — populate .env.prod.local with the prod service_role key and re-run."
+        : "SUPABASE_SERVICE_ROLE_KEY not set (env or .env.local). Set it and re-run, or use --check.",
+    );
+  }
+  if (prod) {
+    // Explicit prod run: targeting prod is intended. Guard the inverse mistake —
+    // --prod given but the URL is local (prod env file not populated) -> abort.
+    if (isLocal) {
+      throw new Error(
+        `--prod given but NEXT_PUBLIC_SUPABASE_URL is local/empty (${url}). Populate .env.prod.local with the PROD url; aborting.`,
+      );
+    }
+    process.stdout.write(`\n[upload-activation-images] *** PROD TARGET *** (--prod)\n`);
+  } else if (!isLocal && process.env.ALLOW_NONLOCAL !== "true") {
+    throw new Error(
+      `Refusing non-local SUPABASE_URL (${url}). LOCAL QA uploader; use --prod (loads .env.prod.local) for a reviewed prod run.`,
     );
   }
   process.stdout.write(`\n[upload-activation-images] target ${url} | bucket ${BUCKET} | env ${envFile ?? "(process env)"}\n`);

@@ -30,7 +30,20 @@ import { redirect } from "next/navigation";
 import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import { firstName } from "@/lib/format/firstName";
 import { assembleReportContent } from "@/lib/report/assemble";
-import { resolveNarrationProse } from "@/lib/report/narration/resolve";
+import { generateReportNarration } from "@/lib/report/narration/generate";
+import { upsertNarration } from "@/lib/report/narration/persist";
+import {
+  failedNarrationMarker,
+  narrationToRow,
+  shouldRegenerateNarration,
+} from "@/lib/report/narration/refresh";
+import {
+  resolveNarrationProse,
+  type ReportNarrationRow,
+} from "@/lib/report/narration/resolve";
+import type { ReportNarration } from "@/lib/report/types";
+import { isNarrationPending, nowMs } from "./narration-pending";
+import { PreparingReport } from "./preparing-report";
 import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -226,11 +239,51 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   }
 
   // ---- Branch 7: full report.
+  const serviceClient = createServiceClient();
+
+  // Read the narration row first (cheap). A freshly-completed session's
+  // narration is written a few seconds AFTER completion (the trigger generates
+  // + persists post-completion), so a report opened in that gap has no row yet.
+  // Show a brief "preparing your report" interstitial that polls until the row
+  // lands, rather than flashing the pre-narration shell (generic strand lede,
+  // no Strengths / Areas). The wait is bounded (narration-pending.ts): a
+  // narration that fails or never arrives falls through to the normal report
+  // below, so the parent is never trapped on an indefinite interstitial.
+  const { data: narrationRow, error: narrationErr } = await supabase
+    .from("report_narrations")
+    .select(
+      "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
+    )
+    .eq("session_id", latestSession.id)
+    .maybeSingle();
+  if (narrationErr) {
+    console.error("[report] narration lookup failed", {
+      sessionId: latestSession.id,
+      err: narrationErr,
+    });
+  }
+
+  if (
+    isNarrationPending(
+      narrationRow != null,
+      latestSession.completed_at,
+      nowMs(),
+    )
+  ) {
+    const completed = formatDate(latestSession.completed_at);
+    return (
+      <PreparingReport
+        childName={firstName(child.name)}
+        metaLine={completed ? `Assessed ${completed}` : null}
+      />
+    );
+  }
+
   let reportContent;
   try {
     reportContent = await assembleReportContent({
       readClient: supabase,
-      serviceClient: createServiceClient(),
+      serviceClient,
       session: latestSession,
       child,
     });
@@ -247,21 +300,73 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
     );
   }
 
-  const { data: narrationRow, error: narrationErr } = await supabase
-    .from("report_narrations")
-    .select(
-      "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
-    )
-    .eq("session_id", latestSession.id)
-    .maybeSingle();
-  if (narrationErr) {
-    console.error("[report] narration lookup failed", {
-      sessionId: latestSession.id,
-      err: narrationErr,
-    });
+  // Self-heal a missing or stale narration, AT MOST ONCE per session. Two
+  // recoverable shapes (see shouldRegenerateNarration):
+  //   (1) NO cached row at all + live content has strand data — the
+  //       completion-time trigger (attemptNarration) threw before persisting
+  //       (a transient callSonnet failure as the session completed). The report
+  //       renders data-only with no strengths/growth narrative. This is the L4
+  //       defect.
+  //   (2) A strand-suppressed "ok" row + live content now has strand data — a
+  //       pre-#160 young-band row narrated when sub-strand resolution was empty,
+  //       so generate.ts's anti-fabrication guard suppressed strand_lede +
+  //       strengths. The radar/bars already reflect #160 (assembled live above);
+  //       the cached narrative does not.
+  // In both, regenerate once from the already-assembled content and re-cache.
+  //
+  // REGEN-LOOP GUARD: when there was NO prior row and regeneration fails (throws
+  // or comes back thin), persist a status:"failed" marker so the next view sees
+  // a row → shouldRegenerateNarration is false → the report settles into the
+  // data-only fallback instead of regenerating on every load. A deterministically
+  // failing session converges; it never loops. For the strand-suppressed case a
+  // useful row already exists (placement/recs), so we never clobber it with a
+  // failed marker — it keeps its existing re-attempt-on-success behavior.
+  // Fail-soft throughout: any error serves the data-only fallback, never blocks.
+  let effectiveNarrationRow: ReportNarrationRow | null = narrationRow ?? null;
+  if (shouldRegenerateNarration(effectiveNarrationRow, reportContent)) {
+    const hadCachedRow = effectiveNarrationRow !== null;
+    let fresh: ReportNarration | null = null;
+    try {
+      fresh = await generateReportNarration(reportContent);
+    } catch (err) {
+      console.error("[report] narration self-heal generation threw", {
+        sessionId: latestSession.id,
+        err: err instanceof Error ? err.message : "unknown",
+      });
+    }
+    if (fresh && fresh.status === "ok" && fresh.strand_lede) {
+      // Regeneration filled the strand prose — adopt + re-cache.
+      const { error: healErr } = await upsertNarration(serviceClient, fresh);
+      if (healErr) {
+        console.error("[report] narration self-heal upsert failed", {
+          sessionId: latestSession.id,
+          err: healErr,
+        });
+      } else {
+        effectiveNarrationRow = narrationToRow(fresh);
+      }
+    } else if (!hadCachedRow) {
+      // No prior row + regeneration failed or thin → persist the once-guard
+      // marker. effectiveNarrationRow stays null, so this view also renders the
+      // data-only fallback; the marker only stops the NEXT view from retrying.
+      const marker = failedNarrationMarker(
+        reportContent,
+        fresh?.model ?? "narration-self-heal",
+      );
+      const { error: markErr } = await upsertNarration(serviceClient, marker);
+      if (markErr) {
+        console.error("[report] narration self-heal marker upsert failed", {
+          sessionId: latestSession.id,
+          err: markErr,
+        });
+      }
+    }
+    // else: a strand-suppressed row existed and regeneration failed/was thin —
+    // keep the cached row (it still carries placement/recs); never clobber it.
   }
+
   const narrationProse = resolveNarrationProse(
-    narrationRow ?? null,
+    effectiveNarrationRow,
     reportContent.time_flag,
   );
 

@@ -290,27 +290,27 @@
     "served_count_incorrect": 10,
     "served_all_correct": [
       "SAM-L0B-Q14",
-      "SAM-L0C-Q11A",
+      "SAM-L0C-Q05",
       "SAM-L0C-Q13",
       "SAM-L1-Q01",
+      "SAM-L0C-Q11A",
       "SAM-L1-Q02",
       "SAM-L1-Q07",
       "SAM-L0B-Q15",
-      "SAM-L0C-Q11B",
       "SAM-L1-Q03",
-      "SAM-L0C-Q09"
+      "SAM-L0C-Q11B"
     ],
     "served_all_incorrect": [
       "SAM-L0B-Q14",
-      "SAM-L0C-Q11A",
+      "SAM-L0C-Q05",
       "SAM-L0C-Q13",
       "SAM-L1-Q01",
       "SAM-L0B-Q15",
-      "SAM-L0C-Q11B",
+      "SAM-L0C-Q03",
       "SAM-L1-Q02",
       "SAM-L1-Q07",
       "SAM-L0C-Q09",
-      "SAM-L0C-Q03"
+      "SAM-L0C-Q04"
     ],
     "items": [
       {
@@ -1283,7 +1283,7 @@
       "SAM-L4-Q21",
       "SAM-L3-Q14",
       "SAM-L4-Q16",
-      "SAM-L4-Q12",
+      "SAM-L4-Q08",
       "SAM-L4-Q15",
       "SAM-L3-Q17",
       "SAM-L3-Q22"
@@ -1296,7 +1296,7 @@
       "SAM-L4-Q20",
       "SAM-L4-Q21",
       "SAM-L2-Q18",
-      "SAM-L3-Q07",
+      "SAM-L4-Q08",
       "SAM-L3-Q09",
       "SAM-L3-Q17",
       "SAM-L4-Q16",
@@ -1616,34 +1616,36 @@
       "4A",
       "4B"
     ],
-    "eligible_count": 18,
+    "eligible_count": 35,
     "prior_band_eligible": 13,
     "hard_cap": 15,
-    "served_count_correct": 10,
-    "served_count_incorrect": 10,
+    "served_count_correct": 11,
+    "served_count_incorrect": 11,
     "served_all_correct": [
       "SAM-L4-Q11",
       "SAM-L4-Q08",
       "SAM-L4-Q14",
       "SAM-L4-Q20",
+      "SAM-L5-Q11",
+      "SAM-L5-Q13",
       "SAM-L4-Q27",
       "SAM-L4-Q15",
-      "SAM-L4-Q26",
-      "SAM-L4-Q22",
-      "SAM-L4-Q12",
-      "SAM-L4-Q23"
+      "SAM-L5-Q04",
+      "SAM-L5-Q17",
+      "SAM-L5-Q24"
     ],
     "served_all_incorrect": [
       "SAM-L4-Q11",
       "SAM-L4-Q08",
       "SAM-L4-Q14",
       "SAM-L4-Q20",
-      "SAM-L3-Q21",
+      "SAM-L5-Q11",
+      "SAM-L5-Q13",
+      "SAM-L5-Q24",
+      "SAM-L5-Q15",
+      "SAM-L5-Q03",
       "SAM-L4-Q09",
-      "SAM-L4-Q15",
-      "SAM-L4-Q22",
-      "SAM-L4-Q10",
-      "SAM-L4-Q07"
+      "SAM-L5-Q22"
     ],
     "items": [
       {
@@ -1789,6 +1791,142 @@
         "level": "4B",
         "difficulty": 0.8,
         "stem": "Name one number that can divide both 54 and 72."
+      },
+      {
+        "external_id": "SAM-L5-Q02",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": -1.8,
+        "stem": "Which is greater, 12 357 or 13 275?"
+      },
+      {
+        "external_id": "SAM-L5-Q03",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": -1.5,
+        "stem": "Estimate the value of 119 + 172."
+      },
+      {
+        "external_id": "SAM-L5-Q04",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "Michelle wrote a 2-digit number that is smaller than 50. The number is a common multiple of 3 and 5. 6 is a factor of the number. What number is it?"
+      },
+      {
+        "external_id": "SAM-L5-Q05",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.2,
+        "stem": "What is the product of 3049 and 7?"
+      },
+      {
+        "external_id": "SAM-L5-Q06",
+        "format": "NUMERIC_ENTRY",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.3,
+        "stem": "What is the product of 762 and 95?"
+      },
+      {
+        "external_id": "SAM-L5-Q07",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "number_sense",
+        "level": "4A",
+        "difficulty": 0.3,
+        "stem": "4981 ÷ 6 ="
+      },
+      {
+        "external_id": "SAM-L5-Q09",
+        "format": "NUMERIC_ENTRY",
+        "strand": "fractions_decimals",
+        "level": "4A",
+        "difficulty": 0.4,
+        "stem": "Patricia used 1¹⁄₂ kg of sugar, 1¹⁄₄ kg of flour and 1¹⁄₆ kg of butter to make a cake. What was the total mass of ingredients used?"
+      },
+      {
+        "external_id": "SAM-L5-Q11",
+        "format": "NUMERIC_ENTRY",
+        "strand": "fractions_decimals",
+        "level": "4A",
+        "difficulty": 0.2,
+        "stem": "A baker had 200 eggs. He used 1/8 of the eggs to bake some cakes. How many eggs did he have left?"
+      },
+      {
+        "external_id": "SAM-L5-Q13",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "geometry",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "Alan is facing north-east now. If he makes a 270° anti-clockwise turn, which direction will he be facing?"
+      },
+      {
+        "external_id": "SAM-L5-Q15",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "fractions_decimals",
+        "level": "4A",
+        "difficulty": -1.2,
+        "stem": "What is the missing number? 8.035 = 8 + ___ + 0.005"
+      },
+      {
+        "external_id": "SAM-L5-Q17",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "fractions_decimals",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "What is the difference between 267.96 and 45.8? Round off your answer to 1 decimal place."
+      },
+      {
+        "external_id": "SAM-L5-Q19",
+        "format": "MULTIPLE_CHOICE",
+        "strand": "fractions_decimals",
+        "level": "4A",
+        "difficulty": 0.2,
+        "stem": "The best estimate for 89.5 ÷ 5 is ___."
+      },
+      {
+        "external_id": "SAM-L5-Q20",
+        "format": "NUMERIC_ENTRY",
+        "strand": "fractions_decimals",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "Ivan bought 8 similar drawing pencils at $20. He also bought a paintbrush that cost $1.75 more than a drawing pencil. How much did Ivan spend on art supplies altogether?"
+      },
+      {
+        "external_id": "SAM-L5-Q21",
+        "format": "NUMERIC_ENTRY",
+        "strand": "fractions_decimals",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "Jacky bought a bag of rice at $14.65 and 6 oranges at $0.40 each. He paid for all the items with $50. About how much change did he receive? Round your answer to the nearest whole number."
+      },
+      {
+        "external_id": "SAM-L5-Q22",
+        "format": "NUMERIC_ENTRY",
+        "strand": "measurement",
+        "level": "4A",
+        "difficulty": -1.2,
+        "stem": "________ seconds = 2 minutes"
+      },
+      {
+        "external_id": "SAM-L5-Q23",
+        "format": "NUMERIC_ENTRY",
+        "strand": "fractions_decimals",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "A bus leaves Singapore at 19 30. It will take 6 hours and 15 minutes to reach Kuala Lumpur. At what time will the bus arrive at Kuala Lumpur? Write the time using a.m. or p.m."
+      },
+      {
+        "external_id": "SAM-L5-Q24",
+        "format": "NUMERIC_ENTRY",
+        "strand": "geometry",
+        "level": "4B",
+        "difficulty": 0.8,
+        "stem": "A rectangular plot of farming land has a perimeter of 276 m. If its width is 46 m, what is its length?"
       }
     ]
   }

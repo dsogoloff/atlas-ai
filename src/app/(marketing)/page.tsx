@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import Image from "next/image";
 import Link from "next/link";
 
 import { LandingViewBeacon } from "./landing-view-beacon";
@@ -26,9 +27,16 @@ export default function LandingPage() {
       {/* TopAppBar */}
       <header className="bg-[#FEFBF6] font-display-child font-semibold top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4 sticky">
         <div className="flex items-center gap-8">
-          <span className="text-2xl font-black text-sam-navy">
-            Atlas Assessment
-          </span>
+          <Link href="/" className="flex items-center" aria-label="S.A.M Singapore Math — home">
+            <Image
+              src="/sam-logo.png"
+              alt="S.A.M Singapore Math"
+              width={3887}
+              height={2182}
+              priority
+              className="h-16 w-auto"
+            />
+          </Link>
         </div>
         <div className="flex items-center gap-4">
           <Link
@@ -44,14 +52,27 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="grid grid-cols-12 gap-gutter items-center min-h-[716px] mb-stack-lg">
           <div className="col-span-12 lg:col-span-6 space-y-stack-md">
-            <div className="inline-flex items-center gap-2 bg-sam-navy/10 text-sam-navy px-4 py-2 rounded-full font-headline-adult text-caption">
+            <div className="inline-flex items-center gap-3">
               <span
-                className="material-symbols-outlined text-[18px]"
+                className="material-symbols-outlined text-sam-navy text-[28px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 stars
               </span>
-              S.A.M Mathematical Assessment Suite
+              <span className="flex flex-col leading-tight">
+                <span className="font-headline-adult text-sam-navy text-2xl">
+                  Atlas Assessment
+                  <sup
+                    className="font-semibold"
+                    style={{ fontSize: "1em", top: "-0.3em" }}
+                  >
+                    ™
+                  </sup>
+                </span>
+                <span className="font-body-regular text-sam-gray-mid text-base">
+                  Powered by Inspirea Labs
+                </span>
+              </span>
             </div>
             <h1 className="font-display-child text-[64px] leading-tight text-sam-navy">
               Unlocking Math Potential,{" "}
@@ -178,6 +199,14 @@ export default function LandingPage() {
             <div className="col-span-1 md:col-span-2 bg-sam-yellow/10 p-8 rounded-[32px] border border-sam-yellow/30 relative overflow-hidden">
               <div className="relative z-10">
                 <h3 className="font-display-child text-sam-navy text-2xl mb-4">
+                  Parents&rsquo; Report
+                </h3>
+                <p className="text-sam-gray-dark max-w-sm mb-8">
+                  A clear, plain-language summary for families — your
+                  child&rsquo;s strengths, where to focus next, and the
+                  recommended starting level.
+                </p>
+                <h3 className="font-display-child text-sam-navy text-2xl mb-4">
                   Instructor Dashboard
                 </h3>
                 <p className="text-sam-gray-dark max-w-sm">
@@ -257,7 +286,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-container-max mx-auto px-gutter mt-12 pt-8 border-t border-sam-gray-light text-center text-xs text-sam-gray-mid">
-          © 2026 Atlas Assessment Suite by S.A.M New York. All rights reserved.
+          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
         </div>
       </footer>
     </>

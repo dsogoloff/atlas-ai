@@ -76,7 +76,150 @@ Migration present — **`supabase db reset` required after merge.**
       (d) Sign in as a normal instructor — roster shows center-only children (unchanged),
           can still author notes (unchanged).
 
-## 0. 2026-06-25 — young-band narration render (PR #166 — OPEN)
+## 0. 2026-06-27 — CONVERSION: prod bring-up step 1 (PR #181 — OPEN)
+
+**Trunk head entering this session: `25b5a7c`** (after PRs up to #174 merged).
+Analysis-only session; no prod connection, no writes, no DB commands made. One new PR
+opened (#181); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN (1371
+tests / 105 files). Artifacts are in `scripts/conversion/prod-bringup/`.
+
+PROD = atlas-assessment (project ref `ntfaqzueppqymfkefadm`), the LIVE DB.
+NOT atlas-assessment-2 (dead). All actions below are founder-gated on prod
+`service_role` creds + explicit go-ahead; manual Studio/uploader path only.
+
+- [ ] **Dimitri: merge PR #181 (lane/prod-bringup-schema-analysis)** — docs/artifacts only;
+      no migration, no seed change, no DB command. Merge at leisure; no `supabase db reset`
+      needed.
+
+- [ ] **PARKED — prod bring-up step 1 inspection (needs Dimitri / prod creds).**
+      Run `01-inspect-prod-schema.sql` in prod Studio (atlas-assessment,
+      ref `ntfaqzueppqymfkefadm`). Paste results back to unblock step 2 and confirm which
+      catch-up sections apply. KEY question: does prod `strand` enum have lowercase values
+      (number_sense/operations_algorithms/…) or the OLD uppercase
+      (NUMBER_SENSE/OPERATIONS/…)? If uppercase, a separate destructive recast migration is
+      required BEFORE the bank can load — cannot proceed to step 4 until confirmed.
+
+- [ ] **PARKED — prod bring-up step 2: apply additive schema catch-up (needs step 1 results
+      + Dimitri go-ahead).**
+      After reviewing step 1 inspection output, apply `02-catchup-additive-schema.sql` in
+      prod Studio. Script is idempotent (IF NOT EXISTS guards throughout); safe to run
+      multiple times. Each statement is tagged with its source migration for traceability.
+
+- [ ] **PARKED — prod bring-up step 3: create question-images bucket in prod (needs
+      Dimitri).**
+      Create the `question-images` bucket in prod Supabase Storage (private; follows
+      migration `20260512000000` DDL). This is a manual Studio action — there is no
+      additive-only SQL for bucket creation.
+
+- [ ] **PARKED — prod bring-up step 4: retarget uploader + upload crops (needs Dimitri).**
+      Set prod URL + service_role key in `.env.prod.local`. Run
+      `pnpm convert:upload-activation-images` targeting prod. Images-first then activate
+      image-essential rows individually once files are confirmed present in the bucket.
+
+- [ ] **PARKED — prod bring-up step 5: audited prod bank load 0A-L4 (needs Dimitri
+      go-ahead).**
+      Run the audited bank loader against prod. Includes taxonomy reference-data seed
+      (tax_content rows so content_id FKs resolve). NEVER run the dev `seed.sql` against
+      prod. L5/L6 geometry activation held until their images are in the prod bucket.
+
+- [ ] **PARKED — prod bring-up step 6: verify clean serve path (needs Dimitri).**
+      Confirm no missing-image 500s on prod; prod content matches audited bank; no
+      dev/QA seed contamination.
+
+- [ ] **NOTE (not CONVERSION's task):** ATLAS must set prod env vars (narration +
+      lead-notify). Founder handles deliverability/DMARC + Supabase paid plan upgrade.
+
+## 0. 2026-06-26 — fix: migration version collision (PR #174 — OPEN)
+
+**Trunk head entering this session: `861bc43`** (after PRs #169–#173 merged).
+One new PR opened (#174); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN.
+Rename-only fix — no schema or data change.
+
+- [ ] **Dimitri: merge PR #174 (lane/fix-migration-version-collision)** after review.
+      No migration data change; no `supabase db reset` needed as part of the merge itself.
+      After merge: run `supabase db reset` to confirm the PK collision (version 20260625120000)
+      is resolved and reset applies cleanly end-to-end.
+
+- [x] **RESOLVED — duplicate migration version 20260625120000.** `supabase db reset` was
+      failing with `duplicate key value violates unique constraint "schema_migrations_pkey"`.
+      Root cause: PR #169 and PR #170 (two same-day lanes) independently assigned version
+      20260625120000. Fix: kept `20260625120000_l5l6_booklet_reband.sql` (canonical anchor
+      for the 120000–120300 batch + referenced by siblings and seed mirror); renamed
+      `20260625120000_admins_tenant_view.sql` → `20260625120400_admins_tenant_view.sql`
+      (git mv; rename only; content unchanged). Zero duplicate version prefixes remain across
+      all 81 migration files. See CURRENT_STATE and TECHNICAL_DEBT for the recurring-lesson
+      note (3rd duplicate-migration-version incident).
+
+## 0. 2026-06-26 — CONVERSION: L5/L6 geometry activation (PR #172 — MERGED `861bc43`)
+
+**Trunk head entering that session: `db1e9ac`** (after PRs #169 and #170 merged).
+PR #172 opened then merged as part of the PRs #169–#173 batch; trunk head now `861bc43`.
+
+- [x] **Dimitri: merge PR #172 (lane/l5l6-geometry-activation)** — MERGED (`861bc43`).
+      Then, in order:
+      (a) `supabase db reset` — applies `20260626120000_l5l6_geometry_activation.sql`; seed
+          rebuilds the 13 newly activated rows as active.
+      (b) Confirm the L5/L6 crops are present in the private `question-images` bucket. Per
+          the QA report they are already uploaded; an active row whose bucket file is absent
+          will 500 at serve time.
+      Check: run a short test for an L5 or L6 child — geometry, area_volume, and percentage
+      sub-strands should now appear (were previously unserved because all 15 image rows were
+      is_active=false).
+
+- [x] **RESOLVED — CROSS-LANE FLAG (PR #161): served-order crosswalk regenerated (PR #170,
+      MERGED `db1e9ac`, lane/regen-served-crosswalk-substrand).** Artifacts
+      `scripts/conversion/audit/served-crosswalk.{md,json}` regenerated to reflect the
+      sub-strand-aware served order. Closes the PR #161 cross-lane follow-up.
+
+- [x] **RESOLVED — the 15 PR #169 image rows "activation-ready (is_active=false)":** 13 of
+      those 15 rows are now activated by PR #172 (geometry, area_volume, percentage sub-strands).
+      The two intentionally left inactive: SAM-L5-Q08 (line graph, data_statistics) and
+      SAM-L6-Q26 (percentage, rectangles shaded) — not in ATLAS's activation list.
+
+## 0. 2026-06-25 — CONVERSION: L5/L6 booklet re-band + load 6 missing rows + wire image_path + SAM-L5-Q27 activation (PR #169 — MERGED)
+
+**Origin head entering this session: `f5947d5`** (after PR #168 merged).
+One new PR opened (#169); independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
+Four new migrations — **`supabase db reset` required after merge. CRITICAL: upload
+l5/sam-l5-q27.png to the private question-images bucket BEFORE or with `supabase db reset` —
+SAM-L5-Q27 is now is_active=true and will 500 at serve time if the image is absent.**
+
+LOCKED DECISION (founder): L5/L6 content bands at BOOKLET LEVEL — SAM-L5-* → 5A, SAM-L6-* → 6A.
+Supersedes `20260623150000_l5l6_releveling` (difficulty/Level-column banding). Clears the prior
+"Level review (founder/picker decision)" follow-up from the l5l6-conversion-status-2026-06-23 work.
+
+- [x] **Dimitri: merge PR #169 (lane/l5l6-booklet-reband-load-images)** — MERGED `db1e9ac`.
+      Then, in order:
+      (a) **CRITICAL FIRST:** Run `pnpm convert:upload-activation-images` to upload
+          `l5/sam-l5-q27.png` (combined 4-shape crop) to the private `question-images` bucket.
+          SAM-L5-Q27 is now is_active=true — if the image is missing in the bucket the row will
+          500 at serve time. Do this BEFORE or simultaneously with `supabase db reset`.
+      (b) Run `supabase db reset` (applies all 4 migrations: `20260625120000`, `20260625120100`,
+          `20260625120200`, `20260625120300`).
+      (c) `pnpm convert:upload-activation-images` also pushes the 15 other L5/L6 image crops
+          (L5 Q08/Q14/Q25/Q26; L6 Q14/Q15/Q16/Q19/Q25/Q26/Q30/Q31/Q32/Q33/Q34) to the private
+          `question-images` bucket. Those 15 rows remain is_active=false; flip them individually
+          once images are confirmed present in the bucket.
+      (d) Run `pnpm convert:purge-staging --apply` to clear the 15 stray full-page renders in
+          `question-images/conversion-staging/` bucket prefix.
+
+- [ ] **BATCHED GATE ITEMS for Dimitri (in PR #169 body, non-blocking before merge):**
+      (1) Confirm 5A/6A is the intended booklet half-grade for L5/L6 content. The A/B collapse
+          (i.e. dropping difficulty-derived A/B suffixes in favour of the booklet floor) is
+          reversible via a single UPDATE if you want to restore A/B splits later.
+      (2) SAM-L5-Q27 — RESOLVED. Founder supplied a combined 4-shape crop (L5-27.png at
+          scripts/conversion/source/5/L5-27.png); Q27 activated via migration
+          20260625120300. No open gate item.
+
+- [x] **RESOLVED — SAM-L5-Q27 (was PARKED "provide composite 4-shape crop OR defer").** Founder
+      supplied a single combined crop (scripts/conversion/source/5/L5-27.png) showing all four
+      shapes with in-image labels (1)–(4): circle/hexagon/heart/rectangle. Resolves the per-tile
+      problem — Q27 is now a standard single-stimulus MC whose options reference the in-image
+      labels. Activated via migration `20260625120300_l5_q27_activate.sql` + seed.sql mirror.
+      is_active=true; short_test_eligible=true; banding 5A; content_id l4-geometry-3. Verify
+      GREEN 1336 tests / 102 files, seed↔migration parity PASS (79 migrations).
+
+## 0. 2026-06-25 — young-band narration render (PR #166 — MERGED)
 
 **Origin head entering this session: `bf792cc`** (after PRs #163/#164/#165 merged).
 One new PR opened; independent off `ATLAS-ASSESSMENT`, not stacked; verify-bar GREEN locally.
@@ -754,7 +897,13 @@ lanes above are merged and stable. Do not build until Dimitri confirms prioritiz
     (864 tests / 52 files, tsc 0, lint 2 known warnings). Phase 3 NOT started (stopped per
     instruction).
 - [ ] Remaining digitization: L7 (parked); image curation for the new inactive image-
-  essential rows; recover the L5/L6 symbol-font MC options skipped by the guard.
+  essential rows.
+  - [x] **L5/L6 banding + missing-row load + image_path wire — DONE (PR #169, 2026-06-25).**
+        6 previously-skipped L5/L6 rows loaded; 15 image rows wired (activation-ready);
+        all SAM-L5/L6-* re-banded to booklet level (5A/6A) per founder's LOCKED decision.
+        SAM-L5-Q27 HELD (image-option per-tile not yet wired — see parked item above).
+        The "Level review (founder/picker decision)" follow-up from l5l6-conversion-status-2026-06-23
+        is resolved by the founder's booklet-level decision.
 
 ## 4b. Assessment mascot (DONE-pending-merge 2026-06-10 — PR #34, lane/assessment-mascot)
 - [x] Dachshund mascot integrated into the child flow (3 poses at stable paths:
