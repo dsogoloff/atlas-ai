@@ -4,6 +4,55 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-28 — full answer-key audit + SAM-L4-Q17 + CI manifest guard (PR #191 MERGED / #192 OPEN)
+
+PR #191 (lane/bank-source-invariant-fix) MERGED: bank source invariant (is_active=false ⟹
+short_test_eligible=false) enforced at source + CHECK constraint
+`questions_inactive_not_short_eligible` + short-eligible-invariant parity test. Now in
+ATLAS-ASSESSMENT. PR #192 (lane/l4-q17-answer-key-audit) OPEN, verify-bar GREEN; awaiting
+Dimitri's attended merge after Vercel preview review.
+
+- [ ] **Dimitri: merge PR #192 (lane/l4-q17-answer-key-audit)** after Vercel preview review.
+      Migration 20260628120000 present — **`supabase db reset` required after merge** (adds
+      SAM-L4-Q17 row). Then upload l4/sam-l4-q17.png to the local question-images bucket
+      BEFORE or with `supabase db reset` — the row is is_active=true and will 500 if the
+      image is absent.
+      Suggested preview check: confirm TEXT_ENTRY judging with accepted_answers works for
+      a perpendicular-lines response ("AF", "GC", "FA", "CG" all accepted in either slot).
+
+- [x] **DONE 2026-06-28 — prod catch-up for SAM-L4-Q17 + bank audit verified (read-only
+      re-verify via PROD_DATABASE_URL, verifier 4/4 PASS).** All prod steps confirmed live:
+      - SAM-L4-Q17 in prod: is_active=true, short_test_eligible=true,
+        content_id → l3-geometry-2, image_path = l4/sam-l4-q17.png,
+        accepted_answers = 16 forms, format TEXT_ENTRY.
+      - CHECK constraint questions_inactive_not_short_eligible present on questions:
+        CHECK ((is_active OR (NOT short_test_eligible))).
+      - 0 prod invariant violators; 217 question ids (excl PLACEHOLDER) — structural
+        parity with canonical local, Q17 included.
+      - 4-id remediation (SAM-L0C-Q11, SAM-L2-Q04, SAM-L5-Q08, SAM-L6-Q26) confirmed
+        both-false in prod.
+      - Image l4/sam-l4-q17.png present in the prod question-images bucket (23998 bytes,
+        matches local L4-17.png).
+      - Repo build-breaker fixed: PR #193 (::representation → ::representation_kind in
+        seed + migration 20260628120000) + new guard
+        src/lib/conversion/seed-cast-types.test.ts.
+
+- [ ] **Image upload (founder's local run):** `pnpm convert:upload-activation-images`
+      to upload l4/sam-l4-q17.png to local question-images storage before `supabase db
+      reset` QA after #192 merges.
+
+- [x] **RESOLVED — "L4 answer key absent" item.** Answer keys for ALL levels (L0A through
+      L6) are now present in scripts/conversion/source/**. No level is key-absent. The
+      audit/answer-key-manifest.json (217 entries) records the per-item verification status
+      for all 187 active items across all 9 booklets.
+
+- [ ] **Minor anomalies to review (not defects; Dimitri awareness):**
+      - SAM-L5-Q12: stem says 65° vs key 68° (inactive draw task; no active serve risk).
+      - SAM-L3-Q15: stem/source fraction conflict (stem 4/6 vs source 4/5; pre-existing,
+        already blocked; stored as TEXT_ENTRY "4/6").
+      - SAM-L6-Q26: activation gap (answer matches key 60%; image wired but row not
+        activated).
+
 ## 0. 2026-06-27 — prod schema reconciliation + bank-flag loader (PRs #186 MERGED / #188 OPEN)
 
 PR #186 (prod-bringup batch 1: introspect + 06-gen-catchup + catchup artifacts) MERGED at
