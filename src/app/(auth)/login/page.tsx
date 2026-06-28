@@ -15,7 +15,7 @@ import { LoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; confirmed?: string; email?: string }>;
 }
 
 export default async function LoginPage({ searchParams }: Props) {
@@ -26,11 +26,20 @@ export default async function LoginPage({ searchParams }: Props) {
 
   // Validate ?next= same-origin (mirror auth/callback/route.ts:30).
   // Defaults to /dashboard when absent, malformed, or pointing off-origin.
-  const { next: nextRaw } = await searchParams;
+  const {
+    next: nextRaw,
+    confirmed: confirmedRaw,
+    email: emailRaw,
+  } = await searchParams;
   const next =
     nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
       ? nextRaw
       : "/dashboard";
+
+  // Informational "email confirmed" state, set by /auth/confirm after a
+  // successful verifyOtp. Drives a success banner + email prefill on the form.
+  const confirmed = confirmedRaw === "1";
+  const confirmedEmail = confirmed ? (emailRaw ?? "") : "";
 
   // Anonymous-only gate (Phase 3 D2 + P3). If already signed in, honour the
   // VALIDATED next so /login?next=/admin sends an authenticated staff user to
@@ -119,7 +128,11 @@ export default async function LoginPage({ searchParams }: Props) {
                   Continue your child&rsquo;s learning journey.
                 </p>
               </header>
-              <LoginForm next={next} />
+              <LoginForm
+                next={next}
+                confirmed={confirmed}
+                confirmedEmail={confirmedEmail}
+              />
             </div>
           </div>
         </div>

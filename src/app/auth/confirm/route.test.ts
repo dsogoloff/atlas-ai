@@ -1,16 +1,18 @@
 // Token-hash email-confirm route (/auth/confirm).
 //
-// verifyOtp success -> session set + redirect to the (same-origin-guarded) next;
-// any failure (bad/missing token, verifyOtp error) -> /signup?error=verify_failed.
-// Mirrors /auth/callback's audit writes. No device-bound verifier cookie needed.
+// verifyOtp success -> ALWAYS a clean /login?confirmed=1 (never /signup, no
+// session assumption), with the confirmed email for prefill when available and
+// the same-origin-guarded next carried for the post-login redirect. Any failure
+// (bad/missing token, verifyOtp error) -> /signup?error=verify_failed. Mirrors
+// /auth/callback's audit writes. No device-bound verifier cookie needed.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mockVerifyOtp = vi.fn();
 const mockMaybeSingle = vi.fn();
-const mockAuditInsert = vi.fn(
-  async (_rows: Array<{ event_type: string }>) => ({ error: null }),
-);
+const mockAuditInsert = vi.fn<
+  (rows: Array<{ event_type: string }>) => Promise<{ error: null }>
+>(async () => ({ error: null }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { verifyOtp: mockVerifyOtp } }),
@@ -52,7 +54,7 @@ afterEach(() => {
 });
 
 describe("GET /auth/confirm — token-hash verification", () => {
-  it("verifyOtp success -> redirects to next (default /coppa) and writes the audit trail", async () => {
+  it("verifyOtp success -> clean /login?confirmed=1 (NOT /signup) and writes the audit trail", async () => {
     mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
     mockMaybeSingle.mockResolvedValue({
       data: { id: "p1", tenant_id: "t1", home_center_id: "c1" },
@@ -61,7 +63,11 @@ describe("GET /auth/confirm — token-hash verification", () => {
     const res = await GET(req("?token_hash=abc&type=email"));
 
     expect(mockVerifyOtp).toHaveBeenCalledWith({ type: "email", token_hash: "abc" });
-    expect(location(res)).toBe(`${ORIGIN}/coppa`);
+    const u = new URL(location(res));
+    expect(u.origin + u.pathname).toBe(`${ORIGIN}/login`);
+    expect(u.searchParams.get("confirmed")).toBe("1");
+    expect(u.searchParams.get("next")).toBe("/coppa");
+    expect(location(res)).not.toContain("/signup");
     // Both VPC audit rows written.
     const rows = mockAuditInsert.mock.calls[0][0];
     expect(rows.map((r) => r.event_type)).toEqual([
@@ -70,13 +76,34 @@ describe("GET /auth/confirm — token-hash verification", () => {
     ]);
   });
 
-  it("honours a same-origin next", async () => {
+  it("includes the confirmed email for prefill when verifyOtp returns one", async () => {
+    mockVerifyOtp.mockResolvedValue({
+      data: { user: { id: "u1", email: "parent@example.com" } },
+      error: null,
+    });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+
+    const u = new URL(location(await GET(req("?token_hash=abc&type=email"))));
+    expect(u.searchParams.get("confirmed")).toBe("1");
+    expect(u.searchParams.get("email")).toBe("parent@example.com");
+  });
+
+  it("omits email when verifyOtp returns none (does not fail on it)", async () => {
     mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null });
 
-    const res = await GET(req("?token_hash=abc&type=email&next=/coppa/step-2"));
+    const u = new URL(location(await GET(req("?token_hash=abc&type=email"))));
+    expect(u.searchParams.get("confirmed")).toBe("1");
+    expect(u.searchParams.has("email")).toBe(false);
+  });
 
-    expect(location(res)).toBe(`${ORIGIN}/coppa/step-2`);
+  it("carries a same-origin next through to login for the post-login redirect", async () => {
+    mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+
+    const u = new URL(location(await GET(req("?token_hash=abc&type=email&next=/coppa/step-2"))));
+    expect(u.pathname).toBe("/login");
+    expect(u.searchParams.get("next")).toBe("/coppa/step-2");
   });
 
   it("rejects an off-origin next, falling back to /coppa (open-redirect guard)", async () => {
@@ -85,7 +112,11 @@ describe("GET /auth/confirm — token-hash verification", () => {
 
     const res = await GET(req("?token_hash=abc&type=email&next=//evil.example.com"));
 
-    expect(location(res)).toBe(`${ORIGIN}/coppa`);
+    const u = new URL(location(res));
+    expect(u.origin).toBe(ORIGIN);
+    expect(u.pathname).toBe("/login");
+    expect(u.searchParams.get("next")).toBe("/coppa");
+    expect(location(res)).not.toContain("evil.example.com");
   });
 
   it("verifyOtp failure -> /signup?error=verify_failed", async () => {

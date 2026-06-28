@@ -20,9 +20,14 @@ interface Props {
   /** Validated, same-origin redirect target. Page-level guard ensures
    *  this is always a safe path (defaults to "/dashboard"). */
   next: string;
+  /** True when the user just confirmed their email (/auth/confirm → login).
+   *  Shows an informational success banner above the form. */
+  confirmed?: boolean;
+  /** Email to prefill (carried from the confirm link), when available. */
+  confirmedEmail?: string;
 }
 
-export function LoginForm({ next }: Props) {
+export function LoginForm({ next, confirmed = false, confirmedEmail = "" }: Props) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +41,7 @@ export function LoginForm({ next }: Props) {
   } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: "",
+      email: confirmedEmail,
       password: "",
     },
   });
@@ -55,6 +60,22 @@ export function LoginForm({ next }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-stack-md" noValidate>
+      {confirmed && (
+        <div
+          role="status"
+          className="flex items-center gap-2 bg-sam-teal/10 text-sam-navy border border-sam-teal/30 px-4 py-3 rounded-xl font-caption text-caption"
+        >
+          <span
+            className="material-symbols-outlined text-sam-teal text-base"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
+          >
+            check_circle
+          </span>
+          <span>Email confirmed — please sign in to continue.</span>
+        </div>
+      )}
+
       {result && !result.ok && (
         <div
           role="alert"
@@ -78,6 +99,7 @@ export function LoginForm({ next }: Props) {
           placeholder="example@email.com"
           type="email"
           autoComplete="email"
+          defaultValue={confirmedEmail}
           aria-invalid={!!errors.email}
           {...register("email")}
         />
