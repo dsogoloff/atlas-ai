@@ -2907,7 +2907,7 @@ set level = '0A'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Tap the object that is the same as the one in the box.","image_alt":"An object shown inside a box, with several objects to choose from below.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0A-Q08';
@@ -2919,7 +2919,7 @@ set level = '0A'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Look at the pattern below. Tap what comes next.","image_alt":"A repeating pattern of flowers with the last item missing, and flower choices to tap.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0A-Q11';
@@ -2931,7 +2931,7 @@ set level = '0A'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Count the balloons. Tap the number.","options":["6","5","2"],"correct_index":1,"image_alt":"A group of balloons.","_authoring":{"target_interaction":"single-MC","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0A-Q17';
@@ -2943,7 +2943,7 @@ set level = '0A'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Tap the object that comes next in the pattern below.","options":["option 1","option 2","option 3","option 4"],"correct_index":0,"_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0B-Q02';
@@ -2967,7 +2967,7 @@ set level = '0A'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"How are the shapes sorted?","options":["color","size"],"correct_index":0,"image_alt":"Two boxes, each holding a group of shapes.","_authoring":{"target_interaction":"single-MC","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0B-Q07';
@@ -3027,7 +3027,7 @@ set level = '0B'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Tap the boxes that make 10.","options":["5 + 5","3 + 7","2 + 8","2 + 2","1 + 9","3 + 5","9 + 2","6 + 4"],"correct_index":0,"_authoring":{"target_interaction":"select-multiple","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q03';
@@ -3039,7 +3039,7 @@ set level = '0B'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Write numbers: 1 = smallest, 2 = bigger, 3 = biggest in the correct blanks.","options":["smallest","bigger","biggest"],"correct_index":1,"_authoring":{"target_interaction":"multi-blank","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q05';
@@ -3051,7 +3051,7 @@ set level = '0B'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Skip count by 2s. Fill in the missing numbers.","options":["4","8","16","20"],"correct_index":0,"_authoring":{"target_interaction":"multi-blank","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q08';
@@ -3087,7 +3087,7 @@ set level = '0B'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Look at the number line. Tap on the answers. 31 comes ___ 30. 31 is ___ than 30. 33 comes ___ 36. 33 is ___ than 36.","options":["after","greater","before","smaller"],"correct_index":0,"_authoring":{"target_interaction":"multi-blank","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q11';
@@ -3111,7 +3111,7 @@ set level = '0C'::half_grade_level,
     format = 'NUMERIC_ENTRY'::question_format,
     is_active = false,
     content = '{"stem":"How many pairs of the same bikes are there? Write the number.","correct_answer":"4","image_alt":"A picture showing several motorcycles in different colors.","_authoring":{"target_interaction":"numeric-single","blocker_code":"A","held":true,"requires_format_swap":false}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q14';
@@ -3123,7 +3123,7 @@ set level = '0C'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Tap the circles with odd numbers.","options":["1","10","26","5","12","24","35","41","40"],"correct_index":0,"_authoring":{"target_interaction":"select-multiple","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q15';
@@ -3135,7 +3135,7 @@ set level = '0C'::half_grade_level,
     format = 'MULTIPLE_CHOICE'::question_format,
     is_active = false,
     content = '{"stem":"Break apart 32. Fill in the boxes.","options":["30","2"],"correct_index":0,"_authoring":{"target_interaction":"multi-blank","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
-    short_test_eligible = true
+    short_test_eligible = false
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L0C-Q16';
@@ -3709,7 +3709,7 @@ with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set content_id = (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = 'l0c-whole_numbers-6'),
     short_test_eligible = true
-from t where q.tenant_id = t.id and q.external_id = 'SAM-L0C-Q14';
+from t where q.tenant_id = t.id and q.is_active and q.external_id = 'SAM-L0C-Q14';
 
 -- Q15 — SELECT_MULTIPLE odd numbers.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
@@ -4247,6 +4247,7 @@ update questions q
 set short_test_eligible = true
 from t
 where q.tenant_id = t.id
+  and q.is_active
   and q.external_id in (
     'SAM-L1-Q01','SAM-L1-Q02','SAM-L1-Q03','SAM-L1-Q04','SAM-L1-Q05',
     'SAM-L1-Q06','SAM-L1-Q07','SAM-L1-Q08','SAM-L1-Q10','SAM-L1-Q12',
@@ -4260,6 +4261,7 @@ update questions q
 set short_test_eligible = true
 from t
 where q.tenant_id = t.id
+  and q.is_active
   and q.external_id in (
     'SAM-L2-Q01','SAM-L2-Q02','SAM-L2-Q03','SAM-L2-Q04','SAM-L2-Q05',
     'SAM-L2-Q06','SAM-L2-Q07','SAM-L2-Q09','SAM-L2-Q10','SAM-L2-Q11',
@@ -4274,6 +4276,7 @@ update questions q
 set short_test_eligible = true
 from t
 where q.tenant_id = t.id
+  and q.is_active
   and q.external_id in (
     'SAM-L3-Q01','SAM-L3-Q03','SAM-L3-Q05','SAM-L3-Q06','SAM-L3-Q07',
     'SAM-L3-Q08','SAM-L3-Q09','SAM-L3-Q10','SAM-L3-Q11','SAM-L3-Q12',
@@ -4287,6 +4290,7 @@ update questions q
 set short_test_eligible = true
 from t
 where q.tenant_id = t.id
+  and q.is_active
   and q.external_id in (
     'SAM-L4-Q01','SAM-L4-Q02','SAM-L4-Q03','SAM-L4-Q04','SAM-L4-Q05',
     'SAM-L4-Q06','SAM-L4-Q07','SAM-L4-Q08','SAM-L4-Q09','SAM-L4-Q10',
@@ -4458,6 +4462,7 @@ update questions q
 set short_test_eligible = true
 from t
 where q.tenant_id = t.id
+  and q.is_active
   and q.external_id in (
     'SAM-L5-Q02','SAM-L5-Q03','SAM-L5-Q04','SAM-L5-Q05','SAM-L5-Q06','SAM-L5-Q07',
     'SAM-L5-Q08','SAM-L5-Q09','SAM-L5-Q11','SAM-L5-Q13','SAM-L5-Q14','SAM-L5-Q15',
@@ -4470,6 +4475,7 @@ update questions q
 set short_test_eligible = true
 from t
 where q.tenant_id = t.id
+  and q.is_active
   and q.external_id in (
     'SAM-L6-Q01','SAM-L6-Q02','SAM-L6-Q03','SAM-L6-Q04','SAM-L6-Q05','SAM-L6-Q06',
     'SAM-L6-Q07','SAM-L6-Q08','SAM-L6-Q09','SAM-L6-Q10','SAM-L6-Q11','SAM-L6-Q12',
