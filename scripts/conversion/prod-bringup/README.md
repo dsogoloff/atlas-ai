@@ -103,7 +103,25 @@ nothing destructive runs until prod is shown to hold zero real families.
      and prod-only / missing objects (INFO; missing → use `06`).
    - `pnpm convert:prod-catchup:remediate`
 
-> **Channels:** `06`, `07`, and `09` all read prod via **direct Postgres** (`PROD_DATABASE_URL`).
+10. **`10-verify-prod-bank.ts`** — BANK **flag-level parity** keyed by `external_id` (not row
+    counts). Compares prod (direct Postgres) vs the audited LOCAL bank on `is_active`,
+    `short_test_eligible`, `level`, `strand`, `content_id` (by `tax_content.code`),
+    `question_format`, `image_path` (present/absent). Canonical = LOCAL **invariant-normalized**
+    (`is_active=false ⟹ short_test_eligible=false` — local stores key-driven `short=true` on
+    held/inactive rows). Reports per-id MATCH/DRIFT/MISSING_IN_PROD/EXTRA_IN_PROD, a per-level
+    rollup (raw active+short, PASS/FAIL), and the hard-invariant violators **on both sides**;
+    asserts the held set is non-servable in prod. Exits nonzero on any DRIFT / MISSING /
+    invariant violation. `pnpm convert:prod-bank:verify`. (`bank.ts` is the shared lib.)
+
+11. **`11-gen-bank-remediation.ts`** — FLAG-corrective remediation (never deletes content):
+    `bank-remediation.generated.sql` (idempotent) = held/inactive → force both flags false;
+    active-item flag drift (`level/strand/content_id/short/question_format`) → targeted per-id
+    UPDATE to local; `question_format` column absent → ADD COLUMN + backfill. `…review.md` =
+    ambiguous/lossy/content-bearing (prod-only rows never deleted, image_path, local-active-but-
+    prod-inactive, un-remappable content, rows needing full INSERT, and LOCAL's own invariant
+    violations to fix in the seed). `pnpm convert:prod-bank:remediate`.
+
+> **Channels:** `06`, `07`, `09`, `10`, `11` all read prod via **direct Postgres** (`PROD_DATABASE_URL`).
 > `06` is presence/additive (missing tables/columns/enums/policies); `07`/`09` cover attribute
 > drift (type/nullable/default). Generated DDL stays self-guarding/idempotent so it's safe to
 > re-run; all apply NOTHING — the founder applies the SQL in prod Studio.
