@@ -3967,7 +3967,7 @@ insert into questions
    is_active, content_id)
 select t.id, v.external_id, v.strand::strand, v.level::half_grade_level, v.difficulty, v.format::question_format,
    v.content::jsonb, v.misconception_tags,
-   v.word_count, v.operation_type::operation_type, v.num_operations, v.representation::representation,
+   v.word_count, v.operation_type::operation_type, v.num_operations, v.representation::representation_kind,
    v.is_active,
    (select tc.id from tax_content tc where tc.tenant_id = t.id and tc.code = v.content_key)
 from t,
