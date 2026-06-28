@@ -14,9 +14,15 @@
 //
 // Flow mirrors /auth/callback (compliance.md §2 "email plus"):
 //   1. Read token_hash + type (+ same-origin-guarded next, default /coppa).
-//   2. verifyOtp({ type, token_hash }) — sets the session cookie on success.
+//   2. verifyOtp({ type, token_hash }) — verifies server-side.
 //   3. Write verification_clicked + verification_succeeded to vpc_audit_log.
-//   4. Redirect to next. Any failure -> /signup?error=verify_failed.
+//   4. ALWAYS redirect a confirmed user to a clean /login?confirmed=1 — never
+//      assume a session exists in THIS browser (the link may be opened on a
+//      different device or pre-fetched by a scanner; cross-device there is no
+//      session, so landing on `next` would bounce to /signup and strand them).
+//      The guarded `next` rides along so the post-login redirect carries them
+//      onward, and the confirmed email (when present) prefills the form. Any
+//      failure -> /signup?error=verify_failed.
 
 import { headers } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
@@ -103,5 +109,14 @@ export async function GET(request: NextRequest) {
     ]);
   }
 
-  return NextResponse.redirect(`${url.origin}${next}`);
+  // Always land on a clean login with the "email confirmed" banner — no session
+  // assumption. Carry the guarded `next` for the post-login redirect, and the
+  // confirmed email for prefill when verifyOtp cleanly returned one.
+  const target = new URL(`${url.origin}/login`);
+  target.searchParams.set("confirmed", "1");
+  if (verified.user.email) {
+    target.searchParams.set("email", verified.user.email);
+  }
+  target.searchParams.set("next", next);
+  return NextResponse.redirect(target.toString());
 }
