@@ -175,6 +175,7 @@ export const SOURCE_MAP: Record<string, string> = {
   "l4/sam-l4-q01.png": `${L4_SRC}/L4-1.png`,
   "l4/sam-l4-q13.png": `${L4_SRC}/L4-13.png`,
   "l4/sam-l4-q16.png": `${L4_SRC}/L4-16.png`,
+  "l4/sam-l4-q17.png": `${L4_SRC}/L4-17.png`,
   "l4/sam-l4-q20.png": `${L4_SRC}/L4-20.png`,
   "l4/sam-l4-q21.png": `${L4_SRC}/L4-21.png`,
   "l4/sam-l4-q23.png": `${L4_SRC}/L4-23.png`,

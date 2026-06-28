@@ -377,6 +377,41 @@ describe("judgeAnswer / TEXT_ENTRY", () => {
   });
 });
 
+describe("judgeAnswer / TEXT_ENTRY accepted_answers (any-of keys)", () => {
+  // SAM-L4-Q17: "name a pair of perpendicular lines" (figure AF/BE/GC/HD), key "AF and GC".
+  // Free-text with an order-tolerant accepted set: pair-letter order (AF=FA, GC=CG) and
+  // slot order (AF,GC = GC,AF). Comma forms normalize to space forms, covering plain-space.
+  const Q17 = {
+    stem: "name a pair of perpendicular lines",
+    correct_answer: "AF and GC",
+    accepted_answers: [
+      "AF and GC", "AF and CG", "FA and GC", "FA and CG",
+      "GC and AF", "GC and FA", "CG and AF", "CG and FA",
+      "AF, GC", "AF, CG", "FA, GC", "FA, CG",
+      "GC, AF", "GC, FA", "CG, AF", "CG, FA",
+    ],
+  } as Json;
+
+  it("accepts the canonical key and slot/letter-order + case/separator variants", () => {
+    for (const a of ["AF and GC", "GC, AF", "FA and CG", "cg af", "AF,GC", "  gc and af  "]) {
+      expect(judgeAnswer("TEXT_ENTRY", Q17, a), `should accept "${a}"`).toBe(true);
+    }
+  });
+  it("rejects a wrong line, a single line, or a repeated line", () => {
+    for (const a of ["AF and BE", "AF", "AF and AF", "BE and HD"]) {
+      expect(judgeAnswer("TEXT_ENTRY", Q17, a), `should reject "${a}"`).toBe(false);
+    }
+  });
+  it("throws when accepted_answers is present but empty", () => {
+    expect(() =>
+      judgeAnswer("TEXT_ENTRY", { stem: "x", correct_answer: "AF and GC", accepted_answers: [] } as Json, "AF and GC"),
+    ).toThrow(/accepted_answers is empty/);
+  });
+  it("falls back to correct_answer when accepted_answers is absent (unchanged behavior)", () => {
+    expect(judgeAnswer("TEXT_ENTRY", teContent("cylinder"), "Cylinder")).toBe(true);
+  });
+});
+
 describe("judgeAnswer / TEXT_ENTRY content errors", () => {
   it("throws when correct_answer is missing", () => {
     expect(() =>

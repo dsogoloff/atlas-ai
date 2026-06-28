@@ -167,6 +167,22 @@ export function judgeAnswer(
     }
 
     case "TEXT_ENTRY": {
+      // Any-of keys mirror NUMERIC_ENTRY: content.accepted_answers lists every value
+      // that grades correct, judged with the same normalizeTextAnswer() compare as a
+      // plain correct_answer. Used where one prompt has several valid spellings/orderings
+      // (e.g. naming a pair of lines "AF and GC" / "GC, AF" / "FA and CG"). correct_answer
+      // stays as the human-readable key (report + classifier). Stays server-side (serialize
+      // sends stem only for TEXT_ENTRY).
+      if ("accepted_answers" in obj) {
+        const accepted = readStringArray(obj, "accepted_answers", format);
+        if (accepted.length === 0) {
+          throw new Error(
+            "[correctness] accepted_answers is empty on TEXT_ENTRY content",
+          );
+        }
+        const got = normalizeTextAnswer(answerGiven);
+        return accepted.some((key) => normalizeTextAnswer(key) === got);
+      }
       const correct = readString(obj, "correct_answer", format);
       return normalizeTextAnswer(answerGiven) === normalizeTextAnswer(correct);
     }

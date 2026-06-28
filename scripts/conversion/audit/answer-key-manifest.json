@@ -1,0 +1,1555 @@
+{
+  "generated_by": "scripts/conversion/answer-key-manifest.ts",
+  "audit_date": "2026-06-28",
+  "note": "Regenerate with `pnpm tsx scripts/conversion/answer-key-manifest.ts --write` after adding/editing questions or re-auditing keys.",
+  "counts": {
+    "INACTIVE": 29,
+    "UNGRADEABLE_FROM_KEY": 10,
+    "MATCH": 166,
+    "MISMATCH_OVERRIDE": 2,
+    "NO_KEY_ENTRY": 10
+  },
+  "entries": [
+    {
+      "external_id": "SAM-L0A-Q01",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0A-Q02",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0A-Q03",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q04",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0A-Q05",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q06",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q07",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q08",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0A-Q09",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0A-Q10",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q11",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0A-Q12",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0A-Q13",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q14",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q15",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0A-Q16",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0A-Q17",
+      "booklet": "L0A",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0A-Q18",
+      "booklet": "L0A",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0B-Q01",
+      "booklet": "L0B",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0B-Q02",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q03",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0B-Q04",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q05",
+      "booklet": "L0B",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0B-Q06",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MISMATCH_OVERRIDE",
+      "key_verified": false,
+      "note": "stored={7, 8} (stem reinterpreted: tap numbers greater than 6); key=colour 7 and 6 → {6, 7}; Founder reinterpreted the worksheet's contradictory instruction; seed.sql:3982-3985,4003."
+    },
+    {
+      "external_id": "SAM-L0B-Q07",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q08",
+      "booklet": "L0B",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0B-Q09",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q10",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q11",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q12",
+      "booklet": "L0B",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0B-Q13",
+      "booklet": "L0B",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0B-Q14",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0B-Q15",
+      "booklet": "L0B",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q01",
+      "booklet": "L0C",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0C-Q02",
+      "booklet": "L0C",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0C-Q03",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q04",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q05",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "UNGRADEABLE_FROM_KEY",
+      "key_verified": false,
+      "note": "key cell is open/observational (no value to compare)"
+    },
+    {
+      "external_id": "SAM-L0C-Q06",
+      "booklet": "L0C",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0C-Q07",
+      "booklet": "L0C",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0C-Q08",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q09",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q10",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q11",
+      "booklet": "L0C",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0C-Q11A",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q11B",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q11C",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q11D",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q12",
+      "booklet": "L0C",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L0C-Q13",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q14",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q15",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L0C-Q16",
+      "booklet": "L0C",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q01",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q02",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q03",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q04",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q05",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q06",
+      "booklet": "L1",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L1-Q07",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "key table cell blank; stored answer not traceable to a key entry"
+    },
+    {
+      "external_id": "SAM-L1-Q08",
+      "booklet": "L1",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L1-Q09",
+      "booklet": "L1",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L1-Q10",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q11",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q12",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q13",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "key table cell blank; stored answer not traceable to a key entry"
+    },
+    {
+      "external_id": "SAM-L1-Q14",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q15",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "key table cell blank; stored answer not traceable to a key entry"
+    },
+    {
+      "external_id": "SAM-L1-Q16",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q17",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q18",
+      "booklet": "L1",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L1-Q19",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q20",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q21",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q22",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q23",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q24",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q25",
+      "booklet": "L1",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L1-Q26",
+      "booklet": "L1",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L1-Q27",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L1-Q28",
+      "booklet": "L1",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q01",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q02",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q03",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q04",
+      "booklet": "L2",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L2-Q05",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q06",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q07",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q08",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q09",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q10",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q11",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q12",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q13",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q14",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q15",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q16",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q17",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q18",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q19",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q20",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q21",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L2-Q22",
+      "booklet": "L2",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q01",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q02",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q03",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q04",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q05",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q06",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q07",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q08",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q09",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q10",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q11",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q12",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q13",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q14",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q15",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q17",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MISMATCH_OVERRIDE",
+      "key_verified": false,
+      "note": "stored=25; key=3; Team judged the printed key wrong; picture-graph (9-4)×5=25; seed.sql:3825-3829."
+    },
+    {
+      "external_id": "SAM-L3-Q18",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q19",
+      "booklet": "L3",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L3-Q20",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q21",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q22",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L3-Q23",
+      "booklet": "L3",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q01",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q02",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q03",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q04",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q05",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q06",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q07",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q08",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q09",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q10",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q11",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q12",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q13",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q14",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q15",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q16",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q17",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q18",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q20",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q21",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q22",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q23",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q24",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q25",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q26",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L4-Q27",
+      "booklet": "L4",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q01",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q02",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q03",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q04",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q05",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q06",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q07",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q08",
+      "booklet": "L5",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L5-Q09",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q10",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q11",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q12",
+      "booklet": "L5",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L5-Q13",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q14",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q15",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q16",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q17",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q18",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q19",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q20",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q21",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q22",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q23",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q24",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q25",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q26",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q27",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q28",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q29",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L5-Q30",
+      "booklet": "L5",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q01",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q02",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q03",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q04",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q05",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q06",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q07",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q08",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q09",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q10",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q11",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q12",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q13",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q14",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q15",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q16",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "NO_KEY_ENTRY",
+      "key_verified": false,
+      "note": "L6 AWARENESS: fraction/decimal item — answer is COMPUTED, NOT key-verified (key table cell blank). Founder-acknowledged 2026-06-28."
+    },
+    {
+      "external_id": "SAM-L6-Q18",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q19",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q20",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q21",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q22",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q23",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q24",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q25",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q26",
+      "booklet": "L6",
+      "active": false,
+      "verdict": "INACTIVE",
+      "key_verified": false
+    },
+    {
+      "external_id": "SAM-L6-Q27",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q28",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q29",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q30",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q31",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q32",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q33",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q34",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q36",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q37",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    },
+    {
+      "external_id": "SAM-L6-Q38",
+      "booklet": "L6",
+      "active": true,
+      "verdict": "MATCH",
+      "key_verified": true
+    }
+  ]
+}
