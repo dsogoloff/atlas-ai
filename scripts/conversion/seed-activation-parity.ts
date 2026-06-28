@@ -13,6 +13,8 @@
 //   * activated      — external_ids in a statement that sets is_active = true
 //   * content_id     — external_ids in a statement that sets content_id
 //   * short_eligible — external_ids in a statement that sets short_test_eligible = true
+//                      AND does not also set is_active = false (a held row's short=true is
+//                      the half-flag the invariant removes, not a mirror to reproduce)
 //   * image_path     — every "image_path":"<key>" referenced
 //   * tax_code       — every tax_content code created (insert into tax_content)
 // Anything a migration declares but seed lacks => the mirror was DROPPED => FAIL,
@@ -77,7 +79,14 @@ export function extract(sql: string): Record<Dimension, Set<string>> {
   return {
     activated: idsInStatementsWhere(sql, (st) => /is_active\s*=\s*true/.test(st)),
     content_id: idsInStatementsWhere(sql, (st) => /content_id\s*=/.test(st)),
-    short_eligible: idsInStatementsWhere(sql, (st) => /short_test_eligible\s*=\s*true/.test(st)),
+    // short=true only counts as a servable activation to mirror when the SAME statement
+    // does not also hold the row inactive. A held block (is_active=false + short=true) is
+    // the half-flag the invariant removes (is_active=false ⟹ short=false; see
+    // scripts/conversion/short-eligible-invariant.ts), not a mirror seed must reproduce.
+    short_eligible: idsInStatementsWhere(
+      sql,
+      (st) => /short_test_eligible\s*=\s*true/.test(st) && !/is_active\s*=\s*false/.test(st),
+    ),
     image_path: imagePaths,
     tax_code: taxCodes,
   };
