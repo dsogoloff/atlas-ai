@@ -3,7 +3,71 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-26
+
+* **Answer log now resolves tap/id-set answers to readable labels via a dedicated
+  `humanize.ts` module; raw JSON never surfaces to parents (PR #171,
+  lane/answer-log-humanize, 2026-06-26).** Root cause: `answers/page.tsx` stringified
+  the raw `answer_given` JSONB for tap- and id-keyed formats (CLICK_IMAGE_SINGLE/MULTI,
+  SELECT_MULTIPLE, IMAGE_ORDERING, VISUAL_MATCHING, MULTI_BLANK, EQUATION_SET). Fix: new
+  `src/app/(parent)/report/answers/humanize.ts` maps each format's stored id(s) back to
+  the matching option or tile label using the question's served content; MC/numeric/text/
+  drag-drop are passed through unchanged. The function never throws and never returns raw
+  JSON. `fetchItemReview` in the instructor/admin path does NOT select `answer_given` and
+  is unaffected. Verify GREEN 1346 tests.
+
+* **Narration self-heal guard: broaden the regeneration predicate to cover the no-row
+  case, then prevent a regen loop with an at-most-once sentinel row (PR #173,
+  lane/l4-narrative-fix, 2026-06-26).** Root cause: when `attemptNarration` throws on a
+  transient `callSonnet` failure at session completion, the catch-all returns without
+  persisting any `report_narrations` row; every subsequent page load re-enters the
+  generation path, potentially looping or silently showing a generic-lede report forever.
+  Fix: `shouldRegenerateNarration` in `src/lib/report/narration/refresh.ts` now triggers
+  a regen when (a) there is no cached row AND (b) the assembled content carries strand
+  data (new predicate `narrationRowIsSelfHealAttempted`). At-most-once guard: if the
+  triggered regen fails, `report/page.tsx` persists a `status:"failed"` sentinel row
+  (`failedNarrationMarker`) so the next request sees a row, `narrationRowIsSelfHealAttempted`
+  returns true, and the page settles into the data-only fallback instead of looping.
+  Existing strand-suppressed rows are never clobbered. Rationale for the sentinel-row
+  pattern: it piggybacks on the existing `report_narrations` table with no schema change,
+  is idempotent, and keeps the fallback deterministic after one regen attempt per session.
+  Verify GREEN 1346 tests.
+
 ## 2026-06-25
+
+* **Admin scope implemented as ADDITIVE RLS SELECT policies + a SECURITY DEFINER tenant
+  resolver, not by altering instructor policies (PR #170, lane/admin-tenant-view,
+  2026-06-25).** A new `app_current_admin_tenant_id()` SECURITY DEFINER function
+  (auth.uid()-scoped, ACTIVE-gated, mirrors `app_current_instructor_id` in shape)
+  serves as the tenant resolver for admins. New SELECT policies on children /
+  assessment_sessions / pedagogical_notes filter on
+  `tenant_id = app_current_admin_tenant_id()`. These are ADDITIVE (Postgres ORs
+  permissive policies): instructors retain their existing center-scoped policies
+  unchanged; admins gain tenant-wide scope via the new policies; a non-admin caller
+  gets NULL from the helper, which matches no rows. No existing instructor policy was
+  touched. Rationale: additive policies require no migration of existing rows, preserve
+  regression-safety for the instructor path, and the NULL-safe helper means the new
+  policies are inert for any caller that is not an active admin.
+
+* **The instructor surface (roster, stats, shared student detail) is REUSED for admins,
+  not duplicated (PR #170, 2026-06-25).** A new `resolveStaff(client)` function returns
+  `{kind:'instructor'|'admin', ...}` from a single query path; both routes call the same
+  `fetchRoster` (which gains `centerName` + center-sort), the same shared
+  `roster-view.tsx` component (new, with an optional Center column), and the same
+  `/instructor/student/[childId]` detail page. The shell accepts optional `roleLabel` /
+  `homeHref` props (labeled "Admin" for the admin route; defaults preserve existing
+  instructor callers). Duplication avoided by parameterizing at the component/prop level
+  rather than copying routes. `resolveInstructor` is kept for instructor-only write paths
+  (note authoring).
+
+* **Admins are read-only: no note authoring, no usefulness rating, no report-viewed
+  tracking (PR #170, 2026-06-25).** The DB has no admin write policies (only additive
+  SELECT policies were added); the UI additionally hides the add-note form, the
+  post-note usefulness rating widget, and the `instructor_report_viewed` tracking call
+  when `resolveStaff` returns `kind==='admin'`. `NotesPanel` gained a `readOnlyMessage`
+  prop for the read-only state. Report content, strand bars, misconceptions, and item
+  review render for both instructor and admin. Compliance is unchanged (no parent PII
+  exposed; licensed question content gated).
 
 * ⚑ **Pre-narration gap closed with a bounded polling interstitial (founder Option 1)
   (PR #166, lane/young-band-narration-render, 2026-06-25).** Root cause: `report_narrations`

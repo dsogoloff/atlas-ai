@@ -4,7 +4,141 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-06-25 (two young-band report fixes: pre-narration interstitial + railed-placement clamp) — origin head entering this session: **`bf792cc`** (after PRs #163/#164/#165 merged). One new lane PR opened (#166); independent off `ATLAS-ASSESSMENT`, not stacked. No migration — **no `supabase db reset` needed.**
+**As of:** 2026-06-27 (prod schema reconciliation + bank-flag loader) — PR #186 (prod-bringup batch 1: introspect + 06-gen-catchup + catchup artifacts) MERGED at dfb82a6 (now in ATLAS-ASSESSMENT). PR #188 (batch 2: full-attribute rewrite 07, 09 remediation, compare.ts, accepted-drift allowlist, 06→direct Postgres) OPEN, verify-bar CI GREEN, Vercel preview pass, awaiting Dimitri's attended merge.
+
+- **PR #188 — lane/prod-bringup-inspect-fix — OPEN (CI GREEN, Vercel preview pass).**
+  "feat(prod-bringup): full-attribute schema verification + type-remediation tooling".
+  Branch `lane/prod-bringup-inspect-fix`, head commit `0184670`, base `ATLAS-ASSESSMENT`.
+  New / rewritten tooling in `scripts/conversion/prod-bringup/`:
+  - `introspect.ts` — prod now introspected via direct Postgres (`PROD_DATABASE_URL` in
+    `.env.prod.local`, gitignored). Legacy PostgREST-OpenAPI path retained as no-DB-password
+    fallback; superseded for introspection (only 20/24 tables visible via OpenAPI; no
+    policy bodies).
+  - `compare.ts` — full attribute comparison per column (`data_type` incl. numeric
+    precision/scale + varchar length, `is_nullable`, `column_default`; enum types
+    end-to-end) + `classifyTypeChange` (widen/narrow/incompatible) + `ACCEPTED_DRIFTS`
+    allowlist (beta sign-off by founder).
+  - `06-gen-prod-schema-catchup.ts` — additive/presence catch-up; now reads prod via
+    direct Postgres; emits only genuinely-missing tables/columns/enums/policies/RLS
+    (guarded/idempotent).
+  - `07-verify-prod-schema.ts` — full attribute verifier; table/column-by-column
+    MATCH/ACCEPTED/DRIFT/MISSING; exits nonzero on UNEXPECTED drift; accepted-for-beta
+    drifts tolerated (not failures).
+  - `09-gen-prod-type-remediation.ts` — classifies drift: AUTO-SAFE (widen/lossless cast,
+    loosen NOT NULL, add missing default, add enum value → `remediation.generated.sql`,
+    idempotent) vs REVIEW (narrow/lossy, tighten NULL→NOT NULL, default change/drop,
+    prod-only → `remediation.review.md`); accepted drifts → "accepted, no action".
+  pnpm scripts: `convert:prod-catchup:gen` / `:verify` / `:remediate`. Added `pg` +
+  `@types/pg` devDeps.
+  Verify GREEN (CI). Codex manual/skipped (relay unauth).
+
+  **Prod schema state (read-only introspection this session — NOTHING applied to prod):**
+  All 24 tables + 16 enum types + 34 RLS policies present and matching local canonical.
+  0 missing; 0 UNEXPECTED attribute drift → `07` exits 0. `catchup.generated.sql` and
+  `remediation.generated.sql` are both empty (nothing to apply). 9 founder-accepted-for-beta
+  drifts: (a) 4 `responses` columns NOT NULL in local but NULLABLE in prod —
+  `expected_time_sec`, `time_ratio`, `time_flag_config_version`, `used_fallback`
+  (tightening DEFERRED past beta — requires backfill before `SET NOT NULL`); (b) 5
+  prod-only defaults kept additive — `responses.time_flag` and
+  `questions.{word_count,operation_type,num_operations,representation}`; (c) 2 prod-only
+  columns kept additive — `questions.time_expected_seconds`,
+  `report_narrations.misconceptions_lede`. `responses.time_taken_seconds` corrected to
+  `numeric(10,3)` in prod Supabase Studio by founder this session → now MATCH.
+  Key infra: prod is directly introspectable via `PROD_DATABASE_URL` (direct Postgres);
+  PostgREST OpenAPI superseded for introspection purposes.
+
+- **PR #186 — lane/prod-bringup (batch 1) — MERGED (`dfb82a6`, now in ATLAS-ASSESSMENT).**
+  Audited prod bank loader `scripts/conversion/prod-bringup/05-load-bank-prod.ts`
+  (commit `aa3446f`): replicates audited local bank → prod via PostgREST upserts —
+  `tax_*` then `questions`, carrying per-row `is_active` / `short_test_eligible` flags
+  and `content_id` (FKs remapped by natural code). Dry-run/count by default; live upsert
+  only with `--prod` behind the `.env.prod.local` gate (founder-run).
+  OPEN QUESTION: whether the live `--prod` bank upsert has been executed against prod,
+  and whether prod's per-level active/short_test_eligible counts match the audited local
+  bank. Needs Dimitri to confirm (see NEXT_ACTIONS).
+
+---
+
+**As of:** 2026-06-26 (two report-render defect fixes) — two independent lane PRs opened (#171, #173); both off `ATLAS-ASSESSMENT`, not stacked; both verify-bar GREEN (1346 tests). No migration in either — **no `supabase db reset` needed.** Both PRs are open, awaiting Dimitri's attended merge after Vercel preview review.
+
+- **PR #171 — lane/answer-log-humanize — OPEN.**
+  "fix(report): humanize tap/id-set answer formats in the answer log".
+  Defect: `src/app/(parent)/report/answers/page.tsx` dumped raw JSON for tap- and
+  id-set-keyed answer formats (CLICK_IMAGE_SINGLE, CLICK_IMAGE_MULTI, SELECT_MULTIPLE,
+  IMAGE_ORDERING, VISUAL_MATCHING, MULTI_BLANK, EQUATION_SET). New file
+  `src/app/(parent)/report/answers/humanize.ts` (+ `humanize.test.ts`) resolves tapped /
+  selected ids to the matching option or tile label for those six formats; MC / numeric /
+  text / drag-drop are passed through unchanged. Never dumps raw JSON; never throws.
+  Instructor / admin `fetchItemReview` confirmed NOT affected (does not select
+  `answer_given`). Verify GREEN (1346 tests).
+
+- **PR #173 — lane/l4-narrative-fix — OPEN.**
+  "fix(report): self-heal narration when no cached row and strand data is present".
+  Defect: an L4 short-test report (session `7a903c1e`, child `fac00000-…-000004`) rendered
+  with no strengths/growth narrative. Root cause: `attemptNarration`'s catch-all returned
+  without persisting after a transient `callSonnet` failure at session completion — leaving
+  no `report_narrations` row; every subsequent page load hit the no-row branch and showed
+  the generic-lede report.
+  Branch taken: generation-failed / no-row, transient (reproduced once; session / assembly
+  / prompt all healthy).
+  Fix: `shouldRegenerateNarration` in `src/lib/report/narration/refresh.ts` broadened to
+  regenerate when there is no cached row AND the assembled content has strand data (new
+  predicate `narrationRowIsSelfHealAttempted`). At-most-once regen-loop guard: on a failed
+  no-row regeneration `report/page.tsx` persists a `status:"failed"` marker row
+  (`failedNarrationMarker`) so the next view settles into the data-only fallback instead
+  of re-entering the regeneration path indefinitely. Never clobbers a useful
+  strand-suppressed row. Regression tests added in `refresh.test.ts`. Verify GREEN
+  (1346 tests).
+
+---
+
+**As of:** 2026-06-25 (tenant-wide admin view + two young-band report fixes) — origin head entering this session: **`bf792cc`** (after PRs #163/#164/#165 merged). Two new lane PRs opened (#166, #170); both independent off `ATLAS-ASSESSMENT`, not stacked. PR #170 adds a migration — **`supabase db reset` required after merge.**
+
+- **PR #170 — lane/admin-tenant-view — OPEN.**
+  "feat(admin): tenant-wide admin view reusing the instructor surface".
+  Independent off `ATLAS-ASSESSMENT`; not stacked. Verify GREEN: 1342 tests / 103 files,
+  tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped (relay unauth).
+  **Post-merge: `supabase db reset`** (adds admins table + admin_status enum +
+  app_current_admin_tenant_id function + admin SELECT policies; seeds dev admin
+  admin@atlas.local / admin-password).
+
+  **Schema** (migration `20260625120000_admins_tenant_view.sql` + seed mirror): new
+  `admins` table (admin_status enum ACTIVE/INACTIVE, tenant FK, unique auth_user_id,
+  tenant index, RLS + admins_self_select); SECURITY DEFINER
+  `app_current_admin_tenant_id()` (auth.uid()-scoped, ACTIVE-gated; mirrors
+  app_current_instructor_id); ADDITIVE SELECT policies on children / assessment_sessions /
+  pedagogical_notes (`tenant_id = app_current_admin_tenant_id()`). Existing instructor
+  policies UNTOUCHED (Postgres ORs permissive policies → instructors keep center scope,
+  admins get tenant scope; non-admin caller gets NULL helper → matches no rows).
+  `seed.sql` adds dev admin at the dev tenant.
+
+  **App**: new `resolveStaff(client)` → `{kind:'instructor'|'admin', id?, tenant_id,
+  center_id?, name}` in `(instructor)/instructor/lib/instructor.ts` (resolveInstructor
+  kept for instructor-only note writes). `fetchRoster` + `RosterRow` gain `centerName`
+  (centers join via children.home_center_id), sorted by center then name; RLS does the
+  scoping so the same query is tenant-wide for admin / center-only for instructor.
+  Shared roster presentation extracted to
+  `(instructor)/instructor/_components/roster-view.tsx` (RosterStats + RosterTable with
+  optional Center column); instructor page reuses it. New `(admin)/admin/page.tsx` route
+  (+ `(admin)/layout.tsx`): resolveStaff → require kind admin else no-access notice;
+  RosterStats + roster table WITH Center column; rows link to the SHARED
+  `/instructor/student/[childId]`; unauth → /login?next=/admin; instructor shell reused,
+  labeled "Admin" via new optional roleLabel/homeHref props (defaults keep instructor
+  callers unchanged). Shared student detail (`student/[childId]/page.tsx`) now gates on
+  resolveStaff (instructor OR admin); notes-ADD form + usefulness rating +
+  report-view tracking render ONLY when kind==='instructor'; admins see notes read-only
+  (NotesPanel gained a `readOnlyMessage` prop) + no rating. Report / strand bars /
+  misconceptions / item review render for both. Compliance unchanged (no parent PII;
+  question content gated).
+
+  `database.types.ts` hand-edited (no live regen): added admins table types, admin_status
+  enum (type + Constants), app_current_admin_tenant_id function.
+
+  **Tests**: new `instructor.test.ts` (resolveStaff: instructor/admin/inactive/none) +
+  roster.test.ts additions (centerName join + sort by center then name, tenant-wide rows
+  all returned/never narrowed; null-center fallback).
+
+---
 
 - **PR #166 — lane/young-band-narration-render — OPEN.**
   "fix(report): preparing-report interstitial + clamp railed placement to served floor".
@@ -464,6 +598,10 @@ PR #59 lane snapshot: 979 tests / 72 files (+64/+16 over baseline).
 ## Lanes
 | Lane | State | Notes |
 |------|-------|-------|
+| Prod schema reconciliation + remediation tooling (PR #188) | OPEN PR #188 — CI GREEN | lane/prod-bringup-inspect-fix, head `0184670`, base ATLAS-ASSESSMENT. `introspect.ts` (direct Postgres via `PROD_DATABASE_URL`), `compare.ts` (full-attribute + `ACCEPTED_DRIFTS` allowlist), `06` (→direct Postgres), `07-verify-prod-schema.ts` (exits nonzero on UNEXPECTED drift), `09-gen-prod-type-remediation.ts` (AUTO-SAFE / REVIEW split). Prod state: 24 tables + 16 enums + 34 policies all MATCH or ACCEPTED; 0 UNEXPECTED drift; both generated SQL files empty; 9 accepted-for-beta drifts. Verify GREEN (CI). Codex manual/skipped. Awaiting Dimitri merge. |
+| Prod bank loader (PR #186) | MERGED (`dfb82a6`) | lane/prod-bringup (batch 1). `05-load-bank-prod.ts` (commit `aa3446f`): local→prod PostgREST upserts, dry-run default, `--prod` flag behind `.env.prod.local` gate. OPEN QUESTION: whether live `--prod` upsert has been run against prod and whether counts match audited local bank. Needs Dimitri to confirm. |
+| Answer log humanize (PR #171) | OPEN PR #171 | lane/answer-log-humanize, off ATLAS-ASSESSMENT. No migration. New `src/app/(parent)/report/answers/humanize.ts` + `humanize.test.ts`: resolves tap/id-set answer formats (CLICK_IMAGE_SINGLE/MULTI, SELECT_MULTIPLE, IMAGE_ORDERING, VISUAL_MATCHING, MULTI_BLANK, EQUATION_SET) to readable labels; MC/numeric/text/drag-drop unchanged; never throws. `fetchItemReview` (instructor/admin) unaffected. Verify GREEN 1346 tests. |
+| L4 narrative self-heal (PR #173) | OPEN PR #173 | lane/l4-narrative-fix, off ATLAS-ASSESSMENT. No migration. `shouldRegenerateNarration` broadened for no-row + strand-data case; at-most-once guard via `failedNarrationMarker` status row; new predicate `narrationRowIsSelfHealAttempted`. Regression tests in `refresh.test.ts`. Verify GREEN 1346 tests. |
 | Young-band narration render: interstitial + placement clamp (PR #166) | OPEN PR #166 | lane/young-band-narration-render, off ATLAS-ASSESSMENT head `bf792cc`. No migration. Pre-narration polling interstitial (bounded 30s, degrades to generic-lede on timeout); railed-placement clamp in `assembleReportContent` (`clampLevelToServedCeiling`). New files: `narration-pending.ts` + test, `preparing-report.tsx`; modified: `report/page.tsx`, `assemble.ts` + test. Verify GREEN 1336/102, tsc 0, lint 0 errors (2 known warnings). Codex manual/skipped. |
 | Intake grades-7/8 disable + >L6 clamp (PR #159) | OPEN PR #159 — CI GREEN | lane/intake-grades78-disable-l6clamp, off origin/ATLAS-ASSESSMENT. No migration. Grades 7/8 greyed "(coming soon)" non-selectable; `halfGradeToTaxLevelCode` clamps 7A/7B/8A/8B → l6 (was returning null → empty strand_mastery). Exported + unit-tested. Verify GREEN. |
 | Low-level strand report fix (PR #160) | OPEN PR #160 — CI GREEN | lane/report-low-level-strand-fix, off origin/ATLAS-ASSESSMENT. No migration. Engine-strand fallback when content_id yields zero sub-strands; gated on `subStrandByQuestion.size===0`. 0A + L1 regression tests. Verify GREEN. NOTE: 0A readiness/placement-card behavior (possibly deliberate suppression in readiness.ts) left for Dimitri to confirm on preview. |
