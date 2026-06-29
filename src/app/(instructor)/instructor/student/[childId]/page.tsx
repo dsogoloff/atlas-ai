@@ -23,6 +23,7 @@ import Link from "next/link";
 
 import { timeFlagBadge } from "@/lib/display/progress";
 import { comprehensiveBudget } from "@/lib/engine/comprehensive";
+import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import type { Strand as EngineStrand } from "@/lib/engine/types";
 import { deriveTier } from "@/lib/tier/derive";
 import { assembleReportContent } from "@/lib/report/assemble";
@@ -34,6 +35,7 @@ import { isPlacementEstimateJson } from "@/lib/responseSubmit/types";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
+import { ReportArticle } from "@/app/(parent)/report/report-article";
 import {
   ENGINE_STRAND_LABELS,
   STRAND_LABELS,
@@ -171,9 +173,11 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
     }
   }
 
-  // Strengths reuse the parent report's narration prose (findings_strengths).
-  // Read-only; instructor sees the same per-run strengths the parent does.
-  let strengths: string[] = [];
+  // Narration prose — the SAME per-run prose the parent report renders (read
+  // the cached row; no self-heal here, matching the existing instructor read).
+  // The admin view feeds the whole prose object to ReportArticle; the
+  // instructor view uses only findings_strengths for its Strengths section.
+  let narrationProse: ReturnType<typeof resolveNarrationProse> = null;
   if (report && session) {
     const { data: narrationRow } = await supabase
       .from("report_narrations")
@@ -182,10 +186,9 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
       )
       .eq("session_id", session.id)
       .maybeSingle();
-    strengths =
-      resolveNarrationProse(narrationRow ?? null, report.time_flag)?.key_findings
-        ?.strengths ?? [];
+    narrationProse = resolveNarrationProse(narrationRow ?? null, report.time_flag);
   }
+  const strengths = narrationProse?.key_findings?.strengths ?? [];
 
   const items =
     report && session
@@ -239,29 +242,51 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
         )}
 
         {report ? (
-          <>
-            <StudentSummaryHeader
-              name={child.name}
-              gradeLabel={report.child.grade_label}
-              reportId={report.metadata.report_id}
-              assessedDate={report.metadata.assessed_date_display}
-              report={report}
-            />
-            {report.time_flag !== "normal" && (
-              <ReliabilityNote flag={report.time_flag} />
-            )}
-            <BentoMetrics
-              correct={correctCount}
-              total={items.length}
-              totalSeconds={totalTimeSeconds}
-            />
-            <StrandBars rows={report.strand_mastery} />
-            <StrengthsSection items={strengths} />
-            <MisconceptionSection items={report.misconceptions} />
-            <RecommendationSection items={report.recommendations} />
-            <StrandCoverageSection rows={strandCoverage} />
-            <ItemReviewSection items={items} />
-          </>
+          isInstructor ? (
+            // INSTRUCTOR — unchanged staff layout (instructor-facing chrome).
+            <>
+              <StudentSummaryHeader
+                name={child.name}
+                gradeLabel={report.child.grade_label}
+                reportId={report.metadata.report_id}
+                assessedDate={report.metadata.assessed_date_display}
+                report={report}
+              />
+              {report.time_flag !== "normal" && (
+                <ReliabilityNote flag={report.time_flag} />
+              )}
+              <BentoMetrics
+                correct={correctCount}
+                total={items.length}
+                totalSeconds={totalTimeSeconds}
+              />
+              <StrandBars rows={report.strand_mastery} />
+              <StrengthsSection items={strengths} />
+              <MisconceptionSection items={report.misconceptions} />
+              <RecommendationSection items={report.recommendations} />
+              <StrandCoverageSection rows={strandCoverage} />
+              <ItemReviewSection items={items} />
+            </>
+          ) : (
+            // ADMIN ("master instructor") — the SAME full parent report the
+            // parent sees (placement, radar, strand map, strand lede, Strengths,
+            // Areas to confirm, readiness, placement recommendation), reusing
+            // ReportArticle. staffView suppresses the parent-only action widgets
+            // (Next Steps / follow-up CTAs, feedback rating island). The
+            // admin-only deep affordances (strand coverage, item-level review)
+            // stay AFTER the report; the parent-account panel renders above it.
+            <>
+              <ReportArticle
+                reportContent={report}
+                narrationProse={narrationProse}
+                childId={child.id}
+                schoolFieldEnabled={isLeadSchoolFieldEnabled()}
+                staffView
+              />
+              <StrandCoverageSection rows={strandCoverage} />
+              <ItemReviewSection items={items} />
+            </>
+          )
         ) : (
           <>
             <h1 className="font-display-child text-sam-navy text-3xl md:text-[40px] tracking-tight">
