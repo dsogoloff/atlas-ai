@@ -87,12 +87,24 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
   const h = await headers();
   const origin = h.get("origin") ?? h.get("referer") ?? "";
 
+  const fullName = `${data.firstName} ${data.lastName}`.trim();
+
   // Create auth user (queues verification email — see compliance.md §2).
   const auth = await createClient();
   const { data: signup, error: signupErr } = await auth.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
+      // Persist the name on the auth identity too (not just the parents row).
+      // This is display/recovery metadata only — NEVER an authorization source
+      // (user_metadata is user-editable). It lets the dashboard self-heal an
+      // orphaned auth user (parents-insert failure) by rebuilding the profile
+      // from the auth identity. See dashboard/recover-profile.ts.
+      data: {
+        full_name: fullName,
+        first_name: data.firstName,
+        last_name: data.lastName,
+      },
       // Email confirmation uses the token-hash (verifyOtp) flow, NOT PKCE: the
       // "Confirm signup" template links to
       //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/coppa
@@ -124,16 +136,31 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
       tenant_id: tenant.id,
       home_center_id: center.id,
       email: data.email,
-      name: `${data.firstName} ${data.lastName}`.trim(),
+      name: fullName,
     })
     .select("id")
     .single();
   if (parentErr || !parent) {
-    // Best-effort cleanup: the auth user was created but we couldn't
-    // attach a parent row. Surface the error; admin can clean up later.
+    // ROLL BACK the just-created auth user. Without this the account is an
+    // orphan: it can authenticate but has no parents row, so it dead-ends
+    // forever ("Account profile not found") and the email can't even be
+    // reused to sign up again. Deleting the auth user makes a retry clean.
+    const { error: rollbackErr } = await admin.auth.admin.deleteUser(
+      signup.user.id,
+    );
+    if (rollbackErr) {
+      // Delete failed — the orphan persists. Log loudly (the dashboard
+      // self-heal in recover-profile.ts is the backstop) but still surface
+      // the ORIGINAL failure to the user; do not mask it with the cleanup error.
+      console.error("[signup] orphan rollback failed — auth user persists", {
+        authUserId: signup.user.id,
+        rollbackErr,
+        parentErr,
+      });
+    }
     return {
       ok: false,
-      error: "Account created but profile save failed. Contact support.",
+      error: "Could not finish creating your account. Please try again.",
     };
   }
 
