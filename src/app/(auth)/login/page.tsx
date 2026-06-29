@@ -15,7 +15,12 @@ import { LoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  searchParams: Promise<{ next?: string; confirmed?: string; email?: string }>;
+  searchParams: Promise<{
+    next?: string;
+    confirmed?: string;
+    email?: string;
+    reset?: string;
+  }>;
 }
 
 export default async function LoginPage({ searchParams }: Props) {
@@ -30,6 +35,7 @@ export default async function LoginPage({ searchParams }: Props) {
     next: nextRaw,
     confirmed: confirmedRaw,
     email: emailRaw,
+    reset: resetRaw,
   } = await searchParams;
   const next =
     nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
@@ -40,6 +46,10 @@ export default async function LoginPage({ searchParams }: Props) {
   // successful verifyOtp. Drives a success banner + email prefill on the form.
   const confirmed = confirmedRaw === "1";
   const confirmedEmail = confirmed ? (emailRaw ?? "") : "";
+
+  // Informational "password updated" state, set by /reset-password after a
+  // successful updateUser + sign-out. Drives a success banner on the form.
+  const reset = resetRaw === "1";
 
   // Anonymous-only gate (Phase 3 D2 + P3). If already signed in, honour the
   // VALIDATED next so /login?next=/admin sends an authenticated staff user to
@@ -132,6 +142,7 @@ export default async function LoginPage({ searchParams }: Props) {
                 next={next}
                 confirmed={confirmed}
                 confirmedEmail={confirmedEmail}
+                reset={reset}
               />
             </div>
           </div>

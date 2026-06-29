@@ -25,9 +25,17 @@ interface Props {
   confirmed?: boolean;
   /** Email to prefill (carried from the confirm link), when available. */
   confirmedEmail?: string;
+  /** True when the user just reset their password (/reset-password → login).
+   *  Shows an informational "Password updated" banner above the form. */
+  reset?: boolean;
 }
 
-export function LoginForm({ next, confirmed = false, confirmedEmail = "" }: Props) {
+export function LoginForm({
+  next,
+  confirmed = false,
+  confirmedEmail = "",
+  reset = false,
+}: Props) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -73,6 +81,22 @@ export function LoginForm({ next, confirmed = false, confirmedEmail = "" }: Prop
             check_circle
           </span>
           <span>Email confirmed — please sign in to continue.</span>
+        </div>
+      )}
+
+      {reset && (
+        <div
+          role="status"
+          className="flex items-center gap-2 bg-sam-teal/10 text-sam-navy border border-sam-teal/30 px-4 py-3 rounded-xl font-caption text-caption"
+        >
+          <span
+            className="material-symbols-outlined text-sam-teal text-base"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
+          >
+            check_circle
+          </span>
+          <span>Password updated — please sign in.</span>
         </div>
       )}
 
@@ -142,6 +166,14 @@ export function LoginForm({ next, confirmed = false, confirmedEmail = "" }: Prop
             {errors.password.message}
           </p>
         )}
+        <div className="flex justify-end">
+          <Link
+            className="font-caption text-caption text-sam-red font-bold hover:underline"
+            href="/forgot-password"
+          >
+            Forgot your password?
+          </Link>
+        </div>
       </div>
 
       {/* Actions */}
