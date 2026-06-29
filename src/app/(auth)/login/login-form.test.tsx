@@ -33,4 +33,25 @@ describe("LoginForm — email-confirmed banner", () => {
     expect(html).not.toContain("Email confirmed");
     expect(html).not.toContain("parent@example.com");
   });
+
+  it("shows the 'Password updated' banner when reset", () => {
+    const html = renderToStaticMarkup(<LoginForm next="/dashboard" reset />);
+
+    expect(html).toContain("Password updated");
+    expect(html).toContain("please sign in");
+  });
+
+  it("omits the reset banner by default", () => {
+    const html = renderToStaticMarkup(<LoginForm next="/dashboard" />);
+
+    expect(html).not.toContain("Password updated");
+  });
+
+  it("always offers a 'Forgot your password?' link", () => {
+    // next/link is mocked to render only its children, so we assert the link
+    // text (the href to /forgot-password is verified structurally in the form).
+    const html = renderToStaticMarkup(<LoginForm next="/dashboard" />);
+
+    expect(html).toContain("Forgot your password?");
+  });
 });
