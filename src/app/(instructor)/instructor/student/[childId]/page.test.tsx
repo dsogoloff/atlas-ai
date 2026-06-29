@@ -210,7 +210,10 @@ function reportServiceClient(): SupabaseClient<Database> {
     from: (table: string) => {
       if (table === "parents") return chain(PARENT);
       if (table === "centers") return chain({ name: "Singapore HQ" });
-      if (table === "responses") return chain(null); // fetchStrandCoverage → []
+      // The report read path (assembly, narration, item review, strand
+      // coverage) runs on the SERVICE client now — see page.tsx reportService.
+      if (table === "report_narrations") return chain(null);
+      if (table === "responses") return chain(null);
       throw new Error(`unexpected service table: ${table}`);
     },
   } as unknown as SupabaseClient<Database>;
@@ -218,8 +221,9 @@ function reportServiceClient(): SupabaseClient<Database> {
 
 describe("StudentDiagnosticPage — admin sees the full parent report", () => {
   it("renders ReportArticle (radar + strand lede) with parent-action widgets suppressed", async () => {
+    const svc = reportServiceClient();
     mockCreateClient.mockResolvedValue(reportRlsClient(SESSION_OK));
-    mockCreateServiceClient.mockReturnValue(reportServiceClient());
+    mockCreateServiceClient.mockReturnValue(svc);
     mockResolveStaff.mockResolvedValue({
       kind: "admin",
       id: "a1",
@@ -231,6 +235,13 @@ describe("StudentDiagnosticPage — admin sees the full parent report", () => {
     const html = renderToStaticMarkup(
       await StudentDiagnosticPage({ params: Promise.resolve({ childId: CHILD_ID }) }),
     );
+
+    // Regression guard: the report is assembled with the SERVICE client, not the
+    // admin's RLS client (admin tenant-view policies don't cover responses /
+    // taxonomy / narration, so an RLS read would return an empty report).
+    const assembleArgs = vi.mocked(assembleReportContent).mock.calls[0][0];
+    expect(assembleArgs.readClient).toBe(svc);
+    expect(assembleArgs.serviceClient).toBe(svc);
 
     // Parent-report-only content (proves ReportArticle rendered).
     expect(html).toContain("Strand Performance");
