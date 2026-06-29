@@ -51,6 +51,14 @@ interface ReportArticleProps {
   childId: string;
   /** LEAD_SCHOOL_FIELD_LIVE — gates the child's-school field on the CTA form. */
   schoolFieldEnabled: boolean;
+  /** Staff (admin) oversight view: render the FULL report content verbatim, but
+   *  suppress the parent-only ACTION widgets — the Next Steps / center-follow-up
+   *  CTA, the short-test lead-capture CTA, and the feedback rating island. Those
+   *  fire parent-side effects (analytics opt-in, parent_report_viewed on mount,
+   *  a lead/satisfaction mutation) and an admin isn't the parent, so they are not
+   *  rendered at all (not merely visually disabled). Default false = the parent
+   *  experience, unchanged. */
+  staffView?: boolean;
 }
 
 /** The full editorial parent report (page.tsx Branch 7). Section order is the
@@ -61,6 +69,7 @@ export function ReportArticle({
   narrationProse,
   childId,
   schoolFieldEnabled,
+  staffView = false,
 }: ReportArticleProps) {
   const childFirstName = firstName(reportContent.child.display_name);
   const metaLine = buildMetaLine(reportContent);
@@ -154,6 +163,7 @@ export function ReportArticle({
             readiness={reportContent.readiness}
             sessionId={sessionId}
             schoolFieldEnabled={schoolFieldEnabled}
+            staffView={staffView}
           />
         </section>
       )}
@@ -166,9 +176,15 @@ export function ReportArticle({
         </Section>
       )}
 
-      <NextSteps sessionId={sessionId} />
+      {/* Parent-only ACTION widgets — suppressed for staff (admin) oversight.
+          NextSteps wraps the center-follow-up CTA (analytics opt-in on click);
+          ParentReportFeedback fires parent_report_viewed on mount and submits a
+          satisfaction rating. An admin isn't the parent, so neither is rendered. */}
+      {!staffView && <NextSteps sessionId={sessionId} />}
 
-      <ParentReportFeedback sessionId={sessionId} childId={childId} />
+      {!staffView && (
+        <ParentReportFeedback sessionId={sessionId} childId={childId} />
+      )}
 
       <Footer />
     </ReportShell>
