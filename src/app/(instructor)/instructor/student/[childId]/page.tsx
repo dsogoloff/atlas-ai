@@ -155,12 +155,27 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
   const hasReport =
     session !== null && isPlacementEstimateJson(session.current_estimate);
 
+  // The report's underlying tables (responses, taxonomy, misconceptions,
+  // curriculum_recommendations, report_narrations) are read with the SERVICE
+  // client — NOT the caller's RLS client. Authorization is already enforced
+  // UPSTREAM: resolveStaff confirmed staff, and `child` + `session` were fetched
+  // via the RLS-scoped client (instructor center / admin tenant), so the session
+  // is in-scope before we assemble. This mirrors the pattern assemble.ts
+  // documents for the narration trigger, and it is REQUIRED for admins: the
+  // admin tenant-view policies (#170) cover children/assessment_sessions/
+  // pedagogical_notes ONLY — not responses/taxonomy/narration — so an admin's
+  // RLS read of `responses` returns empty, collapsing the report to an empty
+  // radar. (Instructors have center-scoped policies and read the same rows either
+  // way.) No licensed question CONTENT is exposed: `questions` was already
+  // service-only and only id/content_id/strand/level are ever projected.
+  const reportService = createServiceClient();
+
   let report: ReportContent | null = null;
   if (hasReport && session) {
     try {
       report = await assembleReportContent({
-        readClient: supabase,
-        serviceClient: createServiceClient(),
+        readClient: reportService,
+        serviceClient: reportService,
         session,
         child,
       });
@@ -179,7 +194,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
   // instructor view uses only findings_strengths for its Strengths section.
   let narrationProse: ReturnType<typeof resolveNarrationProse> = null;
   if (report && session) {
-    const { data: narrationRow } = await supabase
+    const { data: narrationRow } = await reportService
       .from("report_narrations")
       .select(
         "status, placement_line, strand_lede, findings_strengths, findings_growth_areas, recommendations_lede",
@@ -192,7 +207,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
 
   const items =
     report && session
-      ? await fetchItemReview(supabase, createServiceClient(), session.id)
+      ? await fetchItemReview(reportService, reportService, session.id)
       : [];
   const correctCount = items.filter((i) => i.isCorrect).length;
   const totalTimeSeconds = items.reduce((sum, i) => sum + i.timeTakenSeconds, 0);
@@ -211,7 +226,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
       }),
     ).perStrandFloorN;
     strandCoverage = await fetchStrandCoverage(
-      createServiceClient(),
+      reportService,
       session.id,
       perStrandFloorN,
     );
@@ -344,11 +359,11 @@ interface ItemReviewRow {
 }
 
 async function fetchItemReview(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  readClient: ReturnType<typeof createServiceClient>,
   serviceClient: ReturnType<typeof createServiceClient>,
   sessionId: string,
 ): Promise<ItemReviewRow[]> {
-  const { data: responses } = await supabase
+  const { data: responses } = await readClient
     .from("responses")
     .select(
       "question_id, is_correct, time_taken_seconds, time_flag, detected_misconceptions, created_at",
@@ -364,7 +379,7 @@ async function fetchItemReview(
   );
   let labelByCode = new Map<string, string>();
   if (codes.length > 0) {
-    const { data: mcRows } = await supabase
+    const { data: mcRows } = await readClient
       .from("misconceptions")
       .select("code, label")
       .in("code", codes);
