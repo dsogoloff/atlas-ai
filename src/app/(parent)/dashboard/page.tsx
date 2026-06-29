@@ -35,6 +35,7 @@ import { deriveTier } from "@/lib/tier/derive";
 
 import { ChildCard } from "./child-card";
 import { ProfileMenu } from "./profile-menu";
+import { recoverParentProfile } from "./recover-profile";
 
 // Cookies + auth.getUser → no static prerender.
 export const dynamic = "force-dynamic";
@@ -50,10 +51,12 @@ export default async function ParentDashboardPage() {
   }
 
   // Resolve the parent row (RLS-scoped to the auth user's own row).
-  const { data: parent, error: parentErr } = await supabase
+  const { data: existingParent, error: parentErr } = await supabase
     .from("parents")
     .select("id, name")
     .maybeSingle();
+
+  let parent = existingParent;
   if (parentErr || !parent) {
     // A signed-in admin/instructor legitimately has no parent row — route them
     // to their own portal instead of the orphan error (staff used to land here
@@ -64,26 +67,40 @@ export default async function ParentDashboardPage() {
     if (staff?.kind === "admin") redirect("/admin");
     if (staff?.kind === "instructor") redirect("/instructor");
 
-    // Orphan auth user — parents-row insert failed at signup time. Same
-    // bug class Phase 2's add-child action surfaces. Log + render a
-    // minimal full-screen error; user contacts support. No TopAppBar
-    // since the user has no functional account state to chrome around.
-    console.error("[dashboard] parent lookup failed", {
-      authUserId: user.id,
-      err: parentErr,
-    });
-    return (
-      <main className="flex-grow flex items-center justify-center px-6 py-12">
-        <div className="max-w-md text-center bg-white rounded-3xl p-10 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30">
-          <h1 className="font-display-child text-2xl text-sam-navy mb-4">
-            Account profile not found
-          </h1>
-          <p className="font-body-regular text-sam-gray-mid">
-            We couldn&rsquo;t find your parent account. Please contact support.
-          </p>
-        </div>
-      </main>
-    );
+    // Orphaned auth user — the parents-row insert failed at signup, so this
+    // account can authenticate but has no profile. Don't dead-end: self-heal
+    // by rebuilding the parents row from the auth identity (recover-profile.ts
+    // mirrors the signup tenant/center attach), then render the dashboard
+    // normally. Only if recovery ALSO fails do we show a graceful "still
+    // setting up" message with a retry instead of a permanent error.
+    const recovered = await recoverParentProfile(user);
+    if (!recovered) {
+      console.error("[dashboard] orphan recovery failed", {
+        authUserId: user.id,
+        err: parentErr,
+      });
+      return (
+        <main className="flex-grow flex items-center justify-center px-6 py-12">
+          <div className="max-w-md text-center bg-white rounded-3xl p-10 shadow-[0px_4px_24px_rgba(27,58,107,0.06)] border border-sam-gray-light/30">
+            <h1 className="font-display-child text-2xl text-sam-navy mb-4">
+              We&rsquo;re finishing setting up your account
+            </h1>
+            <p className="font-body-regular text-sam-gray-mid mb-6">
+              Give us a moment and try again. If this keeps happening, please
+              contact support.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-sam-red hover:bg-sam-red/90 text-white font-headline-adult font-bold rounded-xl shadow-sm hover:shadow-md active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">refresh</span>
+              Try again
+            </Link>
+          </div>
+        </main>
+      );
+    }
+    parent = recovered;
   }
 
   // Children for this parent (RLS-scoped via children_parent_all).

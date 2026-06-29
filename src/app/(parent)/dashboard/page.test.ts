@@ -15,9 +15,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
 const mockCreateClient = vi.fn();
+const mockRecover = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: () => mockCreateClient(),
+}));
+
+// Orphan self-heal is exercised in recover-profile.test.ts; here we stub it to
+// drive the dashboard's recover-then-render vs graceful-message branches.
+vi.mock("./recover-profile", () => ({
+  recoverParentProfile: (...args: unknown[]) => mockRecover(...args),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -88,6 +95,7 @@ function makeClient(cfg: {
 afterEach(() => {
   redirectMock.mockClear();
   mockCreateClient.mockReset();
+  mockRecover.mockReset();
 });
 
 describe("ParentDashboardPage — staff routing on the no-parent branch", () => {
@@ -129,16 +137,50 @@ describe("ParentDashboardPage — staff routing on the no-parent branch", () => 
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
-  it("still shows contact-support for a true orphan (no parent, not staff)", async () => {
+  it("self-heals an orphan (no parent, not staff): recovers the profile and renders the dashboard", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockCreateClient.mockResolvedValue(
+      makeClient({ parent: null, instructors: [], admins: [], children: [] }),
+    );
+    mockRecover.mockResolvedValue({ id: "p9", name: "Recovered Parent" });
+
+    const html = renderToStaticMarkup(await ParentDashboardPage());
+
+    expect(mockRecover).toHaveBeenCalledTimes(1);
+    expect(html).toContain("Welcome to the Atlas Family!");
+    expect(html).not.toContain("Account profile not found");
+    expect(html).not.toContain("finishing setting up");
+    expect(redirectMock).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("shows the graceful 'still setting up' message when orphan recovery fails", async () => {
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     mockCreateClient.mockResolvedValue(
       makeClient({ parent: null, instructors: [], admins: [] }),
     );
+    mockRecover.mockResolvedValue(null);
 
     const html = renderToStaticMarkup(await ParentDashboardPage());
 
-    expect(html).toContain("Account profile not found");
+    expect(mockRecover).toHaveBeenCalledTimes(1);
+    // The "Try again" retry lives inside next/link, which is stubbed to null
+    // here; assert the message text the page itself renders.
+    expect(html).toContain("finishing setting up your account");
+    expect(html).not.toContain("Account profile not found");
     expect(redirectMock).not.toHaveBeenCalled();
     errSpy.mockRestore();
+  });
+
+  it("does not attempt recovery for staff (admin/instructor redirect wins)", async () => {
+    mockCreateClient.mockResolvedValue(
+      makeClient({
+        parent: null,
+        admins: [{ id: "a1", tenant_id: "t1", name: "Dev Admin", status: "ACTIVE" }],
+      }),
+    );
+
+    await expect(ParentDashboardPage()).rejects.toThrow("NEXT_REDIRECT:/admin");
+    expect(mockRecover).not.toHaveBeenCalled();
   });
 });
