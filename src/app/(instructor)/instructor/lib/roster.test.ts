@@ -276,6 +276,31 @@ describe("fetchRoster", () => {
     ]);
   });
 
+  it("keeps archived children in the roster and maps archived_at to a display date", async () => {
+    // Staff (admin) retain visibility of parent soft-deleted children — they
+    // are NOT filtered out here; the view badges them via archivedAtDisplay.
+    const client = makeClient({
+      children: [
+        {
+          id: "c-aaaa",
+          name: "Aiden Park",
+          grade_level: "3",
+          archived_at: "2026-05-20T10:00:00.000Z",
+        },
+        { id: "c-bbbb", name: "Bree Lim", grade_level: "2" },
+      ],
+      assessment_sessions: [],
+    });
+
+    const roster = await fetchRoster(client);
+
+    expect(roster).toHaveLength(2); // archived child still present
+    const aiden = roster.find((r) => r.childId === "c-aaaa");
+    const bree = roster.find((r) => r.childId === "c-bbbb");
+    expect(aiden?.archivedAtDisplay).toBe("May 20, 2026");
+    expect(bree?.archivedAtDisplay).toBeNull();
+  });
+
   it("leaves centerName null when the child has no home center", async () => {
     const client = makeClient({
       children: [{ id: "c-aaaa", name: "Aiden Park", grade_level: "3" }],

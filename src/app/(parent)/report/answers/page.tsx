@@ -122,10 +122,13 @@ export default async function AnswerLogPage({ searchParams }: AnswersPageProps) 
     );
   }
 
+  // archived_at IS NULL: a soft-deleted child's answer log is hidden from the
+  // parent (the data is retained for staff, not surfaced parent-side).
   const { data: child, error: childErr } = await supabase
     .from("children")
     .select("name")
     .eq("id", session.child_id)
+    .is("archived_at", null)
     .maybeSingle();
   if (childErr || !child) {
     return (

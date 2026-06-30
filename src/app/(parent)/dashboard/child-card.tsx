@@ -17,6 +17,8 @@ import { firstName } from "@/lib/format/firstName";
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
 import type { Tier } from "@/lib/tier/derive";
 
+import { ChildActions } from "./child-actions";
+
 interface ChildCardProps {
   child: {
     id: string;
@@ -157,6 +159,11 @@ export function ChildCard({ child, lastCompletedAt, tier }: ChildCardProps) {
             <span className="material-symbols-outlined text-[18px]">lock</span>
           </button>
         )}
+
+        {/* Edit / Remove (soft-delete) — parent-managed, retained for staff. */}
+        <div className="pt-2 border-t border-sam-gray-light/30">
+          <ChildActions childId={child.id} childName={firstName(child.name)} />
+        </div>
       </div>
     </div>
   );

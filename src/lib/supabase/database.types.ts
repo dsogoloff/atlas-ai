@@ -202,6 +202,8 @@ export type Database = {
       }
       children: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           birth_year: number
           center_changed_at: string | null
           created_at: string
@@ -214,6 +216,8 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           birth_year: number
           center_changed_at?: string | null
           created_at?: string
@@ -226,6 +230,8 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           birth_year?: number
           center_changed_at?: string | null
           created_at?: string

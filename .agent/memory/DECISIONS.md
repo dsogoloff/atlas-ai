@@ -5,6 +5,12 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-06-29
 
+* **SAM-L1-Q05 label-leak fixed by re-cropping to include the worksheet label row; format defect fixed by converting NUMERIC_ENTRY→MULTIPLE_CHOICE (PR #202, lane/fix-l1-q05-group-label-leak, 2026-06-29).** Two defects in one item (geometry / level 1A / content_id l1-geometry-1 / served as Q8 in the L1 short test). (1) Label leak: "Group A / Group B" labels were baked into the stem while the curated image showed the two animal boxes unlabelled. Root cause: migration 20260614120001 stmt 2 put the labels in the stem, and l1_crop.py cropped below the worksheet's label row. Fix: re-cropped to include the label row (source page-04; stray "5." whited out); sam-l1-q05.png re-minted. (2) Format defect: item was NUMERIC_ENTRY with a LETTER answer ("B"), rendering a numeric keypad (inputMode="decimal") un-enterable on touch — fails the live serve-and-submit gate. Fix: converted to MULTIPLE_CHOICE, options ["Group A","Group B"], correct_index 1, tap-to-answer; stem cleaned to "In which group does it belong?"; correct_answer removed. Unchanged: short_test_eligible, banding (1A), content_id, level, image_alt/image_required/image_path. Files: scripts/conversion/l1_crop.py (M); supabase/seed.sql (M); supabase/migrations/20260629120000_fix_l1_q05_group_label_leak.sql (A, forward, idempotent). Verify bar GREEN (pnpm test, tsc, lint); seed↔migration parity guard passes. PR #202 OPEN; nothing applied to prod.
+
+* **Residual observation recorded (context only, not a decision): NUMERIC_ENTRY items keyed to a letter/word answer are a latent serve-gate hazard on touch (2026-06-29).** SAM-L1-Q05 was the found instance. No claim that others exist; no sweep commissioned.
+
+* **Open / unconfirmed (needs Dimitri) — PR #202 prod follow-ups not yet executed (2026-06-29).** After PR #202 merges: (a) apply migration 20260629120000 on prod to convert the row from NUMERIC_ENTRY to MULTIPLE_CHOICE; (b) re-upload corrected l1/sam-l1-q05.png to prod question-images bucket (`pnpm convert:upload-activation-images:prod`). Both require prod creds and explicit go-ahead; cannot auto-execute.
+
 * **`supabase db reset` unblocked: 12 held L0 overlay rows corrected to `short_test_eligible=false`
   at insert; generator and guard hardened against re-emission (PR #199,
   lane/fix-l0-overlay-short-invariant, 2026-06-29).** The `questions_inactive_not_short_eligible`

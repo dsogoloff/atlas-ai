@@ -112,11 +112,13 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
   }
 
   // Resolve the child. RLS limits this to children whose parent_id
-  // matches the parent row above.
+  // matches the parent row above. archived_at IS NULL hides a child the
+  // parent has soft-deleted (a stale /report link resolves to not-found).
   const { data: child, error: childErr } = await supabase
     .from("children")
     .select("id, name, grade_level, birth_year")
     .eq("id", childId)
+    .is("archived_at", null)
     .maybeSingle();
 
   // ---- Branch 4: child not found / belongs to another parent.

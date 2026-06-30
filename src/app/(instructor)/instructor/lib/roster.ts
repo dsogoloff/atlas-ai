@@ -57,6 +57,10 @@ export interface RosterRow {
    *  center (so this is constant); the admin roster spans the tenant, so the
    *  Center column distinguishes rows. */
   centerName: string | null;
+  /** Localised date the parent soft-deleted (archived) this child, else null.
+   *  Archived children stay visible to staff with an "Archived" badge — the
+   *  row, its sessions, and its report are retained for oversight. */
+  archivedAtDisplay: string | null;
 }
 
 type SessionRow = Pick<
@@ -77,9 +81,12 @@ export async function fetchRoster(
   opts: { sort?: RosterSort } = {},
 ): Promise<RosterRow[]> {
   const sort = opts.sort ?? "center";
+  // No archived filter: staff (admin) retain visibility of soft-deleted
+  // children (badged in the view). RLS still scopes rows to the caller's center
+  // / tenant. archived_at drives the "Archived" badge.
   const { data: children, error: childrenErr } = await client
     .from("children")
-    .select("id, name, grade_level, home_center_id")
+    .select("id, name, grade_level, home_center_id, archived_at")
     .order("name", { ascending: true });
 
   if (childrenErr || !children || children.length === 0) return [];
@@ -121,6 +128,9 @@ export async function fetchRoster(
         : null,
       centerName: child.home_center_id
         ? (centerNameById.get(child.home_center_id) ?? null)
+        : null,
+      archivedAtDisplay: child.archived_at
+        ? formatDate(child.archived_at)
         : null,
     };
   });
