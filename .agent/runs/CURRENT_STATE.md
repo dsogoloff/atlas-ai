@@ -4,6 +4,81 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-29 (L0 overlay short-invariant fix; `supabase db reset` unblocked) — PR #199 (lane/fix-l0-overlay-short-invariant) OPEN, verify-bar GREEN (1440 tests), awaiting Dimitri's attended merge. Nothing applied to prod or any DB.
+
+- **PR #199 — lane/fix-l0-overlay-short-invariant — OPEN (verify-bar GREEN).**
+  "fix(seed): clamp L0 overlay held rows to short_test_eligible=false; guard positional VALUES-tuple form".
+  `supabase db reset` was failing on the `questions_inactive_not_short_eligible` CHECK (added in PR #191).
+  Root cause: the GENERATED L0-overlay INSERT in `supabase/seed.sql` + mirror migration
+  `supabase/migrations/20260616120100_l0_overlay_load.sql` inserted 12 HELD L0 rows
+  (`is_active=false`) with `short_test_eligible=true` in the same VALUES tuple. The CHECK is
+  row-level (fires at insert), so the transient `is_active=false` + `short=true` state violated it.
+  The 12 affected rows: SAM-L0A-Q03/Q05/Q06/Q07/Q10/Q13/Q14/Q15, SAM-L0B-Q03/Q04/Q06,
+  SAM-L0C-Q04 (first to fail: SAM-L0A-Q03). These are blocker-C held (format-swap pending);
+  `short=true` was wrong for a held row.
+
+  **Three fixes shipped:**
+  1. DATA — flipped the 12 tuples `false,true` → `false,false` in `seed.sql` AND the mirror
+     migration (preserves audited held end-state; activation later sets `is_active=true` +
+     `short=true` atomically, per the SAM-L0B-Q14 pattern).
+  2. GENERATOR — `scripts/conversion/apply-l0-overlay.ts` now clamps `short_test_eligible` to
+     `false` whenever `is_active` is `false` (both insert and update emit paths), so regeneration
+     can never re-emit a violating tuple.
+  3. GUARD — `scripts/conversion/short-eligible-invariant.ts` gained Form-B detection for the
+     positional VALUES-tuple form (`v.is_active, v.short_test_eligible ← …, false, true, …`).
+     The old guard only matched the literal `short_test_eligible = true` assignment form and was
+     blind to the generated L0-overlay form (same VALUES-tuple blind-spot class as the PR #198
+     image-derivation bug). New unit tests: `src/lib/conversion/short-eligible-invariant.test.ts`.
+
+  Verified: new guard flags all 12 against the pre-fix seed; fixed seed PASSes. Verify bar GREEN
+  (pnpm test 1440 passed + tsc + lint). Nothing applied to prod or any DB. `supabase db reset`
+  now succeeds.
+
+---
+
+**As of:** 2026-06-29 (prod serve/submit 500 root cause + content-completeness verifier) — PR #198 (lane/content-completeness-verifier) OPEN, verify-bar GREEN, awaiting Dimitri's attended merge and the gated prod image upload. Nothing applied to prod.
+
+- **PR #198 — lane/content-completeness-verifier — OPEN (verify-bar GREEN).**
+  "fix(conversion): DB-derived required image set + content-completeness verifier".
+  Root cause of prod serve/submit 500: active L1 items SAM-L1-Q05/Q10/Q12/Q19 had
+  `content.image_path` set but their objects were absent from the prod `question-images`
+  bucket. `mintQuestionImage(createSignedUrl)` threw "Object not found" → 500. The
+  founder's initial "answer_type NULL" diagnosis was a mislabel — `answer_type` exists
+  nowhere in code or data; a prior read-only pass proved the engine grades all active
+  items cleanly.
+
+  **Root cause of the missing uploads:** `scripts/conversion/activation-image-set.ts`
+  `activeImagePaths()` regex-matched only the inline-JSON `"image_path":"…"` form in
+  `seed.sql`. It was blind to the `UPDATE … content || jsonb_build_object('image_path',
+  v.image_path)` form (seed.sql lines 2654 and 4156). The 4 L1 paths never entered the
+  uploader's required set → never uploaded to prod.
+
+  **Deliverables:**
+  1. `activeImagePaths()` replaced with `requiredImagePaths(supabase)` — runtime DB
+     query (not seed text). New `scripts/conversion/minted-image-paths.ts`
+     (`extractMintedPaths`: top-level + per-tile), in lock-step with
+     `src/lib/questionPicker/mintImage.ts`. Uploader + verify-images now derive the
+     required set from the target DB; `--check` stays offline (SOURCE_MAP disk pre-flight).
+     CI unit test: `src/lib/conversion/minted-image-paths.test.ts`.
+  2. New content-completeness verifier:
+     `scripts/conversion/prod-bringup/12-verify-content-completeness.ts`
+     (`pnpm convert:verify-content`). DB-derived; runs against local or prod (pass `--prod`);
+     exits nonzero on any gap. Two sub-dimensions:
+     - Images: every minted path resolves to an object in the target bucket.
+     - Gradeability: real `toClientQuestion` + content-only `judgeAnswer` probe — no
+       false "answer_type NULL" class of misdiagnosis possible from this verifier.
+     Verified live against prod: images FAIL(4) — exactly l1/sam-l1-q05/10/12/19.png
+     absent — gradeability 0 throws. SAM-L1-Q04 is active but text-only in the live row
+     (`image_path` null), so correctly NOT in the required set (the old regex would have
+     phantom-required `l1/sam-l1-q04.png`).
+  Verify bar GREEN. Nothing applied to prod.
+
+  **Founder-gated follow-up (PARKED — see NEXT_ACTIONS):** after PR #198 merges, run
+  `pnpm convert:upload-activation-images:prod` to upload the 4 missing L1 images to prod,
+  then `pnpm convert:verify-content --prod` to confirm 4/4 images PASS.
+
+---
+
 **As of:** 2026-06-28 (answer-key audit + SAM-L4-Q17 authored + CI manifest guard) — PR #191 (lane/bank-source-invariant-fix) MERGED. PR #192 (lane/l4-q17-answer-key-audit) OPEN, verify-bar GREEN, awaiting Dimitri's attended merge after Vercel preview review.
 
 - **PR #191 — lane/bank-source-invariant-fix — MERGED.**

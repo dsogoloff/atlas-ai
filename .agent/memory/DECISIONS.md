@@ -3,6 +3,71 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-06-29
+
+* **`supabase db reset` unblocked: 12 held L0 overlay rows corrected to `short_test_eligible=false`
+  at insert; generator and guard hardened against re-emission (PR #199,
+  lane/fix-l0-overlay-short-invariant, 2026-06-29).** The `questions_inactive_not_short_eligible`
+  CHECK (added in PR #191) fires per-row at statement time. The generated L0-overlay INSERT in
+  `seed.sql` + mirror migration `20260616120100_l0_overlay_load.sql` inserted 12 HELD rows
+  (`is_active=false`) with `short_test_eligible=true` in the VALUES tuple, violating the CHECK.
+  Affected rows: SAM-L0A-Q03/Q05/Q06/Q07/Q10/Q13/Q14/Q15, SAM-L0B-Q03/Q04/Q06, SAM-L0C-Q04.
+  Three fixes: (1) DATA — tuples flipped `false,true` → `false,false` in seed.sql and the mirror
+  migration; (2) GENERATOR — `apply-l0-overlay.ts` now clamps `short_test_eligible` to `false`
+  whenever `is_active` is `false` on both insert and update emit paths; (3) GUARD —
+  `short-eligible-invariant.ts` gained Form-B detection for the positional VALUES-tuple form
+  (`…, false, true, …`); previously only the literal `short_test_eligible = true` assignment form
+  was matched (blind to the generated L0-overlay form — same VALUES-tuple blind-spot class as the
+  PR #198 image-derivation bug). New unit tests in `src/lib/conversion/short-eligible-invariant.test.ts`.
+  Verify bar GREEN (1440 tests, tsc, lint). Nothing applied to prod.
+
+* **Decision: the `questions_inactive_not_short_eligible` CHECK is correct and stays; held rows must
+  be inserted with `short_test_eligible=false`; `short=true` is set only at activation time when
+  `is_active` is also flipped true (PR #199, 2026-06-29).** The CHECK is a per-row constraint
+  enforced at statement time (not deferred). The canonical activation pattern — setting both
+  `is_active=true` and `short_test_eligible=true` atomically in a single UPDATE — satisfies the
+  constraint and must be followed for all future activations. The static invariant guard must cover
+  the positional VALUES-tuple form used in generated INSERT blocks, not just literal `= true`
+  assignment forms.
+
+* **Image required-set is now derived from DB runtime truth, not seed text (PR #198,
+  lane/content-completeness-verifier, 2026-06-29).** `activation-image-set.ts`
+  `activeImagePaths()` was regex-based against `seed.sql` and matched only the inline-JSON
+  `"image_path":"…"` form. It was blind to the `content || jsonb_build_object('image_path',
+  v.image_path)` UPDATE-from-VALUES form used for L1 items (seed.sql lines 2654 and 4156).
+  Decision: replace the seed-text approach with a DB query (`requiredImagePaths(supabase)`)
+  that reads `image_path` values directly from the live questions table. The required set
+  is now whatever the target DB actually contains — no parsing of seed SQL. New
+  `scripts/conversion/minted-image-paths.ts` (`extractMintedPaths`: top-level + per-tile)
+  mirrors the runtime `mintImage.ts` path exactly. `--check` mode stays offline (SOURCE_MAP
+  disk pre-flight). CI unit test: `src/lib/conversion/minted-image-paths.test.ts`.
+  Rationale: seed-text parsing is fragile; the DB is the authoritative source of truth for
+  what images a running deployment needs.
+
+* **Content-completeness adopted as a verified bring-up dimension (PR #198, 2026-06-29).**
+  New `scripts/conversion/prod-bringup/12-verify-content-completeness.ts`
+  (`pnpm convert:verify-content`) checks two sub-dimensions against the target DB:
+  (1) images — every minted path resolves to a bucket object; (2) gradeability — real
+  `toClientQuestion` + content-only `judgeAnswer` probe on every active question. Exits
+  nonzero on any gap; designed to run against local or prod (`--prod`). Verified live
+  against prod: images FAIL(4) — l1/sam-l1-q05/10/12/19.png absent — gradeability 0 throws.
+  This verifier closes the class of misdiagnosis that produced the "answer_type NULL" false
+  lead (that field does not exist in code or data).
+
+* **Root cause of prod L1 serve-500 confirmed: 4 images never uploaded (PR #198,
+  2026-06-29).** SAM-L1-Q05/Q10/Q12/Q19 had `content.image_path` set in the live prod row
+  but their objects were absent from the prod `question-images` bucket.
+  `mintQuestionImage(createSignedUrl)` threw "Object not found" → 500. The missing uploads
+  were caused by the now-replaced seed-text regex in the uploader. Fix in code is in PR #198
+  (OPEN); the actual prod upload is founder-gated (see NEXT_ACTIONS PARKED item). Nothing
+  applied to prod this session.
+
+* **Open / unconfirmed (needs Dimitri) — prod L1 image upload not yet executed
+  (2026-06-29).** After PR #198 merges, Dimitri must run
+  `pnpm convert:upload-activation-images:prod` to push the 4 missing L1 images to the prod
+  `question-images` bucket, then `pnpm convert:verify-content --prod` to confirm resolution.
+  Cannot auto-resolve; requires prod creds and explicit go-ahead.
+
 ## 2026-06-28
 
 * **Full answer-key audit completed across all 9 booklets (L0A/L0B/L0C/L1-L6); committed
