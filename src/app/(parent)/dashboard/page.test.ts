@@ -51,7 +51,7 @@ const redirectMock = vi.mocked(redirect);
  *  with the shape its call site consumes. */
 function chain(data: unknown, error: unknown = null) {
   const b: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "in", "order"]) b[m] = () => b;
+  for (const m of ["select", "eq", "in", "order", "is"]) b[m] = () => b;
   b.maybeSingle = async () => ({ data, error });
   b.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
     Promise.resolve({ data, error }).then(res, rej);

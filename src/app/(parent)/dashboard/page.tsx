@@ -103,11 +103,13 @@ export default async function ParentDashboardPage() {
     parent = recovered;
   }
 
-  // Children for this parent (RLS-scoped via children_parent_all).
+  // Children for this parent (RLS-scoped via children_parent_all). Archived
+  // (soft-deleted) children are hidden from the parent — archived_at IS NULL.
   const { data: children, error: childrenErr } = await supabase
     .from("children")
     .select("id, name, grade_level, birth_year")
     .eq("parent_id", parent.id)
+    .is("archived_at", null)
     .order("created_at");
   if (childrenErr) {
     // Soft failure — render the empty state. Logging surfaces the bug.

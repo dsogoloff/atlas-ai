@@ -60,10 +60,13 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
 
   // RLS on `children` (per supabase/migrations/20260426000100_rls_policies.sql)
   // restricts to rows whose parent_id maps to the calling auth user.
+  // archived_at IS NULL: an archived (parent soft-deleted) child can't be
+  // reopened or assessed by the parent — the row reads as not-found here.
   const { data: child, error: childErr } = await supabase
     .from("children")
     .select("name, grade_level, birth_year")
     .eq("id", childId)
+    .is("archived_at", null)
     .maybeSingle();
 
   if (childErr) {
