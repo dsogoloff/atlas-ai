@@ -148,11 +148,12 @@ import {
   shortTestNextQuestionRequest,
   shortTestShouldTerminate,
 } from "@/lib/engine/shortTest";
-import { STRANDS } from "@/lib/engine/levels";
+import { STRANDS, levelIndex } from "@/lib/engine/levels";
 import type {
   EngineQuestion,
   EngineResponse,
   EngineState,
+  HalfGradeLevel,
   NextQuestionRequest,
   PlacementEstimate,
   Strand,
@@ -239,6 +240,48 @@ interface ShortContext {
    *  fallback (prior behaviour). The session's served sub-strand set is computed
    *  per pick (it grows as items are answered) in buildShortPickContext. */
   subStrandByContentId: ReadonlyMap<string, string>;
+}
+
+/** Bound a placement's overall level to the highest level actually SERVED this
+ *  session. An all-correct, floor-only run (e.g. a Pre-K child served only 0A
+ *  items, all correct) leaves the average posterior flat-high with no ceiling
+ *  evidence, so placementEstimate's argmax rails to the axis top (8B) — placing
+ *  the child at "S.A.M Level 8". A child can't be placed above the hardest level
+ *  they were actually shown, so we clamp the placement to the served ceiling AT
+ *  THE SOURCE (finalization), so the STORED estimate — and every surface that
+ *  reads it: the report, the admin roster's placement column, and the
+ *  placement_created analytics event — is floored consistently. Mirrors the
+ *  report's display-time clampLevelToServedCeiling (assemble.ts); applying it
+ *  here makes that a defensive no-op. No-op for a normal multi-level run where
+ *  the served ceiling already meets or exceeds the estimate. Reads questions.level
+ *  (classification metadata, not licensed content) via the service client. */
+export async function clampPlacementToServedCeiling(
+  serviceClient: SupabaseClient<Database>,
+  servedQuestionIds: string[],
+  placement: PlacementEstimate,
+): Promise<PlacementEstimate> {
+  if (servedQuestionIds.length === 0) return placement;
+
+  const { data } = await serviceClient
+    .from("questions")
+    .select("level")
+    .in("id", servedQuestionIds);
+
+  let ceiling: HalfGradeLevel | null = null;
+  let ceilingIdx = -1;
+  for (const q of data ?? []) {
+    if (!q.level) continue;
+    const idx = levelIndex(q.level);
+    if (idx > ceilingIdx) {
+      ceilingIdx = idx;
+      ceiling = q.level;
+    }
+  }
+
+  if (ceiling === null || levelIndex(ceiling) >= levelIndex(placement.overallLevel)) {
+    return placement;
+  }
+  return { ...placement, overallLevel: ceiling };
 }
 
 interface HandlerInput {
@@ -746,6 +789,33 @@ export async function submitResponseHandler({
     short,
   );
   if (term.done) {
+    // Floor a railed estimate (all-correct, floor-only run) to the highest level
+    // actually served BEFORE the session closes, so the stored current_estimate
+    // — and everything that reads it (report, admin roster, placement_created
+    // analytics) — agrees on the floored level. No-op for a normal run.
+    const finalPlacement = await clampPlacementToServedCeiling(
+      serviceClient,
+      postState.servedQuestionIds,
+      placement,
+    );
+    if (finalPlacement.overallLevel !== placement.overallLevel) {
+      const { error: clampErr } = await serviceClient
+        .from("assessment_sessions")
+        .update({
+          current_estimate: toPlacementEstimateJson(
+            finalPlacement,
+          ) as unknown as Json,
+        })
+        .eq("id", request.session_id);
+      if (clampErr) {
+        return fail(
+          "internal",
+          500,
+          `final estimate clamp failed: ${clampErr.message}`,
+        );
+      }
+    }
+
     const closeMsg = await closeSession(serviceClient, request.session_id);
     if (closeMsg) return fail("internal", 500, closeMsg);
 
@@ -763,7 +833,7 @@ export async function submitResponseHandler({
       parent.tenant_id,
       session.child_id,
       request.session_id,
-      placement,
+      finalPlacement,
       toWireReason(term.reason),
     );
 
@@ -772,7 +842,7 @@ export async function submitResponseHandler({
       time_flag: flag.flag,
       done: true,
       response_count: postState.responseCount,
-      placement: toPlacementEstimateJson(placement),
+      placement: toPlacementEstimateJson(finalPlacement),
       termination_reason: toWireReason(term.reason),
     });
   }
