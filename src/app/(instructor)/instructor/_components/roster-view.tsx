@@ -55,15 +55,26 @@ function initials(name: string): string {
 export function RosterTable({
   rows,
   showCenter = false,
+  showLastAssessment = false,
 }: {
   rows: RosterRow[];
   showCenter?: boolean;
+  /** Admin dashboard: add a "Last assessment" column (between Status and
+   *  Recommended placement). The rows are expected pre-sorted by that date. */
+  showLastAssessment?: boolean;
 }) {
-  // Add a Center column (between Grade and Status) only for the admin's
-  // tenant-wide roster.
-  const gridCls = showCenter
-    ? "md:grid-cols-[2fr_1fr_1.3fr_1.2fr_1.4fr]"
-    : "md:grid-cols-[2fr_1fr_1.2fr_1.4fr]";
+  // Column set varies by surface: the admin adds a Center column (tenant-wide
+  // roster) and/or a Last assessment column. Grid templates are written as full
+  // literal class strings — one per combination — so Tailwind's scanner emits
+  // them (a runtime-built arbitrary value would never be generated).
+  const gridCls =
+    showCenter && showLastAssessment
+      ? "md:grid-cols-[2fr_1fr_1.2fr_1.1fr_1.1fr_1.3fr]"
+      : showCenter
+        ? "md:grid-cols-[2fr_1fr_1.3fr_1.2fr_1.4fr]"
+        : showLastAssessment
+          ? "md:grid-cols-[2fr_1fr_1.2fr_1.1fr_1.4fr]"
+          : "md:grid-cols-[2fr_1fr_1.2fr_1.4fr]";
   return (
     <div className="bg-white rounded-2xl border border-sam-gray-light/40 overflow-hidden">
       {/* Header row — hidden on mobile where cards stack. */}
@@ -74,6 +85,7 @@ export function RosterTable({
         <span>Grade</span>
         {showCenter && <span>Center</span>}
         <span>Status</span>
+        {showLastAssessment && <span>Last assessment</span>}
         <span>Recommended placement</span>
       </div>
       <ul>
@@ -108,6 +120,13 @@ export function RosterTable({
               <span>
                 <StatusBadge status={row.status} date={row.completedAtDisplay} />
               </span>
+              {showLastAssessment && (
+                <span className="text-sm text-sam-navy/70">
+                  {row.lastAssessmentDisplay ?? (
+                    <span className="text-sam-gray-mid">Never</span>
+                  )}
+                </span>
+              )}
               <span className="text-sm font-bold text-sam-navy">
                 {row.placementLabel ?? (
                   <span className="font-normal text-sam-gray-mid">

@@ -46,7 +46,9 @@ export default async function AdminHomePage() {
     );
   }
 
-  const roster = await fetchRoster(supabase);
+  // Admin dashboard: sort by most-recent assessment (un-assessed children last)
+  // and surface a Last assessment column.
+  const roster = await fetchRoster(supabase, { sort: "last_assessment" });
 
   return (
     <InstructorShell instructorName={staff.name} roleLabel="Admin" homeHref="/admin">
@@ -66,7 +68,7 @@ export default async function AdminHomePage() {
       {roster.length > 0 && (
         <>
           <RosterStats rows={roster} />
-          <RosterTable rows={roster} showCenter />
+          <RosterTable rows={roster} showCenter showLastAssessment />
         </>
       )}
     </InstructorShell>

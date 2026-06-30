@@ -165,6 +165,80 @@ describe("fetchRoster", () => {
     expect(await fetchRoster(client)).toEqual([]);
   });
 
+  it("derives lastAssessment from the most recent session (completed_at, else started_at)", async () => {
+    const client = makeClient({
+      children: [{ id: "c-1", name: "Aiden Park", grade_level: "3" }],
+      assessment_sessions: [
+        {
+          child_id: "c-1",
+          status: "COMPLETED",
+          completed_at: "2026-05-10T10:00:00.000Z",
+          started_at: "2026-05-10T09:00:00.000Z",
+          current_estimate: null,
+        },
+        // A later, still-in-progress session — its start time is the most
+        // recent assessment activity (newer than the completed one's finish).
+        {
+          child_id: "c-1",
+          status: "IN_PROGRESS",
+          completed_at: null,
+          started_at: "2026-05-20T09:00:00.000Z",
+          current_estimate: null,
+        },
+      ],
+    });
+
+    const roster = await fetchRoster(client);
+
+    expect(roster[0].lastAssessmentAt).toBe("2026-05-20T09:00:00.000Z");
+    expect(roster[0].lastAssessmentDisplay).toBe("May 20, 2026");
+  });
+
+  it("sort: 'last_assessment' orders most-recent first, un-assessed children last", async () => {
+    const client = makeClient({
+      children: [
+        { id: "c-old", name: "Older Activity", grade_level: "3" },
+        { id: "c-none", name: "Never Assessed", grade_level: "3" },
+        { id: "c-new", name: "Newer Activity", grade_level: "3" },
+      ],
+      assessment_sessions: [
+        {
+          child_id: "c-old",
+          status: "COMPLETED",
+          completed_at: "2026-04-01T10:00:00.000Z",
+          started_at: "2026-04-01T09:00:00.000Z",
+          current_estimate: null,
+        },
+        {
+          child_id: "c-new",
+          status: "COMPLETED",
+          completed_at: "2026-06-01T10:00:00.000Z",
+          started_at: "2026-06-01T09:00:00.000Z",
+          current_estimate: null,
+        },
+      ],
+    });
+
+    const roster = await fetchRoster(client, { sort: "last_assessment" });
+
+    expect(roster.map((r) => r.childId)).toEqual(["c-new", "c-old", "c-none"]);
+    expect(roster[2].lastAssessmentDisplay).toBeNull(); // un-assessed last
+  });
+
+  it("default sort is unchanged (by name) when no sort option is given", async () => {
+    const client = makeClient({
+      children: [
+        { id: "c-z", name: "Zoe Tan", grade_level: "2" },
+        { id: "c-a", name: "Aiden Park", grade_level: "3" },
+      ],
+      assessment_sessions: [],
+    });
+
+    const roster = await fetchRoster(client);
+
+    expect(roster.map((r) => r.name)).toEqual(["Aiden Park", "Zoe Tan"]);
+  });
+
   it("attaches centerName and sorts by center then name across every center the client exposes", async () => {
     // Admin scope: the RLS-scoped client returns children across MULTIPLE
     // centers (an instructor's client would return only their own center's —
