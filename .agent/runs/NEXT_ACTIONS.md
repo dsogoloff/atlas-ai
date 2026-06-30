@@ -18,28 +18,21 @@ unblocks reset.
       run `supabase db reset` to confirm it now completes without the
       `questions_inactive_not_short_eligible` violation.
 
-## 0. 2026-06-29 — prod serve/submit 500 fix + content-completeness verifier (PR #198 OPEN)
+## 0. 2026-06-29 — prod serve/submit 500 fix + content-completeness verifier (PR #198 MERGED — DONE)
 
-PR #198 (lane/content-completeness-verifier) OPEN, verify-bar GREEN. Root cause identified
-and fixed in code; prod image upload is founder-gated and parked below.
+PR #198 (lane/content-completeness-verifier) MERGED. Founder re-ran the prod image upload;
+prod content-completeness re-verified PASS. L1 serve-500 closed.
 
-- [ ] **Dimitri: merge PR #198 (lane/content-completeness-verifier)** after Vercel preview
-      review. No migration; no `supabase db reset` needed (tooling + DB-query change only;
-      no app schema change).
+- [x] **DONE — PR #198 merged** (runtime-truth image required-set + content-completeness verifier).
 
-- [ ] **PARKED — upload 4 missing L1 images to prod (needs Dimitri / prod creds).**
-      After PR #198 merges, run:
-        `pnpm convert:upload-activation-images:prod`
-      This uploads `l1/sam-l1-q05.png`, `l1/sam-l1-q10.png`, `l1/sam-l1-q12.png`,
-      and `l1/sam-l1-q19.png` to the prod `question-images` bucket (the required set now
-      includes them because it is derived from the live DB, not seed text).
-      Then run:
-        `pnpm convert:verify-content --prod`
-      Expected result: images 4/4 PASS, gradeability PASS → closes the L1 serve-500.
-      Plain-English: these 4 images were never uploaded to prod because the old uploader
-      script was blind to one of the two ways `image_path` is set in the seed file. PR #198
-      fixes the script; this attended run pushes the files. Do NOT run until PR #198 is
-      merged (the new uploader logic must be live first).
+- [x] **DONE (2026-06-29) — prod content-completeness verified PASS** (read-only,
+      `pnpm convert:verify-content --prod` after the founder re-ran
+      `pnpm convert:upload-activation-images:prod`). 188 active prod items:
+        • images 125/125 minted paths resolve (0 missing);
+        • gradeability 0 throws (real `toClientQuestion` + content-only `judgeAnswer`).
+      The 4 L1 incident images now resolve live: `l1/sam-l1-q05/10/12/19.png`.
+      `SAM-L1-Q04` is correctly imageless (active but `image_path` null → not minted, can't 500).
+      **L1 serve-500 closed.** (Was: PARKED — upload 4 missing L1 images + verify.)
 
 ## 0. 2026-06-28 — full answer-key audit + SAM-L4-Q17 + CI manifest guard (PR #191 MERGED / #192 OPEN)
 
