@@ -30,6 +30,11 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type RosterStatus = "completed" | "in_progress" | "not_started";
 
+/** Roster sort order. "center" (default) is the existing instructor/admin sort
+ *  (center, then name). "last_assessment" sorts by most-recent assessment date
+ *  descending, with un-assessed children last — the admin dashboard default. */
+export type RosterSort = "center" | "last_assessment";
+
 export interface RosterRow {
   childId: string;
   name: string;
@@ -37,6 +42,12 @@ export interface RosterRow {
   status: RosterStatus;
   /** Localised completion date of the latest COMPLETED session, else null. */
   completedAtDisplay: string | null;
+  /** ISO timestamp of the most recent assessment session — completion time, or
+   *  start time when the latest session isn't completed. Null when the child
+   *  has no session. Drives the "last_assessment" sort. */
+  lastAssessmentAt: string | null;
+  /** Localised form of lastAssessmentAt for display, else null. */
+  lastAssessmentDisplay: string | null;
   /** Canonical S.A.M-level label from the completed session's placement
    *  estimate, e.g. "S.A.M Level 3A". Null until a completed session with a
    *  valid placement exists. */
@@ -54,7 +65,7 @@ export interface RosterRow {
 
 type SessionRow = Pick<
   Database["public"]["Tables"]["assessment_sessions"]["Row"],
-  "child_id" | "status" | "completed_at" | "current_estimate"
+  "child_id" | "status" | "completed_at" | "started_at" | "current_estimate"
 >;
 
 /** Builds the staff roster. Returns rows sorted by center, then child name.
@@ -67,7 +78,9 @@ type SessionRow = Pick<
  *  RLS exposed. */
 export async function fetchRoster(
   client: SupabaseClient<Database>,
+  opts: { sort?: RosterSort } = {},
 ): Promise<RosterRow[]> {
+  const sort = opts.sort ?? "center";
   // No archived filter: staff (admin) retain visibility of soft-deleted
   // children (badged in the view). RLS still scopes rows to the caller's center
   // / tenant. archived_at drives the "Archived" badge.
@@ -81,7 +94,7 @@ export async function fetchRoster(
   const childIds = children.map((c) => c.id);
   const { data: sessions } = await client
     .from("assessment_sessions")
-    .select("child_id, status, completed_at, current_estimate")
+    .select("child_id, status, completed_at, started_at, current_estimate")
     .in("child_id", childIds);
 
   const sessionsByChild = groupSessions(sessions ?? []);
@@ -90,6 +103,7 @@ export async function fetchRoster(
   const rows = children.map((child) => {
     const childSessions = sessionsByChild.get(child.id) ?? [];
     const latestCompleted = pickLatestCompleted(childSessions);
+    const lastAssessmentAt = pickLastAssessmentAt(childSessions);
 
     let status: RosterStatus = "not_started";
     if (latestCompleted) status = "completed";
@@ -107,6 +121,8 @@ export async function fetchRoster(
       completedAtDisplay: latestCompleted
         ? formatDate(latestCompleted.completed_at)
         : null,
+      lastAssessmentAt,
+      lastAssessmentDisplay: formatDate(lastAssessmentAt),
       placementLabel: latestCompleted
         ? placementLabelFor(latestCompleted.current_estimate)
         : null,
@@ -119,7 +135,18 @@ export async function fetchRoster(
     };
   });
 
-  // Sort by center, then name. Children with no center sort last (sentinel).
+  if (sort === "last_assessment") {
+    // Most-recent assessment first; un-assessed children (null) sort last.
+    // Stable tiebreak by name keeps the order deterministic.
+    return rows.sort((a, b) => {
+      const ta = a.lastAssessmentAt ? Date.parse(a.lastAssessmentAt) : -Infinity;
+      const tb = b.lastAssessmentAt ? Date.parse(b.lastAssessmentAt) : -Infinity;
+      if (ta !== tb) return tb - ta;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  // Default: sort by center, then name. Children with no center sort last.
   return rows.sort((a, b) => {
     const ca = a.centerName ?? "￿";
     const cb = b.centerName ?? "￿";
@@ -175,6 +202,27 @@ function pickLatestCompleted(rows: SessionRow[]): SessionRow | null {
     const curT = cur.completed_at ? Date.parse(cur.completed_at) : -Infinity;
     return curT > bestT ? cur : best;
   });
+}
+
+/** ISO timestamp of the most recent assessment session for a child — the
+ *  latest of each session's "assessment date": completed_at when finished, else
+ *  started_at. Counts IN_PROGRESS sessions too (a started-but-unfinished session
+ *  is still the child's most recent assessment activity). Null when the child
+ *  has no session. */
+function pickLastAssessmentAt(rows: SessionRow[]): string | null {
+  let best: string | null = null;
+  let bestT = -Infinity;
+  for (const r of rows) {
+    const iso = r.completed_at ?? r.started_at;
+    if (!iso) continue;
+    const t = Date.parse(iso);
+    if (Number.isNaN(t)) continue;
+    if (t > bestT) {
+      bestT = t;
+      best = iso;
+    }
+  }
+  return best;
 }
 
 function placementLabelFor(
