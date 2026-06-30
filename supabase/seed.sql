@@ -2732,25 +2732,25 @@ from t,
     ('SAM-L0A-Q03', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the big bowl.","image_alt":"Two bowls of different sizes shown side by side.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     4, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     4, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q05 | held | blocker C
     ('SAM-L0A-Q05', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the thick book.","image_alt":"Two books of different thicknesses shown side by side.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     4, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     4, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q06 | held | blocker C
     ('SAM-L0A-Q06', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the long branch.","image_alt":"Two tree branches of different lengths shown side by side.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     4, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     4, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q07 | held | blocker C
     ('SAM-L0A-Q07', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the tall animal.","image_alt":"Two animals of different heights shown side by side.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     4, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     4, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q09 | held | blocker C
     ('SAM-L0A-Q09', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
@@ -2762,7 +2762,7 @@ from t,
     ('SAM-L0A-Q10', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the taller door.","image_alt":"Two doors of different heights shown side by side.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     4, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     4, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q12 | held | blocker C
     ('SAM-L0A-Q12', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
@@ -2774,19 +2774,19 @@ from t,
     ('SAM-L0A-Q13', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the bird facing left.","image_alt":"Two birds facing different directions.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     5, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     5, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q14 | held | blocker C
     ('SAM-L0A-Q14', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the bird that is flying up.","image_alt":"Two birds in flight in different directions.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     7, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     7, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q15 | held | blocker C
     ('SAM-L0A-Q15', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the bowl on the bottom shelf.","image_alt":"A set of shelves with a bowl on each shelf.","_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     7, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     7, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0A-Q16 | inactive | blocker none-manual
     ('SAM-L0A-Q16', 'geometry', '0A', -2.5, 'MULTIPLE_CHOICE',
@@ -2810,19 +2810,19 @@ from t,
     ('SAM-L0B-Q03', 'number_sense', '0A', -2.1, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the part that is missing from the cake.","options":["option 1","option 2","option 3","option 4"],"correct_index":0,"_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     9, 'IDENTIFY', 1, 'PICTORIAL', false, true, 'l0a-geometry-2'),
+     9, 'IDENTIFY', 1, 'PICTORIAL', false, false, 'l0a-geometry-2'),
 
     -- SAM-L0B-Q04 | held_C | blocker C
     ('SAM-L0B-Q04', 'number_sense', '0A', -2.1, 'MULTIPLE_CHOICE',
      '{"stem":"Start at X. Go right, up, left and down. Where are you? Tap the correct box below.","options":["School","Bakery","Playground","Home"],"correct_index":1,"_authoring":{"target_interaction":"click-image-single","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     18, 'IDENTIFY', 1, 'PICTORIAL', false, true, null),
+     18, 'IDENTIFY', 1, 'PICTORIAL', false, false, null),
 
     -- SAM-L0B-Q06 | held_C | blocker C
     ('SAM-L0B-Q06', 'number_sense', '0A', -2.1, 'MULTIPLE_CHOICE',
      '{"stem":"Tap the numbers greater than 6.","options":["option 1","option 2","option 3","option 4"],"correct_index":0,"_authoring":{"target_interaction":"select-multiple","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     6, 'PATTERN', 1, 'PICTORIAL', false, true, 'l0a-whole_numbers-1'),
+     6, 'PATTERN', 1, 'PICTORIAL', false, false, 'l0a-whole_numbers-1'),
 
     -- SAM-L0B-Q10 | active | blocker none
     ('SAM-L0B-Q10', 'operations_algorithms', '0A', -2.1, 'MULTIPLE_CHOICE',
@@ -2864,7 +2864,7 @@ from t,
     ('SAM-L0C-Q04', 'number_sense', '0B', -2, 'MULTIPLE_CHOICE',
      '{"stem":"Complete the fact family.","options":["6","3","9"],"correct_index":2,"_authoring":{"target_interaction":"equation-set","blocker_code":"C","held":true,"requires_format_swap":true}}'::jsonb,
      array[]::text[],
-     4, 'ADDITION', 1, 'SYMBOLIC', false, true, 'l0b-whole_numbers-3'),
+     4, 'ADDITION', 1, 'SYMBOLIC', false, false, 'l0b-whole_numbers-3'),
 
     -- SAM-L0C-Q06 | held | blocker C
     ('SAM-L0C-Q06', 'number_sense', '0B', -2, 'MULTIPLE_CHOICE',
