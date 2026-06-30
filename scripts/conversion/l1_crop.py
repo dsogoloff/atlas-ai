@@ -50,6 +50,16 @@ def trim(im, thresh=BG_THRESH, pad=PAD):
     out.paste(c, (pad, pad))
     return out
 
+def whiteout(im, x0, y0, x1, y1):
+    """Paint a fractional rectangle of `im` white (in place) and return it.
+    Used to drop a worksheet artifact (e.g. the printed question number) that
+    falls inside a generous crop bbox."""
+    from PIL import ImageDraw
+    w, h = im.size
+    ImageDraw.Draw(im).rectangle(
+        [int(x0*w), int(y0*h), int(x1*w), int(y1*h)], fill=(255, 255, 255))
+    return im
+
 def stack(parts, gap=24):
     parts = [trim(p) for p in parts]
     w = max(p.width for p in parts)
@@ -85,9 +95,14 @@ save(trim(fbox(14, 0.14, 0.642, 0.58, 0.757)), "q23")  # ribbons (7 blue + 3 red
 save(trim(fbox(16, 0.13, 0.150, 0.58, 0.315)), "q26")  # candies (select 10)
 
 # --- composites --------------------------------------------------------
-# Q05 — Group A/B boxes + the stingray target object
-# boxes cropped below the label row (stem already renders "Group A / Group B")
-save(stack([fbox(4, 0.104, 0.142, 0.95, 0.360), fbox(4, 0.50, 0.402, 0.66, 0.470)]), "q05")
+# Q05 — Group A/B boxes (WITH their header labels) + the stingray target.
+# The crop INCLUDES the worksheet's "Group A / Group B" header row: a
+# NUMERIC_ENTRY item renders as a single <img> with no per-box caption, so the
+# labels must live on the image (the stem is only "In which group does it
+# belong? / Answer: Group ___"). y0 raised to 0.092 to capture the labels; the
+# stray "5." question number in the top-left band is whited out.
+save(stack([whiteout(fbox(4, 0.085, 0.092, 0.95, 0.365), 0.0, 0.0, 0.066, 0.16),
+            fbox(4, 0.50, 0.402, 0.66, 0.470)]), "q05")
 # Q17 — Tom's day: 4 scenes (p11 bottom two + p12 top two)
 save(stack([fbox(11, 0.08, 0.774, 0.72, 0.935), fbox(12, 0.06, 0.030, 0.72, 0.230)], gap=16), "q17")
 # Q19 — cherries: top box + box below

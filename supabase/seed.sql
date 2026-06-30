@@ -1193,7 +1193,7 @@ from t,
 
     -- SAM-L1-Q05 | l1-geometry-1 | geometry / 1A | NUMERIC_ENTRY | INACTIVE (image-essential; awaiting curated image)
     ('SAM-L1-Q05', 'geometry', '1A', -2, 'NUMERIC_ENTRY',
-     '{"stem":"Group A    Group B\\nIn which group does [object] belong?\\nAnswer: Group ___","correct_answer":"B","image_alt":"Two groups of objects labelled Group A and Group B, sorted by a shared attribute, with a separate target object whose group membership must be identified.","image_required":true}',
+     '{"stem":"In which group does [object] belong?\\nAnswer: Group ___","correct_answer":"B","image_alt":"Two groups of objects labelled Group A and Group B, sorted by a shared attribute, with a separate target object whose group membership must be identified.","image_required":true}',
      array[]::text[],
      11, 'IDENTIFY', 1, 'PICTORIAL', false, 'l1-geometry-1'),
 
@@ -2668,19 +2668,24 @@ where q.tenant_id = t.id
   and q.external_id = v.external_id
   and q.is_active = false;
 
--- 2) SAM-L1-Q05 — drop the dead "[object]" placeholder from the stem.
+-- 2) SAM-L1-Q05 — stem is ONLY the question. The "Group A / Group B" box
+--    labels live ON the image (l1_crop.py re-crops to include the worksheet's
+--    header row), NOT in the stem: a NUMERIC_ENTRY item renders as a single
+--    <img> with no per-box caption, so the image is the only place the labels
+--    can go. Also drops the dead "[object]" placeholder ([object]→it). Mirrors
+--    migration 20260629120000_fix_l1_q05_group_label_leak.sql (idempotent).
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
 update questions q
 set content = jsonb_set(
       q.content, '{stem}',
-      to_jsonb(('Group A    Group B' || E'\n' ||
-               'In which group does it belong?' || E'\n' ||
+      to_jsonb(('In which group does it belong?' || E'\n' ||
                'Answer: Group ___')::text)
     )
 from t
 where q.tenant_id = t.id
   and q.external_id = 'SAM-L1-Q05'
-  and q.content->>'stem' like '%[object]%';
+  and q.content->>'stem' is distinct from
+      ('In which group does it belong?' || E'\n' || 'Answer: Group ___');
 
 -- 3) SAM-L1-Q12 — drop the dead "[image]" placeholders.
 with t as (select id from tenants where slug = 'inspirea_singapore_math')
