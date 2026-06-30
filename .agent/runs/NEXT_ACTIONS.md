@@ -4,6 +4,31 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-29 — CONVERSION: SAM-L1-Q05 label-leak + format fix (PR #202 OPEN)
+
+PR #202 (lane/fix-l1-q05-group-label-leak) OPEN, verify-bar GREEN (pnpm test, tsc, lint; seed↔migration parity guard passes). NOT merged. Nothing applied to prod.
+
+Two defects in SAM-L1-Q05 (L1 grouping item, geometry / 1A / content_id l1-geometry-1, served as Q8):
+(1) Label-leak: "Group A / Group B" baked into stem while image showed boxes unlabelled. Fix: re-cropped to include label row; sam-l1-q05.png re-minted.
+(2) Format defect: NUMERIC_ENTRY with letter answer "B" rendered an un-enterable numeric keypad on touch. Fix: converted to MULTIPLE_CHOICE, options ["Group A","Group B"], correct_index 1.
+
+- [ ] **Dimitri: merge PR #202 (lane/fix-l1-q05-group-label-leak)** after Vercel preview
+      review. No `supabase db reset` needed (the migration converts the existing row in
+      place; no new schema objects).
+      Suggested preview check: serve SAM-L1-Q05 in a short test for a Level 1 child —
+      the image should show labelled Group A / Group B boxes, and the answer should present
+      as a two-option tap choice (not a numeric keypad).
+
+- [ ] **PARKED — prod migration apply (needs Dimitri / prod access).** After PR #202 merges,
+      apply migration 20260629120000_fix_l1_q05_group_label_leak.sql on prod to convert
+      the row from NUMERIC_ENTRY to MULTIPLE_CHOICE. The migration is forward and idempotent.
+
+- [ ] **PARKED — prod image re-upload (needs Dimitri / prod creds).** After PR #202 merges,
+      run `pnpm convert:upload-activation-images:prod` to push the corrected
+      l1/sam-l1-q05.png to the prod question-images bucket. The prod row already has
+      image_path set; the old uncorrected (unlabelled) crop must be replaced with the
+      re-minted version that includes the label row.
+
 ## 0. 2026-06-29 — L0 overlay short-invariant fix (`supabase db reset` unblocked) (PR #199 OPEN)
 
 PR #199 (lane/fix-l0-overlay-short-invariant) OPEN, verify-bar GREEN (1440 tests).

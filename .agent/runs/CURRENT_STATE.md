@@ -4,6 +4,28 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-06-29 (CONVERSION: SAM-L1-Q05 label-leak + format defect fix) — PR #202 (lane/fix-l1-q05-group-label-leak) OPEN, verify-bar GREEN (pnpm test full pass, tsc clean, lint 0 errors; seed↔migration activation-parity guard passes). NOT merged. Nothing applied to prod.
+
+- **PR #202 — lane/fix-l1-q05-group-label-leak — OPEN (verify-bar GREEN).**
+  "fix(conversion): SAM-L1-Q05 label-leak + NUMERIC_ENTRY→MULTIPLE_CHOICE format fix".
+  SAM-L1-Q05: L1 "grouping" item; geometry / level 1A; content_id l1-geometry-1; served as Q8 in the L1 short test.
+  Two defects fixed in one PR:
+
+  1. LABEL LEAK — "Group A / Group B" box labels were baked into the stem ("Group A   Group B   In which group does it belong? Answer: Group ___") while the curated image l1/sam-l1-q05.png showed the two animal boxes UNLABELLED. Root cause: migration 20260614120001 stmt 2 put the labels in the stem, and scripts/conversion/l1_crop.py cropped the boxes BELOW the worksheet's label row ("stem already renders Group A / Group B"). Because a single-image item renders one `<img>` with no per-box caption (QuestionImage.tsx), the labels can only live on the image. Fix: l1_crop.py Q05 re-cropped to INCLUDE the label row (faithful re-crop from source page-04; stray "5." whited out); sam-l1-q05.png re-minted.
+
+  2. FORMAT DEFECT — item was NUMERIC_ENTRY with a LETTER answer ("B" / "Group B"), which renders a numeric keypad (inputMode="decimal") and is un-enterable on touch, failing the live serve-and-submit gate. Fix: converted to MULTIPLE_CHOICE, options ["Group A","Group B"], correct_index 1 (= key B), tap-to-answer; stem cleaned to "In which group does it belong?"; correct_answer removed.
+
+  **Files changed:** scripts/conversion/l1_crop.py (M); supabase/seed.sql (M — INSERT row format+content; removed now-redundant Q05 stem-patch block); supabase/migrations/20260629120000_fix_l1_q05_group_label_leak.sql (A, forward, idempotent). Unchanged: short_test_eligible, banding (1A), content_id, level, image_alt/image_required/image_path. Verify bar GREEN (pnpm test, tsc, lint). seed↔migration activation-parity guard passes.
+
+  **Founder-gated prod follow-ups (PARKED — NOT executed):**
+  (a) Apply migration 20260629120000 on prod.
+  (b) Re-upload corrected l1/sam-l1-q05.png to the prod question-images bucket (`pnpm convert:upload-activation-images:prod`).
+  (c) Merge PR #202 after Vercel preview review.
+
+  **Residual observation (context only, not a decision):** NUMERIC_ENTRY items keyed to a letter/word answer are a latent serve-gate hazard on touch. Q05 was the instance found; no claim that others exist.
+
+---
+
 **As of:** 2026-06-29 (L0 overlay short-invariant fix; `supabase db reset` unblocked) — PR #199 (lane/fix-l0-overlay-short-invariant) OPEN, verify-bar GREEN (1440 tests), awaiting Dimitri's attended merge. Nothing applied to prod or any DB.
 
 - **PR #199 — lane/fix-l0-overlay-short-invariant — OPEN (verify-bar GREEN).**
