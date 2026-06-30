@@ -31,6 +31,15 @@ const SEED_DEFAULT = path.join(REPO_ROOT, "supabase", "seed.sql");
 
 const EXTERNAL_ID = /'(SAM-L\d+[A-Z]?-Q\d+[A-Z]?)'/;
 
+// One VALUES tuple inside a questions INSERT, captured from its leading external_id to the
+// trailing `…, <is_active>, <short_test_eligible>, <content_key>)`. The two bare booleans
+// immediately before the content_key (null or a quoted code) are, positionally,
+// (is_active, short_test_eligible) — the column order the l0-overlay generator emits. JSON
+// content can't false-match: its booleans look like `"held":true` / `:false}` (no `, b, b,`
+// run followed by a SQL null/'code'), and it contains no lone `'` for the content_key group.
+const VALUES_TUPLE =
+  /\(\s*'(SAM-L\d+[A-Z]?-Q\d+[A-Z]?)'[\s\S]*?,\s*(true|false)\s*,\s*(true|false)\s*,\s*(?:null|'[^']*')\s*\)/gi;
+
 /** Split into statements and strip `-- line comments` so comments never match. */
 function statements(sql: string): string[] {
   const stripped = sql
@@ -66,18 +75,47 @@ export function checkShortEligibleInvariant(seedSql: string): InvariantResult {
   for (const st of stmts) {
     const isQuestions = /update\s+questions/i.test(st) || /insert\s+into\s+questions/i.test(st);
     if (!isQuestions) continue;
-    if (!/short_test_eligible\s*=\s*true/i.test(st)) continue;
-    shortSetters += 1;
 
-    const setsActiveFalse = /is_active\s*=\s*false/i.test(st);
-    const setsActiveTrue = /is_active\s*=\s*true/i.test(st);
-    const mentionsActive = /\bis_active\b/i.test(st);
-    const firstId = (st.match(EXTERNAL_ID) ?? [])[1] ?? "(no external_id)";
+    // Form A: literal assignment `short_test_eligible = true` (UPDATE SET, or an INSERT that
+    // names the column = true). is_active is read from the same statement's literal assignments.
+    if (/short_test_eligible\s*=\s*true/i.test(st)) {
+      shortSetters += 1;
+      const setsActiveFalse = /is_active\s*=\s*false/i.test(st);
+      const setsActiveTrue = /is_active\s*=\s*true/i.test(st);
+      const mentionsActive = /\bis_active\b/i.test(st);
+      const firstId = (st.match(EXTERNAL_ID) ?? [])[1] ?? "(no external_id)";
 
-    if (setsActiveFalse && !setsActiveTrue) {
-      violations.push({ kind: "held", firstId, statement: st.trim() });
-    } else if (!setsActiveTrue && !mentionsActive) {
-      violations.push({ kind: "unguarded", firstId, statement: st.trim() });
+      if (setsActiveFalse && !setsActiveTrue) {
+        violations.push({ kind: "held", firstId, statement: st.trim() });
+      } else if (!setsActiveTrue && !mentionsActive) {
+        violations.push({ kind: "unguarded", firstId, statement: st.trim() });
+      }
+    }
+
+    // Form B: positional VALUES tuples — `insert into questions (… is_active,
+    // short_test_eligible, …) select … v.is_active, v.short_test_eligible … from (values
+    // (…, <active>, <short>, <key>) …)`. The boolean is a bare tuple value, NOT a `= true`
+    // assignment, so Form A cannot see it. This is the GENERATED l0-overlay form; 12 held
+    // rows (is_active=false + short=true) once slipped past this guard and only failed at
+    // `db reset`. Scan each tuple by its trailing (is_active, short_test_eligible) booleans.
+    if (
+      /insert\s+into\s+questions/i.test(st) &&
+      /is_active\s*,\s*short_test_eligible/i.test(st) &&
+      /\bvalues\b/i.test(st)
+    ) {
+      for (const m of st.matchAll(VALUES_TUPLE)) {
+        const id = m[1];
+        const tupleActive = m[2].toLowerCase() === "true";
+        const tupleShort = m[3].toLowerCase() === "true";
+        if (tupleShort) shortSetters += 1;
+        if (!tupleActive && tupleShort) {
+          violations.push({
+            kind: "held",
+            firstId: id,
+            statement: `insert into questions (values …) — tuple ${id}: is_active=false, short_test_eligible=true`,
+          });
+        }
+      }
     }
   }
 

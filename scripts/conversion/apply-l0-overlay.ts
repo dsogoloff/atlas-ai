@@ -167,7 +167,14 @@ function withAuthoring(task: OverlayTask, content: Record<string, unknown>): Rec
 function renderInsertTuple(externalId: string, task: OverlayTask): string {
   const row = task.row;
   if (!row) throw new Error(`insert task ${externalId} without row`);
-  const { shortEligible, content: base } = splitShortFlag(row.content);
+  const { shortEligible: rawShortEligible, content: base } = splitShortFlag(row.content);
+  // Invariant (questions_inactive_not_short_eligible): a held/inactive row must NEVER be
+  // short-eligible. Clamp here so the generator CANNOT emit a violating tuple (is_active=false
+  // + short_test_eligible=true) — the authored Short=Y flag only takes effect once the row is
+  // activated, which is a later atomic step (is_active=true + short=true together). Before
+  // this clamp the l0-overlay block shipped 12 held rows with short=true that failed the
+  // CHECK on `supabase db reset` (and slipped past the static guard's literal-assignment scan).
+  const shortEligible = task.is_active ? rawShortEligible : false;
   const content = withAuthoring(task, base);
   return (
     `    (${sqlString(externalId)}, ${sqlString(row.strand)}, ${sqlString(row.level)}, ` +
@@ -217,8 +224,12 @@ function buildUpdateStatement(externalId: string, task: OverlayTask): string {
   if (upd.format !== undefined) sets.push(`format = ${sqlString(upd.format)}::question_format`);
   if (upd.is_active !== undefined) sets.push(`is_active = ${String(upd.is_active)}`);
   if (upd.content !== undefined) {
-    const { shortEligible, content: base } = splitShortFlag(upd.content);
+    const { shortEligible: rawShortEligible, content: base } = splitShortFlag(upd.content);
     sets.push(`content = ${sqlJsonb(withAuthoring(task, base))}`);
+    // Same invariant clamp as the insert path: an UPDATE that holds a row (is_active=false)
+    // must not also set short=true. Activation re-sets short=true atomically when it flips
+    // is_active=true.
+    const shortEligible = upd.is_active === false ? false : rawShortEligible;
     sets.push(`short_test_eligible = ${String(shortEligible)}`);
   }
   if (upd.content_merge !== undefined) {
