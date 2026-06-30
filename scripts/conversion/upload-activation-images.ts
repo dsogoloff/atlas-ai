@@ -36,7 +36,7 @@ import {
   REPO_ROOT,
   type Entry,
   SOURCE_MAP,
-  activeImagePaths,
+  requiredImagePaths,
   resolveEntries,
   missingSources,
   fmtCounts,
@@ -71,37 +71,24 @@ async function main(): Promise<void> {
   const checkOnly = process.argv.includes("--check");
   const prod = process.argv.includes("--prod");
 
-  // --- Derive the required set from the DB source of truth ------------------
-  const required = activeImagePaths();
-  const entries = resolveEntries(required); // throws loud on unmapped active keys
-
-  process.stdout.write("[upload-activation-images] derived from supabase/seed.sql\n");
-  process.stdout.write(`  required (active image rows): ${fmtCounts(required)}\n`);
-  process.stdout.write(`  SOURCE_MAP coverage (superset): ${fmtCounts(Object.keys(SOURCE_MAP))}\n`);
-
-  // --- Pre-flight: resolved sources exist on disk --------------------------
-  const missing = await missingSources(entries);
-  if (missing.length > 0) {
-    process.stderr.write(
-      `\nFAIL — ${String(missing.length)} active row(s) have no source crop on disk:\n` +
-        missing.map((s) => `  - ${s}`).join("\n") + "\n",
-    );
-    process.exitCode = 1;
-    return;
-  }
-
+  // --- --check: OFFLINE pre-flight (no DB) ---------------------------------
+  // The required set is now derived from the DB (runtime truth), which --check has no
+  // connection for. So --check validates the FULL SOURCE_MAP against disk — every mapped
+  // source crop exists — which is the only meaningful offline guarantee. The active-subset
+  // derivation + bucket audit happen in a real (connected) run below.
   if (checkOnly) {
     const allEntries: Entry[] = Object.entries(SOURCE_MAP).map(([bucket, source]) => ({ bucket, source }));
+    process.stdout.write(`[upload-activation-images] --check (offline): SOURCE_MAP coverage ${fmtCounts(Object.keys(SOURCE_MAP))}\n`);
     const missingAll = await missingSources(allEntries);
     if (missingAll.length > 0) {
       process.stderr.write(
-        `\nWARNING — ${String(missingAll.length)} SOURCE_MAP source(s) missing on disk (will fail when their rows activate):\n` +
+        `\nFAIL — ${String(missingAll.length)} SOURCE_MAP source(s) missing on disk (will 500 when their rows activate):\n` +
           missingAll.map((s) => `  - ${s}`).join("\n") + "\n",
       );
-    } else {
-      process.stdout.write(`  full SOURCE_MAP: all ${String(allEntries.length)} source files present on disk.\n`);
+      process.exitCode = 1;
+      return;
     }
-    process.stdout.write("\nPASS (--check) — every active image_path is mapped and its source exists on disk.\n");
+    process.stdout.write(`\nPASS (--check) — all ${String(allEntries.length)} SOURCE_MAP source files present on disk.\n`);
     return;
   }
 
@@ -138,6 +125,25 @@ async function main(): Promise<void> {
   }
   process.stdout.write(`\n[upload-activation-images] target ${url} | bucket ${BUCKET} | env ${envFile ?? "(process env)"}\n`);
   const supabase = createClient(url, key, { auth: { persistSession: false } }) as SupabaseClient;
+
+  // --- Derive the required set from RUNTIME TRUTH (the DB, not seed text) ---
+  // Every image the app will mint for the currently-active rows (top-level + per-tile),
+  // read from the target DB itself — so it can never drift from what the runtime requests.
+  const required = await requiredImagePaths(supabase);
+  const entries = resolveEntries(required); // throws loud on unmapped active keys
+  process.stdout.write(`[upload-activation-images] required (active, DB-derived): ${fmtCounts(required)}\n`);
+  process.stdout.write(`  SOURCE_MAP coverage (superset): ${fmtCounts(Object.keys(SOURCE_MAP))}\n`);
+
+  // --- Pre-flight: resolved sources exist on disk --------------------------
+  const missing = await missingSources(entries);
+  if (missing.length > 0) {
+    process.stderr.write(
+      `\nFAIL — ${String(missing.length)} active row(s) have no source crop on disk:\n` +
+        missing.map((s) => `  - ${s}`).join("\n") + "\n",
+    );
+    process.exitCode = 1;
+    return;
+  }
 
   // --- Upload (upsert) -----------------------------------------------------
   process.stdout.write("\n  uploaded | size      | bucket path\n");

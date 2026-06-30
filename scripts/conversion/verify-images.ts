@@ -2,12 +2,14 @@
 //
 // One command, one verdict. Run anytime AFTER `supabase db reset` + the uploader to
 // confirm every is_active image row actually has its file in the private
-// `question-images` bucket. Derives the required set from supabase/seed.sql (the DB
-// source of truth) and re-lists the bucket; prints per-folder expected-vs-present
-// counts and names any 500-risk row (active but no file). Exits non-zero on FAIL.
+// `question-images` bucket. The required set is derived from RUNTIME TRUTH — every active
+// row's actual content in the DB (top-level image_path + per-tile), exactly what the app
+// mints at serve time (see ./minted-image-paths.ts) — NOT from seed text. It re-lists the
+// bucket; prints per-folder expected-vs-present counts and names any 500-risk row (active
+// but no file). Exits non-zero on FAIL.
 //
 // Run: pnpm convert:verify-images
-//   (--check skips Supabase and only checks map + source-on-disk, like the uploader.)
+//   (--check is OFFLINE: validates the full SOURCE_MAP against disk only, no DB/Supabase.)
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
@@ -16,7 +18,9 @@ import path from "node:path";
 import {
   BUCKET,
   REPO_ROOT,
-  activeImagePaths,
+  type Entry,
+  SOURCE_MAP,
+  requiredImagePaths,
   resolveEntries,
   missingSources,
   fmtCounts,
@@ -40,19 +44,18 @@ function loadEnvFile(): void {
 }
 
 async function main(): Promise<void> {
-  const required = activeImagePaths();
-  const entries = resolveEntries(required); // throws loud on unmapped active keys
-  process.stdout.write("[verify-images] active image rows derived from supabase/seed.sql\n");
-  process.stdout.write(`  required: ${fmtCounts(required)}\n`);
-
+  // --check: OFFLINE — required set is DB-derived (needs a connection), so the only
+  // meaningful offline guarantee is that every mapped source crop exists on disk.
   if (process.argv.includes("--check")) {
-    const missing = await missingSources(entries);
+    const allEntries: Entry[] = Object.entries(SOURCE_MAP).map(([bucket, source]) => ({ bucket, source }));
+    process.stdout.write(`[verify-images] --check (offline): SOURCE_MAP coverage ${fmtCounts(Object.keys(SOURCE_MAP))}\n`);
+    const missing = await missingSources(allEntries);
     if (missing.length > 0) {
-      process.stderr.write(`\nFAIL — ${String(missing.length)} source(s) missing on disk:\n` + missing.map((s) => `  - ${s}`).join("\n") + "\n");
+      process.stderr.write(`\nFAIL — ${String(missing.length)} SOURCE_MAP source(s) missing on disk:\n` + missing.map((s) => `  - ${s}`).join("\n") + "\n");
       process.exitCode = 1;
       return;
     }
-    process.stdout.write("\nPASS (--check) — every active image_path is mapped and its source exists on disk.\n");
+    process.stdout.write(`\nPASS (--check) — all ${String(allEntries.length)} SOURCE_MAP source files present on disk.\n`);
     return;
   }
 
@@ -65,8 +68,12 @@ async function main(): Promise<void> {
   if (!/127\.0\.0\.1|localhost/.test(url) && process.env.ALLOW_NONLOCAL !== "true") {
     throw new Error(`Refusing non-local SUPABASE_URL (${url}); set ALLOW_NONLOCAL=true for a reviewed prod audit.`);
   }
-  process.stdout.write(`  target ${url} | bucket ${BUCKET}\n`);
   const supabase = createClient(url, key, { auth: { persistSession: false } }) as SupabaseClient;
+
+  const required = await requiredImagePaths(supabase);
+  resolveEntries(required); // throws loud on unmapped active keys
+  process.stdout.write("[verify-images] active image rows derived from the DB (runtime truth)\n");
+  process.stdout.write(`  required: ${fmtCounts(required)}\n  target ${url} | bucket ${BUCKET}\n`);
 
   const audit = await auditBucket(supabase, required);
   const pass = printVerdict(audit);
