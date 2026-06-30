@@ -7,14 +7,14 @@
 // SOURCE_MAP only resolves a bucket key to its source file on disk.
 
 import { stat } from "node:fs/promises";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { type ActiveItem, mintedImagePaths } from "./minted-image-paths";
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(HERE, "..", "..");
-export const SEED_FILE = path.join(REPO_ROOT, "supabase", "seed.sql");
 export const BUCKET = "question-images";
 
 // Untracked licensed-crop / generated source roots (override via env if relocated).
@@ -202,12 +202,27 @@ export const SOURCE_MAP: Record<string, string> = {
   "l6/sam-l6-q34.png": `${L6_SRC}/L6-34.png`,
 };
 
-/** Every `"image_path":"KEY"` referenced in seed.sql (held rows carry none). */
-export function activeImagePaths(): string[] {
-  const seed = readFileSync(SEED_FILE, "utf8");
-  const keys = new Set<string>();
-  for (const m of seed.matchAll(/"image_path"\s*:\s*"([^"]+)"/g)) keys.add(m[1]);
-  return [...keys].sort();
+/**
+ * RUNTIME-TRUTH required set: every image the app will mint for the CURRENTLY-ACTIVE rows,
+ * read from the DB (not seed text) via PostgREST. Form-agnostic — it sees the resolved
+ * `content`, so it captures image_paths assigned by ANY seed/migration form (inline JSON
+ * AND `update … content || jsonb_build_object('image_path', …)`). Mirrors what
+ * serveQuestion mints (top-level + per-tile) via extractMintedPaths. PLACEHOLDER- dev row
+ * excluded. See ./minted-image-paths.ts for the extraction (kept in lock-step with
+ * src/lib/questionPicker/mintImage.ts).
+ */
+export async function requiredImagePaths(supabase: SupabaseClient): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("external_id, format, content")
+    .eq("is_active", true)
+    .not("external_id", "like", "PLACEHOLDER-%");
+  if (error) throw new Error(`active-rows query failed: ${error.message}`);
+  const items: ActiveItem[] = (data ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    return { external_id: String(r.external_id ?? ""), format: String(r.format ?? ""), content: r.content };
+  });
+  return mintedImagePaths(items);
 }
 
 export function folderOf(key: string): string {
