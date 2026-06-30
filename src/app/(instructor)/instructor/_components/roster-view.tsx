@@ -93,8 +93,21 @@ export function RosterTable({
                 >
                   {initials(row.name)}
                 </span>
-                <span className="font-headline-adult text-sam-navy font-bold">
-                  {row.name}
+                <span className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-headline-adult text-sam-navy font-bold">
+                    {row.name}
+                  </span>
+                  {row.archivedAtDisplay && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sam-gray-light text-sam-gray-mid">
+                      <span
+                        className="material-symbols-outlined text-[12px]"
+                        aria-hidden="true"
+                      >
+                        archive
+                      </span>
+                      Archived {row.archivedAtDisplay}
+                    </span>
+                  )}
                 </span>
               </span>
               <span className="text-sm text-sam-navy/70">
