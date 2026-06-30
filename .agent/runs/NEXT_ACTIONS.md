@@ -4,6 +4,43 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-06-29 — L0 overlay short-invariant fix (`supabase db reset` unblocked) (PR #199 OPEN)
+
+PR #199 (lane/fix-l0-overlay-short-invariant) OPEN, verify-bar GREEN (1440 tests).
+`supabase db reset` was failing on the `questions_inactive_not_short_eligible` CHECK
+(PR #191); root cause was 12 held L0 overlay rows inserted with `is_active=false,
+short_test_eligible=true`. Three fixes shipped (data + generator + guard). No schema
+change; no `supabase db reset` step needed as part of the merge — the fix IS what
+unblocks reset.
+
+- [ ] **Dimitri: merge PR #199 (lane/fix-l0-overlay-short-invariant)** after review.
+      No migration; no `supabase db reset` needed as part of the merge itself. After merge,
+      run `supabase db reset` to confirm it now completes without the
+      `questions_inactive_not_short_eligible` violation.
+
+## 0. 2026-06-29 — prod serve/submit 500 fix + content-completeness verifier (PR #198 OPEN)
+
+PR #198 (lane/content-completeness-verifier) OPEN, verify-bar GREEN. Root cause identified
+and fixed in code; prod image upload is founder-gated and parked below.
+
+- [ ] **Dimitri: merge PR #198 (lane/content-completeness-verifier)** after Vercel preview
+      review. No migration; no `supabase db reset` needed (tooling + DB-query change only;
+      no app schema change).
+
+- [ ] **PARKED — upload 4 missing L1 images to prod (needs Dimitri / prod creds).**
+      After PR #198 merges, run:
+        `pnpm convert:upload-activation-images:prod`
+      This uploads `l1/sam-l1-q05.png`, `l1/sam-l1-q10.png`, `l1/sam-l1-q12.png`,
+      and `l1/sam-l1-q19.png` to the prod `question-images` bucket (the required set now
+      includes them because it is derived from the live DB, not seed text).
+      Then run:
+        `pnpm convert:verify-content --prod`
+      Expected result: images 4/4 PASS, gradeability PASS → closes the L1 serve-500.
+      Plain-English: these 4 images were never uploaded to prod because the old uploader
+      script was blind to one of the two ways `image_path` is set in the seed file. PR #198
+      fixes the script; this attended run pushes the files. Do NOT run until PR #198 is
+      merged (the new uploader logic must be live first).
+
 ## 0. 2026-06-28 — full answer-key audit + SAM-L4-Q17 + CI manifest guard (PR #191 MERGED / #192 OPEN)
 
 PR #191 (lane/bank-source-invariant-fix) MERGED: bank source invariant (is_active=false ⟹
