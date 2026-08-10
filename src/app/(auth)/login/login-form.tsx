@@ -13,6 +13,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { getBranding } from "@/lib/branding";
+
 import { loginAction, type LoginResult } from "./actions";
 import { LoginSchema, type LoginInput } from "./schema";
 
@@ -189,7 +191,7 @@ export function LoginForm({
           )}
         </button>
         <div className="flex items-center justify-center gap-2 font-caption text-caption text-sam-gray-mid">
-          <span>New to Atlas?</span>
+          <span>New to {getBranding().shortName}?</span>
           <Link className="text-sam-red font-bold hover:underline" href="/signup">
             Create an account
           </Link>

@@ -4,6 +4,53 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
+
+PR #209 (lane/tenant-white-label) OPEN, verify-bar GREEN (1554 tests, tsc clean, lint 0 errors),
+CI green, Vercel preview deployed. NOT merged.
+
+Customer-facing surface is now skinned per tenant from `src/lib/branding/`. Atlas branding is
+RETAINED for Inspirea's own use (the `atlas` skin) and in internal chrome (`(admin)`, `/dev`).
+Nothing below blocks the PR — every item is a drop-in swap after merge.
+
+- [ ] **Dimitri: merge PR #209 (lane/tenant-white-label)** after Vercel preview review.
+      Suggested preview check: the landing hero should read "S.A.M New York Math Assessment"
+      with no ™ and no "Powered by Inspirea Labs"; the browser tab title should carry no
+      "Atlas"; the parent report footer should read "S.A.M New York"; and the COPPA page
+      should still show the operator disclosure in fine print at the bottom of the sections.
+
+- [ ] **PARKED — favicon / app icon asset (needs Dimitri).** `src/app/favicon.ico` is still
+      the Next.js default. Drop the S.A.M mark in at that path — `faviconHref` already points
+      to `/favicon.ico`, so no code change is needed. Not derived from `sam-logo.png`:
+      cropping a wordmark makes a poor icon, and brand art is not run through tooling.
+
+- [ ] **PARKED — OG / social share image (needs Dimitri).** No `og:image` is emitted today.
+      Supply a 1200×630 PNG and it becomes one line in
+      `src/lib/branding/tenants/sam-new-york.ts`.
+
+- [ ] **PARKED — final S.A.M New York copy (needs Dimitri).** All one-line swaps in
+      `src/lib/branding/tenants/sam-new-york.ts`: meta description (current placeholder is
+      deliberately weaker than the copy it replaced — dropped "diagnostic"/"pinpoints" to
+      stay inside BUSINESS_RULES §Claims), copyright line, report footer name, email sender
+      display name.
+
+- [ ] **PARKED — counsel wording, operator/data-processor disclosure (needs Dimitri +
+      counsel).** `branding.legal.processorDisclosure` holds a clearly-marked placeholder.
+      Do NOT let an agent invent or "improve" this wording. The slot renders in fine print on
+      `/coppa`; the guard test asserts it still exists so a future rebrand cannot scrub it.
+
+- [ ] **PARKED — counsel wording, signup consent authorization line (needs Dimitri +
+      counsel).** Now reads "I authorize S.A.M New York Math Assessment to share…". It names
+      the authorizing counterparty, so counsel should confirm. The VERSIONED consent text
+      (`src/lib/consent/text.ts`) was deliberately left untouched.
+
+- [ ] **PARKED — Supabase Auth email templates (needs Dimitri; outside this repo).** Confirm
+      signup and password reset emails carry product branding and are configured in the
+      Supabase dashboard, not in-repo. They still need the S.A.M New York treatment there
+      (sender name, subject, body, footer).
+
+---
+
 ## 0. 2026-06-29 — CONVERSION: SAM-L1-Q05 label-leak + format fix (PR #202 OPEN)
 
 PR #202 (lane/fix-l1-q05-group-label-leak) OPEN, verify-bar GREEN (pnpm test, tsc, lint; seed↔migration parity guard passes). NOT merged. Nothing applied to prod.

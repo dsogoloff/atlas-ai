@@ -3,6 +3,8 @@
 // (no session gate). A `?error=reset_failed` param (set by /auth/reset on an
 // invalid/expired recovery link) surfaces an informational note on the form.
 
+import { getBranding } from "@/lib/branding";
+
 import { ForgotPasswordForm } from "./forgot-password-form";
 
 // Reads searchParams — opt out of static prerender.
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export default async function ForgotPasswordPage({ searchParams }: Props) {
+  const branding = getBranding();
   const { error } = await searchParams;
   const resetFailed = error === "reset_failed";
 
@@ -23,7 +26,7 @@ export default async function ForgotPasswordPage({ searchParams }: Props) {
           <header className="mb-stack-lg">
             <div className="mb-4">
               <span className="text-2xl font-black text-sam-navy">
-                Atlas Assessment
+                {branding.productName}
               </span>
             </div>
             <h2 className="font-headline-adult text-headline-adult text-sam-navy mb-2">
@@ -39,7 +42,7 @@ export default async function ForgotPasswordPage({ searchParams }: Props) {
       </main>
       <footer className="w-full py-stack-md flex justify-center border-t border-sam-gray-light/30">
         <p className="font-caption text-caption text-sam-gray-mid/60">
-          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
+          {branding.copyrightLine}
         </p>
       </footer>
     </>

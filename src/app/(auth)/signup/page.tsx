@@ -5,6 +5,8 @@
 // component (./signup-form.tsx) that wires to the server action.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { getBranding } from "@/lib/branding";
+
 import { SignupForm } from "./signup-form";
 
 // Loaded per-request (changes roughly never but we want dashboard edits to
@@ -30,6 +32,7 @@ async function loadCenterName(): Promise<string | null> {
 }
 
 export default async function SignupPage() {
+  const branding = getBranding();
   const centerName = await loadCenterName();
 
   return (
@@ -43,7 +46,7 @@ export default async function SignupPage() {
             <div className="relative z-10 text-center space-y-stack-md max-w-[440px]">
               <div className="flex justify-center mb-8">
                 <img
-                  alt="Atlas dachshund mascot waving hello"
+                  alt={`${branding.mascotAlt} waving hello`}
                   className="w-full h-64 object-contain rounded-3xl shadow-lg border-4 border-white bg-sam-cream"
                   src="/mascot/waving.png"
                 />
@@ -52,7 +55,7 @@ export default async function SignupPage() {
                 Welcome to the Journey.
               </h1>
               <p className="font-body-regular text-body-regular text-sam-gray-mid">
-                Atlas Assessment helps you understand your child&rsquo;s
+                {branding.productName} helps you understand your child&rsquo;s
                 mathematical potential through engaging diagnostics and clear,
                 actionable reporting.
               </p>
@@ -83,7 +86,7 @@ export default async function SignupPage() {
             </div>
             <div className="absolute bottom-6 left-6 flex items-center gap-4">
               <img
-                alt="Atlas mascot"
+                alt={branding.mascotAlt}
                 className="w-20 h-20 object-contain"
                 src="/mascot/waving.png"
               />
@@ -102,7 +105,7 @@ export default async function SignupPage() {
               <header className="mb-stack-lg">
                 <div className="mb-4">
                   <span className="text-2xl font-black text-sam-navy">
-                    Atlas Assessment
+                    {branding.productName}
                   </span>
                 </div>
                 <h2 className="font-headline-adult text-headline-adult text-sam-navy mb-2">
@@ -119,7 +122,7 @@ export default async function SignupPage() {
       </main>
       <footer className="w-full py-stack-md flex justify-center border-t border-sam-gray-light/30">
         <p className="font-caption text-caption text-sam-gray-mid/60">
-          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
+          {branding.copyrightLine}
         </p>
       </footer>
     </>

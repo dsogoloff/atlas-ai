@@ -37,6 +37,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isBetaWelcomeEnabled } from "@/lib/env";
 
+import { getBranding } from "@/lib/branding";
+
 import { AddChildForm } from "./add-child-form";
 import { BetaWelcomeGate } from "./beta-welcome-gate";
 
@@ -45,6 +47,7 @@ interface Props {
 }
 
 export default async function AddChildPage({ searchParams }: Props) {
+  const branding = getBranding();
   // Page-level auth gate per Phase 2 decision D3. Defense-in-depth in
   // addition to the auth check inside addChildAction.
   const supabase = await createClient();
@@ -71,7 +74,7 @@ export default async function AddChildPage({ searchParams }: Props) {
       <header className="bg-[#FEFBF6] font-display-child font-semibold top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-4">
           <span className="text-2xl font-black text-sam-navy">
-            Atlas Assessment
+            {branding.productName}
           </span>
         </div>
         <div className="flex items-center gap-6">
@@ -129,7 +132,7 @@ export default async function AddChildPage({ searchParams }: Props) {
           <div className="flex justify-center -mt-24 mb-6">
             <div className="w-32 h-32 relative">
               <img
-                alt="Atlas dachshund mascot waving hello"
+                alt={`${branding.mascotAlt} waving hello`}
                 className="w-full h-full object-contain"
                 src="/mascot/waving.png"
               />
@@ -149,7 +152,7 @@ export default async function AddChildPage({ searchParams }: Props) {
       </main>
 
       <footer className="p-6 text-center text-sam-gray-mid/50 text-caption font-caption">
-        © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
+        {branding.copyrightLine}
       </footer>
     </BetaWelcomeGate>
   );

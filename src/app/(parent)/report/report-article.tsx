@@ -12,6 +12,7 @@
 
 import Link from "next/link";
 
+import { getBranding } from "@/lib/branding";
 import { CTA_LINKS } from "@/lib/cta-links";
 import { firstName } from "@/lib/format/firstName";
 import type { resolveNarrationProse } from "@/lib/report/narration/resolve";
@@ -241,7 +242,7 @@ export function Topbar({ reportId }: { reportId: string | null }) {
         className="font-semibold"
         style={{ color: "var(--color-report-navy)" }}
       >
-        Atlas Assessment
+        {getBranding().report.headerName}
       </span>
       {reportId && (
         <span className="max-sm:hidden">Report ID &middot; {reportId}</span>
@@ -412,7 +413,7 @@ export function Footer() {
         className="uppercase font-medium"
         style={{ color: "var(--color-report-navy-muted)" }}
       >
-        Atlas AI &middot; Powered by Inspirea Labs
+        {getBranding().report.footerName}
       </div>
       <p
         className="mt-4 italic max-w-[600px] mx-auto leading-[1.6]"

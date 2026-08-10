@@ -16,6 +16,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { getBranding } from "@/lib/branding";
 import { createClient } from "@/lib/supabase/server";
 
 // auth.getUser → no static prerender.
@@ -31,6 +32,7 @@ interface HowItWorksPageProps {
 export default async function HowItWorksPage({
   searchParams,
 }: HowItWorksPageProps) {
+  const branding = getBranding();
   const params = await searchParams;
   const childId = params.child?.trim() ?? "";
   const hasChild = UUID_RE.test(childId);
@@ -74,7 +76,7 @@ export default async function HowItWorksPage({
             className="font-semibold"
             style={{ color: "var(--color-report-navy)" }}
           >
-            Atlas Assessment
+            {branding.report.headerName}
           </span>
           <Link
             href={backHref}
@@ -206,7 +208,8 @@ export default async function HowItWorksPage({
               </strong>{" "}
               The result is a starting picture of your child&rsquo;s strengths
               and the few specific areas worth a closer look &mdash; designed to
-              help a S.A.M. instructor place and support your child, not to
+              help a {branding.shortName} instructor place and support your child,
+              not to
               label them. A fuller assessment at a center can confirm and go
               deeper.
             </p>
@@ -239,7 +242,7 @@ export default async function HowItWorksPage({
             className="uppercase font-medium"
             style={{ color: "var(--color-report-navy-muted)" }}
           >
-            Atlas AI &middot; Powered by Inspirea Labs
+            {branding.report.footerName}
           </div>
         </footer>
       </article>

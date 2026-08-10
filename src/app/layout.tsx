@@ -5,6 +5,8 @@ import {
   Playfair_Display,
   DM_Sans,
 } from "next/font/google";
+import { getBranding } from "@/lib/branding";
+
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -36,10 +38,24 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
+// Browser <title>, meta and OG/social strings are tenant-resolved — see
+// src/lib/branding. Never hardcode a product name here.
+const branding = getBranding();
+
 export const metadata: Metadata = {
-  title: "Atlas Assessment | Assessment Report",
-  description:
-    "S.A.M. Atlas Assessment — an AI-adaptive Singapore Math diagnostic that pinpoints a child's level and learning gaps in ~15 minutes. Powered by Inspirea Labs.",
+  title: branding.meta.title,
+  description: branding.meta.description,
+  icons: { icon: branding.faviconHref },
+  openGraph: {
+    title: branding.meta.ogTitle,
+    description: branding.meta.description,
+    siteName: branding.meta.siteName,
+  },
+  twitter: {
+    card: "summary",
+    title: branding.meta.ogTitle,
+    description: branding.meta.description,
+  },
 };
 
 export default function RootLayout({

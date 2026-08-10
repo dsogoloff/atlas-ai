@@ -28,6 +28,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { resolveStaff } from "@/app/(instructor)/instructor/lib/instructor";
+import { getBranding } from "@/lib/branding";
 import { CTA_LINKS } from "@/lib/cta-links";
 import { firstName } from "@/lib/format/firstName";
 import { createClient } from "@/lib/supabase/server";
@@ -41,6 +42,7 @@ import { recoverParentProfile } from "./recover-profile";
 export const dynamic = "force-dynamic";
 
 export default async function ParentDashboardPage() {
+  const branding = getBranding();
   // Auth gate (Phase 1 Q5b): page-level. Mirrors Phase 2/3 idiom.
   const supabase = await createClient();
   const {
@@ -150,7 +152,7 @@ export default async function ParentDashboardPage() {
       <header className="bg-[#FEFBF6] sticky top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-black text-sam-navy font-display-child">
-            Atlas Assessment
+            {branding.productName}
           </span>
         </div>
         <div className="flex items-center space-x-6">
@@ -179,7 +181,7 @@ export default async function ParentDashboardPage() {
         <main className="flex-grow flex flex-col items-center justify-center px-6 py-12">
           <div className="max-w-2xl w-full text-center">
             <h1 className="font-display-child text-display-child text-sam-navy mb-12">
-              Welcome to the Atlas Family!
+              Welcome to the {branding.shortName} Family!
             </h1>
             <div className="relative flex flex-col items-center space-y-8">
               <div className="relative w-full max-w-md mx-auto mb-4">

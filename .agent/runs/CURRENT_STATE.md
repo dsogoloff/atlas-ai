@@ -4,6 +4,53 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-08-10 (ATLAS: per-tenant white-label layer, S.A.M New York skin) — PR #209 (lane/tenant-white-label) OPEN, verify-bar GREEN (1554 tests, tsc clean, lint 0 errors), Vercel preview deployed. NOT merged.
+
+- **PR #209 — lane/tenant-white-label — OPEN (verify-bar GREEN, CI green).**
+  "feat(branding): per-tenant white-label layer, seeded with S.A.M New York".
+  New `src/lib/branding/` owns every customer-facing brand string, asset path and sender
+  identity — implements the already-locked ARCHITECTURE.md guardrail #5. Two skins:
+  `sam-new-york` (default, live tenant) and `atlas` (Inspirea's own brand, retained).
+  Selected per-deployment by `NEXT_PUBLIC_TENANT_BRAND`; `brandingForTenantSlug()` maps
+  DB `tenants.slug` (`inspirea_singapore_math`) → skin. Internal chrome — the `(admin)`
+  route group and `/dev` — deliberately keeps Atlas branding and does not read the config.
+
+  **Surfaces rebranded (customer-facing only):** landing hero eyebrow (`Atlas Assessment™`
+  → `S.A.M New York Math Assessment`, ™ dropped, star icon kept), landing header logo /
+  footer / mascot alt, root `<title>` + meta description + OG/Twitter tags + favicon href,
+  all six auth pages, signup consent authorization line, child assessment compact header +
+  loading splash, beta welcome screen, parent dashboard header + empty-state greeting,
+  report topbar + footer (screen AND print/PDF), report answer log, report how-it-works,
+  instructor portal chrome, transactional email `from` display name.
+  "Powered by Inspirea Labs" is hidden via `poweredBy: null` — gone from all customer chrome.
+
+  **Brand mark:** normalised to the exact two-dot form `S.A.M`. Fixed three rendered
+  three-dot `S.A.M.` occurrences (meta description, how-it-works prose, instructor
+  recommendation note).
+
+  **Legal:** the operator/data-processor disclosure is NOT deleted — it moved to legal fine
+  print on `/coppa`, rendered from `branding.legal.processorDisclosure`. That string is a
+  clearly-marked COUNSEL-GATED placeholder. The VERSIONED consent text
+  (`src/lib/consent/text.ts`) was deliberately left untouched (editing it changes consent
+  semantics = Dimitri/counsel gate, not a branding change).
+
+  **Mascot:** `public/mascot/*.png` byte-unchanged. No regeneration, upscaling or AI image
+  tooling. Only `alt` text was rebranded.
+
+  **Guard:** `src/lib/branding/customer-surface.guard.test.ts` scans every customer-facing
+  route for rendered `Atlas`/`Inspirea` (outside the fine-print slot) and for three-dot
+  `S.A.M.`, and asserts >20 files scanned so it cannot go vacuous. Verified non-vacuous by
+  injecting a violation and confirming the failure, then reverting.
+
+  **Isolation:** no attribution/UTM/GA4 code, domain, URL path or query handling touched —
+  `src/lib/marketing/**` is absent from the diff. Independent of PR #208.
+
+  **Founder-gated follow-ups (PARKED — see NEXT_ACTIONS.md):** favicon asset; OG share
+  image; final S.A.M NY copy strings; counsel wording for the processor disclosure and the
+  consent authorization line; Supabase Auth email templates (dashboard, outside this repo).
+
+---
+
 **As of:** 2026-06-29 (CONVERSION: SAM-L1-Q05 label-leak + format defect fix) — PR #202 (lane/fix-l1-q05-group-label-leak) OPEN, verify-bar GREEN (pnpm test full pass, tsc clean, lint 0 errors; seed↔migration activation-parity guard passes). NOT merged. Nothing applied to prod.
 
 - **PR #202 — lane/fix-l1-q05-group-label-leak — OPEN (verify-bar GREEN).**

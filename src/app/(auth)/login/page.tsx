@@ -8,6 +8,8 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { getBranding } from "@/lib/branding";
+
 import { LoginForm } from "./login-form";
 
 // Force dynamic so Next doesn't statically prerender — we read cookies
@@ -24,6 +26,7 @@ interface Props {
 }
 
 export default async function LoginPage({ searchParams }: Props) {
+  const branding = getBranding();
   const supabase = await createClient();
   const {
     data: { user },
@@ -71,7 +74,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <div className="relative z-10 text-center space-y-stack-md max-w-[440px]">
               <div className="flex justify-center mb-8">
                 <img
-                  alt="Atlas dachshund mascot waving hello"
+                  alt={`${branding.mascotAlt} waving hello`}
                   className="w-full h-64 object-contain rounded-3xl shadow-lg border-4 border-white bg-sam-cream"
                   src="/mascot/waving.png"
                 />
@@ -109,7 +112,7 @@ export default async function LoginPage({ searchParams }: Props) {
             </div>
             <div className="absolute bottom-6 left-6 flex items-center gap-4">
               <img
-                alt="Atlas mascot"
+                alt={branding.mascotAlt}
                 className="w-20 h-20 object-contain"
                 src="/mascot/waving.png"
               />
@@ -128,7 +131,7 @@ export default async function LoginPage({ searchParams }: Props) {
               <header className="mb-stack-lg">
                 <div className="mb-4">
                   <span className="text-2xl font-black text-sam-navy">
-                    Atlas Assessment
+                    {branding.productName}
                   </span>
                 </div>
                 <h2 className="font-headline-adult text-headline-adult text-sam-navy mb-2">
@@ -150,7 +153,7 @@ export default async function LoginPage({ searchParams }: Props) {
       </main>
       <footer className="w-full py-stack-md flex justify-center border-t border-sam-gray-light/30">
         <p className="font-caption text-caption text-sam-gray-mid/60">
-          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
+          {branding.copyrightLine}
         </p>
       </footer>
     </>

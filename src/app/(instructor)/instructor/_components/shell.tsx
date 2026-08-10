@@ -7,6 +7,7 @@
 import Link from "next/link";
 
 import { signOutAction } from "@/lib/auth/sign-out";
+import { getBranding } from "@/lib/branding";
 
 // The chrome is shared by the instructor portal and the tenant-wide admin
 // view. `roleLabel` / `homeHref` default to the instructor surface so every
@@ -25,7 +26,7 @@ export function InstructorTopBar({
     <header className="bg-sam-cream sticky top-0 z-40 border-b border-sam-gray-light flex justify-between items-center w-full px-6 py-4">
       <Link href={homeHref} className="flex items-center gap-2">
         <span className="text-xl font-black text-sam-navy font-display-child">
-          Atlas Assessment
+          {getBranding().productName}
         </span>
         <span className="text-xs font-bold text-sam-gray-mid uppercase tracking-wider hidden sm:inline">
           {roleLabel}
