@@ -72,7 +72,9 @@ describe("notifyFollowUpLead — live", () => {
     expect(init.headers.Authorization).toBe("Bearer re_test_key");
 
     const body = JSON.parse(init.body);
-    expect(body.from).toBe("noreply@example.com");
+    // Sender display name is tenant-resolved (src/lib/branding); the bare
+    // address from LEAD_NOTIFY_FROM_EMAIL is wrapped, not replaced.
+    expect(body.from).toBe("S.A.M New York <noreply@example.com>");
     expect(body.to).toBe("center@example.com");
     expect(body.text).toContain("jordan@example.com");
     expect(body.text).toContain("Maple Elementary");

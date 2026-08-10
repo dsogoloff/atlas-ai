@@ -11,12 +11,25 @@ import "server-only";
 // NO diagnostic result is included. Uses the Resend HTTP API directly via fetch
 // (no SDK dependency).
 
+import { getBranding } from "@/lib/branding";
 import {
   getLeadNotifyFromEmail,
   getLeadNotifyToEmail,
   getResendApiKey,
   isLeadNotifyLive,
 } from "@/lib/env";
+
+/**
+ * Resend `from` with the tenant's sender display name applied, e.g.
+ * `S.A.M New York <leads@…>`. LEAD_NOTIFY_FROM_EMAIL may already carry a
+ * display name (`Name <addr>`) — in that case it is left alone so the env var
+ * stays authoritative.
+ */
+function brandedFrom(): string {
+  const raw = getLeadNotifyFromEmail().trim();
+  if (raw.includes("<")) return raw;
+  return `${getBranding().email.senderName} <${raw}>`;
+}
 
 export interface FollowUpLeadNotification {
   /** Null when the school field is gated off (LEAD_SCHOOL_FIELD_LIVE). */
@@ -55,7 +68,7 @@ export async function notifyFollowUpLead(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: getLeadNotifyFromEmail(),
+        from: brandedFrom(),
         to: getLeadNotifyToEmail(),
         subject: `New assessment lead — ${subjectTag}`,
         text: lines.join("\n"),

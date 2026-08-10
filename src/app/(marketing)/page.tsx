@@ -2,6 +2,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { getBranding } from "@/lib/branding";
+
 import { LandingViewBeacon } from "./landing-view-beacon";
 
 // Ported from stitch/module-a/01-landing-desktop.html (do not hand-edit
@@ -21,18 +23,23 @@ import { LandingViewBeacon } from "./landing-view-beacon";
 // remain pending real content.
 
 export default function LandingPage() {
+  const branding = getBranding();
   return (
     <>
       <LandingViewBeacon />
       {/* TopAppBar */}
       <header className="bg-[#FEFBF6] font-display-child font-semibold top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4 sticky">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center" aria-label="S.A.M Singapore Math — home">
+          <Link
+            href="/"
+            className="flex items-center"
+            aria-label={`${branding.logo.alt} — home`}
+          >
             <Image
-              src="/sam-logo.png"
-              alt="S.A.M Singapore Math"
-              width={3887}
-              height={2182}
+              src={branding.logo.src}
+              alt={branding.logo.alt}
+              width={branding.logo.width}
+              height={branding.logo.height}
               priority
               className="h-16 w-auto"
             />
@@ -61,17 +68,21 @@ export default function LandingPage() {
               </span>
               <span className="flex flex-col leading-tight">
                 <span className="font-headline-adult text-sam-navy text-2xl">
-                  Atlas Assessment
-                  <sup
-                    className="font-semibold"
-                    style={{ fontSize: "1em", top: "-0.3em" }}
-                  >
-                    ™
-                  </sup>
+                  {branding.productName}
+                  {branding.trademarkSymbol && (
+                    <sup
+                      className="font-semibold"
+                      style={{ fontSize: "1em", top: "-0.3em" }}
+                    >
+                      {branding.trademarkSymbol}
+                    </sup>
+                  )}
                 </span>
-                <span className="font-body-regular text-sam-gray-mid text-base">
-                  Powered by Inspirea Labs
-                </span>
+                {branding.poweredBy && (
+                  <span className="font-body-regular text-sam-gray-mid text-base">
+                    {branding.poweredBy}
+                  </span>
+                )}
               </span>
             </div>
             <h1 className="font-display-child text-[64px] leading-tight text-sam-navy">
@@ -99,7 +110,7 @@ export default function LandingPage() {
             {/* Mascot: brown long-haired mini dachshund */}
             <div className="relative z-10 w-full max-w-md">
               <img
-                alt="Atlas dachshund mascot waving hello"
+                alt={`${branding.mascotAlt} waving hello`}
                 className="rounded-[48px] shadow-2xl border-8 border-white transform rotate-3 bg-sam-cream"
                 src="/mascot/waving.png"
               />
@@ -266,7 +277,7 @@ export default function LandingPage() {
           {/* Mascot peek-a-boo */}
           <div className="absolute -bottom-4 right-10 w-48 h-48">
             <img
-              alt="Atlas dachshund mascot celebrating"
+              alt={`${branding.mascotAlt} celebrating`}
               className="w-full h-full object-contain"
               src="/mascot/celebrating.png"
             />
@@ -278,7 +289,7 @@ export default function LandingPage() {
         <div className="max-w-container-max mx-auto px-gutter">
           <div className="max-w-sm">
             <span className="text-xl font-black text-sam-navy">
-              Atlas Assessment
+              {branding.productName}
             </span>
             <p className="text-sam-gray-mid text-sm mt-4">
               Empowering educators with world-class assessment tools.
@@ -286,7 +297,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-container-max mx-auto px-gutter mt-12 pt-8 border-t border-sam-gray-light text-center text-xs text-sam-gray-mid">
-          © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
+          {branding.copyrightLine}
         </div>
       </footer>
     </>

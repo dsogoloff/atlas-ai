@@ -46,6 +46,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { getBranding } from "@/lib/branding";
 import { timeFlagBadge } from "@/lib/display/progress";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -351,7 +352,7 @@ function TopAppBar() {
     <header className="bg-[#FEFBF6] sticky top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4 print:hidden">
       <div className="flex items-center gap-2">
         <span className="text-2xl font-black text-sam-navy font-display-child">
-          Atlas Assessment
+          {getBranding().report.headerName}
         </span>
       </div>
     </header>

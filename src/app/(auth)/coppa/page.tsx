@@ -28,6 +28,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { getBranding } from "@/lib/branding";
+
 // Force dynamic so Next.js doesn't statically prerender — we read
 // searchParams to forward stale email-link `?code=` values to the
 // /auth/callback Route Handler (where cookies can be set).
@@ -38,6 +40,7 @@ interface Props {
 }
 
 export default async function CoppaPage({ searchParams }: Props) {
+  const branding = getBranding();
   const { code } = await searchParams;
 
   // Old verification emails (sent before the /auth/callback handler
@@ -107,7 +110,7 @@ export default async function CoppaPage({ searchParams }: Props) {
                   Our Commitment to Privacy
                 </p>
                 <p className="font-body-regular text-on-background text-sm leading-relaxed">
-                  Atlas Assessment is committed to complying with the
+                  {branding.productName} is committed to complying with the
                   Children&rsquo;s Online Privacy Protection Act (COPPA). We
                   collect minimal information necessary to evaluate
                   mathematical progress and never share identifiable data with
@@ -201,6 +204,20 @@ export default async function CoppaPage({ searchParams }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* ---------------------------------------------------------------
+                OPERATOR / DATA-PROCESSOR DISCLOSURE — legal fine print.
+                This is the ONE customer-facing place an Inspirea reference
+                legitimately remains: it is a compliance disclosure, not
+                branding, and must NOT be scrubbed by a rebrand.
+                The wording is COUNSEL-GATED and supplied by the founder —
+                src/lib/branding/tenants/*.ts `legal.processorDisclosure`
+                currently holds a clearly-marked placeholder. Do not rewrite it
+                here.
+                --------------------------------------------------------------- */}
+            <p className="pt-2 text-xs leading-relaxed text-sam-gray-mid">
+              {branding.legal.processorDisclosure}
+            </p>
           </div>
         </div>
 
@@ -247,7 +264,7 @@ export default async function CoppaPage({ searchParams }: Props) {
         </div>
         <div className="w-24 h-24 relative">
           <img
-            alt="Atlas dachshund mascot waving hello"
+            alt={`${branding.mascotAlt} waving hello`}
             className="w-full h-full object-contain drop-shadow-lg"
             src="/mascot/waving.png"
           />

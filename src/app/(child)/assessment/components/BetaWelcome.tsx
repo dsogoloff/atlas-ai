@@ -18,15 +18,21 @@
 // Copy is founder-approved and lives inline as BETA_WELCOME_COPY so the whole
 // screen is a single self-contained, removable unit.
 
+import { getBranding } from "@/lib/branding";
 import type { Tier } from "@/lib/tier/derive";
 
-/** Founder-approved beta welcome copy (pilot-only; removed at v1.0). */
+const branding = getBranding();
+
+/** Founder-approved beta welcome copy (pilot-only; removed at v1.0).
+ *  The product name is tenant-resolved; the rest of the wording is unchanged
+ *  from the founder-approved original, with the one "Atlas" self-reference
+ *  replaced by a plain descriptor. */
 export const BETA_WELCOME_COPY = {
-  heading: "Welcome to Atlas Assessment (Beta)",
+  heading: `Welcome to the ${branding.productName} (Beta)`,
   body: [
     "Thank you for taking part in the beta. This early version of the assessment is designed to give Seriously Addictive Mathematics instructors a high-level picture of your child's comfort with certain mathematical concepts.",
     "The beta is offered to a limited number of families ahead of our public launch. Because it's still in testing, you may run into a few quirks — or the occasional problem. After your child finishes and you've reviewed the report, we'd be very grateful for your feedback through the short form we'll provide.",
-    "Thank you for helping us make Atlas more robust and useful for every family.",
+    "Thank you for helping us make the assessment more robust and useful for every family.",
   ],
   continueButton: "Continue",
 } as const;

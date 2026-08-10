@@ -12,7 +12,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { getBranding } from "@/lib/branding";
 import type { Database } from "@/lib/supabase/database.types";
+
+// The empty-state greeting is tenant-resolved (src/lib/branding) — assert
+// against the config, not a literal, so a copy swap doesn't break this test.
+const EMPTY_STATE_GREETING = `Welcome to the ${getBranding().shortName} Family!`;
 
 const mockCreateClient = vi.fn();
 const mockRecover = vi.fn();
@@ -132,7 +137,7 @@ describe("ParentDashboardPage — staff routing on the no-parent branch", () => 
 
     const html = renderToStaticMarkup(await ParentDashboardPage());
 
-    expect(html).toContain("Welcome to the Atlas Family!");
+    expect(html).toContain(EMPTY_STATE_GREETING);
     expect(html).not.toContain("Account profile not found");
     expect(redirectMock).not.toHaveBeenCalled();
   });
@@ -147,7 +152,7 @@ describe("ParentDashboardPage — staff routing on the no-parent branch", () => 
     const html = renderToStaticMarkup(await ParentDashboardPage());
 
     expect(mockRecover).toHaveBeenCalledTimes(1);
-    expect(html).toContain("Welcome to the Atlas Family!");
+    expect(html).toContain(EMPTY_STATE_GREETING);
     expect(html).not.toContain("Account profile not found");
     expect(html).not.toContain("finishing setting up");
     expect(redirectMock).not.toHaveBeenCalled();

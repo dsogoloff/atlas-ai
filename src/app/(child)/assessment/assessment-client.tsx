@@ -15,6 +15,7 @@ import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
 import { MARKETING_EVENTS } from "@/lib/marketing/events";
 import { trackOnce } from "@/lib/marketing/track";
+import { getBranding } from "@/lib/branding";
 import { computeProgressDisplay } from "@/lib/display/progress";
 import type { Tier } from "@/lib/tier/derive";
 import type { ProctoringMode } from "@/lib/proctoring/mode";
@@ -277,7 +278,7 @@ function Loading() {
           progress_activity
         </span>
         <span className="font-display-child text-sm font-bold text-sam-navy">
-          Getting ready…
+          {getBranding().loadingText}
         </span>
       </div>
     </div>

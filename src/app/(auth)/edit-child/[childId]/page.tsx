@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { getBranding } from "@/lib/branding";
+
 import { EditChildForm } from "./edit-child-form";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,7 @@ interface Props {
 }
 
 export default async function EditChildPage({ params }: Props) {
+  const branding = getBranding();
   const { childId } = await params;
   if (!UUID_RE.test(childId)) {
     redirect("/dashboard");
@@ -49,7 +52,7 @@ export default async function EditChildPage({ params }: Props) {
     <>
       <header className="bg-[#FEFBF6] top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
         <span className="text-2xl font-black text-sam-navy font-display-child">
-          Atlas Assessment
+          {branding.productName}
         </span>
       </header>
 
@@ -78,7 +81,7 @@ export default async function EditChildPage({ params }: Props) {
       </main>
 
       <footer className="p-6 text-center text-sam-gray-mid/50 text-caption font-caption">
-        © 2026 Atlas Assessment by Inspirea Labs Inc. All rights reserved.
+        {branding.copyrightLine}
       </footer>
     </>
   );

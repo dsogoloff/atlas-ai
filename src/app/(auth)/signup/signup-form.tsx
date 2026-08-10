@@ -13,6 +13,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { getBranding } from "@/lib/branding";
+
 import { signupAction, type SignupResult } from "./actions";
 import { SignupSchema, type SignupInput } from "./schema";
 
@@ -239,7 +241,11 @@ export function SignupForm({ centerName }: Props) {
             </label>
             <p className="font-caption text-[12px] text-sam-gray-mid leading-relaxed">
               I am the parent or legal guardian of the child(ren) I will
-              register. I authorize Atlas to share my child&rsquo;s assessment
+              {/* CONSENT WORDING: the authorizing counterparty is tenant-
+                  resolved. Final wording is counsel-gated — see the PR's
+                  founder list. */}
+              register. I authorize {getBranding().productName} to share my
+              child&rsquo;s assessment
               results (placement level, strand-level results, detected
               misconceptions, and response patterns — never the questions
               themselves) with instructors at{" "}

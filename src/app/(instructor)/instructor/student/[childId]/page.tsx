@@ -976,7 +976,7 @@ function ItemReviewSection({ items }: { items: ItemReviewRow[] }) {
       <SectionHeading>Item-level review</SectionHeading>
       <p className="text-sm text-sam-gray-mid mb-4">
         Per-item outcome, strand, time, and any detected pattern. Question shown
-        only in S.A.M. materials (licensed content).
+        only in S.A.M materials (licensed content).
       </p>
       {items.length === 0 ? (
         <p className="text-sm text-sam-gray-mid">No item responses recorded.</p>
