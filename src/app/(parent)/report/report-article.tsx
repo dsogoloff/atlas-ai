@@ -24,6 +24,7 @@ import { ParentReportFeedback } from "./parent-report-feedback";
 import { PlacementCard } from "./placement-card";
 import { PlacementRecommendation } from "./placement-recommendation";
 import { ReadinessSection } from "./readiness-section";
+import { ReportConversion } from "./report-conversion";
 import { StrandMap } from "./strand-map";
 import { StrandRadar } from "./strand-radar";
 import { TimeFlagBanner } from "./time-flag-banner";
@@ -184,6 +185,15 @@ export function ReportArticle({
 
       {!staffView && (
         <ParentReportFeedback sessionId={sessionId} childId={childId} />
+      )}
+
+      {/* Marketing conversion (assessment_complete) — parent-only, same reason
+          as the widgets above. Renders nothing; sends UTMs + test type only. */}
+      {!staffView && (
+        <ReportConversion
+          sessionId={sessionId}
+          assessmentType={reportContent.readiness ? "short" : "comprehensive"}
+        />
       )}
 
       <Footer />
