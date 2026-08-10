@@ -13,6 +13,8 @@ import { useEffect, useReducer, useState } from "react";
 
 import { startSession, submitResponse } from "./lib/api";
 import { initialState, reduce } from "./lib/reducer";
+import { MARKETING_EVENTS } from "@/lib/marketing/events";
+import { trackOnce } from "@/lib/marketing/track";
 import { computeProgressDisplay } from "@/lib/display/progress";
 import type { Tier } from "@/lib/tier/derive";
 import type { ProctoringMode } from "@/lib/proctoring/mode";
@@ -152,6 +154,19 @@ export function AssessmentClient({
     dispatch({ type: "RETRY_FROM_ERROR" });
   }
 
+  // Marketing conversion: `assessment_start`. Fired at the handoff gate — the
+  // parent-context transition where the parent passes the screen to the child —
+  // so it never fires from a child item screen. Deduped per child per tab.
+  // Carries the persisted UTMs plus the test type; NO child data (see
+  // lib/marketing/events.ts, which allowlists the payload). The Meta half is
+  // queued here (no pixel on this route) and flushed from a parent surface.
+  function confirmHandoff() {
+    trackOnce(MARKETING_EVENTS.ASSESSMENT_START, childId, {
+      assessment_type: comprehensive ? "comprehensive" : "short",
+    });
+    setTestModeChosen(true);
+  }
+
   if (state.kind === "starting") {
     // Gate 1: parent intro / instructions (ENABLE_PARENT_INTRO). Shows before
     // any child-facing UI. Tapping Start only acknowledges it — the child
@@ -177,10 +192,10 @@ export function AssessmentClient({
           tier={tier}
           comprehensive={comprehensive}
           onChange={setComprehensive}
-          onStart={() => setTestModeChosen(true)}
+          onStart={confirmHandoff}
         />
       ) : (
-        <ChildHandoff tier={tier} onContinue={() => setTestModeChosen(true)} />
+        <ChildHandoff tier={tier} onContinue={confirmHandoff} />
       );
     }
     // Gate 3: the child Welcome — the first child-facing screen. Static; the
