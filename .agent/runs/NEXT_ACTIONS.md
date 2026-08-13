@@ -4,7 +4,47 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
+## 0. 2026-08-11 — ATLAS: analytics page-context redaction + GA4 queue (PR #210 OPEN)
+
+PR #210 (lane/analytics-privacy-redaction) OPEN off ATLAS-ASSESSMENT, verify-bar GREEN
+(1614 tests, tsc clean, lint 0 errors), CI `verify-bar` green. NOT merged.
+
+Root cause of the "#208 custom events not firing" report: **they were firing.** Verified on
+live prod — dedupe keys set, `event|assessment_start` / `event|assessment_complete` in
+`dataLayer`, outbound `/g/collect` POSTs made. The absence was GA4 standard-report processing
+latency (24–48h on a NEW event name, checked ~36h after deploy), with a DebugView that showed
+ZERO events — proving the Tag Assistant debug channel never attached, not that events were
+missing. No code defect. The 503 seen on collect requests is an observation artifact: the
+known-good `page_view` hit returns 503 in the same observer.
+
+The live trace did surface two real findings, which PR #210 fixes:
+- COPPA: `/report?child=<uuid>` put the child UUID in GA4 `dl`/`dp`/`dr` and Meta `dl`/`rl` —
+  page context the #208 payload allowlist cannot see. Confirmed leaking on prod (Meta HTTP 200).
+- GA4 had no retry queue (event lost permanently when `gtag` was absent) while Meta queued.
+
+- [ ] **Dimitri: merge PR #210 (lane/analytics-privacy-redaction)** after preview review.
+
+- [ ] **Dimitri: mark `assessment_start` / `assessment_complete` as Key events** in GA4 Admin →
+      Data display → Events. GA4 only offers an event name after it has seen it, so this is a
+      dashboard action, not code. Use Reports → **Realtime** (no processing latency) to confirm
+      collection rather than the Event-count report.
+
+- [ ] **PARKED — accept deferred Meta `assessment_complete`, or prioritise the structural URL
+      change (needs Dimitri).** The Meta Pixel offers no supported way to override the URL it
+      reports, so PR #210 stops it sending from any document whose URL carries a child
+      identifier; the conversion is queued and flushed from the next clean parent surface, and
+      Meta gets no report PageView. Privacy was chosen over conversion immediacy. Restoring an
+      immediate Meta conversion needs the child id out of the query string (path segment with an
+      opaque token, or a server-resolved id) — a routing change that risks colliding with
+      existing report links, so it was deliberately NOT done in #210. Business call.
+
+- [ ] **PARKED — Preview-environment verification is blocked (needs Dimitri).** The Vercel
+      preview for #210 sits behind Vercel deployment protection (serves "Login – Vercel"), so
+      the deployed bundle could not be checked from this session. Either open the preview
+      yourself and confirm the report route's outbound GA4 `dl` carries `child=redacted`, or
+      confirm on prod after merge.
+
+## 1. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
 
 PR #209 (lane/tenant-white-label) OPEN, verify-bar GREEN (1554 tests, tsc clean, lint 0 errors),
 CI green, Vercel preview deployed. NOT merged.
