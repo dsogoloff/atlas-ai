@@ -4,6 +4,70 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-08-13 (ATLAS: staff alerts, director CTA, dead-link cleanup, COPPA copy, re-clamp script) — five independent PRs #211–#215 OPEN, all verify-bar GREEN and CI green. NONE merged. Nothing run against prod.
+
+- **PR #211 — lane/staff-assessment-alerts — OPEN (verify-bar GREEN: 1580 tests, tsc clean, lint 0 errors).**
+  "feat(alerts): staff email alerts on account confirm + assessment completion".
+  Two operational Resend emails to the pilot center, reusing the follow-up-lead transport
+  wholesale — same `RESEND_API_KEY`, same verified `LEAD_NOTIFY_FROM_EMAIL` sender, same
+  `LEAD_NOTIFY_LIVE` gate (default OFF: no send, no spend). Recipient is a CODE DEFAULT
+  (`parents@samnewyork.com`) with an optional `STAFF_ALERT_TO` override, so it ships with
+  NO Vercel env action.
+  (1a) ACCOUNT CREATED fires on email-CONFIRM success (`/auth/confirm`, after `verifyOtp`),
+  not raw signup. Once per account, guarded on the durable VPC trail — a pre-existing
+  `verification_succeeded` row means the account was already announced.
+  (1b) ASSESSMENT COMPLETED fires on server-side finalization, from the same two
+  fresh-submit terminal paths as the `test_completed` / `placement_created` funnel events;
+  a sequential retry 409s before those paths and a concurrent duplicate returns via
+  `duplicateResult()`, which emits nothing.
+  Both wrapped in `after()` (non-blocking) and fail-soft — neither notifier throws.
+  New `src/lib/staffAlerts/notify.ts` + tests; `src/lib/env.ts` gains
+  `getStaffAlertToEmail()`; `/api/assess/submit` threads request origin for the record link.
+
+- **PR #212 — lane/director-cta-mailto — OPEN (verify-bar GREEN: 1557 tests).**
+  "feat(cta): interim director mailto replaces the dead schedule placeholder".
+  `CTA_LINKS.scheduleFreeClass` was `#schedule-a-free-class` (a dead anchor); now a mailto
+  to `parents@samnewyork.com` with the director-call subject URL-encoded, no body prefill.
+  Button labels unchanged. INTERIM ONLY — the env-gated `SAM_SCHEDULER_URL` swap and its
+  relabel remain the HubSpot lane's Contract B and are deliberately NOT implemented.
+  `todo.md` records the multi-center follow-on (center-scoped director contact AND alert
+  recipient once a second center exists).
+
+- **PR #213 — lane/dead-link-cleanup — OPEN (verify-bar GREEN: 1554 tests).**
+  "fix(ui): remove dead nav/controls, wire the setup-help link".
+  Removed the Add-Child `href="#"` tabs (Students / Reports / Add Child) and its
+  Notifications + Help icon buttons (no handlers), plus the parent dashboard's
+  Notifications bell placeholder. Dashboard empty-state "Need help setting up your
+  account?" now opens the support inbox via new `CTA_LINKS.accountSetupHelp`.
+  Zero `href="#"` anchors remain in `src/`.
+
+- **PR #214 — lane/coppa-onscreen-copy — OPEN (verify-bar GREEN: 1625 tests).**
+  "fix(coppa): on-screen disclosure now matches the counsel-approved PDF".
+  `/coppa` rendered Stitch placeholder copy that said something DIFFERENT from
+  `public/legal/coppa-disclosure-v1.pdf` — the asset its own Download button serves. The
+  counsel text (sections 1–10 + two opening paragraphs) is now transcribed VERBATIM into
+  `src/app/(auth)/coppa/disclosure-copy.ts`; `page.tsx` owns layout only.
+  `disclosure-copy.test.ts` extracts the text from the real PDF at test time and asserts
+  every rendered string appears in it (71 assertions) — a "typo fix" to counsel wording
+  now fails CI. The app-authored AI-processing disclosure (safeguard C2, NOT in the PDF)
+  is KEPT and renumbered to section 11 so it never shifts counsel numbering.
+  `src/lib/consent/text.ts` untouched; PDF download link intact.
+
+- **PR #215 — lane/reclamp-backfill-script — OPEN (verify-bar GREEN: 1554 tests). NOT RUN.**
+  "chore(backfill): re-clamp script for pre-#206 railed placements (REVIEW ONLY)".
+  Floors pre-#206 sessions' stored `current_estimate.overall_level` to the highest level
+  actually served (live example: session a28f0c2a, Pre-K, 0A×10 all-correct, stored 8B).
+  `clampPlacementToServedCeiling` extracted from `handler.ts` into
+  `src/lib/responseSubmit/clampPlacement.ts` (handler imports `server-only`/`next/server`,
+  which break under `tsx`); handler re-exports it, so all import sites and
+  `clamp-placement.test.ts` are unchanged and the backfill runs the EXACT live function.
+  DRY RUN by default; writing needs `--apply --confirm`; target explicit
+  (`--target=local|prod`, prod creds only from gitignored `.env.prod.local`); read-checked
+  per session including a fixed-point idempotency check. Has NOT been run against prod or
+  local. `scripts/backfill/README.md` is the plain-English summary.
+
+---
+
 **As of:** 2026-08-10 (ATLAS: per-tenant white-label layer, S.A.M New York skin) — PR #209 (lane/tenant-white-label) OPEN, verify-bar GREEN (1554 tests, tsc clean, lint 0 errors), Vercel preview deployed. NOT merged.
 
 - **PR #209 — lane/tenant-white-label — OPEN (verify-bar GREEN, CI green).**

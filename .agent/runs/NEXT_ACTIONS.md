@@ -4,7 +4,55 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
+## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (PRs #211–#215 OPEN)
+
+Five INDEPENDENT PRs (not stacked), all verify-bar GREEN and CI green, none merged.
+
+- [ ] **Dimitri: merge PRs #211–#215** after Vercel preview review. They do not depend on
+      each other and can merge in any order. #212 and #213 both touch `src/lib/cta-links.ts`
+      in different regions — if the second one conflicts, it is a trivial two-key merge.
+
+- [ ] **Dimitri: flip `LEAD_NOTIFY_LIVE=true` in Vercel when ready for staff alerts to
+      actually send (#211).** Until then the alerts no-op — no send, no spend. The flip also
+      enables the EXISTING follow-up-lead notifier, so it is one switch for both. No other
+      env var is needed: the recipient defaults in code to `parents@samnewyork.com`.
+      Set `STAFF_ALERT_TO` only to route alerts somewhere else (e.g. a QA inbox).
+
+- [ ] **PARKED — COPPA disclosure, three counsel-facing questions (#214, needs Dimitri +
+      counsel).** All flagged on the PR; none block merge.
+      (a) The sub-header now shows the disclosure VERSION instead of the old hardcoded
+      "Updated: October 24, 2023", which was Stitch filler and wrong. Supply a real
+      effective date and it goes back.
+      (b) The app-authored AI-processing disclosure sits at section 11, AFTER counsel's
+      section 10 consent affirmation — that keeps counsel numbering intact but does place a
+      disclosure after the affirmation. Moving it earlier renumbers counsel text.
+      (c) Counsel's section 10 reads "By checking the box below and continuing…", but
+      `/coppa` has no checkbox (it is disclosure-only; the binding per-child consent with
+      the checkbox is at `/add-child`, Model B). The wording was NOT altered to match the
+      screen. Either the PDF wording or the page flow should move — counsel's call.
+
+- [ ] **PARKED — run the re-clamp backfill (#215, needs Dimitri).** The script has NOT been
+      run against prod or local. Review order: `pnpm backfill:reclamp:dry -- --target=prod`
+      (READ-ONLY) → read the would-change table → only then
+      `pnpm backfill:reclamp -- --target=prod --apply --confirm`. See
+      `scripts/backfill/README.md`.
+
+- [ ] **Follow-up after any re-clamp run (#215):** report narration prose generated BEFORE
+      the correction may still quote the old level. If an affected report has already been
+      shown to a parent, regenerate its narration. Not built — the script only prints a
+      reminder.
+
+- [ ] **Dimitri (optional, presentational): dashboard "Schedule a free class" label (#212).**
+      The parent dashboard shares `CTA_LINKS.scheduleFreeClass` under its own existing
+      label, which now opens the director mailto. Per the "do not relabel" instruction the
+      label was left as-is; say the word to align it in a follow-up.
+
+- [ ] **Multi-center follow-on (recorded in `todo.md` by #212; not built).** Once more than
+      one center exists, the parent selects a center FIRST and both the director contact
+      link AND the staff-alert recipient resolve to that center's director/inbox (via
+      `home_center_id`, not a global constant). Vitalis directs the one current center only.
+
+## 1. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
 
 PR #209 (lane/tenant-white-label) OPEN, verify-bar GREEN (1554 tests, tsc clean, lint 0 errors),
 CI green, Vercel preview deployed. NOT merged.
