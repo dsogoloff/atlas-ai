@@ -4,17 +4,15 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (#211–#214 MERGED, #215 OPEN)
+## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (#211–#217 ALL MERGED)
 
-Five INDEPENDENT PRs (not stacked), all verify-bar GREEN and CI green.
+Six lane PRs plus the follow-on build fix (#217), all verify-bar GREEN and CI green.
 
-- [x] **Dimitri: merge PRs #211–#214** — DONE (trunk head 9ed3954).
+- [x] **Dimitri: merge PRs #211–#216** — DONE (trunk head 486b230, then 07e7bb1 with #217).
 
-- [ ] **Dimitri: merge PR #215 (lane/reclamp-backfill-script).** Rebased onto the merged
-      trunk; verify-bar GREEN after the merge (1714 tests / 142 files, tsc clean, lint 0
-      errors). The one conflict was in `src/lib/responseSubmit/handler.ts`, where #211 and
-      #215 added an import on the same line — both kept. Merging #215 does NOT run anything;
-      the script stays unexecuted until the separate founder-gated step below.
+- [x] **Dimitri: merge PR #215 (lane/reclamp-backfill-script)** — DONE (4fb8482). The one
+      conflict was in `src/lib/responseSubmit/handler.ts`, where #211 and #215 added an
+      import on the same line — both kept.
 
 - [ ] **Dimitri: flip `LEAD_NOTIFY_LIVE=true` in Vercel when ready for staff alerts to
       actually send (#211).** Until then the alerts no-op — no send, no spend. The flip also
@@ -35,16 +33,18 @@ Five INDEPENDENT PRs (not stacked), all verify-bar GREEN and CI green.
       the checkbox is at `/add-child`, Model B). The wording was NOT altered to match the
       screen. Either the PDF wording or the page flow should move — counsel's call.
 
-- [ ] **PARKED — run the re-clamp backfill (#215, needs Dimitri).** The script has NOT been
-      run against prod or local. Review order: `pnpm backfill:reclamp:dry -- --target=prod`
-      (READ-ONLY) → read the would-change table → only then
-      `pnpm backfill:reclamp -- --target=prod --apply --confirm`. See
-      `scripts/backfill/README.md`.
+- [x] **CLOSED — NOT NEEDED: run the re-clamp backfill (#215).** Prod DRY RUN executed
+      2026-08-13 (`pnpm backfill:reclamp:dry -- --target=prod`, read-only, zero writes):
+      **0 affected of 16 completed sessions.** Every stored `overall_level` already equals
+      its served ceiling. The headline case reads `0A` on prod
+      (`a28f0c2a-c917-4877-9346-0cf430627f04`, served 0A×10) — the 8B was local/dev data,
+      since corrected. **The apply variant was deliberately NOT run**, and should not be:
+      running a write path over a zero-row work list is risk for no benefit. The script
+      stays in-repo as a verified instrument if a future railed session appears.
 
-- [ ] **Follow-up after any re-clamp run (#215):** report narration prose generated BEFORE
-      the correction may still quote the old level. If an affected report has already been
-      shown to a parent, regenerate its narration. Not built — the script only prints a
-      reminder.
+- [x] **DROPPED — narration regeneration after a re-clamp (#215).** Contingent on levels
+      changing; nothing changed, so no report narration can be quoting a stale level from
+      this cause.
 
 - [ ] **Dimitri (optional, presentational): dashboard "Schedule a free class" label (#212).**
       The parent dashboard shares `CTA_LINKS.scheduleFreeClass` under its own existing

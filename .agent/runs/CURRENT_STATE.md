@@ -4,7 +4,13 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-08-13 (ATLAS: staff alerts, director CTA, dead-link cleanup, COPPA copy, re-clamp script) — five independent PRs. **#211–#214 MERGED** into ATLAS-ASSESSMENT (head 9ed3954); **#215 OPEN** (rebased onto the merged trunk, verify-bar GREEN at 1714 tests / 142 files). Nothing run against prod. Staff alerts are merged but still DARK — `LEAD_NOTIFY_LIVE` is not flipped, so nothing sends.
+**As of:** 2026-08-13 (ATLAS: staff alerts, director CTA, dead-link cleanup, COPPA copy, re-clamp script, self-hosted fonts) — **#211–#217 ALL MERGED**; trunk head **07e7bb1**.
+
+Two standing caveats:
+- Staff alerts are merged but **DARK** — `LEAD_NOTIFY_LIVE` is not flipped, so nothing sends.
+- The re-clamp backfill (#215) is **CLOSED as NOT NEEDED**: the prod DRY RUN on 2026-08-13 found **0 affected of 16 completed sessions** (read-only, zero writes). The apply variant was deliberately never run. See DECISIONS.md 2026-08-13.
+
+The one production incident this session: the deploy of 486b230 failed because `next/font/google` fetched woff2 from fonts.gstatic.com at build time and Google returned 404. Fixed by self-hosting the fonts (#217, head 07e7bb1). Not caused by any of #211–#216.
 
 - **PR #211 — lane/staff-assessment-alerts — MERGED (d0cb632; verify-bar GREEN: 1580 tests, tsc clean, lint 0 errors).**
   "feat(alerts): staff email alerts on account confirm + assessment completion".
@@ -63,8 +69,27 @@
   `clamp-placement.test.ts` are unchanged and the backfill runs the EXACT live function.
   DRY RUN by default; writing needs `--apply --confirm`; target explicit
   (`--target=local|prod`, prod creds only from gitignored `.env.prod.local`); read-checked
-  per session including a fixed-point idempotency check. Has NOT been run against prod or
-  local. `scripts/backfill/README.md` is the plain-English summary.
+  per session including a fixed-point idempotency check.
+  `scripts/backfill/README.md` is the plain-English summary.
+
+  **OUTCOME — 2026-08-13 prod DRY RUN (read-only, zero writes): 0 would-re-clamp,
+  16 already-correct, 0 skipped.** A separate read-only enumeration of all 20 prod sessions
+  confirmed this is a TRUE negative: every completed session's stored `overall_level`
+  equals its served ceiling, and the headline case
+  `a28f0c2a-c917-4877-9346-0cf430627f04` (served 0A×10) reads **`0A` on prod, not `8B`** —
+  the 8B was local/dev data, since corrected. The apply variant was deliberately NOT run.
+  Incidental: three IN_PROGRESS prod sessions hold a provisional `1B` against a `1A`
+  ceiling — expected, because the #206 clamp fires at FINALIZATION, and evidence it works.
+
+- **PR #217 — lane/selfhost-fonts — MERGED (07e7bb1; verify-bar GREEN: 1719 tests / 143 files, `pnpm run build` exit 0).**
+  "fix(build): self-host webfonts so the build stops depending on Google's CDN".
+  Production deploy of 486b230 failed (`pnpm run build` exit 1) on a markdown-only commit:
+  `next/font/google` fetches every weight from fonts.gstatic.com AT BUILD TIME and Google
+  404'd the Plus Jakarta Sans URLs Next had resolved. Five latin VARIABLE woff2 (185 KB)
+  are now committed under `src/app/fonts/` and loaded with `next/font/local`, with all four
+  SIL OFL 1.1 licenses alongside. Rendering unchanged; zero `fonts.gstatic.com` references
+  in the built output. `src/app/font-hosting.guard.test.ts` blocks any reintroduction.
+  The Material Symbols `<link>` stays — it is a RUNTIME stylesheet, not a build-time fetch.
 
 ---
 
