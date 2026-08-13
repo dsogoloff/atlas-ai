@@ -4,13 +4,17 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (PRs #211–#215 OPEN)
+## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (#211–#214 MERGED, #215 OPEN)
 
-Five INDEPENDENT PRs (not stacked), all verify-bar GREEN and CI green, none merged.
+Five INDEPENDENT PRs (not stacked), all verify-bar GREEN and CI green.
 
-- [ ] **Dimitri: merge PRs #211–#215** after Vercel preview review. They do not depend on
-      each other and can merge in any order. #212 and #213 both touch `src/lib/cta-links.ts`
-      in different regions — if the second one conflicts, it is a trivial two-key merge.
+- [x] **Dimitri: merge PRs #211–#214** — DONE (trunk head 9ed3954).
+
+- [ ] **Dimitri: merge PR #215 (lane/reclamp-backfill-script).** Rebased onto the merged
+      trunk; verify-bar GREEN after the merge (1714 tests / 142 files, tsc clean, lint 0
+      errors). The one conflict was in `src/lib/responseSubmit/handler.ts`, where #211 and
+      #215 added an import on the same line — both kept. Merging #215 does NOT run anything;
+      the script stays unexecuted until the separate founder-gated step below.
 
 - [ ] **Dimitri: flip `LEAD_NOTIFY_LIVE=true` in Vercel when ready for staff alerts to
       actually send (#211).** Until then the alerts no-op — no send, no spend. The flip also

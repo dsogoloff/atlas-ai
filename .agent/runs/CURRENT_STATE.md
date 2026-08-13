@@ -4,9 +4,9 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
-**As of:** 2026-08-13 (ATLAS: staff alerts, director CTA, dead-link cleanup, COPPA copy, re-clamp script) — five independent PRs #211–#215 OPEN, all verify-bar GREEN and CI green. NONE merged. Nothing run against prod.
+**As of:** 2026-08-13 (ATLAS: staff alerts, director CTA, dead-link cleanup, COPPA copy, re-clamp script) — five independent PRs. **#211–#214 MERGED** into ATLAS-ASSESSMENT (head 9ed3954); **#215 OPEN** (rebased onto the merged trunk, verify-bar GREEN at 1714 tests / 142 files). Nothing run against prod. Staff alerts are merged but still DARK — `LEAD_NOTIFY_LIVE` is not flipped, so nothing sends.
 
-- **PR #211 — lane/staff-assessment-alerts — OPEN (verify-bar GREEN: 1580 tests, tsc clean, lint 0 errors).**
+- **PR #211 — lane/staff-assessment-alerts — MERGED (d0cb632; verify-bar GREEN: 1580 tests, tsc clean, lint 0 errors).**
   "feat(alerts): staff email alerts on account confirm + assessment completion".
   Two operational Resend emails to the pilot center, reusing the follow-up-lead transport
   wholesale — same `RESEND_API_KEY`, same verified `LEAD_NOTIFY_FROM_EMAIL` sender, same
@@ -24,7 +24,7 @@
   New `src/lib/staffAlerts/notify.ts` + tests; `src/lib/env.ts` gains
   `getStaffAlertToEmail()`; `/api/assess/submit` threads request origin for the record link.
 
-- **PR #212 — lane/director-cta-mailto — OPEN (verify-bar GREEN: 1557 tests).**
+- **PR #212 — lane/director-cta-mailto — MERGED (25c56c4; verify-bar GREEN: 1557 tests).**
   "feat(cta): interim director mailto replaces the dead schedule placeholder".
   `CTA_LINKS.scheduleFreeClass` was `#schedule-a-free-class` (a dead anchor); now a mailto
   to `parents@samnewyork.com` with the director-call subject URL-encoded, no body prefill.
@@ -33,7 +33,7 @@
   `todo.md` records the multi-center follow-on (center-scoped director contact AND alert
   recipient once a second center exists).
 
-- **PR #213 — lane/dead-link-cleanup — OPEN (verify-bar GREEN: 1554 tests).**
+- **PR #213 — lane/dead-link-cleanup — MERGED (9774f91; verify-bar GREEN: 1554 tests).**
   "fix(ui): remove dead nav/controls, wire the setup-help link".
   Removed the Add-Child `href="#"` tabs (Students / Reports / Add Child) and its
   Notifications + Help icon buttons (no handlers), plus the parent dashboard's
@@ -41,7 +41,7 @@
   account?" now opens the support inbox via new `CTA_LINKS.accountSetupHelp`.
   Zero `href="#"` anchors remain in `src/`.
 
-- **PR #214 — lane/coppa-onscreen-copy — OPEN (verify-bar GREEN: 1625 tests).**
+- **PR #214 — lane/coppa-onscreen-copy — MERGED (9ed3954; verify-bar GREEN: 1625 tests).**
   "fix(coppa): on-screen disclosure now matches the counsel-approved PDF".
   `/coppa` rendered Stitch placeholder copy that said something DIFFERENT from
   `public/legal/coppa-disclosure-v1.pdf` — the asset its own Download button serves. The
@@ -53,7 +53,7 @@
   is KEPT and renumbered to section 11 so it never shifts counsel numbering.
   `src/lib/consent/text.ts` untouched; PDF download link intact.
 
-- **PR #215 — lane/reclamp-backfill-script — OPEN (verify-bar GREEN: 1554 tests). NOT RUN.**
+- **PR #215 — lane/reclamp-backfill-script — OPEN, rebased onto the merged trunk (verify-bar GREEN: 1714 tests / 142 files). NOT RUN.**
   "chore(backfill): re-clamp script for pre-#206 railed placements (REVIEW ONLY)".
   Floors pre-#206 sessions' stored `current_estimate.overall_level` to the highest level
   actually served (live example: session a28f0c2a, Pre-K, 0A×10 all-correct, stored 8B).
