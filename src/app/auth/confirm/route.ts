@@ -15,7 +15,10 @@
 // Flow mirrors /auth/callback (compliance.md §2 "email plus"):
 //   1. Read token_hash + type (+ same-origin-guarded next, default /coppa).
 //   2. verifyOtp({ type, token_hash }) — verifies server-side.
-//   3. Write verification_clicked + verification_succeeded to vpc_audit_log.
+//   3. Write verification_clicked + verification_succeeded to vpc_audit_log,
+//      and (first confirmation only) fire the staff "account created" alert.
+//      Confirmation — not raw signup — is the account-created moment: an
+//      unconfirmed signup is not an account.
 //   4. ALWAYS redirect a confirmed user to a clean /login?confirmed=1 — never
 //      assume a session exists in THIS browser (the link may be opened on a
 //      different device or pre-fetched by a scanner; cross-device there is no
@@ -25,10 +28,11 @@
 //      failure -> /signup?error=verify_failed.
 
 import { headers } from "next/headers";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+import { notifyAccountCreated } from "@/lib/staffAlerts/notify";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 // Email-family OTP types Supabase can mint for a token-hash link. We only ever
@@ -77,7 +81,9 @@ export async function GET(request: NextRequest) {
   const admin = createServiceClient();
   const { data: parent } = await admin
     .from("parents")
-    .select("id, tenant_id, home_center_id")
+    // name + email feed the staff account-created alert below; they are the
+    // ONLY parent fields that leave the box (see staffAlerts/notify.ts).
+    .select("id, tenant_id, home_center_id, name, email")
     .eq("auth_user_id", verified.user.id)
     .maybeSingle();
 
@@ -86,6 +92,20 @@ export async function GET(request: NextRequest) {
     const ipRaw = h.get("x-forwarded-for") ?? h.get("x-real-ip");
     const ip = ipRaw?.split(",")[0]?.trim() ?? null;
     const userAgent = h.get("user-agent") ?? null;
+
+    // ONCE-PER-ACCOUNT guard for the staff alert. verifyOtp tokens are
+    // single-use, but a parent who requests a second confirmation email (or a
+    // re-sent link) can land here again with a fresh valid token — so the
+    // alert keys off the durable VPC trail rather than off this request:
+    // a pre-existing verification_succeeded row means this account was already
+    // confirmed once and already announced. Read BEFORE the insert below.
+    const { data: priorConfirm } = await admin
+      .from("vpc_audit_log")
+      .select("id")
+      .eq("parent_id", parent.id)
+      .eq("event_type", "verification_succeeded")
+      .limit(1);
+    const firstConfirmation = (priorConfirm ?? []).length === 0;
 
     await admin.from("vpc_audit_log").insert([
       {
@@ -107,6 +127,21 @@ export async function GET(request: NextRequest) {
         metadata: null,
       },
     ]);
+
+    // Staff alert — non-blocking. `after()` runs the send once the redirect has
+    // already been returned, so a slow or failing Resend call costs the parent
+    // nothing on the confirm click; notifyAccountCreated never throws, and the
+    // trailing catch is belt-and-suspenders. No child data: at confirm time
+    // there is usually no child yet, and a result never exists.
+    if (firstConfirmation) {
+      after(() =>
+        notifyAccountCreated({
+          parentName: parent.name,
+          parentEmail: parent.email,
+          adminUrl: `${url.origin}/admin`,
+        }).catch(() => undefined),
+      );
+    }
   }
 
   // Always land on a clean login with the "email confirmed" banner — no session

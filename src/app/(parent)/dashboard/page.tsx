@@ -146,9 +146,10 @@ export default async function ParentDashboardPage() {
   return (
     <>
       {/* TopAppBar — ported from Stitch source 01. The profile menu now wires
-          Sign out (Phase 1 Q7 deferral). The "Resources" placeholder link was
-          removed (no destination); the notifications bell stays a placeholder
-          until that feature lands. */}
+          Sign out (Phase 1 Q7 deferral). The "Resources" placeholder link and
+          the notifications bell were both removed — neither had a destination
+          or a handler, and a control that does nothing when clicked reads as a
+          broken app. Bring the bell back when notifications actually land. */}
       <header className="bg-[#FEFBF6] sticky top-0 z-40 border-b border-[#F2EDE4] shadow-[0px_4px_12px_rgba(27,58,107,0.05)] flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-black text-sam-navy font-display-child">
@@ -165,12 +166,6 @@ export default async function ParentDashboardPage() {
             </a>
           </nav>
           <div className="flex items-center gap-4">
-            <button
-              className="text-sam-navy/60 hover:text-sam-red transition-colors"
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
             <ProfileMenu name={parent.name} email={user.email} />
           </div>
         </div>
@@ -228,7 +223,7 @@ export default async function ParentDashboardPage() {
               <div className="pt-8">
                 <a
                   className="text-sam-navy/60 hover:text-sam-navy font-caption text-caption underline underline-offset-4 decoration-sam-yellow decoration-2 transition-all"
-                  href="#"
+                  href={CTA_LINKS.accountSetupHelp}
                 >
                   Need help setting up your account?
                 </a>
