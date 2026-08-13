@@ -67,6 +67,9 @@ describe("tagged visit -> both event payloads", () => {
     const childRouteHandles: DispatchHandles = {
       gtag,
       fbq: null,
+      enqueueGa4: () => {
+        throw new Error("GA4 should not queue when the tag is loaded");
+      },
       enqueueMeta: (event) => {
         queue = appendToQueue(queue, event, NOW_MS);
       },
@@ -95,6 +98,9 @@ describe("tagged visit -> both event payloads", () => {
     const reportHandles: DispatchHandles = {
       gtag,
       fbq,
+      enqueueGa4: () => {
+        throw new Error("GA4 should not queue when the tag is loaded");
+      },
       enqueueMeta: () => {
         throw new Error("should not queue when the pixel is loaded");
       },
@@ -156,7 +162,13 @@ describe("tagged visit -> both event payloads", () => {
     const result = dispatchMarketingEvent(
       MARKETING_EVENTS.ASSESSMENT_COMPLETE,
       buildEventPayload(capture.attribution),
-      { gtag, fbq, enqueueMeta: () => {}, nowMs: NOW_MS },
+      {
+        gtag,
+        fbq,
+        enqueueGa4: () => {},
+        enqueueMeta: () => {},
+        nowMs: NOW_MS,
+      },
     );
 
     expect(result).toEqual({ ga4: "sent", meta: "sent" });

@@ -188,7 +188,7 @@ import {
 } from "@/lib/shortTest/outcome";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
-import { clampPlacementToServedCeiling } from "./clampPlacement";
+import { notifyAssessmentCompleted } from "@/lib/staffAlerts/notify";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import {
   aggregateSessionFlags,
@@ -198,6 +198,7 @@ import {
   type ItemNormTags,
 } from "@/lib/timeFlagging";
 
+import { clampPlacementToServedCeiling } from "./clampPlacement";
 import { judgeAnswer } from "./correctness";
 import { replayEngineState, replayStrandCounts } from "./replay";
 import {
@@ -256,6 +257,10 @@ interface HandlerInput {
    *  present. Forwarded to question_access_log inserts when a new
    *  question is served. */
   ip: string | null;
+  /** Request origin (e.g. https://app.samnewyork.com), used ONLY to build the
+   *  absolute staff-record link in the assessment-completed staff alert. Null
+   *  degrades that link to a bare path — the alert still sends. */
+  origin?: string | null;
 }
 
 export async function submitResponseHandler({
@@ -263,6 +268,7 @@ export async function submitResponseHandler({
   rlsClient,
   serviceClient,
   ip,
+  origin = null,
 }: HandlerInput): Promise<SubmitHandlerResult> {
   // ---------------------------------------------------------------------------
   // 1. Auth — server-validated user, then the calling parent's row.
@@ -275,7 +281,10 @@ export async function submitResponseHandler({
 
   const { data: parent, error: parentErr } = await rlsClient
     .from("parents")
-    .select("id, tenant_id")
+    // `name` feeds the assessment-completed staff alert only (see
+    // lib/staffAlerts/notify.ts) — it is the sole parent field that leaves the
+    // box on that path.
+    .select("id, tenant_id, name")
     .eq("auth_user_id", userId)
     .maybeSingle();
 
@@ -800,6 +809,12 @@ export async function submitResponseHandler({
       finalPlacement,
       toWireReason(term.reason),
     );
+    notifyStaffAssessmentCompleted(
+      parent.name,
+      session.child_id,
+      childRow?.grade_level ?? null,
+      origin,
+    );
 
     return success({
       is_correct: isCorrect,
@@ -856,6 +871,12 @@ export async function submitResponseHandler({
       request.session_id,
       placement,
       "bank-exhausted",
+    );
+    notifyStaffAssessmentCompleted(
+      parent.name,
+      session.child_id,
+      childRow?.grade_level ?? null,
+      origin,
     );
 
     return success({
@@ -1094,6 +1115,44 @@ function emitPlacementCreated(
       sessionId,
       props: { sam_level: placement.overallLevel, termination_reason: reason },
     }),
+  );
+}
+
+/**
+ * Staff alert: tell the center a child finished an assessment. Fired from the
+ * SAME two fresh-submit terminal paths as emitTestCompleted (engine-terminated
+ * and bank-exhausted) and never from the idempotent-retry branches, which is
+ * what makes it ONCE PER COMPLETED SESSION:
+ *   - a sequential retry after the close is rejected 409 (`session_completed`)
+ *     long before either terminal path,
+ *   - a concurrent duplicate of the same final answer loses the INSERT on
+ *     23505 and returns via duplicateResult(), which deliberately emits
+ *     nothing.
+ *
+ * COPPA: the payload is the explicit allowlist on AssessmentCompletedAlert —
+ * parent name, child GRADE, and the staff record link. No score, level, strand
+ * mastery, misconception flag, response, narrative, child name or DOB is read
+ * here, let alone sent. The child's grade is already in hand from the earlier
+ * `children` read; nothing extra is fetched.
+ *
+ * Non-blocking: wrapped in `after()` so the send happens once the submit
+ * response is already on the wire — the child is staring at the end-of-
+ * assessment screen and must not wait on Resend. notifyAssessmentCompleted
+ * never throws; the trailing catch is belt-and-suspenders.
+ */
+function notifyStaffAssessmentCompleted(
+  parentName: string,
+  childId: string,
+  childGrade: string | null,
+  origin: string | null,
+): void {
+  const path = `/instructor/student/${childId}`;
+  after(() =>
+    notifyAssessmentCompleted({
+      parentName,
+      childGrade,
+      studentUrl: origin ? `${origin}${path}` : path,
+    }).catch(() => undefined),
   );
 }
 

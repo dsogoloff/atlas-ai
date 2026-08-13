@@ -22,6 +22,13 @@ vi.mock("@/lib/report/narration/trigger", () => ({
   attemptNarration: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Stub the staff assessment-completed alert (Resend). Its own gating, payload
+// allowlist and fail-soft behaviour are covered in
+// src/lib/staffAlerts/notify.test.ts; here we only assert WHEN it fires.
+vi.mock("@/lib/staffAlerts/notify", () => ({
+  notifyAssessmentCompleted: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Stub Next.js `after` so the fire-and-forget kick-off in closeSession
 // invokes its callback synchronously in tests. Outside a request context
 // the real `after` would throw, and we want the trigger-side effects to
@@ -40,6 +47,7 @@ import { STRANDS } from "@/lib/engine/levels";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import type { ClassifierOutput } from "@/lib/misconceptionClassifier/types";
 import { attemptNarration } from "@/lib/report/narration/trigger";
+import { notifyAssessmentCompleted } from "@/lib/staffAlerts/notify";
 import type { Database, Enums, Json, TablesInsert } from "@/lib/supabase/database.types";
 import {
   TIME_FLAG_CONFIG_VERSION,
@@ -53,6 +61,7 @@ import type { SubmitRequest } from "./types";
 const mockClassify = vi.mocked(classify);
 const mockAttemptNarration = vi.mocked(attemptNarration);
 const mockEmit = vi.mocked(emit);
+const mockStaffAlert = vi.mocked(notifyAssessmentCompleted);
 
 const DEFAULT_CLASSIFICATION: ClassifierOutput = {
   codes: [],
@@ -69,6 +78,8 @@ beforeEach(() => {
   mockAttemptNarration.mockReset();
   mockAttemptNarration.mockResolvedValue(undefined);
   mockEmit.mockClear();
+  mockStaffAlert.mockClear();
+  mockStaffAlert.mockResolvedValue(undefined);
 });
 
 // ===========================================================================
@@ -260,7 +271,7 @@ function makeRlsClient(opts: RlsMockOpts): SupabaseClient<Database> {
 // Fixtures
 // ===========================================================================
 
-const PARENT = { id: "p1", tenant_id: "t1" };
+const PARENT = { id: "p1", tenant_id: "t1", name: "Jordan Lee" };
 const CHILD_ID = "c1";
 const SESSION_ID = "s1";
 const QUESTION_ID = "q1";
@@ -549,6 +560,173 @@ describe("submitResponseHandler — happy path terminating", () => {
       svc.client,
       SESSION_ID,
     );
+  });
+});
+
+// ===========================================================================
+// Staff "assessment completed" alert
+// ===========================================================================
+//
+// Fires from the fresh-submit terminal path only — the same seam as the
+// test_completed / placement_created funnel events, which is what makes it one
+// alert per completed session. COPPA: parent name + child GRADE + the staff
+// record link, never a result.
+describe("submitResponseHandler — staff assessment-completed alert", () => {
+  /** The `happy path terminating` script, with the child's grade staged. */
+  function terminatingClient(gradeLevel: string | null) {
+    const p = priors(24);
+    return makeServiceClient({
+      responses: [
+        { data: null, error: null }, // already-answered check (no row)
+        { data: p.responses, error: null }, // replay responses
+        { data: null, error: null }, // insert
+        { data: [], error: null }, // replayStrandCounts
+        { data: aggRows(25, 0), error: null }, // aggregation re-read
+      ],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: p.questions, error: null },
+      ],
+      // First `children` read is the handler's step-3.4 grade/birth_year read;
+      // replay's later read falls through to the mock default.
+      children: [{ data: { grade_level: gradeLevel, birth_year: 2018 }, error: null }],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null }, // estimate update
+        { data: null, error: null }, // close update
+        { data: null, error: null }, // summary update
+      ],
+      question_access_log: [{ data: { id: 1 }, error: null }],
+    });
+  }
+
+  it("fires once on finalization with parent name, child grade and an absolute record link", async () => {
+    const svc = terminatingClient("3");
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+      origin: "https://app.samnewyork.com",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockStaffAlert).toHaveBeenCalledTimes(1);
+    expect(mockStaffAlert).toHaveBeenCalledWith({
+      parentName: "Jordan Lee",
+      childGrade: "3",
+      studentUrl: `https://app.samnewyork.com/instructor/student/${CHILD_ID}`,
+    });
+  });
+
+  it("passes a null grade through rather than inventing one", async () => {
+    const svc = terminatingClient(null);
+
+    await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+      origin: "https://app.samnewyork.com",
+    });
+
+    expect(mockStaffAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ childGrade: null }),
+    );
+  });
+
+  it("degrades the link to a bare path when no origin is available", async () => {
+    const svc = terminatingClient("3");
+
+    await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+    });
+
+    expect(mockStaffAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        studentUrl: `/instructor/student/${CHILD_ID}`,
+      }),
+    );
+  });
+
+  it("never carries a placement, score or child name in the payload", async () => {
+    const svc = terminatingClient("3");
+
+    await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+      origin: "https://app.samnewyork.com",
+    });
+
+    const payload = mockStaffAlert.mock.calls[0][0] as unknown as Record<
+      string,
+      unknown
+    >;
+    expect(Object.keys(payload).sort()).toEqual([
+      "childGrade",
+      "parentName",
+      "studentUrl",
+    ]);
+  });
+
+  it("still returns a successful submit when the alert rejects", async () => {
+    const svc = terminatingClient("3");
+    mockStaffAlert.mockRejectedValueOnce(new Error("resend down"));
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+      origin: "https://app.samnewyork.com",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(true);
+  });
+
+  it("does not fire on a NON-terminal submit", async () => {
+    const p = priors(3);
+    const nextPick = { ...QUESTION, id: "q-next" };
+    const svc = makeServiceClient({
+      responses: [
+        { data: null, error: null },
+        { data: p.responses, error: null },
+        { data: null, error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+      ],
+      questions: [
+        { data: QUESTION, error: null },
+        { data: p.questions, error: null },
+        { data: [nextPick], error: null },
+      ],
+      assessment_sessions: [
+        { data: { engine_prior_version: "v1", child_id: CHILD_ID }, error: null },
+        { data: null, error: null },
+      ],
+      question_access_log: [{ data: { id: 1 }, error: null }],
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+      origin: "https://app.samnewyork.com",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(false);
+    expect(mockStaffAlert).not.toHaveBeenCalled();
   });
 });
 
