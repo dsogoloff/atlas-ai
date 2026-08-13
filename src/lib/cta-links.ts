@@ -31,4 +31,11 @@ export const CTA_LINKS = {
   /** Secondary action on the parent dashboard + end-of-report. Wired to the
    *  S.A.M New York support inbox. */
   questionsTalkToUs: "mailto:hello@samnewyork.com",
+
+  /** Dashboard empty-state "Need help setting up your account?". Same support
+   *  inbox as questionsTalkToUs, with a subject so staff can tell a stuck
+   *  first-time setup apart from a general question. */
+  accountSetupHelp: `mailto:hello@samnewyork.com?subject=${encodeURIComponent(
+    "Help setting up my S.A.M assessment account",
+  )}`,
 } as const;

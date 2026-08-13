@@ -77,40 +77,14 @@ export default async function AddChildPage({ searchParams }: Props) {
             {branding.productName}
           </span>
         </div>
+        {/* The Students / Reports / Add Child tabs and the Notifications +
+            Help icon buttons were removed: the tabs were href="#" (they went
+            nowhere) and the buttons had no handler. A control that does
+            nothing when clicked reads as a broken app in the pilot, so the bar
+            now carries only the brand and the avatar. Restore each one at the
+            point its destination actually exists. */}
         <div className="flex items-center gap-6">
-          <div className="hidden md:flex gap-8 items-center">
-            <a
-              className="text-sam-navy/60 hover:text-sam-red transition-colors"
-              href="#"
-            >
-              Students
-            </a>
-            <a
-              className="text-sam-navy/60 hover:text-sam-red transition-colors"
-              href="#"
-            >
-              Reports
-            </a>
-            <a
-              className="text-sam-red border-b-2 border-sam-red pb-1"
-              href="#"
-            >
-              Add Child
-            </a>
-          </div>
           <div className="flex items-center gap-3">
-            <button
-              className="p-2 text-sam-navy/60 hover:text-sam-red transition-colors active:scale-95 active:duration-150"
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
-            <button
-              className="p-2 text-sam-navy/60 hover:text-sam-red transition-colors active:scale-95 active:duration-150"
-              aria-label="Help"
-            >
-              <span className="material-symbols-outlined">help_outline</span>
-            </button>
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
               <img
                 alt="Parent profile"
