@@ -1,40 +1,60 @@
 import type { Metadata } from "next";
-import {
-  Plus_Jakarta_Sans,
-  Inter,
-  Playfair_Display,
-  DM_Sans,
-} from "next/font/google";
+import localFont from "next/font/local";
 import { getBranding } from "@/lib/branding";
 
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+// SELF-HOSTED, DELIBERATELY. These were `next/font/google` until 2026-08-13,
+// when Google 404'd the Plus Jakarta Sans woff2 URLs Next had resolved and the
+// production build failed on a commit that changed only markdown. `next/font/
+// google` downloads every weight from fonts.gstatic.com AT BUILD TIME, so a
+// third-party CDN hiccup breaks our deploy. The files now live in ./fonts —
+// see ./fonts/README.md for provenance, licensing, and how to update one.
+//
+// Each family is the LATIN VARIABLE file, so one file spans the whole weight
+// range the app uses (the old config pulled ~21 static instances). The ranges
+// below match the weights the previous config requested, so rendering is
+// unchanged. Do NOT reintroduce next/font/google.
+
+const plusJakarta = localFont({
+  src: "./fonts/plus-jakarta-sans-latin.woff2",
   variable: "--font-plus-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "400 800",
   display: "swap",
 });
 
-const inter = Inter({
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "400 600",
   display: "swap",
 });
 
-const playfairDisplay = Playfair_Display({
+const playfairDisplay = localFont({
+  src: [
+    {
+      path: "./fonts/playfair-display-latin.woff2",
+      weight: "400 700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/playfair-display-italic-latin.woff2",
+      weight: "400 700",
+      style: "italic",
+    },
+  ],
   variable: "--font-playfair-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
   display: "swap",
+  // Serif metrics for the auto-generated fallback face; the sans families keep
+  // the default (Arial). Without this a serif would be size-matched to a
+  // sans-serif and shift on swap.
+  adjustFontFallback: "Times New Roman",
 });
 
-const dmSans = DM_Sans({
+const dmSans = localFont({
+  src: "./fonts/dm-sans-latin.woff2",
   variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "300 700",
   display: "swap",
 });
 

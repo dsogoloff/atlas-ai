@@ -12,7 +12,8 @@ import { LandingViewBeacon } from "./landing-view-beacon";
 // Cycle 0 deviations from source, to be addressed in a follow-up:
 //  - Stripped `dark:` Tailwind variants (no dark-mode toggle wired yet).
 //  - Replaced inline `font-['Plus_Jakarta_Sans']` with the named
-//    `font-display-child` token so next/font/google self-hosting works.
+//    `font-display-child` token so the self-hosted font pipeline applies
+//    (src/app/layout.tsx + src/app/fonts/).
 //  - Image src attributes swapped from broken Stitch CDN URLs to local
 //    placeholder SVGs in /public/img/. Real S.A.M. assets will replace them.
 //
