@@ -69,7 +69,8 @@
   --color-outline: #8f6f6e;
   --color-outline-variant: #e4bebc;
 
-  /* --- Font families (wired to next/font/google in src/app/layout.tsx) ---- */
+  /* --- Font families (wired to next/font/local in src/app/layout.tsx; the
+   * woff2 files are committed under src/app/fonts/) -------------------------- */
   --font-display-child: var(--font-plus-jakarta), sans-serif;
   --font-body-regular: var(--font-inter), sans-serif;
   --font-headline-adult: var(--font-inter), sans-serif;
