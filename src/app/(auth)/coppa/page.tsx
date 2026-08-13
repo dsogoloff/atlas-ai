@@ -20,15 +20,23 @@
 // (public/legal/coppa-disclosure-v1.pdf), and the privacy contact is
 // privacy@samnewyork.com.
 //
-// KNOWN FOLLOW-UP (not fixed here): the ON-SCREEN disclosure body below is still
-// the Stitch-derived placeholder copy and does NOT yet match the counsel text in
-// the served PDF. Reconciling the rendered page to coppa-disclosure-v1 is a
-// separate, counsel-facing copy pass (parent-facing claims language).
+// The on-screen body is now the SAME counsel text as that PDF, transcribed
+// verbatim into ./disclosure-copy.ts (it used to be Stitch placeholder copy
+// that said something different). This file owns layout only — read the header
+// of disclosure-copy.ts before touching any wording.
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getBranding } from "@/lib/branding";
+
+import {
+  AI_PROCESSING_SECTION,
+  DISCLOSURE_INTRO,
+  DISCLOSURE_SECTIONS,
+  DISCLOSURE_VERSION,
+  type DisclosureSection,
+} from "./disclosure-copy";
 
 // Force dynamic so Next.js doesn't statically prerender — we read
 // searchParams to forward stale email-link `?code=` values to the
@@ -37,6 +45,36 @@ export const dynamic = "force-dynamic";
 
 interface Props {
   searchParams: Promise<{ code?: string }>;
+}
+
+/** One counsel section: heading, then its paragraphs and bulleted lists. */
+function Section({ section }: { section: DisclosureSection }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
+        {section.heading}
+      </h2>
+      {section.blocks.map((block, i) =>
+        Array.isArray(block) ? (
+          <ul
+            key={i}
+            className="font-body-regular text-sam-gray-dark text-sm leading-relaxed list-disc pl-5 space-y-1.5"
+          >
+            {block.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <p
+            key={i}
+            className="font-body-regular text-sam-gray-dark text-sm leading-relaxed"
+          >
+            {block as string}
+          </p>
+        ),
+      )}
+    </section>
+  );
 }
 
 export default async function CoppaPage({ searchParams }: Props) {
@@ -84,8 +122,13 @@ export default async function CoppaPage({ searchParams }: Props) {
               </span>
               COPPA Disclosure &amp; Parental Consent
             </h1>
+            {/* The Stitch port carried a hardcoded "Updated: October 24, 2023"
+                — filler, and wrong. Now that the body IS the counsel text, a
+                false effective date sitting above it is worse than no date, so
+                the sub-header identifies the disclosure VERSION instead. Add a
+                real date here when counsel supplies one. */}
             <p className="font-caption text-caption text-sam-gray-mid">
-              Updated: October 24, 2023 • Required for Student Assessments
+              Version: {DISCLOSURE_VERSION} • Required for Student Assessments
             </p>
           </div>
           <Link
@@ -99,111 +142,42 @@ export default async function CoppaPage({ searchParams }: Props) {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          {/* Introduction */}
+          {/* Introduction — the two unnumbered paragraphs that open the PDF.
+              Replaces a Stitch "Our Commitment to Privacy" blurb that made
+              privacy claims the counsel text does not make. */}
           <div className="bg-sam-cream/50 rounded-2xl p-6 border border-sam-orange/20">
             <div className="flex gap-4">
               <span className="material-symbols-outlined text-sam-orange">
                 info
               </span>
               <div className="space-y-2">
-                <p className="font-body-regular text-on-background font-semibold">
-                  Our Commitment to Privacy
-                </p>
-                <p className="font-body-regular text-on-background text-sm leading-relaxed">
-                  {branding.productName} is committed to complying with the
-                  Children&rsquo;s Online Privacy Protection Act (COPPA). We
-                  collect minimal information necessary to evaluate
-                  mathematical progress and never share identifiable data with
-                  third parties for marketing purposes.
-                </p>
+                {DISCLOSURE_INTRO.map((paragraph) => (
+                  <p
+                    key={paragraph}
+                    className="font-body-regular text-on-background text-sm leading-relaxed"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Sections */}
+          {/* Sections 1–10, verbatim from coppa-disclosure-v1, then the
+              app-authored AI-processing disclosure appended as 11 (safeguard
+              C2) so it never renumbers the counsel sections.
+
+              The Stitch "No Advertising" / "Encrypted Storage" badge tiles were
+              removed with the placeholder body: "Bank-grade security protocols"
+              is a security claim the counsel text does not make (§8 says
+              "reasonable administrative, technical, and organizational
+              safeguards"), and §4 already states the advertising position in
+              counsel's own words. */}
           <div className="space-y-6">
-            <section className="space-y-3">
-              <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
-                1. Information Collection
-              </h2>
-              <p className="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
-                For students under the age of 13, we collect only the
-                following: first name (or nickname), age, and assessment
-                responses. This data is used exclusively to generate diagnostic
-                reports for parents and instructors.
-              </p>
-            </section>
-            <section className="space-y-3">
-              <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
-                2. Use of Data
-              </h2>
-              <p className="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
-                The diagnostic data helps identify learning gaps and
-                mathematical strands requiring attention. All progress data is
-                encrypted and hosted on secure servers.
-              </p>
-            </section>
-            <section className="space-y-3">
-              <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
-                3. Your Rights as a Parent
-              </h2>
-              <p className="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
-                You have the right to review your child&rsquo;s information,
-                request its deletion, and refuse further collection or use.
-                Please contact our Data Privacy Officer at
-                privacy@samnewyork.com for any such requests.
-              </p>
-            </section>
-            {/* Automated (AI) processing disclosure — minor-safety safeguard
-                C2 (M2 readiness). Discloses, in the consent flow itself, that
-                an AI system processes responses and that the child never
-                interacts with it directly. Mirrors what the misconception
-                classifier actually does (structured response data only —
-                src/lib/misconceptionClassifier/*). */}
-            <section className="space-y-3">
-              <h2 className="font-headline-adult text-lg text-sam-navy font-bold">
-                4. Automated (AI) Processing
-              </h2>
-              <p className="font-body-regular text-sam-gray-dark text-sm leading-relaxed">
-                To help identify common misconceptions, your child&rsquo;s
-                answers to assessment questions are processed by an automated
-                system that uses artificial intelligence. Your child never
-                chats with or types free-form messages to this system: only
-                structured assessment data (the question, the expected answer,
-                and the answer your child selected or entered) is analyzed, and
-                the analysis happens on our servers after the response is
-                submitted. The AI is never shown your child&rsquo;s name or any
-                identifying information.
-              </p>
-            </section>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-              <div className="border border-sam-gray-light rounded-xl p-4 flex items-start gap-3">
-                <span className="material-symbols-outlined text-sam-teal">
-                  check_circle
-                </span>
-                <div>
-                  <p className="font-caption text-sam-navy font-bold">
-                    No Advertising
-                  </p>
-                  <p className="text-xs text-sam-gray-mid">
-                    We do not serve ads to children.
-                  </p>
-                </div>
-              </div>
-              <div className="border border-sam-gray-light rounded-xl p-4 flex items-start gap-3">
-                <span className="material-symbols-outlined text-sam-teal">
-                  check_circle
-                </span>
-                <div>
-                  <p className="font-caption text-sam-navy font-bold">
-                    Encrypted Storage
-                  </p>
-                  <p className="text-xs text-sam-gray-mid">
-                    Bank-grade security protocols.
-                  </p>
-                </div>
-              </div>
-            </div>
+            {DISCLOSURE_SECTIONS.map((section) => (
+              <Section key={section.heading} section={section} />
+            ))}
+            <Section section={AI_PROCESSING_SECTION} />
 
             {/* ---------------------------------------------------------------
                 OPERATOR / DATA-PROCESSOR DISCLOSURE — legal fine print.
