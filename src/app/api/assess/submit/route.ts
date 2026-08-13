@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
       rlsClient,
       serviceClient,
       ip,
+      // Only used to make the staff-alert student link absolute on session
+      // finalization; nothing else in the handler reads it.
+      origin: new URL(request.url).origin,
     });
   } catch (e) {
     console.error("[submit] unhandled error", e);

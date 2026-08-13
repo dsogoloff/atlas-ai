@@ -13,6 +13,17 @@ const mockMaybeSingle = vi.fn();
 const mockAuditInsert = vi.fn<
   (rows: Array<{ event_type: string }>) => Promise<{ error: null }>
 >(async () => ({ error: null }));
+/** Prior verification_succeeded rows for this parent (the once-per-account
+ *  guard). Default: none — i.e. this IS the first confirmation. */
+const mockPriorConfirms = vi.fn<() => Promise<{ data: Array<{ id: string }> }>>(
+  async () => ({ data: [] }),
+);
+const mockNotifyAccountCreated = vi.fn(async () => undefined);
+
+vi.mock("@/lib/staffAlerts/notify", () => ({
+  notifyAccountCreated: (...args: unknown[]) =>
+    mockNotifyAccountCreated(...(args as [])),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { verifyOtp: mockVerifyOtp } }),
@@ -22,7 +33,12 @@ vi.mock("@/lib/supabase/server", () => ({
         return { select: () => ({ eq: () => ({ maybeSingle: mockMaybeSingle }) }) };
       }
       if (table === "vpc_audit_log") {
-        return { insert: mockAuditInsert };
+        return {
+          insert: mockAuditInsert,
+          select: () => ({
+            eq: () => ({ eq: () => ({ limit: mockPriorConfirms }) }),
+          }),
+        };
       }
       throw new Error(`unexpected table: ${table}`);
     },
@@ -31,6 +47,15 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("next/headers", () => ({
   headers: async () => ({ get: () => null }),
+}));
+
+// Run the fire-and-forget staff alert synchronously so each test can assert on
+// it; outside a request context the real `after` would throw.
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (cb: () => unknown) => {
+    Promise.resolve(cb()).catch(() => undefined);
+  },
 }));
 
 import type { NextRequest } from "next/server";
@@ -51,13 +76,22 @@ afterEach(() => {
   mockVerifyOtp.mockReset();
   mockMaybeSingle.mockReset();
   mockAuditInsert.mockClear();
+  mockNotifyAccountCreated.mockClear();
+  mockPriorConfirms.mockReset();
+  mockPriorConfirms.mockResolvedValue({ data: [] });
 });
 
 describe("GET /auth/confirm — token-hash verification", () => {
   it("verifyOtp success -> clean /login?confirmed=1 (NOT /signup) and writes the audit trail", async () => {
     mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
     mockMaybeSingle.mockResolvedValue({
-      data: { id: "p1", tenant_id: "t1", home_center_id: "c1" },
+      data: {
+        id: "p1",
+        tenant_id: "t1",
+        home_center_id: "c1",
+        name: "Jordan Lee",
+        email: "jordan@example.com",
+      },
     });
 
     const res = await GET(req("?token_hash=abc&type=email"));
@@ -140,5 +174,79 @@ describe("GET /auth/confirm — token-hash verification", () => {
 
     expect(location(res)).toBe(`${ORIGIN}/signup?error=verify_failed`);
     expect(mockVerifyOtp).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Staff "account created" alert. Confirmation — not raw signup — is the
+// account-created moment.
+// ---------------------------------------------------------------------------
+describe("GET /auth/confirm — staff account-created alert", () => {
+  const PARENT = {
+    id: "p1",
+    tenant_id: "t1",
+    home_center_id: "c1",
+    name: "Jordan Lee",
+    email: "jordan@example.com",
+  };
+
+  function confirmedParent() {
+    mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockMaybeSingle.mockResolvedValue({ data: PARENT });
+  }
+
+  it("fires once on the FIRST confirmation, with the allowlisted payload only", async () => {
+    confirmedParent();
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockNotifyAccountCreated).toHaveBeenCalledTimes(1);
+    expect(mockNotifyAccountCreated).toHaveBeenCalledWith({
+      parentName: "Jordan Lee",
+      parentEmail: "jordan@example.com",
+      adminUrl: `${ORIGIN}/admin`,
+    });
+  });
+
+  it("does NOT fire again when the account was already confirmed once", async () => {
+    confirmedParent();
+    // A prior verification_succeeded row exists — a re-sent confirmation link
+    // must not re-announce the same account.
+    mockPriorConfirms.mockResolvedValue({ data: [{ id: "audit-1" }] });
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockNotifyAccountCreated).not.toHaveBeenCalled();
+    // The audit trail is still written — only the alert is suppressed.
+    expect(mockAuditInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fire when verification fails", async () => {
+    mockVerifyOtp.mockResolvedValue({
+      data: { user: null },
+      error: { message: "expired" },
+    });
+
+    await GET(req("?token_hash=bad&type=email"));
+
+    expect(mockNotifyAccountCreated).not.toHaveBeenCalled();
+  });
+
+  it("does not fire when no parent row exists for the confirmed user", async () => {
+    mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockNotifyAccountCreated).not.toHaveBeenCalled();
+  });
+
+  it("still redirects the parent to /login?confirmed=1 when the alert rejects", async () => {
+    confirmedParent();
+    mockNotifyAccountCreated.mockRejectedValueOnce(new Error("resend down"));
+
+    const u = new URL(location(await GET(req("?token_hash=abc&type=email"))));
+    expect(u.pathname).toBe("/login");
+    expect(u.searchParams.get("confirmed")).toBe("1");
   });
 });
