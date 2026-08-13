@@ -109,6 +109,27 @@ export function getLeadNotifyFromEmail(): string {
   return required("LEAD_NOTIFY_FROM_EMAIL");
 }
 
+/**
+ * Where S.A.M staff receive assessment ALERTS (account confirmed / assessment
+ * completed) — src/lib/staffAlerts/notify.ts.
+ *
+ * Unlike the lead-notify addresses this has a code DEFAULT, so the feature
+ * ships with no Vercel env action: the single pilot center's inbox is
+ * parents@samnewyork.com. STAFF_ALERT_TO overrides it (e.g. to route alerts at
+ * a staging address during QA). Sending is still gated on LEAD_NOTIFY_LIVE and
+ * still needs RESEND_API_KEY + LEAD_NOTIFY_FROM_EMAIL — this only decides the
+ * recipient.
+ *
+ * Single-center assumption: one address for every alert. When a second center
+ * exists this becomes center-scoped (TODO.md, "Multi-center — center-scoped
+ * director contact").
+ */
+export const DEFAULT_STAFF_ALERT_TO = "parents@samnewyork.com";
+export function getStaffAlertToEmail(): string {
+  const override = process.env.STAFF_ALERT_TO?.trim();
+  return override ? override : DEFAULT_STAFF_ALERT_TO;
+}
+
 // =============================================================================
 // §12 staged-rollout feature flags.
 //
