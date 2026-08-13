@@ -11,14 +11,16 @@ const TAGGED = parseUtmParams(
 
 function handles(over: Partial<DispatchHandles> = {}) {
   const queued: QueuedMetaEvent[] = [];
+  const ga4Queued: QueuedMetaEvent[] = [];
   const base: DispatchHandles = {
     gtag: vi.fn(),
     fbq: vi.fn(),
+    enqueueGa4: (event) => ga4Queued.push(event),
     enqueueMeta: (event) => queued.push(event),
     nowMs: 1_770_000_000_000,
     ...over,
   };
-  return { handles: base, queued };
+  return { handles: base, queued, ga4Queued };
 }
 
 describe("dispatchMarketingEvent", () => {
@@ -78,19 +80,24 @@ describe("dispatchMarketingEvent", () => {
     ]);
   });
 
-  it("no-ops GA4 when it is unconfigured, without disturbing Meta", () => {
-    const { handles: h } = handles({ gtag: null });
+  it("QUEUES the GA4 half when the tag has not loaded, without disturbing Meta", () => {
+    // Regression guard for Finding 1: this used to return "skipped" and the
+    // event was lost permanently, while Meta queued and replayed.
+    const { handles: h, ga4Queued } = handles({ gtag: null });
     const result = dispatchMarketingEvent(
       MARKETING_EVENTS.ASSESSMENT_COMPLETE,
       {},
       h,
     );
-    expect(result).toEqual({ ga4: "skipped", meta: "sent" });
+    expect(result).toEqual({ ga4: "queued", meta: "sent" });
+    expect(ga4Queued).toEqual([
+      { name: "assessment_complete", payload: {}, at: h.nowMs },
+    ]);
     expect(h.fbq).toHaveBeenCalledOnce();
   });
 
   it("never throws when a sink throws, and still tries the other", () => {
-    const { handles: h, queued } = handles({
+    const { handles: h, queued, ga4Queued } = handles({
       gtag: vi.fn(() => {
         throw new Error("blocked by extension");
       }),
@@ -100,9 +107,23 @@ describe("dispatchMarketingEvent", () => {
       {},
       h,
     );
-    expect(result.ga4).toBe("skipped");
+    expect(result.ga4).toBe("queued");
     expect(result.meta).toBe("sent");
+    // A throwing gtag queues for replay instead of dropping the conversion.
+    expect(ga4Queued).toHaveLength(1);
     expect(queued).toEqual([]);
+  });
+
+  it("survives a GA4 enqueue that throws", () => {
+    const { handles: h } = handles({
+      gtag: null,
+      enqueueGa4: () => {
+        throw new Error("quota exceeded");
+      },
+    });
+    expect(() =>
+      dispatchMarketingEvent(MARKETING_EVENTS.ASSESSMENT_COMPLETE, {}, h),
+    ).not.toThrow();
   });
 
   it("queues for retry when the Meta sink throws", () => {

@@ -85,14 +85,16 @@ describe("GA4 configuration", () => {
   const source = read("src/components/marketing/ga4-script.tsx");
 
   it("uses cookie_domain 'auto' so the cookie lands on the registrable domain", () => {
-    expect(source).toContain("cookie_domain: 'auto'");
+    expect(stripComments(source)).toMatch(/cookie_domain:\s*["']auto["']/);
   });
 
   it("does NOT scope the cookie to the app subdomain", () => {
     // Any cookie_domain other than 'auto' — a pinned host, a subdomain — would
     // break the www <-> app session stitch.
-    const assignments = stripComments(source).match(/cookie_domain:\s*[^,\n]+/g) ?? [];
-    expect(assignments).toEqual(["cookie_domain: 'auto'"]);
+    const assignments =
+      stripComments(source).match(/cookie_domain:\s*[^,\n]+/g) ?? [];
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]).toMatch(/^cookie_domain:\s*["']auto["']$/);
   });
 
   it("disables Google Signals and ads personalization (COPPA)", () => {
@@ -102,6 +104,11 @@ describe("GA4 configuration", () => {
 
   it("renders nothing when the measurement id is unset (fail safe)", () => {
     expect(source).toContain("if (!measurementId) return null;");
+  });
+
+  it("redacts page context so no child id reaches GA4 (COPPA)", () => {
+    // Detail and ordering are pinned in lib/marketing/privacy-page-context.test.ts.
+    expect(source).toContain("ga4PageContext");
   });
 });
 
@@ -119,6 +126,14 @@ describe("Meta Pixel configuration", () => {
 
   it("drains the deferred queue so queued events still reach Meta", () => {
     expect(source).toContain("drainMetaQueue");
+  });
+
+  it("will not load from a document whose URL could identify a child (COPPA)", () => {
+    // Meta gives no way to override the URL it reports, so the gate is
+    // "do not send from here". Behaviour is pinned in
+    // lib/marketing/privacy-page-context.test.ts.
+    expect(source).toContain("documentIsSafeForPixel");
+    expect(source).toContain("if (!documentSafe) return null;");
   });
 });
 
