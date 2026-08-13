@@ -4,10 +4,62 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-11 — ATLAS: analytics page-context redaction + GA4 queue (PR #210 OPEN)
+## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (#211–#214 MERGED, #215 OPEN)
 
-PR #210 (lane/analytics-privacy-redaction) OPEN off ATLAS-ASSESSMENT, verify-bar GREEN
-(1614 tests, tsc clean, lint 0 errors), CI `verify-bar` green. NOT merged.
+Five INDEPENDENT PRs (not stacked), all verify-bar GREEN and CI green.
+
+- [x] **Dimitri: merge PRs #211–#214** — DONE (trunk head 9ed3954).
+
+- [ ] **Dimitri: merge PR #215 (lane/reclamp-backfill-script).** Rebased onto the merged
+      trunk; verify-bar GREEN after the merge (1714 tests / 142 files, tsc clean, lint 0
+      errors). The one conflict was in `src/lib/responseSubmit/handler.ts`, where #211 and
+      #215 added an import on the same line — both kept. Merging #215 does NOT run anything;
+      the script stays unexecuted until the separate founder-gated step below.
+
+- [ ] **Dimitri: flip `LEAD_NOTIFY_LIVE=true` in Vercel when ready for staff alerts to
+      actually send (#211).** Until then the alerts no-op — no send, no spend. The flip also
+      enables the EXISTING follow-up-lead notifier, so it is one switch for both. No other
+      env var is needed: the recipient defaults in code to `parents@samnewyork.com`.
+      Set `STAFF_ALERT_TO` only to route alerts somewhere else (e.g. a QA inbox).
+
+- [ ] **PARKED — COPPA disclosure, three counsel-facing questions (#214, needs Dimitri +
+      counsel).** All flagged on the PR; none block merge.
+      (a) The sub-header now shows the disclosure VERSION instead of the old hardcoded
+      "Updated: October 24, 2023", which was Stitch filler and wrong. Supply a real
+      effective date and it goes back.
+      (b) The app-authored AI-processing disclosure sits at section 11, AFTER counsel's
+      section 10 consent affirmation — that keeps counsel numbering intact but does place a
+      disclosure after the affirmation. Moving it earlier renumbers counsel text.
+      (c) Counsel's section 10 reads "By checking the box below and continuing…", but
+      `/coppa` has no checkbox (it is disclosure-only; the binding per-child consent with
+      the checkbox is at `/add-child`, Model B). The wording was NOT altered to match the
+      screen. Either the PDF wording or the page flow should move — counsel's call.
+
+- [ ] **PARKED — run the re-clamp backfill (#215, needs Dimitri).** The script has NOT been
+      run against prod or local. Review order: `pnpm backfill:reclamp:dry -- --target=prod`
+      (READ-ONLY) → read the would-change table → only then
+      `pnpm backfill:reclamp -- --target=prod --apply --confirm`. See
+      `scripts/backfill/README.md`.
+
+- [ ] **Follow-up after any re-clamp run (#215):** report narration prose generated BEFORE
+      the correction may still quote the old level. If an affected report has already been
+      shown to a parent, regenerate its narration. Not built — the script only prints a
+      reminder.
+
+- [ ] **Dimitri (optional, presentational): dashboard "Schedule a free class" label (#212).**
+      The parent dashboard shares `CTA_LINKS.scheduleFreeClass` under its own existing
+      label, which now opens the director mailto. Per the "do not relabel" instruction the
+      label was left as-is; say the word to align it in a follow-up.
+
+- [ ] **Multi-center follow-on (recorded in `todo.md` by #212; not built).** Once more than
+      one center exists, the parent selects a center FIRST and both the director contact
+      link AND the staff-alert recipient resolve to that center's director/inbox (via
+      `home_center_id`, not a global constant). Vitalis directs the one current center only.
+## 1. 2026-08-11 — ATLAS: analytics page-context redaction + GA4 queue (PR #210 MERGED)
+
+PR #210 (lane/analytics-privacy-redaction) **MERGED** into ATLAS-ASSESSMENT (commit c325897).
+Verify-bar was GREEN (1614 tests, tsc clean, lint 0 errors). The follow-ups below are still
+open.
 
 Root cause of the "#208 custom events not firing" report: **they were firing.** Verified on
 live prod — dedupe keys set, `event|assessment_start` / `event|assessment_complete` in
@@ -22,7 +74,7 @@ The live trace did surface two real findings, which PR #210 fixes:
   page context the #208 payload allowlist cannot see. Confirmed leaking on prod (Meta HTTP 200).
 - GA4 had no retry queue (event lost permanently when `gtag` was absent) while Meta queued.
 
-- [ ] **Dimitri: merge PR #210 (lane/analytics-privacy-redaction)** after preview review.
+- [x] **Dimitri: merge PR #210 (lane/analytics-privacy-redaction)** — DONE (c325897).
 
 - [ ] **Dimitri: mark `assessment_start` / `assessment_complete` as Key events** in GA4 Admin →
       Data display → Events. GA4 only offers an event name after it has seen it, so this is a
@@ -44,7 +96,7 @@ The live trace did surface two real findings, which PR #210 fixes:
       yourself and confirm the report route's outbound GA4 `dl` carries `child=redacted`, or
       confirm on prod after merge.
 
-## 1. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
+## 2. 2026-08-10 — ATLAS: per-tenant white-label, S.A.M New York skin (PR #209 OPEN)
 
 PR #209 (lane/tenant-white-label) OPEN, verify-bar GREEN (1554 tests, tsc clean, lint 0 errors),
 CI green, Vercel preview deployed. NOT merged.
