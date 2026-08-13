@@ -31,3 +31,20 @@ reference (commit, item number, or section anchor).
   for now). Oral/observational task with no auto-grade path as written; no crop.
   Revisit if/when an oral or alternate-format capability lands. Key Short=Y. Context:
   L1 audit (PR #93) held list.
+
+## Multi-center — center-scoped director contact
+
+- **When more than one center exists, the parent picks a center FIRST and every
+  "contact the director" path resolves to THAT center's director/inbox.** Today
+  there is exactly one center and Vitalis is its director — he is not the
+  director of future centers — so both the director contact link and the staff
+  alert recipient are hardcoded to the single S.A.M New York inbox
+  (`parents@samnewyork.com`). At the second center, two things become
+  center-scoped together:
+  1. the director CTA (`CTA_LINKS.scheduleFreeClass` — today an interim mailto,
+     later the HubSpot lane's env-gated scheduler URL), and
+  2. the assessment-completed / account-created staff alert recipient
+     (`STAFF_ALERT_TO` — today one default address for all sends).
+  Both should read the child's/parent's resolved center (`home_center_id`)
+  rather than a global constant. Context: interim director-CTA mailto lane +
+  staff-alert lane.
