@@ -87,6 +87,12 @@ export async function addChildAction(
     };
   }
 
+  // ATLAS-002: tenant_id and home_center_id are SERVER-CONTROLLED. They are
+  // still sent here (the generated Insert type requires tenant_id), but the
+  // children_force_server_columns_ins trigger DERIVES both from the parent row
+  // and overwrites whatever arrives — so these two values are advisory, not
+  // authoritative. Do not add server-controlled columns to this payload
+  // expecting them to stick.
   const { data: child, error: childErr } = await supabase
     .from("children")
     .insert({
@@ -134,13 +140,19 @@ export async function addChildAction(
   });
   if (consentErr) {
     // Don't leave a child that can never be assessed. Best-effort rollback of
-    // the just-created child (RLS allows the owning parent to delete it).
+    // the just-created child.
+    //
+    // ATLAS-002: this uses the SERVICE-ROLE client because parent DELETE on
+    // children is revoked — hard-delete would cascade assessment_sessions and
+    // question_access_log, defeating the soft-delete retention #203 added for
+    // staff. This is the one legitimate hard delete: a child created seconds
+    // ago whose consent never landed, so it has no sessions to lose.
     console.error("[add-child] consent insert failed; rolling back child", {
       parentId: parent.id,
       childId: child.id,
       err: consentErr,
     });
-    const { error: rollbackErr } = await supabase
+    const { error: rollbackErr } = await admin
       .from("children")
       .delete()
       .eq("id", child.id);
