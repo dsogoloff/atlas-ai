@@ -7,20 +7,31 @@
 //   2. Resolve the calling parent via supabase.auth.getUser() + parents
 //      lookup. The page-level auth gate (page.tsx) catches unauth users
 //      before this point; this is defense-in-depth.
-//   3. Insert into children with parent_id, tenant_id, and home_center_id
-//      copied from the parent's row. RLS policy children_parent_all
-//      accepts the insert when parent_id = app_current_parent_id().
-//   4. Record the binding PER-CHILD consent (Model B / COPPA Gate-B): a
-//      consent_records row keyed to the new child_id. This is the record the
-//      assessment gate (src/lib/consent/verify.ts) checks. If it fails we roll
-//      back the child (best-effort) so we never leave a child that can never
-//      be assessed.
+//   3. ONE call to create_child_with_consent(), which writes the child AND the
+//      binding per-child consent record (Model B / COPPA Gate-B) in a single
+//      transaction.
 //
-// Why createClient() for the child insert (not service role): the parent has
-// an authenticated session here (post-verification), and RLS on children
-// allows parent-scoped inserts via children_parent_all. The consent_records
-// write uses the service role (consent_records grants parents self-SELECT
-// only — no client insert policy — mirroring how signup writes vpc_audit_log).
+// ATLAS-013. This used to be two round-trips — insert the child on the RLS
+// client, then insert consent on the service role — with a best-effort rollback
+// DELETE if the second failed. A crash between them, or a rollback that itself
+// failed, left a child with no consent record; since the assessment gate
+// (src/lib/consent/verify.ts) reads consent, that child could never be
+// assessed. A double-click or second tab ran the whole sequence twice and
+// created duplicates.
+//
+// Now: either both rows land or neither does, enforced by the transaction
+// rather than by cleanup code. There is no rollback path here any more because
+// there is nothing to roll back. The RPC is also idempotent on
+// (parent_id, name, birth_year) among non-archived children, so a repeat submit
+// returns the SAME child id instead of creating a second child.
+//
+// Consent CONTENT is still owned by src/lib/consent/text.ts and passed in as
+// parameters — the database never holds its own copy of the consent
+// instrument, so versioning stays in one place.
+//
+// The RPC runs SECURITY DEFINER and checks the caller owns p_parent_id itself;
+// it does not bypass the ATLAS-002 BEFORE INSERT trigger, which still derives
+// tenant_id / home_center_id from the parent row.
 
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -87,28 +98,42 @@ export async function addChildAction(
     };
   }
 
-  // ATLAS-002: tenant_id and home_center_id are SERVER-CONTROLLED. They are
-  // still sent here (the generated Insert type requires tenant_id), but the
-  // children_force_server_columns_ins trigger DERIVES both from the parent row
-  // and overwrites whatever arrives — so these two values are advisory, not
-  // authoritative. Do not add server-controlled columns to this payload
-  // expecting them to stick.
-  const { data: child, error: childErr } = await supabase
-    .from("children")
-    .insert({
-      tenant_id: parent.tenant_id,
-      parent_id: parent.id,
-      home_center_id: parent.home_center_id,
-      name: data.name,
-      birth_year: data.birthYear,
-      grade_level: data.gradeLevel ?? null,
-    })
-    .select("id")
-    .single();
-  if (childErr || !child) {
-    console.error("[add-child] child insert failed", {
+  const h = await headers();
+  const ipRaw = h.get("x-forwarded-for") ?? h.get("x-real-ip");
+  const ip = ipRaw?.split(",")[0]?.trim() ?? null;
+  const userAgent = h.get("user-agent") ?? null;
+
+  // ATLAS-013: child + consent in ONE transaction. Called on the RLS client so
+  // the function sees the parent's JWT — app_current_parent_id() inside it
+  // resolves to this caller, which is what both its own ownership check and the
+  // ATLAS-002 insert trigger depend on. tenant_id and home_center_id are
+  // deliberately NOT passed: the trigger derives them from the parent row.
+  const { data: childId, error: rpcErr } = await supabase.rpc(
+    "create_child_with_consent",
+    {
+      p_parent_id: parent.id,
+      p_name: data.name,
+      p_birth_year: data.birthYear,
+      p_grade_level: data.gradeLevel ?? null,
+      p_consent_type: CONSENT_TYPE,
+      p_consent_text_version: CONSENT_TEXT_VERSION,
+      p_consent_text: CONSENT_TEXT,
+      p_disclosure_version: DISCLOSURE_VERSION,
+      p_disclosure_content_sha256: DISCLOSURE_CONTENT_SHA256,
+      p_data_uses: [...DATA_USES],
+      p_sharing_permissions: { ...SHARING_PERMISSIONS },
+      p_ip_address: ip,
+      p_user_agent: userAgent,
+    },
+  );
+
+  if (rpcErr || !childId) {
+    // Nothing to clean up: the transaction rolled back both writes, or neither
+    // happened. That is the whole point of ATLAS-013 — there is no orphan state
+    // to repair here, so there is no rollback path.
+    console.error("[add-child] create_child_with_consent failed", {
       parentId: parent.id,
-      err: childErr,
+      err: rpcErr,
     });
     return {
       ok: false,
@@ -116,71 +141,19 @@ export async function addChildAction(
     };
   }
 
-  // Record the binding per-child consent. Service role: consent_records has no
-  // client insert policy. Keyed to the child just created.
-  const admin = createServiceClient();
-  const h = await headers();
-  const ipRaw = h.get("x-forwarded-for") ?? h.get("x-real-ip");
-  const ip = ipRaw?.split(",")[0]?.trim() ?? null;
-  const userAgent = h.get("user-agent") ?? null;
-
-  const { error: consentErr } = await admin.from("consent_records").insert({
-    tenant_id: parent.tenant_id,
-    parent_id: parent.id,
-    child_id: child.id,
-    consent_type: CONSENT_TYPE,
-    consent_text_version: CONSENT_TEXT_VERSION,
-    consent_text: CONSENT_TEXT,
-    disclosure_version: DISCLOSURE_VERSION,
-    disclosure_content_sha256: DISCLOSURE_CONTENT_SHA256,
-    data_uses: [...DATA_USES],
-    sharing_permissions: { ...SHARING_PERMISSIONS },
-    ip_address: ip,
-    user_agent: userAgent,
-  });
-  if (consentErr) {
-    // Don't leave a child that can never be assessed. Best-effort rollback of
-    // the just-created child.
-    //
-    // ATLAS-002: this uses the SERVICE-ROLE client because parent DELETE on
-    // children is revoked — hard-delete would cascade assessment_sessions and
-    // question_access_log, defeating the soft-delete retention #203 added for
-    // staff. This is the one legitimate hard delete: a child created seconds
-    // ago whose consent never landed, so it has no sessions to lose.
-    console.error("[add-child] consent insert failed; rolling back child", {
-      parentId: parent.id,
-      childId: child.id,
-      err: consentErr,
-    });
-    const { error: rollbackErr } = await admin
-      .from("children")
-      .delete()
-      .eq("id", child.id);
-    if (rollbackErr) {
-      console.error("[add-child] child rollback failed", {
-        childId: child.id,
-        err: rollbackErr,
-      });
-    }
-    return {
-      ok: false,
-      error: "Could not record consent. Please try again.",
-    };
-  }
-
   // Funnel instrumentation (fail-soft, off the response path via after()).
-  // Both events fire only here — past the consent rollback — so they always
-  // reflect a child that actually persisted. No PII: ids + non-identifying
-  // scalars only.
+  // Both events fire only past a committed create, so they always reflect a
+  // child that actually persisted. No PII: ids + non-identifying scalars only.
+  const admin = createServiceClient();
   after(() => {
     void emit(admin, ANALYTICS_EVENTS.CHILD_PROFILE_CREATED, {
       tenantId: parent.tenant_id,
-      childId: child.id,
+      childId,
       props: { grade_level: data.gradeLevel ?? null },
     });
     void emit(admin, ANALYTICS_EVENTS.PARENT_CONSENT_COMPLETED, {
       tenantId: parent.tenant_id,
-      childId: child.id,
+      childId,
       props: {
         consent_type: CONSENT_TYPE,
         consent_text_version: CONSENT_TEXT_VERSION,
@@ -188,5 +161,5 @@ export async function addChildAction(
     });
   });
 
-  return { ok: true, childId: child.id };
+  return { ok: true, childId };
 }

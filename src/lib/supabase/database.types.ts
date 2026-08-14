@@ -1346,6 +1346,29 @@ export type Database = {
         Args: { p_child_tenant_id: string; p_home_center_id: string }
         Returns: boolean
       }
+      // ATLAS-013 (migration 20260814130000). Hand-written to match the
+      // migration because the generator needs a live database and this repo
+      // regenerates types out-of-band; it will be reproduced verbatim on the
+      // next `supabase gen types`. Keep the signature in sync with
+      // create_child_with_consent(...) if that function ever changes.
+      create_child_with_consent: {
+        Args: {
+          p_parent_id: string
+          p_name: string
+          p_birth_year: number
+          p_grade_level: string | null
+          p_consent_type: string
+          p_consent_text_version: string
+          p_consent_text: string
+          p_disclosure_version: string
+          p_disclosure_content_sha256: string
+          p_data_uses: Json
+          p_sharing_permissions: Json
+          p_ip_address: string | null
+          p_user_agent: string | null
+        }
+        Returns: string
+      }
     }
     Enums: {
       admin_status: "ACTIVE" | "INACTIVE"
