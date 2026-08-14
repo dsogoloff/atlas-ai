@@ -59,3 +59,65 @@ jobs:
       # so no live ANTHROPIC_API_KEY (or other secret) is read at build time.
       - name: Build
         run: pnpm build
+
+  # ===========================================================================
+  # ATLAS-017 — RLS / column-scope integration tests against a real database.
+  # ===========================================================================
+  #
+  # SEPARATE JOB, running in PARALLEL with verify-bar so the fast bar stays fast.
+  # These need Docker (Postgres + PostgREST + GoTrue), which is why they are not
+  # in the unit suite: `pnpm test` must stay DB-free and runnable anywhere.
+  #
+  # Why a real stack rather than mocks: ATLAS-002's threat model is a direct
+  # PATCH through the public PostgREST interface with a valid parent JWT. A
+  # mocked client cannot reproduce that request, so it cannot prove it is
+  # blocked. Everything here — roles, JWTs, RLS, column privileges, triggers —
+  # is the real thing.
+  #
+  # No secrets: the local stack mints its own throwaway anon/service keys, read
+  # back out of `supabase status`.
+  rls-integration:
+    name: rls-integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.3
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Applies supabase/migrations/* then supabase/seed.sql to a fresh database,
+      # so this also proves every migration — including the ATLAS-002 one — still
+      # applies cleanly from scratch.
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Export Supabase connection details
+        run: |
+          supabase status -o json > /tmp/supabase-status.json
+          echo "SUPABASE_URL=$(jq -r '.API_URL' /tmp/supabase-status.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$(jq -r '.ANON_KEY' /tmp/supabase-status.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.SERVICE_ROLE_KEY' /tmp/supabase-status.json)" >> "$GITHUB_ENV"
+
+      - name: RLS integration tests
+        run: pnpm test:integration
+
+      - name: Supabase service logs (on failure)
+        if: failure()
+        run: supabase status || true
