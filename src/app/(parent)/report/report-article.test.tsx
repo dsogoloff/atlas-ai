@@ -80,6 +80,69 @@ function render(node: React.ReactElement) {
   return renderToStaticMarkup(node);
 }
 
+describe("ReportArticle — short reports never show a placement to parents", () => {
+  // This withholding is a deliberate protection: a ten-item short check does
+  // not yield a placement, and showing one would present a
+  // comprehensive-shaped claim off a sample. The staff-only block added on the
+  // instructor/admin student-detail page must NOT change this — these assert
+  // the parent surface stays byte-identical in this respect, in BOTH the parent
+  // view and the staffView rendering of the same component.
+  // The MEASURED placement is deliberately set to a different level than the
+  // readiness label. A short report legitimately says "appears ready for S.A.M
+  // Level 4" (READINESS_COPY.readyLine — founder-approved, and it names the
+  // child's CURRENT booklet, not a measurement). So asserting on the bare
+  // string "S.A.M Level" would be wrong; what must never appear is the
+  // PLACEMENT — here "S.A.M Level 6" / "L6".
+  const SHORT_PLACED_ELSEWHERE: ReportContent = {
+    ...SHORT,
+    placement: {
+      ...SHORT.placement,
+      sam_level: "S.A.M Level 6",
+      canonical_level: "L6",
+    },
+  };
+
+  for (const staffView of [false, true]) {
+    it(`short report withholds the measured placement (staffView=${staffView})`, () => {
+      const html = render(
+        <ReportArticle
+          reportContent={SHORT_PLACED_ELSEWHERE}
+          narrationProse={PROSE}
+          childId="c1"
+          schoolFieldEnabled={false}
+          staffView={staffView}
+        />,
+      );
+
+      // The placement itself — never on a parent surface for a short test.
+      expect(html).not.toContain("S.A.M Level 6");
+      expect(html).not.toContain("Placement recommendation");
+      // The canonical contract value must never reach a parent surface.
+      expect(html).not.toContain("L6");
+      expect(html).not.toContain("iClassPro");
+      expect(html).not.toContain("Placement for enrollment");
+
+      // …while the readiness line and the rest of the report still render, so
+      // this is not passing merely because nothing rendered.
+      expect(html).toContain("S.A.M Level 4"); // readiness, not placement
+      expect(html).toContain("Strand Performance");
+    });
+  }
+
+  it("comprehensive still DOES show the placement (unchanged)", () => {
+    const html = render(
+      <ReportArticle
+        reportContent={COMPREHENSIVE}
+        narrationProse={PROSE}
+        childId="c1"
+        schoolFieldEnabled={false}
+      />,
+    );
+
+    expect(html).toContain(COMPREHENSIVE.placement.sam_level);
+  });
+});
+
 describe("ReportArticle — staffView gating", () => {
   it("parent view (default) renders the parent-action widgets", () => {
     const html = render(
