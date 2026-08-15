@@ -89,11 +89,16 @@ export function InstructorNotice({
   body,
   roleLabel,
   homeHref,
+  actionHref,
+  actionLabel,
 }: {
   title: string;
   body: string;
   roleLabel?: string;
   homeHref?: string;
+  /** ATLAS-007: optional CTA, so an MFA-required notice can offer the step. */
+  actionHref?: string;
+  actionLabel?: string;
 }) {
   return (
     <>
@@ -104,6 +109,14 @@ export function InstructorNotice({
             {title}
           </h1>
           <p className="font-body-regular text-sam-gray-mid">{body}</p>
+          {actionHref && actionLabel ? (
+            <a
+              href={actionHref}
+              className="mt-6 inline-flex items-center justify-center px-6 py-3 bg-sam-red hover:bg-sam-red/90 text-white font-headline-adult font-bold rounded-xl transition-colors"
+            >
+              {actionLabel}
+            </a>
+          ) : null}
         </div>
       </main>
     </>

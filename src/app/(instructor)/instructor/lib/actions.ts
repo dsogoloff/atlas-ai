@@ -18,6 +18,7 @@ import {
 } from "@/lib/analytics/instructorUsefulness";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
+import { requireStaffAal2Action } from "@/lib/auth/staffActionGate";
 import { resolveInstructor } from "./instructor";
 import { buildNoteInsert } from "./notes";
 
@@ -37,6 +38,11 @@ export async function createNote(
   }
 
   const supabase = await createClient();
+  // ATLAS-007: a POST must fail CLOSED. A server action is directly invokable,
+  // so it can never rely on the page's redirect or the middleware prefix gate.
+  if (!(await requireStaffAal2Action(supabase))) {
+    return { ok: false, error: "Not authorised." };
+  }
   const instructor = await resolveInstructor(supabase);
   if (!instructor) return { ok: false, error: "Not authorised." };
 
@@ -71,6 +77,11 @@ export async function updateNote(
   }
 
   const supabase = await createClient();
+  // ATLAS-007: a POST must fail CLOSED. A server action is directly invokable,
+  // so it can never rely on the page's redirect or the middleware prefix gate.
+  if (!(await requireStaffAal2Action(supabase))) {
+    return { ok: false, error: "Not authorised." };
+  }
   const instructor = await resolveInstructor(supabase);
   if (!instructor) return { ok: false, error: "Not authorised." };
 
@@ -102,6 +113,8 @@ export async function recordInstructorReportViewed(
     if (!UUID_RE.test(sessionId)) return;
 
     const rls = await createClient();
+    // ATLAS-007: fail closed before any service-client emit.
+    if (!(await requireStaffAal2Action(rls))) return;
     const instructor = await resolveInstructor(rls);
     if (!instructor) return;
 
@@ -137,6 +150,10 @@ export async function submitInstructorUsefulness(
   input: InstructorUsefulnessInput,
 ): Promise<InstructorUsefulnessResult> {
   const rlsClient = await createClient();
+  // ATLAS-007: fail closed before any service-client write.
+  if (!(await requireStaffAal2Action(rlsClient))) {
+    return { ok: false, error: "Not authorised." };
+  }
   const instructor = await resolveInstructor(rlsClient);
   if (!instructor) return { ok: false, error: "Not authorised." };
 

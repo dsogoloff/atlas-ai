@@ -42,7 +42,7 @@ import {
 } from "@/app/(parent)/report/strand-labels";
 
 import { InstructorNotice, InstructorTopBar } from "../../_components/shell";
-import { resolveStaff } from "../../lib/instructor";
+import { checkStaffAal2 } from "@/lib/auth/requireStaffAal2";
 import { fetchNotesForChild } from "../../lib/notes";
 import { NotesPanel } from "./notes-panel";
 import { ReportViewTracker } from "./report-view-tracker";
@@ -67,12 +67,22 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    // Server component — render a notice rather than redirect mid-tree;
-    // middleware keeps the session fresh and the roster link is the entry.
+  // ATLAS-007 — THE gate for the richest cross-family child data in the product.
+  //
+  // This page assembles its report through createServiceClient(), which BYPASSES
+  // RLS entirely, so no database-side AAL policy could ever cover it. The check
+  // therefore happens HERE, in application code, and must stay ABOVE every
+  // service-client construction below (parent panel, report assembly, notes).
+  // Moving any service-role read above this line reopens the finding.
+  //
+  // Non-redirecting form because this is a server component rendering mid-tree;
+  // the outcome is the same, expressed as a notice with a link to the MFA step.
+  const gate = await checkStaffAal2(
+    supabase,
+    `/instructor/student/${childId}`,
+  );
+
+  if (!gate.ok && gate.reason === "unauthenticated") {
     return (
       <InstructorNotice
         title="Sign in required"
@@ -80,11 +90,7 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
       />
     );
   }
-
-  // Shared detail: an instructor (center-scoped) OR an admin (tenant-scoped)
-  // may view. Notes authoring stays instructor-only (admins don't author).
-  const staff = await resolveStaff(supabase);
-  if (!staff) {
+  if (!gate.ok && gate.reason === "not-staff") {
     return (
       <InstructorNotice
         title="Staff access required"
@@ -92,6 +98,27 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
       />
     );
   }
+  if (!gate.ok) {
+    // Staff, but below AAL2. No child data is read on this path at all.
+    return (
+      <InstructorNotice
+        title="Two-factor authentication required"
+        body={
+          gate.decision === "enroll"
+            ? "Staff accounts must set up an authenticator app before viewing student data."
+            : "Enter the code from your authenticator app to continue."
+        }
+        actionHref={gate.redirectTo}
+        actionLabel={
+          gate.decision === "enroll" ? "Set up two-factor" : "Enter code"
+        }
+      />
+    );
+  }
+
+  // Shared detail: an instructor (center-scoped) OR an admin (tenant-scoped)
+  // may view. Notes authoring stays instructor-only (admins don't author).
+  const staff = gate.staff;
   const isInstructor = staff.kind === "instructor";
   const roleLabel = isInstructor ? "Instructor" : "Admin";
   const rosterHref = isInstructor ? "/instructor" : "/admin";
