@@ -8,6 +8,16 @@ const mockGetUser = vi.fn(async () => ({
 }));
 const updateSpy = vi.fn();
 
+// revalidatePath needs a Next request/static-generation store, which a unit
+// test has no way to provide. Mocked so the action is callable here AND so the
+// dashboard invalidation can be asserted: it is load-bearing, not incidental —
+// without it the form has to fall back to a client router.refresh(), which is
+// exactly what used to cancel the post-save navigation.
+const revalidateSpy = vi.fn();
+vi.mock("next/cache", () => ({
+  revalidatePath: (path: string) => revalidateSpy(path),
+}));
+
 let childResult: { data: { id: string } | null; error: unknown } = {
   data: { id: "c1" },
   error: null,
@@ -45,6 +55,7 @@ afterEach(() => {
   mockGetUser.mockReset();
   mockGetUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
   updateSpy.mockReset();
+  revalidateSpy.mockReset();
   childResult = { data: { id: "c1" }, error: null };
 });
 
@@ -58,6 +69,25 @@ describe("updateChildAction", () => {
       birth_year: 2017,
       grade_level: "3",
     });
+  });
+
+  it("revalidates /dashboard on success so the form can navigate with a plain push", async () => {
+    // Regression guard for the "Saving..." hang: if this invalidation is
+    // dropped, the dashboard serves a stale name and the form is pushed back
+    // toward a client-side router.refresh() — the thing that cancelled the
+    // navigation in the first place.
+    await updateChildAction(VALID, INPUT);
+
+    expect(revalidateSpy).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("does NOT revalidate when the update failed", async () => {
+    childResult = { data: null, error: null };
+
+    const res = await updateChildAction(VALID, INPUT);
+
+    expect(res.ok).toBe(false);
+    expect(revalidateSpy).not.toHaveBeenCalled();
   });
 
   it("rejects invalid input without updating", async () => {

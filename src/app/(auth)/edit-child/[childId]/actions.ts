@@ -11,6 +11,8 @@
 // No consent re-capture: consent was bound at add-child time (Model B /
 // COPPA Gate-B) and isn't re-collected on an edit.
 
+import { revalidatePath } from "next/cache";
+
 import { createClient } from "@/lib/supabase/server";
 
 import { EditChildSchema, type EditChildInput } from "./schema";
@@ -64,6 +66,15 @@ export async function updateChildAction(
   if (!updated) {
     return { ok: false, error: "This child is no longer available." };
   }
+
+  // Invalidate the dashboard's cached RSC payload so the edited name/grade is
+  // current when the client navigates back to it. Revalidating HERE is what
+  // lets the form navigate with a plain router.push(): the form previously
+  // chased the same goal with a client-side router.refresh() fired immediately
+  // after the push, which started a competing transition on the CURRENT route
+  // and silently cancelled the pending navigation — leaving the button stuck on
+  // "Saving..." forever while the row had already been written.
+  revalidatePath("/dashboard");
 
   return { ok: true };
 }

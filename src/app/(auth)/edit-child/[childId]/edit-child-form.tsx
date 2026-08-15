@@ -56,8 +56,12 @@ export function EditChildForm({
     const r = await updateChildAction(childId, values);
     if (r.ok) {
       // Let navigation tear down the component; keep submitting=true.
+      // NO router.refresh() here — it re-fetches the CURRENT route and
+      // supersedes the push above, so the navigation never commits and this
+      // button stays on "Saving..." forever. The dashboard is kept fresh by
+      // revalidatePath("/dashboard") in the server action instead. This is now
+      // the same success path as add-child, which works in prod.
       router.push("/dashboard");
-      router.refresh();
       return;
     }
     setSubmitting(false);
