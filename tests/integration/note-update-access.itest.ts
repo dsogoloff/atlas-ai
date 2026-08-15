@@ -202,6 +202,14 @@ beforeAll(async () => {
           tenant_id: tenantId,
           child_id: childId,
           instructor_id: author.instructorId,
+          // NOT NULL. Provenance — the author's centre AT WRITE TIME, kept
+          // across later transfers "so new-center instructors see the source".
+          // Deliberately NOT part of the access predicate: authorisation reads
+          // children.home_center_id (where the child is NOW), which is exactly
+          // the distinction ATLAS-009 is about. Recording it as centre A here
+          // means the headline test still has stale provenance pointing at A
+          // after the child moves to B — the shape the bug actually took.
+          authored_at_center_id: centerA,
           body: "ORIGINAL",
         })
         .select("id")
