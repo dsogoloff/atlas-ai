@@ -5,7 +5,7 @@
 // it isn't left as an orphan that can authenticate with no profile. A delete
 // failure is logged but the original error is still surfaced.
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSignUp = vi.fn();
 const mockDeleteUser = vi.fn<
@@ -76,10 +76,18 @@ const INPUT = {
   consent: true as const,
 };
 
+// ATLAS-011: emailRedirectTo is built from APP_PUBLIC_ORIGIN rather than from
+// the Origin/Referer headers, so the action needs it configured. Its absence is
+// a hard failure by design — see lib/config/publicOrigin.test.ts.
+beforeEach(() => {
+  vi.stubEnv("APP_PUBLIC_ORIGIN", "https://app.samnewyork.com");
+});
+
 afterEach(() => {
   mockSignUp.mockReset();
   mockDeleteUser.mockClear();
   parentInsertResult = { data: { id: "p1" }, error: null };
+  vi.unstubAllEnvs();
 });
 
 describe("signupAction — orphan rollback on parents-insert failure", () => {

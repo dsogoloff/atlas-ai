@@ -9,6 +9,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAppPublicOrigin } from "@/lib/config/publicOrigin";
 import { extractClientIp } from "@/lib/questionAccessLog/log";
 import { submitResponseHandler } from "@/lib/responseSubmit/handler";
 import { SubmitRequestSchema } from "@/lib/responseSubmit/types";
@@ -51,7 +52,13 @@ export async function POST(request: NextRequest) {
       ip,
       // Only used to make the staff-alert student link absolute on session
       // finalization; nothing else in the handler reads it.
-      origin: new URL(request.url).origin,
+      //
+      // ATLAS-011: the CANONICAL origin, not `new URL(request.url).origin`.
+      // request.url is built from the Host / X-Forwarded-Host header, so a
+      // forged host would put an attacker-controlled student-record link into
+      // an email we send to staff. The handler stays origin-agnostic (it is
+      // unit-tested with an injected origin); the trust decision lives here.
+      origin: getAppPublicOrigin(),
     });
   } catch (e) {
     console.error("[submit] unhandled error", e);

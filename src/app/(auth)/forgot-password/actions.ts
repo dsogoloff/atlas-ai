@@ -21,8 +21,7 @@
 // vpc_event_type enum has no reset event), so there is nothing consistent to
 // write — unlike /auth/confirm, which completes the COPPA verification trail.
 
-import { headers } from "next/headers";
-
+import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { createClient } from "@/lib/supabase/server";
 
 import { ForgotPasswordSchema, type ForgotPasswordInput } from "./schema";
@@ -41,12 +40,13 @@ export async function requestPasswordReset(
   }
 
   try {
-    const h = await headers();
-    const origin = h.get("origin") ?? h.get("referer") ?? "";
-
+    // ATLAS-011: the recovery link's origin comes from APP_PUBLIC_ORIGIN, never
+    // from `Origin` / `Referer`. This is the highest-value target of the whole
+    // finding — a password-reset link pointed at an attacker's domain is a
+    // direct account takeover, delivered inside a genuine email from us.
     const supabase = await createClient();
     await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: origin ? `${origin}/auth/reset?next=/login` : undefined,
+      redirectTo: canonicalUrl("/auth/reset?next=/login"),
     });
   } catch {
     // Swallow — the outcome must not depend on the send result (see header).
