@@ -34,6 +34,7 @@ import { enqueueGa4Event } from "./ga4-queue";
 import { enqueueMetaEvent } from "./meta-queue";
 import type { QueuedEvent } from "./event-queue";
 import { carriesChildIdentifier } from "./redact";
+import { analyticsMaySendFrom } from "./child-surface";
 
 export type GtagFn = (
   command: "event",
@@ -143,8 +144,19 @@ function browserHandles(): DispatchHandles {
     href = null;
   }
   const metaAllowed = href !== null && metaMaySendFrom(href);
+
+  // ATLAS-006 — third gate for GA4, mirroring the one Meta already had.
+  //
+  // (child)/layout.tsx no longer mounts the GA4 tag, but that alone does not
+  // guarantee `window.gtag` is absent: a client-side navigation from a parent
+  // surface carries the already-injected tag into the child document. Treating
+  // gtag as ABSENT here means such an event is QUEUED for replay from a parent
+  // surface rather than beaconed from a child screen. Fails closed — an
+  // unreadable href counts as a child surface.
+  const ga4Allowed = href !== null && analyticsMaySendFrom(href);
+
   return {
-    gtag: typeof w.gtag === "function" ? w.gtag : null,
+    gtag: ga4Allowed && typeof w.gtag === "function" ? w.gtag : null,
     fbq: metaAllowed && typeof w.fbq === "function" ? w.fbq : null,
     enqueueGa4: enqueueGa4Event,
     enqueueMeta: enqueueMetaEvent,

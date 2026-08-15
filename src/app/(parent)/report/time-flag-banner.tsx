@@ -21,7 +21,6 @@
 // Copy attributes failures to response patterns (timing, pacing), not
 // to the child. Reviewed at file-6 gate.
 
-import Link from "next/link";
 
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -124,13 +123,15 @@ export function TimeFlagBanner({
         </p>
         {showCta && (
           <div className="pt-2 print:hidden">
-            <Link
+            {/* ATLAS-006: plain <a> so entry into the child route is a HARD
+                navigation and no GA4 tag survives into it. See child-surface.ts. */}
+            <a
               href={`/assessment?child_id=${childId}`}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-sam-red hover:bg-sam-red/90 text-white font-headline-adult font-bold rounded-xl shadow-sm hover:shadow-md active:scale-95 transition-all"
             >
               <span className="material-symbols-outlined text-lg">refresh</span>
               Re-take Assessment
-            </Link>
+            </a>
           </div>
         )}
       </div>
