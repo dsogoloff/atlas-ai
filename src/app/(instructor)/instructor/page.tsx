@@ -7,12 +7,11 @@
 // policy restricts to the instructor's center (+ 30-day prior-center
 // grace). No parent PII is read here (compliance §6.2 / §10.3).
 
-import { redirect } from "next/navigation";
-
 import { createClient } from "@/lib/supabase/server";
 
 import { RosterStats, RosterTable } from "./_components/roster-view";
 import { InstructorNotice, InstructorShell } from "./_components/shell";
+import { requireStaffAal2 } from "@/lib/auth/requireStaffAal2";
 import { resolveInstructor } from "./lib/instructor";
 import { fetchRoster } from "./lib/roster";
 
@@ -22,13 +21,12 @@ export const dynamic = "force-dynamic";
 export default async function InstructorHomePage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login?next=/instructor");
-  }
+  // ATLAS-007: authoritative staff gate — AAL2 or nothing. See
+  // lib/auth/requireStaffAal2.ts.
+  await requireStaffAal2("/instructor");
 
+  // Still resolve the INSTRUCTOR specifically: an admin is staff and clears the
+  // gate, but this portal is center-scoped and needs an instructor row.
   const instructor = await resolveInstructor(supabase);
   if (!instructor) {
     return (

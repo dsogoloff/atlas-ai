@@ -10,14 +10,12 @@
 // (compliance §6.2 / §10.3). Rows link to the SHARED student detail under
 // /instructor/student/[childId] — never a duplicated detail page.
 
-import { redirect } from "next/navigation";
-
 import { RosterStats, RosterTable } from "@/app/(instructor)/instructor/_components/roster-view";
 import {
   InstructorNotice,
   InstructorShell,
 } from "@/app/(instructor)/instructor/_components/shell";
-import { resolveStaff } from "@/app/(instructor)/instructor/lib/instructor";
+import { requireStaffAal2 } from "@/lib/auth/requireStaffAal2";
 import { fetchRoster } from "@/app/(instructor)/instructor/lib/roster";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,15 +25,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminHomePage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login?next=/admin");
-  }
+  // ATLAS-007: authoritative staff gate. Resolves the caller, then REFUSES to
+  // proceed unless the session is AAL2 (a TOTP factor verified this session),
+  // redirecting to enrolment or challenge as appropriate. Replaces the previous
+  // getUser() + resolveStaff() preamble; ?next=/admin survives the round trip.
+  const { staff } = await requireStaffAal2("/admin");
 
-  const staff = await resolveStaff(supabase);
-  if (!staff || staff.kind !== "admin") {
+  if (staff.kind !== "admin") {
     return (
       <InstructorNotice
         roleLabel="Admin"

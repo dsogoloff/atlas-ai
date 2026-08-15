@@ -28,6 +28,21 @@ vi.mock("../../lib/instructor", () => ({
   resolveStaff: () => mockResolveStaff(),
 }));
 
+// ATLAS-007: the page now goes through the staff MFA gate instead of calling
+// getUser() + resolveStaff() itself. These tests are about the page's RENDER
+// branches, not the gate (which has its own unit + integration coverage), so
+// the gate resolves to "staff, AAL2 satisfied" and defers to mockResolveStaff
+// for WHICH staff — keeping every existing instructor/admin branch assertion
+// meaningful. The AAL1 refusal is proven in tests/integration/staff-mfa.itest.ts.
+vi.mock("@/lib/auth/requireStaffAal2", () => ({
+  checkStaffAal2: async () => {
+    const staff = await mockResolveStaff();
+    return staff
+      ? { ok: true, user: { id: "u1" }, staff }
+      : { ok: false, reason: "not-staff", user: { id: "u1" } };
+  },
+}));
+
 // Keep the render hermetic — stub the children that pull client-only deps or
 // the report pipeline. The branch assertions key off the panel's own text.
 vi.mock("../../lib/notes", () => ({ fetchNotesForChild: async () => [] }));

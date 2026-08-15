@@ -3,6 +3,12 @@ import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
+  // ATLAS-007: updateSession now also applies the OUTER staff-MFA gate on
+  // /admin and /instructor. It is belt-and-braces only — the authoritative
+  // control is requireStaffAal2 / requireStaffAal2Action inside the pages,
+  // server actions and service-client call sites. Middleware sees paths, not
+  // intent: it cannot protect a server action (which POSTs to the page's own
+  // path) and cannot sit between a page and its service-role reads.
   return updateSession(request);
 }
 
