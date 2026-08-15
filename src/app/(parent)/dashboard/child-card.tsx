@@ -126,7 +126,14 @@ export function ChildCard({ child, lastCompletedAt, tier }: ChildCardProps) {
           (disabled when no completion, link when completion exists
           per Phase 1 Q1 + Q2). */}
       <div className="mt-auto space-y-4">
-        <Link
+        {/* ATLAS-006: a plain <a>, NOT next/link, on purpose. next/link is a
+            client-side navigation, so the document — and with it the already
+            injected GA4 tag — would survive into the child assessment route,
+            where GA4 Enhanced Measurement would fire a history-based page_view.
+            A hard navigation guarantees the child document is built fresh from
+            (child)/layout.tsx, which mounts no third-party tag. Cost is one
+            full page load on this click; see src/lib/marketing/child-surface.ts. */}
+        <a
           href={`/assessment?child_id=${child.id}`}
           className="w-full bg-sam-red text-white font-display-child text-lg md:text-xl py-4 rounded-2xl shadow-lg hover:translate-y-[-2px] active:translate-y-[1px] transition-all flex items-center justify-center gap-2 group/cta"
         >
@@ -134,7 +141,7 @@ export function ChildCard({ child, lastCompletedAt, tier }: ChildCardProps) {
           <span className="material-symbols-outlined group-hover/cta:translate-x-1 transition-transform">
             arrow_forward
           </span>
-        </Link>
+        </a>
         {lastCompletedAt ? (
           // TODO(Item #8): /report route doesn't exist yet. Link target
           // points at /report?child=<id> as a placeholder; Item #8 will

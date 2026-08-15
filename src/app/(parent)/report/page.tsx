@@ -173,7 +173,9 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             they finish their first session, the assessment report will
             appear here.
           </p>
-          <Link
+          {/* ATLAS-006: plain <a> so entry into the child route is a HARD
+              navigation and no GA4 tag survives into it. See child-surface.ts. */}
+          <a
             href={`/assessment?child_id=${child.id}`}
             className="mt-7 inline-flex items-center gap-4 px-7 py-5 text-white text-[17px] font-medium hover:opacity-95 transition-opacity"
             style={{
@@ -189,7 +191,7 @@ export default async function ReportPage({ searchParams }: ReportPageProps) {
             >
               &rarr;
             </span>
-          </Link>
+          </a>
         </section>
         <Footer />
       </ReportShell>

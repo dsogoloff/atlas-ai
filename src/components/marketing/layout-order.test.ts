@@ -19,11 +19,14 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = process.cwd();
 
+// ATLAS-006: (child) is deliberately ABSENT. It no longer mounts the analytics
+// island at all — no third-party tag loads on a child assessment screen — so
+// there is no ordering to pin there. That the island is gone is asserted in
+// marketing-analytics.test.ts; if it were re-added, that suite fails.
 const LAYOUTS_WITH_ANALYTICS = [
   "src/app/(marketing)/layout.tsx",
   "src/app/(auth)/layout.tsx",
   "src/app/(parent)/layout.tsx",
-  "src/app/(child)/layout.tsx",
 ];
 
 describe("analytics island is mounted before the page tree", () => {
