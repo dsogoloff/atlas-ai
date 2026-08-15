@@ -34,6 +34,7 @@ export const aidenGrade3Report: ReportContent = {
 
   placement: {
     sam_level: "S.A.M Level 3",
+    canonical_level: "L3",
     overall_percentage: 70,
     tier: "K_4",
   },

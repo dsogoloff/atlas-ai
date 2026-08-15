@@ -1113,7 +1113,16 @@ function emitPlacementCreated(
       tenantId,
       childId,
       sessionId,
-      props: { sam_level: placement.overallLevel, termination_reason: reason },
+      // `placement_band`, NOT `sam_level`. This is the RAW half-grade band
+      // ("3A", "KA") — the engine's internal axis. The report's `sam_level` is
+      // the parent-facing label ("S.A.M Level 3") and `canonical_level` is the
+      // franchise contract value ("L3"); all three are different strings for
+      // the same placement, so the key must not collide with either. Internal
+      // analytics prop only — a band code carries no child data.
+      props: {
+        placement_band: placement.overallLevel,
+        termination_reason: reason,
+      },
     }),
   );
 }

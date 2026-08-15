@@ -21,7 +21,12 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatGradeLevel } from "@/lib/format/gradeLevel";
-import { samLevelLabel } from "@/lib/report/assemble";
+import {
+  CanonicalLevelError,
+  placementStrings,
+  samLevelLabel,
+  type CanonicalLevel,
+} from "@/lib/report/canonical-level";
 import {
   fromPlacementEstimateJson,
   isPlacementEstimateJson,
@@ -48,10 +53,14 @@ export interface RosterRow {
   lastAssessmentAt: string | null;
   /** Localised form of lastAssessmentAt for display, else null. */
   lastAssessmentDisplay: string | null;
-  /** Canonical S.A.M-level label from the completed session's placement
-   *  estimate, e.g. "S.A.M Level 3A". Null until a completed session with a
-   *  valid placement exists. */
+  /** Parent-facing S.A.M-level label from the completed session's placement
+   *  estimate, e.g. "S.A.M Level 3". Never carries the internal half-grade
+   *  code. Null until a completed session with a valid placement exists. */
   placementLabel: string | null;
+  /** FRANCHISE §4.2 contract value for the same placement, e.g. "L3". Null when
+   *  there is no completed placement, or (defensively) when a stored level
+   *  falls outside the canonical set — see placementStringsFor. */
+  placementCanonical: CanonicalLevel | null;
   /** Display name of the child's home center, joined via children.home_center_id.
    *  Null when the child has no home center. The instructor roster is a single
    *  center (so this is constant); the admin roster spans the tenant, so the
@@ -62,6 +71,14 @@ export interface RosterRow {
    *  row, its sessions, and its report are retained for oversight. */
   archivedAtDisplay: string | null;
 }
+
+/** Roster-local view of the two placement strings. Mirrors PlacementStrings but
+ *  allows a null canonical value, which the chokepoint deliberately does not —
+ *  see placementStringsFor for why this surface degrades instead of throwing. */
+type RosterPlacement = {
+  samLevel: string;
+  canonicalLevel: CanonicalLevel | null;
+};
 
 type SessionRow = Pick<
   Database["public"]["Tables"]["assessment_sessions"]["Row"],
@@ -111,6 +128,10 @@ export async function fetchRoster(
       status = "in_progress";
     }
 
+    const placement = latestCompleted
+      ? placementStringsFor(latestCompleted.current_estimate)
+      : null;
+
     return {
       childId: child.id,
       name: child.name,
@@ -123,9 +144,8 @@ export async function fetchRoster(
         : null,
       lastAssessmentAt,
       lastAssessmentDisplay: formatDate(lastAssessmentAt),
-      placementLabel: latestCompleted
-        ? placementLabelFor(latestCompleted.current_estimate)
-        : null,
+      placementLabel: placement?.samLevel ?? null,
+      placementCanonical: placement?.canonicalLevel ?? null,
       centerName: child.home_center_id
         ? (centerNameById.get(child.home_center_id) ?? null)
         : null,
@@ -225,11 +245,37 @@ function pickLastAssessmentAt(rows: SessionRow[]): string | null {
   return best;
 }
 
-function placementLabelFor(
+/** Both placement strings for a completed session, or null when the session has
+ *  no usable estimate.
+ *
+ *  THE INPUT IS ALREADY CLAMPED. `current_estimate` is written by finalization,
+ *  which applies clampPlacementToServedCeiling at source
+ *  (src/lib/responseSubmit/clampPlacement.ts) — so the stored overallLevel is
+ *  bounded by the hardest level the child was actually served. The roster has
+ *  no served-question list of its own (it reads one row per session by design,
+ *  for data minimisation), and re-deriving a ceiling here would mean an extra
+ *  per-session query for a value that is already correct in the row. This is
+ *  why the roster may canonicalize the stored level directly.
+ *
+ *  DEGRADES, DOES NOT THROW. toCanonicalLevel fails loud by design, but this is
+ *  a read-only staff list, not the contract handoff: one legacy row outside the
+ *  canonical set must not 500 the whole roster. The label is kept and the
+ *  canonical value goes null, so the row stays readable and the missing
+ *  contract value is visible as absent rather than as a wrong string. The
+ *  parent report — the actual producer of the handoff — does NOT catch. */
+function placementStringsFor(
   estimate: SessionRow["current_estimate"],
-): string | null {
+): RosterPlacement | null {
   if (!isPlacementEstimateJson(estimate)) return null;
-  return samLevelLabel(fromPlacementEstimateJson(estimate).overallLevel);
+  const clampedLevel = fromPlacementEstimateJson(estimate).overallLevel;
+  try {
+    return placementStrings(clampedLevel);
+  } catch (err) {
+    if (err instanceof CanonicalLevelError) {
+      return { samLevel: samLevelLabel(clampedLevel), canonicalLevel: null };
+    }
+    throw err;
+  }
 }
 
 function formatDate(iso: string | null): string | null {

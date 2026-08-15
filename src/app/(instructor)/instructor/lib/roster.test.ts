@@ -119,7 +119,45 @@ describe("fetchRoster", () => {
     // instructor roster shares this fn (founder decision 2026-06-18; instructor
     // side-effect flagged in the PR).
     expect(roster[0].placementLabel).toBe("S.A.M Level 3");
+    // Second producer of a placement string: it goes through the SAME
+    // chokepoint as the report, so the roster carries the franchise contract
+    // value alongside the parent label instead of a label with no counterpart.
+    expect(roster[0].placementCanonical).toBe("L3");
     expect(roster[0].completedAtDisplay).toBe("May 20, 2026");
+  });
+
+  it("degrades to a null canonical (keeping the label) for an out-of-contract level", async () => {
+    // A stored 8B has no canonical target. The report throws; a read-only staff
+    // list must not 500 over one legacy row, so it drops the contract value and
+    // keeps the label. Not reachable today — see canonical-level.ts.
+    const client = makeClient({
+      children: [{ id: "c-aaaa", name: "Aiden Park", grade_level: "3" }],
+      assessment_sessions: [
+        {
+          child_id: "c-aaaa",
+          status: "COMPLETED",
+          completed_at: "2026-05-20T10:00:00.000Z",
+          current_estimate: { ...VALID_PLACEMENT_3A, overall_level: "8B" },
+        },
+      ],
+    });
+
+    const roster = await fetchRoster(client);
+
+    expect(roster[0].placementLabel).toBe("S.A.M Level 8");
+    expect(roster[0].placementCanonical).toBeNull();
+  });
+
+  it("has no placement strings at all until a session completes", async () => {
+    const client = makeClient({
+      children: [{ id: "c-aaaa", name: "Aiden Park", grade_level: "3" }],
+      assessment_sessions: [],
+    });
+
+    const roster = await fetchRoster(client);
+
+    expect(roster[0].placementLabel).toBeNull();
+    expect(roster[0].placementCanonical).toBeNull();
   });
 
   it("marks in_progress when the only session is in progress", async () => {

@@ -37,8 +37,8 @@ import { pickNearestRecommendation } from "@/lib/report/recommendation-lookup";
 import {
   BOOKLET_LEVELS,
   anchorBookletForChild,
-  bookletOrdinalForHalfGrade,
 } from "@/lib/questionPicker/levelBand";
+import { placementStrings } from "@/lib/report/canonical-level";
 import {
   buildGrowthSignals,
   type GrowthResponseInput,
@@ -84,16 +84,12 @@ export function clampLevelToServedCeiling(
   return levelIndex(ceiling) < levelIndex(level) ? ceiling : level;
 }
 
-export function samLevelLabel(level: HalfGradeLevel): string {
-  // S.A.M-LEVEL (booklet) naming — the parent/placement axis (0A, 0B, 0C,
-  // 1, 2 … 8), derived from the row's half_grade via levelBand's booklet axis.
-  // The internal half-grade code (KA/KB/3A/3B) is NEVER surfaced — KA/KB fold
-  // into the 0C booklet, 3A/3B into "3", etc. No trailing dot ("S.A.M Level 3",
-  // not "S.A.M. Level 3"), matching the voice-locked narration prompt.
-  const ordinal = bookletOrdinalForHalfGrade(level);
-  const booklet = ordinal === null ? level : BOOKLET_LEVELS[ordinal];
-  return `S.A.M Level ${booklet}`;
-}
+// samLevelLabel now lives beside the canonical derivation in canonical-level.ts
+// so the parent label and the FRANCHISE §4.2 contract value share one input and
+// cannot drift. Re-exported here because existing call sites (and the report
+// tests) import it from this module. New producers should call
+// placementStrings() instead, which returns BOTH strings.
+export { samLevelLabel } from "@/lib/report/canonical-level";
 
 /** Half-grade → tax_level code. Best-effort 1:1. The V2026 taxonomy tops out
  *  at l6, so half-grades above the L6 booklet (7A-8B) CLAMP to l6 rather than
@@ -522,6 +518,23 @@ export async function assembleReportContent(
     currentLevelLabel: readinessLevel,
   });
 
+  // Clamp the displayed/narrated level to the levels actually served: a
+  // floor/sparse run can rail the engine estimate to the axis top (8B) with no
+  // ceiling items to pull it down (see clampLevelToServedCeiling). This fixes
+  // BOTH the report label and the value fed to the narration prompt (which
+  // reads placement.sam_level), so no more "working at S.A.M Level 8" on a 0A
+  // child. The raw engine level still drives taxLevelCode (the sub-strand grid
+  // / radar) above, so the visuals are unchanged.
+  //
+  // The parent label and the FRANCHISE §4.2 contract value are then derived
+  // together from that ONE clamped level, so they can never describe different
+  // placements. placementStrings THROWS on a level with no canonical target
+  // (booklet 8) rather than quietly clamping it to L6 — see canonical-level.ts.
+  // Unreachable today, and deliberately loud if that ever stops being true.
+  const { samLevel, canonicalLevel } = placementStrings(
+    clampLevelToServedCeiling(placement.overallLevel, servedCeiling),
+  );
+
   return {
     session_id: session.id,
     tenant_id: session.tenant_id,
@@ -538,16 +551,8 @@ export async function assembleReportContent(
     },
     time_flag: timeFlag,
     placement: {
-      // Clamp the displayed/narrated level to the levels actually served: a
-      // floor/sparse run can rail the engine estimate to the axis top (8B) with
-      // no ceiling items to pull it down (see clampLevelToServedCeiling). This
-      // fixes BOTH the report label and the value fed to the narration prompt
-      // (which reads placement.sam_level), so no more "working at S.A.M Level 8"
-      // on a 0A child. The raw engine level still drives taxLevelCode (the
-      // sub-strand grid / radar) above, so the visuals are unchanged.
-      sam_level: samLevelLabel(
-        clampLevelToServedCeiling(placement.overallLevel, servedCeiling),
-      ),
+      sam_level: samLevel,
+      canonical_level: canonicalLevel,
       overall_percentage: overallPercentage,
       tier,
     },

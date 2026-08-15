@@ -50,7 +50,12 @@ function content(readiness: ReportContent["readiness"]): ReportContent {
       report_id: "A-TEST",
     },
     time_flag: "normal",
-    placement: { sam_level: "S.A.M Level 4", overall_percentage: 75, tier: "K_4" },
+    placement: {
+      sam_level: "S.A.M Level 4",
+      canonical_level: "L4",
+      overall_percentage: 75,
+      tier: "K_4",
+    },
     strand_mastery: STRANDS,
     misconceptions: [],
     recommendations: [],

@@ -141,7 +141,14 @@ const FAKE_REPORT_CONTENT: ReportContent = {
     report_id: SESSION_ID,
   },
   time_flag: "normal",
-  placement: { sam_level: "S.A.M Level 3A", overall_percentage: 70, tier: "K_4" },
+  // "S.A.M Level 3", not the stale "S.A.M Level 3A" — the half-grade letter is
+  // a form samLevelLabel can no longer produce.
+  placement: {
+    sam_level: "S.A.M Level 3",
+    canonical_level: "L3",
+    overall_percentage: 70,
+    tier: "K_4",
+  },
   strand_mastery: [],
   misconceptions: [],
   recommendations: [],
