@@ -15,6 +15,7 @@
 // 12-value sub-strand union; misconceptions + curriculum_recommendations
 // rows are still keyed by the engine enum in the DB.
 import type { Strand as EngineStrand } from "@/lib/engine/types";
+import type { CanonicalLevel } from "@/lib/report/canonical-level";
 import type { AggregatedMisconception } from "@/lib/report/misconception-aggregate";
 import type { StrandMastery } from "@/lib/report/strand-mastery";
 import type { ReadinessSummary } from "@/lib/report/readiness";
@@ -152,7 +153,17 @@ export interface ReportContent {
   time_flag: SessionTimeFlag; // unreliable | mixed | rushed | struggling | normal
 
   placement: {
-    sam_level: string; // pre-formatted "S.A.M Level 3A" (samLevelLabel output)
+    /** PARENT-FACING label, pre-formatted by samLevelLabel — e.g.
+     *  "S.A.M Level 3", "S.A.M Level 0C". The internal half-grade code is never
+     *  present (there is no "S.A.M Level 3A" form; KA/KB fold into 0C). Display
+     *  copy only — never send this to a franchise system. */
+    sam_level: string;
+    /** FRANCHISE §4.2 CONTRACT VALUE — e.g. "L3", "L0C". Derived from the same
+     *  clamped level as sam_level via placementStrings (canonical-level.ts).
+     *  This is the string a director copy-pastes into iClassPro and that the app
+     *  byte-checks; it is never shown to a parent. Required, not optional: a
+     *  report without a contract value must not typecheck. */
+    canonical_level: CanonicalLevel;
     overall_percentage: number; // 0..100, R1 hybrid (correct/attempted)
     tier: Tier; // K_4 | G5_8
   };

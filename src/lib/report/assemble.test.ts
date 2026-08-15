@@ -9,6 +9,8 @@ import { describe, expect, it } from "vitest";
 
 import type { Database } from "@/lib/supabase/database.types";
 
+import { CanonicalLevelError } from "@/lib/report/canonical-level";
+
 import {
   assembleReportContent,
   clampLevelToServedCeiling,
@@ -588,9 +590,16 @@ describe("assembleReportContent — placement clamped to the served floor", () =
 
     // Was "S.A.M Level 8" before the clamp; now floors to 0A.
     expect(content.placement.sam_level).toBe("S.A.M Level 0A");
+    // …and the franchise contract value is derived from the SAME clamped level.
+    expect(content.placement.canonical_level).toBe("L0A");
   });
 
-  it("does NOT clamp when a ceiling item was actually served (normal multi-level run)", async () => {
+  it("REFUSES to emit a report when a genuinely-served 8B estimate survives the clamp", async () => {
+    // Booklet 8 has no canonical target (FRANCHISE §4.2 stops at L7), so the
+    // report fails loud rather than quietly presenting "S.A.M Level 8" with a
+    // silently down-clamped "L6" beside it. Unreachable in production — the
+    // bank has no content above 6B and grades 7/8 are disabled at intake — so
+    // this asserts the structural guarantee, not a live path.
     const readClient = makeFakeClient({
       responses: [
         { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
@@ -608,14 +617,49 @@ describe("assembleReportContent — placement clamped to the served floor", () =
       ],
     });
 
+    await expect(
+      assembleReportContent({
+        readClient,
+        serviceClient,
+        session: RAILED_SESSION,
+        child: CHILD,
+      }),
+    ).rejects.toThrow(CanonicalLevelError);
+  });
+
+  it("does NOT clamp when a ceiling item was actually served (normal multi-level run)", async () => {
+    const readClient = makeFakeClient({
+      responses: [
+        { question_id: "q1", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+        { question_id: "q2", is_correct: true, detected_misconceptions: [], time_flag: "NORMAL" },
+      ],
+      tax_sub_strands: [],
+      tax_content: [],
+      misconceptions: [],
+      curriculum_recommendations: [],
+    });
+    const serviceClient = makeFakeClient({
+      questions: [
+        { id: "q1", content_id: null, strand: "number_sense", level: "0A" },
+        { id: "q2", content_id: null, strand: "number_sense", level: "6B" },
+      ],
+    });
+
     const content = await assembleReportContent({
       readClient,
       serviceClient,
-      session: RAILED_SESSION,
+      session: {
+        ...SESSION,
+        current_estimate: {
+          ...VALID_PLACEMENT_JSON,
+          overall_level: "6B",
+        } as never,
+      },
       child: CHILD,
     });
 
-    // An 8B item was served, so the 8B estimate is trustworthy — unchanged.
-    expect(content.placement.sam_level).toBe("S.A.M Level 8");
+    // A 6B item was served, so the 6B estimate is trustworthy — unchanged.
+    expect(content.placement.sam_level).toBe("S.A.M Level 6");
+    expect(content.placement.canonical_level).toBe("L6");
   });
 });

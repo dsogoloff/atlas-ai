@@ -42,6 +42,7 @@ const PREVIEW_CONTENT: ReportContent = {
   time_flag: "normal",
   placement: {
     sam_level: "S.A.M Level 4",
+    canonical_level: "L4",
     overall_percentage: 75,
     tier: "K_4",
   },

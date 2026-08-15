@@ -1734,7 +1734,10 @@ describe("submitResponseHandler — analytics funnel by test_type", () => {
     expect(placementCall?.[2]?.props).toMatchObject({
       termination_reason: "max-questions-reached",
     });
-    expect(placementCall?.[2]?.props).toHaveProperty("sam_level");
+    // `placement_band` (raw half-grade), not `sam_level` — that key now means
+    // the parent-facing label on the report and must not mean two things.
+    expect(placementCall?.[2]?.props).toHaveProperty("placement_band");
+    expect(placementCall?.[2]?.props).not.toHaveProperty("sam_level");
   });
 
   it("comprehensive session terminating: emits comprehensive_test_completed + placement_recommendation_created", async () => {

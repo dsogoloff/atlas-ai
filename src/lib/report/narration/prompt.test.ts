@@ -15,7 +15,12 @@ const BASE: ReportContent = {
     report_id: "A-1",
   },
   time_flag: "normal",
-  placement: { sam_level: "S.A.M Level 4", overall_percentage: 70, tier: "K_4" },
+  placement: {
+    sam_level: "S.A.M Level 4",
+    canonical_level: "L4",
+    overall_percentage: 70,
+    tier: "K_4",
+  },
   strand_mastery: [
     { strand: "whole_numbers", correct: 6, total: 8, percentage: 75, band: "mastery" },
     { strand: "measurement", correct: 1, total: 3, percentage: 33, band: "area_of_focus" },
