@@ -19,6 +19,7 @@
 
 import { headers } from "next/headers";
 
+import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { SignupSchema, type SignupInput } from "./schema";
 
@@ -82,10 +83,13 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
   }
   const center = activeCenters[0];
 
-  // Read request headers once — used for both the email redirect URL
-  // and the audit-log entries below.
+  // Read request headers once — used for the audit-log entries below.
+  //
+  // ATLAS-011: these are NO LONGER used to build the email redirect URL. This
+  // used to be `h.get("origin") ?? h.get("referer")`, both caller-controlled:
+  // a forged Origin made Supabase mail the victim a confirmation link pointing
+  // at the attacker's domain. The redirect now comes from APP_PUBLIC_ORIGIN.
   const h = await headers();
-  const origin = h.get("origin") ?? h.get("referer") ?? "";
 
   const fullName = `${data.firstName} ${data.lastName}`.trim();
 
@@ -112,9 +116,10 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
       // (the PKCE /auth/callback exchange failed cross-device and on link
       // pre-fetch with verify_failed). emailRedirectTo is kept aligned with that
       // /auth/confirm destination; the template controls the actual link + next.
-      emailRedirectTo: origin
-        ? `${origin}/auth/confirm?next=/coppa`
-        : undefined,
+      // ATLAS-011: canonical origin, never a request header. No fallback —
+      // if the deployment is misconfigured this throws rather than mailing a
+      // link built from whatever the caller supplied.
+      emailRedirectTo: canonicalUrl("/auth/confirm?next=/coppa"),
     },
   });
   if (signupErr || !signup.user) {

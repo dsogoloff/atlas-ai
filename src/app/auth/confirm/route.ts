@@ -32,6 +32,7 @@ import { NextResponse, after, type NextRequest } from "next/server";
 
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { notifyAccountCreated } from "@/lib/staffAlerts/notify";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
@@ -138,7 +139,11 @@ export async function GET(request: NextRequest) {
         notifyAccountCreated({
           parentName: parent.name,
           parentEmail: parent.email,
-          adminUrl: `${url.origin}/admin`,
+          // ATLAS-011: canonical origin, NOT url.origin. `request.url` is built
+          // from the Host / X-Forwarded-Host header, so a forged host would put
+          // an attacker-controlled "admin" link inside an email we send to
+          // staff — a phishing vector into the admin panel.
+          adminUrl: canonicalUrl("/admin"),
         }).catch(() => undefined),
       );
     }

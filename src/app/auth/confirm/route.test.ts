@@ -6,7 +6,7 @@
 // (bad/missing token, verifyOtp error) -> /signup?error=verify_failed. Mirrors
 // /auth/callback's audit writes. No device-bound verifier cookie needed.
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockVerifyOtp = vi.fn();
 const mockMaybeSingle = vi.fn();
@@ -72,7 +72,16 @@ function location(res: Response): string {
   return res.headers.get("location") ?? "";
 }
 
+// ATLAS-011: the admin link in the staff alert is built from APP_PUBLIC_ORIGIN,
+// not from request.url (which derives from the Host header). Set deliberately
+// DIFFERENT from the request origin in one test below to prove the link follows
+// config rather than the request.
+beforeEach(() => {
+  vi.stubEnv("APP_PUBLIC_ORIGIN", ORIGIN);
+});
+
 afterEach(() => {
+  vi.unstubAllEnvs();
   mockVerifyOtp.mockReset();
   mockMaybeSingle.mockReset();
   mockAuditInsert.mockClear();
@@ -219,6 +228,29 @@ describe("GET /auth/confirm — staff account-created alert", () => {
     expect(mockNotifyAccountCreated).not.toHaveBeenCalled();
     // The audit trail is still written — only the alert is suppressed.
     expect(mockAuditInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("the admin link follows APP_PUBLIC_ORIGIN, not the request's host (ATLAS-011)", async () => {
+    // The request arrives on a spoofed host; the emailed admin link must still
+    // point at the canonical origin. Otherwise a forged Host puts an
+    // attacker-controlled "admin" link into an email we send to staff.
+    confirmedParent();
+    vi.stubEnv("APP_PUBLIC_ORIGIN", ORIGIN);
+
+    const spoofed = {
+      url: "https://evil.example/auth/confirm?token_hash=abc&type=email",
+    } as unknown as NextRequest;
+
+    await GET(spoofed);
+
+    expect(mockNotifyAccountCreated).toHaveBeenCalledWith(
+      expect.objectContaining({ adminUrl: `${ORIGIN}/admin` }),
+    );
+    expect(mockNotifyAccountCreated).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminUrl: expect.stringContaining("evil.example"),
+      }),
+    );
   });
 
   it("does not fire when verification fails", async () => {

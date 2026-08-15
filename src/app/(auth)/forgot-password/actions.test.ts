@@ -5,7 +5,7 @@
 // fails, or throws. Otherwise an attacker could distinguish registered from
 // unregistered emails.
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockResetForEmail = vi.fn();
 
@@ -21,8 +21,16 @@ vi.mock("next/headers", () => ({
 
 import { requestPasswordReset } from "./actions";
 
+// ATLAS-011: the recovery link's origin now comes from APP_PUBLIC_ORIGIN, not
+// from request headers. The expected URL below is unchanged — only its SOURCE
+// moved, which is the whole point of the finding.
+beforeEach(() => {
+  vi.stubEnv("APP_PUBLIC_ORIGIN", "https://app.samnewyork.com");
+});
+
 afterEach(() => {
   mockResetForEmail.mockReset();
+  vi.unstubAllEnvs();
 });
 
 describe("requestPasswordReset — neutral, anti-enumeration", () => {
