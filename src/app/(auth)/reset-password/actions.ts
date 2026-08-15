@@ -17,6 +17,10 @@
 //   4. On failure (no/expired recovery session, weak password Supabase rejects)
 //      return a generic error for the form to surface inline.
 
+import {
+  authThrottleMessage,
+  guardAuthAttempt,
+} from "@/lib/quota/authGuard";
 import { createClient } from "@/lib/supabase/server";
 
 import { ResetPasswordSchema, type ResetPasswordInput } from "./schema";
@@ -29,6 +33,14 @@ export async function resetPassword(
   const parsed = ResetPasswordSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Form validation failed. Refresh and try again." };
+  }
+
+  // ATLAS-004: keyed by IP only — the account is identified by the recovery
+  // SESSION, not by anything in the payload, so there is no address to key on
+  // and none should be invented.
+  const guard = await guardAuthAttempt("password_set", input);
+  if (!guard.ok) {
+    return { ok: false, error: authThrottleMessage(guard) };
   }
 
   const supabase = await createClient();

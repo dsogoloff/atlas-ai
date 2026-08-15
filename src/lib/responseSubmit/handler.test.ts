@@ -1586,6 +1586,9 @@ describe("submitResponseHandler — classifier integration", () => {
       }),
       svc.client,
       PARENT.tenant_id,
+      // ATLAS-004: the session id attributes this call to the per-session AI
+      // ceiling. The high-volume call site — one per answered response.
+      SESSION_ID,
     );
   });
 });

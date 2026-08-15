@@ -35,6 +35,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { generateObject } from "ai";
 
 import { getAnthropicApiKey, isMisconceptionClassifierLive } from "@/lib/env";
+import { consumeAiCall } from "@/lib/quota/aiSpend";
 
 import {
   PROMPT_VERSION,
@@ -69,10 +70,18 @@ const STUB_OUTPUT: ClassifierOutput = {
 export async function callHaiku(
   input: ClassifierInput,
   taxonomy: TaxonomyMap,
+  sessionId?: string | null,
 ): Promise<ClassifierOutput> {
   if (!isMisconceptionClassifierLive()) {
     return STUB_OUTPUT;
   }
+
+  // ATLAS-004: spend ceiling. Sits here — the single choke point every live
+  // classifier call passes through — so no caller can route around it. Throws
+  // when a ceiling is reached; classify() already catches everything and
+  // returns method:'failed', so the existing degrade path handles it and no
+  // new failure mode is introduced.
+  await consumeAiCall(sessionId);
 
   // Validate ANTHROPIC_API_KEY is set in live mode. The AI SDK reads it
   // from process.env automatically; we eagerly call getAnthropicApiKey()

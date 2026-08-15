@@ -7,6 +7,13 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// ATLAS-004: the route consumes an auth-attempt quota before verifying the
+// token. Allowed here; the limiter has its own coverage.
+vi.mock("@/lib/quota/authLimits", () => ({
+  consumeAuthAttempt: vi.fn(async () => ({ allowed: true, retryAfterSeconds: 0 })),
+}));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+
 const mockVerifyOtp = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({

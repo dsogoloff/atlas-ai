@@ -21,6 +21,7 @@
 // vpc_event_type enum has no reset event), so there is nothing consistent to
 // write — unlike /auth/confirm, which completes the COPPA verification trail.
 
+import { guardAuthAttempt } from "@/lib/quota/authGuard";
 import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,18 @@ export async function requestPasswordReset(
   // already validates client-side, and surfacing a distinct error here would
   // leak nothing useful while breaking the single-state anti-enumeration UX.
   if (!parsed.success) {
+    return { ok: true };
+  }
+
+  // ATLAS-004: reset mail is the classic amplification vector — cheap to
+  // request, lands in someone else's inbox. Limited tightly per email.
+  //
+  // NOTE the deliberate silence: this action returns the SAME neutral ok:true
+  // whatever happens, to avoid leaking whether an address is registered. A
+  // throttled response that said "too many attempts" would reintroduce exactly
+  // that oracle, so a blocked request simply stops doing work and returns ok.
+  const guard = await guardAuthAttempt("reset", input, parsed.data.email);
+  if (!guard.ok) {
     return { ok: true };
   }
 

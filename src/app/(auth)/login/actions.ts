@@ -24,6 +24,10 @@
 // No audit row written (Phase 3 D4): compliance.md §2 audit trail
 // covers VPC events only; login is out of scope.
 
+import {
+  authThrottleMessage,
+  guardAuthAttempt,
+} from "@/lib/quota/authGuard";
 import { createClient } from "@/lib/supabase/server";
 
 import { LoginSchema, type LoginInput } from "./schema";
@@ -43,6 +47,14 @@ export async function loginAction(input: LoginInput): Promise<LoginResult> {
     };
   }
   const data = parsed.data;
+
+  // ATLAS-004: size cap + rate limit before any GoTrue round-trip. Keyed by IP
+  // (generous) and by the account being signed into (tight), so shared NAT does
+  // not collectively lock out a household. Message is deliberately generic.
+  const guard = await guardAuthAttempt("login", input, data.email);
+  if (!guard.ok) {
+    return { ok: false, error: authThrottleMessage(guard) };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({

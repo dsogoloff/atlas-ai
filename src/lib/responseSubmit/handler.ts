@@ -661,6 +661,10 @@ export async function submitResponseHandler({
     },
     serviceClient,
     parent.tenant_id,
+    // ATLAS-004: attributes this classifier call to the session so the
+    // per-session AI ceiling applies. This is the high-volume call site — one
+    // per answered response — so it is the one a retry storm would multiply.
+    request.session_id,
   );
 
   // ---------------------------------------------------------------------------

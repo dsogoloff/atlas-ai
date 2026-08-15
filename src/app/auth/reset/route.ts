@@ -23,8 +23,11 @@
 // verification trail; there is no consent-semantics-consistent row to write
 // here, and reusing a consent event would corrupt that trail.
 
+import { headers } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { consumeAuthAttempt } from "@/lib/quota/authLimits";
+import { extractClientIp } from "@/lib/questionAccessLog/log";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -43,6 +46,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       `${url.origin}/forgot-password?error=reset_failed`,
     );
+  }
+
+  // ATLAS-004: token verification is cheap and legitimate retries happen (mail
+  // scanners pre-fetch these links), so the limit is loose — it exists to stop
+  // enumeration hammering, not to police normal use. Keyed by IP only: the
+  // token is opaque and there is no account identifier to key on before it is
+  // verified. Real HTTP 429 here, since this is a route handler.
+  const throttle = await consumeAuthAttempt(
+    "confirm",
+    extractClientIp(await headers()),
+  );
+  if (!throttle.allowed) {
+    return new NextResponse("Too many attempts. Please try again shortly.", {
+      status: 429,
+      headers: {
+        // Coarse and constant — the precise reset time is internal state.
+        "Retry-After": String(throttle.retryAfterSeconds),
+      },
+    });
   }
 
   const auth = await createClient();

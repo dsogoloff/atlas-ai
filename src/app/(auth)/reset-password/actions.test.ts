@@ -7,6 +7,14 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// ATLAS-004: the auth rate limiter runs before the action's own work. These
+// tests are about that work, not the limiter (unit-tested in
+// lib/quota/authLimits.test.ts, store behaviour in tests/integration/quota).
+vi.mock("@/lib/quota/authGuard", () => ({
+  guardAuthAttempt: vi.fn(async () => ({ ok: true })),
+  authThrottleMessage: () => "Too many attempts.",
+}));
+
 const mockUpdateUser = vi.fn();
 const mockSignOut = vi.fn(async () => ({ error: null }));
 
