@@ -36,6 +36,8 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
 import { ReportArticle } from "@/app/(parent)/report/report-article";
+
+import { StaffPlacementBlock } from "./staff-placement-block";
 import {
   ENGINE_STRAND_LABELS,
   STRAND_LABELS,
@@ -318,6 +320,22 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
             // admin-only deep affordances (strand coverage, item-level review)
             // stay AFTER the report; the parent-account panel renders above it.
             <>
+              {/* SHORT tests only. ReportArticle withholds the PlacementCard
+                  when `readiness` is present (a short sample yields no
+                  parent-facing placement) — correct for parents, but it left
+                  the DIRECTOR with no level to enter at enrollment. This
+                  staff-only block restores that value on the staff surface
+                  WITHOUT touching the parent-side withholding.
+
+                  Comprehensive (`readiness === null`) is deliberately excluded:
+                  ReportArticle already renders its PlacementCard, so adding
+                  this would duplicate the placement on the same page. */}
+              {report.readiness && (
+                <StaffPlacementBlock
+                  samLevel={report.placement.sam_level}
+                  canonicalLevel={report.placement.canonical_level}
+                />
+              )}
               <ReportArticle
                 reportContent={report}
                 narrationProse={narrationProse}

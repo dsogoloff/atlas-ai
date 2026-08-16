@@ -302,3 +302,75 @@ describe("StudentDiagnosticPage — admin sees the full parent report", () => {
     expect(vi.mocked(assembleReportContent)).not.toHaveBeenCalled();
   });
 });
+
+// =============================================================================
+// Staff-only placement block — SHORT tests.
+//
+// The parent-facing short report withholds the placement on purpose. That left
+// the DIRECTOR with no level to enter at enrollment, because the admin surface
+// renders the same ReportArticle. These pin the staff-only restoration: present
+// on a short test, absent on comprehensive (where ReportArticle already shows
+// it), and carrying BOTH the label and the canonical iClassPro value.
+// =============================================================================
+
+/** Same report, but SHORT: `readiness` non-null is what makes it a short test.
+ *  The measured placement (Level 2 / L2) is deliberately DIFFERENT from the
+ *  readiness label (0A) so the assertions below can only be satisfied by the
+ *  staff block — not by the readiness line, which also renders "S.A.M Level X". */
+const SHORT_REPORT: ReportContent = {
+  ...REPORT,
+  placement: {
+    sam_level: "S.A.M Level 2",
+    canonical_level: "L2",
+    overall_percentage: 100,
+    tier: "K_4",
+  },
+  readiness: { ready: true, currentLevelLabel: "0A" },
+};
+
+const SHORT_SESSION = { ...SESSION_OK, test_type: "short" };
+
+async function renderAdminWith(report: ReportContent, session: unknown) {
+  const svc = reportServiceClient();
+  mockCreateClient.mockResolvedValue(reportRlsClient(session));
+  mockCreateServiceClient.mockReturnValue(svc);
+  mockResolveStaff.mockResolvedValue({
+    kind: "admin",
+    id: "a1",
+    tenant_id: "t1",
+    name: "Dev Admin",
+  });
+  vi.mocked(assembleReportContent).mockResolvedValue(report);
+  return renderToStaticMarkup(
+    await StudentDiagnosticPage({ params: Promise.resolve({ childId: CHILD_ID }) }),
+  );
+}
+
+describe("StudentDiagnosticPage — staff-only placement on a SHORT test", () => {
+  it("shows BOTH the S.A.M label and the canonical iClassPro value", async () => {
+    const html = await renderAdminWith(SHORT_REPORT, SHORT_SESSION);
+
+    expect(html).toContain("Placement for enrollment");
+    expect(html).toContain("S.A.M Level 2"); // measured placement, not readiness
+    expect(html).toContain("L2"); // FRANCHISE §4.2 contract value
+    expect(html).toContain("iClassPro level");
+    // Marked staff-only so it is never mistaken for parent-visible copy.
+    expect(html).toContain("Staff only");
+  });
+
+  it("still renders the rest of the admin report around it", async () => {
+    const html = await renderAdminWith(SHORT_REPORT, SHORT_SESSION);
+
+    expect(html).toContain("Strand Performance"); // ReportArticle intact
+    expect(html).toContain("Item-level review"); // admin affordances intact
+  });
+
+  it("does NOT render on a comprehensive report (ReportArticle already shows placement)", async () => {
+    const html = await renderAdminWith(REPORT, SESSION_OK); // readiness: null
+
+    expect(html).not.toContain("Placement for enrollment");
+    expect(html).not.toContain("iClassPro level");
+    // Comprehensive is unaffected: its own PlacementCard still renders.
+    expect(html).toContain("Placement recommendation");
+  });
+});
