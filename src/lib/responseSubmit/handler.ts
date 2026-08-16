@@ -162,7 +162,6 @@ import { deriveTier } from "@/lib/tier/derive";
 import { hasValidConsent } from "@/lib/consent/verify";
 import { classify } from "@/lib/misconceptionClassifier/classifier";
 import { attemptNarration } from "@/lib/report/narration/trigger";
-import { logQuestionServe } from "@/lib/questionAccessLog/log";
 import {
   discoverEmptyBankStrands,
   discoverShortEligibleCounts,
@@ -187,6 +186,7 @@ import {
   type OutcomeResponse,
 } from "@/lib/shortTest/outcome";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
+import { claimNextQuestion } from "@/lib/sessionShared/claimNextQuestion";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import { notifyAssessmentCompleted } from "@/lib/staffAlerts/notify";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -540,6 +540,7 @@ export async function submitResponseHandler({
         tenantId: parent.tenant_id,
         childId: session.child_id,
         ip,
+        answeredQuestionId: request.question_id,
         sessionPick,
         subStrandByContentId: short?.subStrandByContentId,
       },
@@ -706,6 +707,7 @@ export async function submitResponseHandler({
           tenantId: parent.tenant_id,
           childId: session.child_id,
           ip,
+          answeredQuestionId: request.question_id,
           sessionPick,
           subStrandByContentId: short?.subStrandByContentId,
         },
@@ -848,6 +850,7 @@ export async function submitResponseHandler({
       tenantId: parent.tenant_id,
       childId: session.child_id,
       ip,
+      answeredQuestionId: request.question_id,
       sessionPick,
       subStrandByContentId: short?.subStrandByContentId,
     },
@@ -1434,6 +1437,10 @@ interface PickContext {
   tenantId: string;
   childId: string;
   ip: string | null;
+  /** ATLAS-003: the question this submit answered. The claim advances the
+   *  session only if it is still waiting on exactly this question, which is
+   *  what stops two concurrent submits serving two different next questions. */
+  answeredQuestionId: string | null;
   /** Drives the level-lock band + picker choice on the next pick. */
   sessionPick: SessionPickParams;
   /** Task 3 — short-test AXIS-B sub-strand coverage map (content_id →
@@ -1545,16 +1552,47 @@ async function pickAndMaybeClose(
       continue;
     }
 
+    // ATLAS-003: claim + log atomically. Previously this was a bare
+    // question_access_log insert, which meant two concurrent submits of the
+    // same served question could each log a DIFFERENT next question and fork
+    // the assessment. The claim holds a row lock, so exactly one advances.
+    let outcome;
     try {
-      await logQuestionServe(serviceClient, {
-        tenantId: ctx.tenantId,
+      outcome = await claimNextQuestion(serviceClient, {
         sessionId: ctx.sessionId,
+        answeredQuestionId: ctx.answeredQuestionId,
+        nextQuestionId: pick.question.id,
+        tenantId: ctx.tenantId,
         childId: ctx.childId,
-        questionId: pick.question.id,
         ip: ctx.ip,
       });
     } catch (e) {
       return { kind: "error", message: errorMessage(e) };
+    }
+
+    if (outcome.kind === "completed") {
+      // The session finished under us. Report it as exhausted rather than
+      // serving into a closed session; the caller renders the terminal shape.
+      return { kind: "exhausted" };
+    }
+
+    if (outcome.kind === "superseded") {
+      // We lost the claim. The winner's serve is COMMITTED (it happened inside
+      // the same transaction as the claim), so the outstanding lookup is now
+      // guaranteed to find it — no race, no second pick.
+      let winner;
+      try {
+        winner = await findOutstandingQuestion(serviceClient, ctx.sessionId);
+      } catch (e) {
+        return { kind: "error", message: errorMessage(e) };
+      }
+      if (!winner) {
+        return {
+          kind: "error",
+          message: "claim superseded but no outstanding question found",
+        };
+      }
+      return { kind: "picked", question: winner, request: req };
     }
 
     return { kind: "picked", question: pick.question, request: req };

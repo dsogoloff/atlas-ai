@@ -106,6 +106,7 @@ export type Database = {
           created_at: string
           current_estimate: Json | null
           engine_prior_version: string
+          expected_question_id: string | null
           id: string
           session_time_flag:
             | Database["public"]["Enums"]["session_time_flag"]
@@ -123,6 +124,7 @@ export type Database = {
           created_at?: string
           current_estimate?: Json | null
           engine_prior_version?: string
+          expected_question_id?: string | null
           id?: string
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
@@ -140,6 +142,7 @@ export type Database = {
           created_at?: string
           current_estimate?: Json | null
           engine_prior_version?: string
+          expected_question_id?: string | null
           id?: string
           session_time_flag?:
             | Database["public"]["Enums"]["session_time_flag"]
@@ -1354,6 +1357,17 @@ export type Database = {
       app_caller_is_active_staff: { Args: never; Returns: boolean }
       issue_staff_recovery_codes: { Args: { p_hashes: string[] }; Returns: number }
       redeem_staff_recovery_code: { Args: { p_code_hash: string }; Returns: boolean }
+      claim_next_question: {
+        Args: {
+          p_session_id: string
+          p_answered_question_id: string | null
+          p_next_question_id: string
+          p_tenant_id: string
+          p_child_id: string
+          p_ip: string | null
+        }
+        Returns: string | null
+      }
       consume_quota: {
         Args: { p_bucket: string; p_window_seconds: number; p_limit: number }
         Returns: { allowed: boolean; used: number; reset_at: string | null }[]
