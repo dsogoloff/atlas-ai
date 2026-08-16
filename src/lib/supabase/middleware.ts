@@ -15,6 +15,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { decideStaffMfaStep, mfaStepPath } from "@/lib/auth/staffMfa";
 import { env } from "@/lib/env";
+import { applySecurityHeaders } from "@/lib/security/headers";
 import type { Database } from "./database.types";
 
 /**
@@ -108,7 +109,13 @@ export async function updateSession(request: NextRequest) {
       const [path, query] = step.split("?");
       target.pathname = path;
       target.search = query ? `?${query}` : "";
-      return NextResponse.redirect(target);
+
+      // ATLAS-012: this response SHORT-CIRCUITS routing, so the headers
+      // declared in next.config never run for it. Apply the same set, from the
+      // same module, so a redirect is not the one response that ships bare.
+      const redirectResponse = NextResponse.redirect(target);
+      applySecurityHeaders(redirectResponse.headers);
+      return redirectResponse;
     }
   }
 
