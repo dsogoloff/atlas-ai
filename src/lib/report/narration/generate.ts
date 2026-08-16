@@ -39,7 +39,7 @@ export async function generateReportNarration(
   content: ReportContent,
 ): Promise<ReportNarration> {
   const { system, prompt } = buildNarrationPrompt(content);
-  const result = await callSonnet(system, prompt);
+  const result = await callSonnet(system, prompt, content.session_id);
 
   const failed = (): ReportNarration => ({
     session_id: content.session_id,

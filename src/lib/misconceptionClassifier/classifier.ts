@@ -30,6 +30,9 @@ export async function classify(
   input: ClassifierInput,
   serviceClient: SupabaseClient<Database>,
   tenantId: string,
+  /** ATLAS-004: attributes the call to a session so the per-session AI ceiling
+   *  applies. Optional — without it only the global daily ceiling does. */
+  sessionId?: string | null,
 ): Promise<ClassifierOutput> {
   // R2: only run on incorrect responses.
   if (input.isCorrect) {
@@ -76,7 +79,7 @@ export async function classify(
   // (taxonomy load, prompt build, LLM call) resolves to method='failed'.
   try {
     const taxonomy = await loadTaxonomy(serviceClient, tenantId);
-    return await callHaiku(input, taxonomy);
+    return await callHaiku(input, taxonomy, sessionId);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[classifier] haiku branch failed", { error: msg });

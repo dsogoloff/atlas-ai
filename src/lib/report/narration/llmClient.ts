@@ -32,6 +32,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 import { getAnthropicApiKey, isReportNarrationLive } from "@/lib/env";
+import { consumeAiCall } from "@/lib/quota/aiSpend";
 
 /** Direct @ai-sdk/anthropic model string for Sonnet. NO 'anthropic/' prefix
  *  (that was the Vercel AI Gateway convention) and NO date suffix (Sonnet
@@ -85,6 +86,7 @@ export interface CallSonnetResult {
 export async function callSonnet(
   system: string,
   prompt: string,
+  sessionId?: string | null,
 ): Promise<CallSonnetResult> {
   if (!isReportNarrationLive()) {
     return {
@@ -101,6 +103,13 @@ export async function callSonnet(
   // rather than as an opaque 401 from the SDK. Return value isn't
   // passed to the SDK — process.env is the SDK's discovery surface.
   getAnthropicApiKey();
+
+  // ATLAS-004: spend ceiling, at the single choke point for live narration
+  // calls. Throws when reached; attemptNarration's failure isolation swallows
+  // it, no row is persisted, and the report renders data-only through the
+  // existing no-prose fallback. Deliberately NOT returning STUB_TEXT here — in
+  // live mode that would persist stub prose as a real narration.
+  await consumeAiCall(sessionId);
 
   const start = Date.now();
 

@@ -19,6 +19,10 @@
 
 import { headers } from "next/headers";
 
+import {
+  authThrottleMessage,
+  guardAuthAttempt,
+} from "@/lib/quota/authGuard";
 import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { SignupSchema, type SignupInput } from "./schema";
@@ -35,6 +39,14 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
     return { ok: false, error: "Form validation failed. Refresh and try again." };
   }
   const data = parsed.data;
+
+  // ATLAS-004: gate BEFORE any database read or email send. Signup sends mail,
+  // so the limit protects sending reputation as much as the database — tight
+  // per-email, looser per-IP so shared NAT is not collectively punished.
+  const guard = await guardAuthAttempt("signup", input, data.email);
+  if (!guard.ok) {
+    return { ok: false, error: authThrottleMessage(guard) };
+  }
 
   const admin = createServiceClient();
 

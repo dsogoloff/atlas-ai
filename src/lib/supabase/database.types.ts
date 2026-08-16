@@ -1354,6 +1354,10 @@ export type Database = {
       app_caller_is_active_staff: { Args: never; Returns: boolean }
       issue_staff_recovery_codes: { Args: { p_hashes: string[] }; Returns: number }
       redeem_staff_recovery_code: { Args: { p_code_hash: string }; Returns: boolean }
+      consume_quota: {
+        Args: { p_bucket: string; p_window_seconds: number; p_limit: number }
+        Returns: { allowed: boolean; used: number; reset_at: string | null }[]
+      }
       create_child_with_consent: {
         Args: {
           p_parent_id: string

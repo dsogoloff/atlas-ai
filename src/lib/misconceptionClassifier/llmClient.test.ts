@@ -1,6 +1,14 @@
 // vi.mock is hoisted; declare before importing the unit under test.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// ATLAS-004: the AI spend ceiling sits inside callHaiku/callSonnet. These tests
+// are about the LLM call itself, not the ceiling (which has its own unit tests
+// and a real-database integration suite), so it is a no-op here.
+vi.mock("@/lib/quota/aiSpend", () => ({
+  consumeAiCall: vi.fn(async () => undefined),
+  AiQuotaExceededError: class extends Error {},
+}));
+
 vi.mock("ai", () => ({
   generateObject: vi.fn(),
 }));

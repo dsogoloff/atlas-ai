@@ -34,6 +34,8 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { notifyAccountCreated } from "@/lib/staffAlerts/notify";
+import { consumeAuthAttempt } from "@/lib/quota/authLimits";
+import { extractClientIp } from "@/lib/questionAccessLog/log";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 // Email-family OTP types Supabase can mint for a token-hash link. We only ever
@@ -64,6 +66,25 @@ export async function GET(request: NextRequest) {
 
   if (!tokenHash || !isEmailOtpType(type)) {
     return NextResponse.redirect(`${url.origin}/signup?error=verify_failed`);
+  }
+
+  // ATLAS-004: token verification is cheap and legitimate retries happen (mail
+  // scanners pre-fetch these links), so the limit is loose — it exists to stop
+  // enumeration hammering, not to police normal use. Keyed by IP only: the
+  // token is opaque and there is no account identifier to key on before it is
+  // verified. Real HTTP 429 here, since this is a route handler.
+  const throttle = await consumeAuthAttempt(
+    "confirm",
+    extractClientIp(await headers()),
+  );
+  if (!throttle.allowed) {
+    return new NextResponse("Too many attempts. Please try again shortly.", {
+      status: 429,
+      headers: {
+        // Coarse and constant — the precise reset time is internal state.
+        "Retry-After": String(throttle.retryAfterSeconds),
+      },
+    });
   }
 
   const auth = await createClient();
