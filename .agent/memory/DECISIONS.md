@@ -6,18 +6,35 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 ## 2026-08-21
 
 * **`parents.attribution` migration (`20260821150000_hubspot_contract_a_parent_attribution.sql`)
-  confirmed applied to production.** Dimitri ran the migration SQL directly in prod Studio.
-  Confirmed by two independent checks: a direct `information_schema.columns` query against
-  prod (zero rows before, per the original report; Dimitri then applied it), and a live
-  `pnpm convert:prod-catchup:verify` run showing `attribution` present on prod's `parents`
-  table. This was the actual root cause of HubSpot Contract A silently no-op'ing (the
-  column the sync writes into didn't exist) — signup itself was already fixed separately
-  (PR #238's decoupling, commit `1c2557a`). **Not yet independently re-verified end-to-end**
-  (a fresh signup/confirm actually producing a HubSpot contact + staff alert) — see
-  NEXT_ACTIONS.md. Also surfaced: the verify run's LOCAL comparison baseline was stale
-  (predates this migration and two others from mid-August), because `supabase start` reuses
-  an existing local volume rather than replaying migrations — `supabase db reset` is needed
-  for a fully rigorous re-check, not yet done.
+  confirmed applied to PRODUCTION only — Preview remains unconfirmed.** Dimitri ran the
+  migration SQL directly in prod Studio. Confirmed by two independent checks: a direct
+  `information_schema.columns` query against prod (zero rows before, per the original
+  report; Dimitri then applied it), and a live `pnpm convert:prod-catchup:verify` run
+  showing `attribution` present on prod's `parents` table. **Preview is a SEPARATE Supabase
+  project** (`ARCHITECTURE.md` — "Prod/preview use separate Supabase" — confirmed, not
+  assumed) and nothing here checked it; the original outage this migration fixes was first
+  observed on Preview. Do not treat Preview as covered by this entry — see NEXT_ACTIONS.md.
+  **What this actually fixes (precise, per two Codex review findings on PR #242 — both
+  confirmed against the code, both correct, and this entry rewritten because of them):**
+  the missing column broke `/auth/confirm`'s `parents` SELECT (it explicitly selects
+  `attribution`), so `if (parent)` was false and the ENTIRE block — VPC audit rows, the
+  staff alert, AND the `syncHubSpotContact` `after()` call — was skipped silently, on
+  prod, whichever DB it points at. Applying the migration restores that lookup, which
+  restores the staff alert and lets the HubSpot `after()` call actually be reached.
+  **UPDATE, same day: end-to-end now CONFIRMED LIVE by Dimitri.** A real signup/confirm
+  produced both the `parents@samnewyork.com` staff alert email AND a new HubSpot contact —
+  reported directly by Dimitri, not independently re-run by Claude Code. The HubSpot
+  contact landing is itself proof `HUBSPOT_ATLAS_SYNC_TOKEN` is now set and valid in
+  Vercel (`syncContact.ts:68-69` returns immediately with no HTTP call whenever it is
+  unset — a contact cannot land otherwise), so the "remains unset" / "stays fully dark"
+  language above is now HISTORICAL — describing the state through this same day, not the
+  current one. See NEXT_ACTIONS.md for the closed item. **Still unconfirmed:** which
+  Supabase project this test ran against (Preview vs Production — the two are separate
+  projects per `ARCHITECTURE.md`; nothing in Dimitri's report specified). Also still open:
+  the verify run's LOCAL comparison baseline was stale (predates this migration and two
+  others from mid-August), because `supabase start` reuses an existing local volume rather
+  than replaying migrations — `supabase db reset` is needed for a fully rigorous re-check,
+  not yet done.
 
 * **P0 — signup email-confirmation AND password reset were BOTH completely non-functional
   in production, for every user, silently — root-caused and fixed (PR #240, merge commit

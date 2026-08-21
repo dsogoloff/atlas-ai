@@ -35,19 +35,22 @@ full account.
       rls-integration + Vercel all green. One Codex finding (kebab-case filename)
       confirmed and fixed, commit ab58e1b.
 
-- [ ] **STILL OWED — run the live end-to-end verification and record the result.** This
-      session PROVED (a) the new client's options object has `flowType: "implicit"` (unit
-      test) and (b) `@supabase/ssr` hardcodes `pkce` (read the installed package source)
-      — but could NOT prove end-to-end that a real GoTrue server given this config mints a
+- [x] **Live end-to-end verification — CONFIRMED (2026-08-21).** This session PROVED
+      (a) the new client's options object has `flowType: "implicit"` (unit test) and
+      (b) `@supabase/ssr` hardcodes `pkce` (read the installed package source) — but could
+      NOT itself prove end-to-end that a real GoTrue server given this config mints a
       plain-hash token the real routes accept, because `supabase start` failed on every
-      Docker image pull (403 Forbidden against `production.cloudfront.docker.com`,
-      confirmed as an explicit network-policy denial via the session's proxy status
-      endpoint, not transient). A ready-to-run verification script was handed to Dimitri
-      separately — it drives a real signup and a real password reset through the fixed
-      clients, reads the captured emails from Mailpit, asserts no `pkce_` prefix on the
-      token, and invokes the real route handlers end to end. **Run it and record the
-      result here before this is considered fully closed.** Until then the fix is
-      verified-by-construction, not verified-in-production.
+      Docker image pull in this sandboxed session (403 Forbidden against
+      `production.cloudfront.docker.com`, confirmed as an explicit network-policy denial,
+      not transient). Dimitri closed this gap directly: a real signup + confirm produced
+      the `parents@samnewyork.com` staff alert AND a new HubSpot contact — which requires
+      `verifyOtp({token_hash})` to have succeeded (it gates the `parents` SELECT that both
+      `after()` calls sit behind), so the token minted by `createTokenHashClient()` reached
+      the real route as a plain hash, not a `pkce_`-prefixed one. Password reset was NOT
+      separately re-confirmed by this same live test — it shares the identical client and
+      fix, but if a first-hand reset confirmation is wanted, it's still worth doing.
+      **Note on scope, same as the migration item above: which Supabase project (Preview
+      vs Production) this ran against was not stated by Dimitri.**
 
 - [ ] **PARKED — whether any outreach/recovery is warranted for parents who tried to sign
       up while this was broken (needs Dimitri).** Scope this to the corrected window: any
@@ -83,20 +86,35 @@ HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set in Vercel. Zero ch
 
 - [x] **Dimitri: merge PR #238** — DONE (7d4580f).
 
-- [x] **Dimitri: apply the `parents.attribution` migration SQL to production — DONE,
-      confirmed applied (2026-08-21).** This was what actually caused the Preview signup
-      outage above — the column had never been applied to a real DB. Dimitri applied the
-      migration SQL directly in prod Studio. Confirmed via two independent checks:
-      (1) a direct `information_schema.columns` query against prod (initially came back
-      zero rows — before the SQL was applied — then, per Dimitri, he ran it); (2)
-      `pnpm convert:prod-catchup:verify` (`scripts/conversion/prod-bringup/07-verify-prod-schema.ts`),
-      run against prod live, reported `attribution` as a `parents` column present in prod
-      (`prod-only` relative to the comparer's local baseline — see caveat below). Signup
-      itself never depended on this (that was the separate #238 decoupling fix, commit
-      `1c2557a`) — this closes the *capture* half: attribution should now actually persist
-      to HubSpot contacts instead of silently no-op'ing.
-      **Caveat, not yet closed:** that same verify run showed the LOCAL comparison baseline
-      on Dimitri's machine is stale — it predates this migration plus two other
+- [x] **Dimitri: apply the `parents.attribution` migration SQL to PRODUCTION — DONE,
+      confirmed applied (2026-08-21).** Dimitri applied the migration SQL directly in prod
+      Studio. Confirmed via two independent checks: (1) a direct `information_schema.columns`
+      query against prod (initially came back zero rows — before the SQL was applied — then,
+      per Dimitri, he ran it); (2) `pnpm convert:prod-catchup:verify`
+      (`scripts/conversion/prod-bringup/07-verify-prod-schema.ts`), run against prod live,
+      reported `attribution` as a `parents` column present in prod (`prod-only` relative to
+      the comparer's local baseline — see caveat below).
+      **What this fixes, precisely** (corrected per 2 Codex review findings on PR #242 —
+      both confirmed against the code, both correct): the missing column broke
+      `/auth/confirm`'s `parents` SELECT, so `if (parent)` was false and the audit rows,
+      staff alert, AND the `syncHubSpotContact` `after()` call were ALL skipped silently.
+      Applying it restores the lookup — which restores the staff alert and lets the
+      HubSpot `after()` call actually run. **It does NOT mean HubSpot contacts are being
+      written.** `syncHubSpotContact()` (`src/lib/hubspot/syncContact.ts:68-69`) still
+      returns immediately, no HTTP call, because `HUBSPOT_ATLAS_SYNC_TOKEN` remains unset
+      (see the item below — still unchecked). Do not record HubSpot sync as active anywhere
+      until that separate action happens.
+
+- [ ] **STILL OPEN — apply the same migration to PREVIEW (a SEPARATE Supabase project from
+      Production — confirmed in `ARCHITECTURE.md`, "Prod/preview use separate Supabase").**
+      The item above only confirmed Production. The original outage this migration fixes
+      was FIRST observed on Preview (see PR #238's account) — nothing here has confirmed
+      Preview's database has this column. Until it's checked (same `information_schema`
+      query or `convert:prod-catchup:verify` pointed at Preview's connection string, if one
+      exists for it), treat Preview as still potentially broken on this exact defect.
+
+- [ ] **Follow-up, not yet closed:** that same verify run showed the LOCAL comparison
+      baseline on Dimitri's machine is stale — it predates this migration plus two other
       August migrations (`atlas_007_staff_mfa_recovery_codes`, `atlas_004_quota_counters`),
       because `supabase start` reuses an existing local Docker volume rather than
       replaying migrations (`supabase db reset` does). The verify run still reported
@@ -105,14 +123,23 @@ HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set in Vercel. Zero ch
       *everything* the full current migration set requires, only of what the (stale) local
       baseline asked for. **Still worth doing**: `supabase db reset` then re-run
       `pnpm convert:prod-catchup:verify` for a genuinely fresh, no-blind-spots confirmation.
-      **Also still worth doing**: a real end-to-end test (fresh signup + confirm) to verify
-      the HubSpot contact and staff alert actually arrive now that the column exists.
 
-- [ ] **Dimitri (whenever ready, NOT merge-blocking): set `HUBSPOT_ATLAS_SYNC_TOKEN` in
-      Vercel to go live.** Re-verify the connected HubSpot portal id live is still
-      **245446396** immediately before setting it — do not trust any document's claim that
-      it was already checked (guardrail 6). Presence of the token is the only gate; there is
-      no separate LIVE flag.
+- [x] **End-to-end test (fresh signup + confirm) — CONFIRMED by Dimitri (2026-08-21).**
+      A real signup/confirm produced both the `parents@samnewyork.com` staff alert email
+      and a new HubSpot contact. Reported directly by Dimitri; not independently re-run by
+      Claude Code. **Which Supabase project (Preview vs Production) this ran against was
+      not stated** — the two are separate projects (`ARCHITECTURE.md`) and the item above
+      (apply the migration to Preview) should stay open until that's specified, even though
+      this result is strong evidence the whole pipeline works wherever it ran.
+
+- [x] **Set `HUBSPOT_ATLAS_SYNC_TOKEN` in Vercel — CONFIRMED live (2026-08-21), inferred
+      from effect, not a direct env-var check.** `syncContact.ts:68-69` returns immediately
+      with no HTTP call whenever the token is unset or blank — a HubSpot contact cannot
+      land otherwise — so the contact landing in the test above is proof the token is now
+      set and valid. Re-verifying the connected HubSpot portal id live (guardrail 6) was
+      not independently redone here; if that check did not happen before the token was set,
+      do it now as a follow-up, not a blocker (a wrong portal id would show up as contacts
+      landing in the wrong HubSpot account, not as a failure).
 
 - [ ] **Follow-on (not blocked, can be picked up next session): BRIEF-20260820-1711-HUBSPOT**
       — assessment-started/completed child-field events, ship with flag OFF. Was sequenced
