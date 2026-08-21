@@ -45,10 +45,11 @@
      DECISIONS.md 2026-08-21 for the standing lesson).
 3. Dimitri merged PR #238 after the fix; see gates above.
 
-- **PR #238 — claude/relaxed-cerf-ly61pe — OPEN (verify-bar GREEN: 1939 tests / 3 skipped /
-  13 todo, 150 files, up from 1906; tsc --noEmit clean; lint 0 errors, 2 pre-existing
-  unrelated warnings in profile-menu.tsx / layout.tsx). Codex review: manual/skipped, relay
-  not wired in this remote session.**
+- **PR #238 — claude/relaxed-cerf-ly61pe — MERGED (7d4580f, 2026-08-21T14:14:14Z — see the
+  "As of" summary above for final CI/merge state and the post-open fixes). Implementation
+  detail below is as originally shipped; where it describes the `parents` insert carrying
+  `attribution` directly, that was changed by the decoupling fix in commit `1c2557a` —
+  see point 2 above for the current (merged) behavior.**
   "feat(hubspot): Contract A parent contact sync on account confirmation". Implements
   **BRIEF-20260820-1444-HUBSPOT** (SAM-OS brief, HubSpot lane, executed in this repo per the
   lane-routing contract). Fires an account-level HubSpot contact sync ONCE, on the FIRST
@@ -72,8 +73,11 @@
   separate LIVE flag). **Ships fully dark until Dimitri sets it in Vercel.**
   `.env.example` documents the new var, with a reminder to re-verify the connected HubSpot
   portal id (245446396) live before ever setting it in a real deploy (guardrail 6).
-  `signupAction` (`src/app/(auth)/signup/actions.ts`) now persists `getAttribution()` onto
-  the `parents` insert as `attribution` (null when empty, never `{}`).
+  `signupAction` (`src/app/(auth)/signup/actions.ts`) calls `getAttribution()` at signup.
+  **As merged, this is NOT written on the `parents` creation insert** — it is written by a
+  separate, best-effort UPDATE after the parent row is confirmed created (decoupling fix,
+  commit `1c2557a`, point 2 above); the creation insert carries only the fields that make an
+  account exist. Do not reintroduce writing `attribution` on the creation insert.
   `/auth/confirm/route.ts` extended its `parents` select (`attribution, created_at`) and
   added a SECOND, INDEPENDENT `after()` call for `syncHubSpotContact(...)` inside the
   existing `firstConfirmation` guard, alongside — never replacing — the #211/#233
