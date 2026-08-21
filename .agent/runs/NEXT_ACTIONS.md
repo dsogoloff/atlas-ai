@@ -35,19 +35,22 @@ full account.
       rls-integration + Vercel all green. One Codex finding (kebab-case filename)
       confirmed and fixed, commit ab58e1b.
 
-- [ ] **STILL OWED — run the live end-to-end verification and record the result.** This
-      session PROVED (a) the new client's options object has `flowType: "implicit"` (unit
-      test) and (b) `@supabase/ssr` hardcodes `pkce` (read the installed package source)
-      — but could NOT prove end-to-end that a real GoTrue server given this config mints a
+- [x] **Live end-to-end verification — CONFIRMED (2026-08-21).** This session PROVED
+      (a) the new client's options object has `flowType: "implicit"` (unit test) and
+      (b) `@supabase/ssr` hardcodes `pkce` (read the installed package source) — but could
+      NOT itself prove end-to-end that a real GoTrue server given this config mints a
       plain-hash token the real routes accept, because `supabase start` failed on every
-      Docker image pull (403 Forbidden against `production.cloudfront.docker.com`,
-      confirmed as an explicit network-policy denial via the session's proxy status
-      endpoint, not transient). A ready-to-run verification script was handed to Dimitri
-      separately — it drives a real signup and a real password reset through the fixed
-      clients, reads the captured emails from Mailpit, asserts no `pkce_` prefix on the
-      token, and invokes the real route handlers end to end. **Run it and record the
-      result here before this is considered fully closed.** Until then the fix is
-      verified-by-construction, not verified-in-production.
+      Docker image pull in this sandboxed session (403 Forbidden against
+      `production.cloudfront.docker.com`, confirmed as an explicit network-policy denial,
+      not transient). Dimitri closed this gap directly: a real signup + confirm produced
+      the `parents@samnewyork.com` staff alert AND a new HubSpot contact — which requires
+      `verifyOtp({token_hash})` to have succeeded (it gates the `parents` SELECT that both
+      `after()` calls sit behind), so the token minted by `createTokenHashClient()` reached
+      the real route as a plain hash, not a `pkce_`-prefixed one. Password reset was NOT
+      separately re-confirmed by this same live test — it shares the identical client and
+      fix, but if a first-hand reset confirmation is wanted, it's still worth doing.
+      **Note on scope, same as the migration item above: which Supabase project (Preview
+      vs Production) this ran against was not stated by Dimitri.**
 
 - [ ] **PARKED — whether any outreach/recovery is warranted for parents who tried to sign
       up while this was broken (needs Dimitri).** Scope this to the corrected window: any
@@ -120,15 +123,23 @@ HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set in Vercel. Zero ch
       *everything* the full current migration set requires, only of what the (stale) local
       baseline asked for. **Still worth doing**: `supabase db reset` then re-run
       `pnpm convert:prod-catchup:verify` for a genuinely fresh, no-blind-spots confirmation.
-      **Also still worth doing**: a real end-to-end test (fresh signup + confirm) to verify
-      the staff alert now arrives (HubSpot cannot be verified this way until the sync token
-      is set — see the item below).
 
-- [ ] **Dimitri (whenever ready, NOT merge-blocking): set `HUBSPOT_ATLAS_SYNC_TOKEN` in
-      Vercel to go live.** Re-verify the connected HubSpot portal id live is still
-      **245446396** immediately before setting it — do not trust any document's claim that
-      it was already checked (guardrail 6). Presence of the token is the only gate; there is
-      no separate LIVE flag.
+- [x] **End-to-end test (fresh signup + confirm) — CONFIRMED by Dimitri (2026-08-21).**
+      A real signup/confirm produced both the `parents@samnewyork.com` staff alert email
+      and a new HubSpot contact. Reported directly by Dimitri; not independently re-run by
+      Claude Code. **Which Supabase project (Preview vs Production) this ran against was
+      not stated** — the two are separate projects (`ARCHITECTURE.md`) and the item above
+      (apply the migration to Preview) should stay open until that's specified, even though
+      this result is strong evidence the whole pipeline works wherever it ran.
+
+- [x] **Set `HUBSPOT_ATLAS_SYNC_TOKEN` in Vercel — CONFIRMED live (2026-08-21), inferred
+      from effect, not a direct env-var check.** `syncContact.ts:68-69` returns immediately
+      with no HTTP call whenever the token is unset or blank — a HubSpot contact cannot
+      land otherwise — so the contact landing in the test above is proof the token is now
+      set and valid. Re-verifying the connected HubSpot portal id live (guardrail 6) was
+      not independently redone here; if that check did not happen before the token was set,
+      do it now as a follow-up, not a blocker (a wrong portal id would show up as contacts
+      landing in the wrong HubSpot account, not as a failure).
 
 - [ ] **Follow-on (not blocked, can be picked up next session): BRIEF-20260820-1711-HUBSPOT**
       — assessment-started/completed child-field events, ship with flag OFF. Was sequenced

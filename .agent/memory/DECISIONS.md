@@ -21,17 +21,20 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
   staff alert, AND the `syncHubSpotContact` `after()` call — was skipped silently, on
   prod, whichever DB it points at. Applying the migration restores that lookup, which
   restores the staff alert and lets the HubSpot `after()` call actually be reached.
-  **It does NOT mean HubSpot contacts are now being written.** `syncHubSpotContact()`
-  itself (`src/lib/hubspot/syncContact.ts:68-69`) still returns immediately — no HTTP call
-  at all — because `HUBSPOT_ATLAS_SYNC_TOKEN` remains unset (`NEXT_ACTIONS.md`, still
-  unchecked). HubSpot sync stays fully dark until that separate action happens; do not
-  record it as active or repaired anywhere. **Not yet independently re-verified
-  end-to-end** (a fresh signup/confirm actually producing a staff alert — HubSpot cannot
-  be verified until the token is set) — see NEXT_ACTIONS.md. Also surfaced: the verify
-  run's LOCAL comparison baseline was stale (predates this migration and two others from
-  mid-August), because `supabase start` reuses an existing local volume rather than
-  replaying migrations — `supabase db reset` is needed for a fully rigorous re-check, not
-  yet done.
+  **UPDATE, same day: end-to-end now CONFIRMED LIVE by Dimitri.** A real signup/confirm
+  produced both the `parents@samnewyork.com` staff alert email AND a new HubSpot contact —
+  reported directly by Dimitri, not independently re-run by Claude Code. The HubSpot
+  contact landing is itself proof `HUBSPOT_ATLAS_SYNC_TOKEN` is now set and valid in
+  Vercel (`syncContact.ts:68-69` returns immediately with no HTTP call whenever it is
+  unset — a contact cannot land otherwise), so the "remains unset" / "stays fully dark"
+  language above is now HISTORICAL — describing the state through this same day, not the
+  current one. See NEXT_ACTIONS.md for the closed item. **Still unconfirmed:** which
+  Supabase project this test ran against (Preview vs Production — the two are separate
+  projects per `ARCHITECTURE.md`; nothing in Dimitri's report specified). Also still open:
+  the verify run's LOCAL comparison baseline was stale (predates this migration and two
+  others from mid-August), because `supabase start` reuses an existing local volume rather
+  than replaying migrations — `supabase db reset` is needed for a fully rigorous re-check,
+  not yet done.
 
 * **P0 — signup email-confirmation AND password reset were BOTH completely non-functional
   in production, for every user, silently — root-caused and fixed (PR #240, merge commit
