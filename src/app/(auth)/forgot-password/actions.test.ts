@@ -9,8 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockResetForEmail = vi.fn();
 
-vi.mock("@/lib/supabase/tokenHashClient", () => ({
-  createTokenHashClient: () => ({
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => ({
     auth: { resetPasswordForEmail: mockResetForEmail },
   }),
 }));

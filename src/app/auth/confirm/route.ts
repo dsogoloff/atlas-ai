@@ -96,19 +96,6 @@ export async function GET(request: NextRequest) {
   });
 
   if (verifyErr || !verified.user) {
-    // Was previously SILENT — the only reason the 2026-04-26..2026-08-21
-    // pkce_-token outage took a live production log dig to root-cause: a 307
-    // to here is byte-identical to the success 307 below, and there was no
-    // log line distinguishing "verifyOtp rejected this" from "never called."
-    // code/status come straight from Supabase's AuthError (e.g. 'otp_expired'
-    // for a genuinely expired/used token) — log them raw, don't guess a
-    // category, so a genuinely-expired token is distinguishable in logs from
-    // a structurally-rejected one (wrong flow, malformed hash, etc.).
-    console.error("[auth] confirm verifyOtp failed", {
-      code: verifyErr?.code,
-      status: verifyErr?.status,
-      message: verifyErr?.message,
-    });
     return NextResponse.redirect(`${url.origin}/signup?error=verify_failed`);
   }
 

@@ -25,8 +25,7 @@ import {
 } from "@/lib/quota/authGuard";
 import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { getAttribution } from "@/lib/marketing/server";
-import { createServiceClient } from "@/lib/supabase/server";
-import { createTokenHashClient } from "@/lib/supabase/tokenHashClient";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { SignupSchema, type SignupInput } from "./schema";
 
@@ -123,12 +122,7 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
   const hasAttribution = Object.keys(attribution).length > 0;
 
   // Create auth user (queues verification email — see compliance.md §2).
-  //
-  // Dedicated non-PKCE client — see tokenHashClient.ts. signUp() mints the
-  // confirmation-email token; /auth/confirm verifies it via
-  // verifyOtp({ token_hash }), which needs a plain-hash token, not the
-  // pkce_-prefixed one the shared @supabase/ssr client would mint.
-  const auth = createTokenHashClient();
+  const auth = await createClient();
   const { data: signup, error: signupErr } = await auth.auth.signUp({
     email: data.email,
     password: data.password,
