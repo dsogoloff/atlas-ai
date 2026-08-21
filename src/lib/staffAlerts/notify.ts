@@ -1,12 +1,17 @@
 import "server-only";
 
-// Staff assessment alerts (Resend transactional email) — two operational
+// Staff assessment alerts (Resend transactional email) — three operational
 // notifications to the pilot center's inbox:
 //
 //   1. ACCOUNT CREATED   — a parent completed EMAIL CONFIRMATION (not raw
 //                          signup: an unconfirmed signup is not an account).
-//   2. ASSESSMENT DONE   — a child's assessment session was finalized
+//   2. ASSESSMENT START  — a child's assessment session was freshly created
+//                          server-side and its first question served.
+//   3. ASSESSMENT DONE   — a child's assessment session was finalized
 //                          server-side (the same seam that closes the session).
+//
+// (2) and (3) now arrive as a PAIR per session, so their subject lines are
+// deliberately not confusable — see the subject note on notifyAssessmentStarted.
 //
 // Reuses the follow-up-lead transport wholesale: same RESEND_API_KEY, same
 // verified LEAD_NOTIFY_FROM_EMAIL sender, same LEAD_NOTIFY_LIVE gate. The only
@@ -24,8 +29,10 @@ import "server-only";
 // interfaces below and hand-copied into the body. NEVER pass a whole account /
 // child / session object through here, and NEVER add: score, placement level,
 // strand mastery, misconception flags, item responses, report narrative, child
-// NAME, or child DOB/birth year. The completion alert carries the child's GRADE
-// only — enough for a director to prep a conversation, and no result.
+// NAME, or child DOB/birth year. The start and completion alerts carry the
+// child's GRADE only — enough for a director to prep a conversation, and no
+// result. The started alert deliberately reuses the completion allowlist
+// verbatim rather than widening it: at start time no result even exists.
 // ---------------------------------------------------------------------------
 
 import { getBranding } from "@/lib/branding";
@@ -110,7 +117,49 @@ export async function notifyAccountCreated(
 }
 
 // ---------------------------------------------------------------------------
-// 2. Assessment completed (fired on server-side session finalization)
+// 2. Assessment started (fired on fresh server-side session creation)
+// ---------------------------------------------------------------------------
+
+/**
+ * Allowlisted payload for the assessment-started alert. IDENTICAL to
+ * AssessmentCompletedAlert by design — same child-scoped surface, same COPPA
+ * allowlist, deliberately not widened. Child GRADE is the only child attribute
+ * permitted; at start time there is no score/level/strand mastery to leak even
+ * in principle, and there must never be one here later either.
+ */
+export interface AssessmentStartedAlert {
+  parentName: string;
+  /** `children.grade_level`; null when the child's grade was never captured. */
+  childGrade: string | null;
+  /** Absolute link to the internal student-detail record. */
+  studentUrl: string;
+}
+
+/**
+ * SUBJECT DISCIPLINE: staff now receive a start/complete PAIR for every
+ * session, often minutes apart and adjacent in the inbox. The distinguishing
+ * token is the UPPERCASE `STARTED`, which cannot be misread as the completion
+ * alert's lowercase `completed` even when a mail client truncates the tail.
+ * The completion subject is left exactly as-is — this brief does not touch it.
+ */
+export async function notifyAssessmentStarted(
+  alert: AssessmentStartedAlert,
+): Promise<void> {
+  const grade = alert.childGrade?.trim() || "not provided";
+  await send(`S.A.M assessment STARTED: ${alert.parentName} (grade ${grade})`, [
+    "A child just STARTED their S.A.M assessment.",
+    "",
+    `Parent: ${alert.parentName}`,
+    `Child grade: ${grade}`,
+    `Student record: ${alert.studentUrl}`,
+    "",
+    "This is the START alert — a separate 'completed' email follows when the",
+    "child finishes. No result exists yet and none is included here.",
+  ]);
+}
+
+// ---------------------------------------------------------------------------
+// 3. Assessment completed (fired on server-side session finalization)
 // ---------------------------------------------------------------------------
 
 /**

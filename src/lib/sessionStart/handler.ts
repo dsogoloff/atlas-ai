@@ -136,6 +136,7 @@ import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { hasValidConsent } from "@/lib/consent/verify";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
 import { toNextRequestJson } from "@/lib/responseSubmit/types";
+import { notifyAssessmentStarted } from "@/lib/staffAlerts/notify";
 import type { Database } from "@/lib/supabase/database.types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 
@@ -152,6 +153,12 @@ interface HandlerInput {
   /** Client IP from extractClientIp(); null if no trusted header was
    *  present. Forwarded to question_access_log inserts. */
   ip: string | null;
+  /** Canonical origin (e.g. https://app.samnewyork.com), used ONLY to build the
+   *  absolute staff-record link in the assessment-STARTED staff alert. Null
+   *  degrades that link to a bare path — the alert still sends. Same contract
+   *  as responseSubmit/handler.ts, and the same reason the handler stays
+   *  origin-agnostic: the trust decision belongs at the route boundary. */
+  origin?: string | null;
 }
 
 export async function sessionStartHandler({
@@ -159,6 +166,7 @@ export async function sessionStartHandler({
   rlsClient,
   serviceClient,
   ip,
+  origin = null,
 }: HandlerInput): Promise<StartHandlerResult> {
   // ---------------------------------------------------------------------------
   // 1. Auth — server-validated user, then the calling parent's row.
@@ -171,7 +179,10 @@ export async function sessionStartHandler({
 
   const { data: parent, error: parentErr } = await rlsClient
     .from("parents")
-    .select("id, tenant_id")
+    // `name` feeds the assessment-STARTED staff alert only (see
+    // lib/staffAlerts/notify.ts) — it is the sole parent field that leaves the
+    // box on this path. Mirrors the identical select in responseSubmit/handler.
+    .select("id, tenant_id, name")
     .eq("auth_user_id", userId)
     .maybeSingle();
 
@@ -461,6 +472,25 @@ export async function sessionStartHandler({
     ),
   );
 
+  // Staff alert: tell the center a child just STARTED an assessment. Fired from
+  // the SAME fresh-session seam as the started analytics event above, which is
+  // exactly what makes it ONCE PER SESSION — every re-entry route returns long
+  // before this line:
+  //   - a resume/refresh finds the IN_PROGRESS row at step 3 and returns via
+  //     resumeExisting(),
+  //   - a concurrent duplicate /start loses the INSERT on 23505 and also
+  //     returns via resumeExisting(),
+  //   - a first-pick exhaustion rolls the session back and returns 422 above.
+  // The partial unique index on (child_id) WHERE status='IN_PROGRESS'
+  // guarantees no second fresh session can exist while one is open, so there is
+  // no path that reaches here twice for the same session.
+  notifyStaffAssessmentStarted(
+    parent.name,
+    child.id,
+    child.grade_level,
+    origin,
+  );
+
   // Fresh-session first pick: no responses persisted yet, so the served
   // question is question 1 (response_count + 1 = 1).
   const maxQuestions = await computeMaxQuestions({
@@ -481,6 +511,48 @@ export async function sessionStartHandler({
       max_questions: maxQuestions,
     },
   };
+}
+
+/**
+ * Staff alert: tell the center a child STARTED an assessment. Twin of
+ * notifyStaffAssessmentCompleted in responseSubmit/handler.ts — same shape,
+ * same fail-soft contract, same link target.
+ *
+ * COPPA: the payload is the explicit allowlist on AssessmentStartedAlert —
+ * parent name, child GRADE, and the staff record link. The grade is already in
+ * hand from the earlier `children` read; nothing extra is fetched, and no
+ * result exists at this point in the session's life.
+ *
+ * Non-blocking: wrapped in `after()` so the send happens once the start
+ * response is already on the wire — a child tapping "begin" must never wait on
+ * Resend, and a Resend outage must never stop an assessment from starting.
+ *
+ * The try/catch (rather than the twin's trailing `.catch()`) is deliberate: a
+ * trailing `.catch()` only ever attaches to a returned promise, so it covers a
+ * REJECTION but not a SYNCHRONOUS throw. notifyAssessmentStarted is `async` and
+ * so cannot throw synchronously today — but this seam is the one guarding a
+ * child's ability to begin an assessment, and that guarantee should not rest on
+ * a callee keeping the `async` keyword. Swallowing here makes it unconditional.
+ */
+function notifyStaffAssessmentStarted(
+  parentName: string,
+  childId: string,
+  childGrade: string | null,
+  origin: string | null,
+): void {
+  const path = `/instructor/student/${childId}`;
+  after(async () => {
+    try {
+      await notifyAssessmentStarted({
+        parentName,
+        childGrade,
+        studentUrl: origin ? `${origin}${path}` : path,
+      });
+    } catch {
+      // Fail-soft by construction. The notifier already logs its own
+      // failures on the [staffAlerts] path; nothing to add here.
+    }
+  });
 }
 
 // ===========================================================================
