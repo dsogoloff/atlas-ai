@@ -74,6 +74,18 @@ export async function GET(request: NextRequest) {
   });
 
   if (verifyErr || !verified.user) {
+    // Was previously SILENT — same gap as /auth/confirm (see its comment on
+    // this branch). The user-facing "invalid or expired" copy stays neutral
+    // on purpose (anti-enumeration-adjacent — don't hand back a signal that
+    // distinguishes cause), but logs should not be equally blind: code/status
+    // come straight from Supabase's AuthError (e.g. 'otp_expired' for a
+    // genuinely expired/used token) so a real expiry is distinguishable in
+    // logs from a structurally-rejected token (wrong flow, malformed hash).
+    console.error("[auth] reset verifyOtp failed", {
+      code: verifyErr?.code,
+      status: verifyErr?.status,
+      message: verifyErr?.message,
+    });
     return NextResponse.redirect(
       `${url.origin}/forgot-password?error=reset_failed`,
     );
