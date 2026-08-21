@@ -4,11 +4,120 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-08-21 (ATLAS: **P0 — signup email-confirmation AND password reset were
+BOTH completely non-functional in production, ~8 weeks each, now fixed**) — **PR #240
+MERGED** (merge commit **f4f5d43**, now the `ATLAS-ASSESSMENT` head). Final CI state at
+merge: `verify-bar` GREEN, `rls-integration` GREEN, Vercel GREEN. **This is the current
+`ATLAS-ASSESSMENT` head, and this is the single most significant defect found in this
+project's history — recorded with that weight.**
+
+- **PR #240 — "fix(auth): non-PKCE token-minting client for signup confirm + password
+  reset [P0]" — MERGED (f4f5d43).**
+
+  **What was broken, and the corrected timeline** (an earlier record of this entry said
+  "~4 months since `bfabe14`" — verified against commit history and corrected here, per a
+  Codex review finding on PR #241):
+  - 2026-04-29 (`a12596e`/`1867b0e`): signup + the original PKCE `/auth/callback`
+    confirmation went live. Confirmation worked for a normal same-device/browser user;
+    it had a narrower, already-documented weakness (cross-device confirms, email-scanner
+    link pre-fetches) — **not** the defect below.
+  - **2026-06-27** (`395f48a`): confirmation switched to the token-hash `/auth/confirm`
+    route to fix that weakness. From here on, confirmation became universally broken for
+    everyone — the signup client's `flowType` was never changed and stayed forced to
+    `"pkce"` while the route consuming its token now expected a plain hash.
+  - **2026-06-28** (`1dd4607`): password reset introduced for the first time, built on the
+    token-hash pattern from inception — never worked, but did not exist before this date.
+  - 2026-08-21: PR #240 fixes both.
+  **Universal breakage ran ~8 weeks (2026-06-27 / -28 → 2026-08-21), not ~4 months.**
+  Material: this feeds a live founder question about outreach to affected families —
+  do not use the old "4 months since April" framing for that decision. Silently the
+  whole time either way: no error, no alert, no signal.
+
+  **Root cause:** `@supabase/ssr`'s `createServerClient`/`createBrowserClient` hardcode
+  `flowType: "pkce"` AFTER spreading the caller's own `auth` options — verified by
+  reading the INSTALLED package source directly
+  (`node_modules/@supabase/ssr/dist/module/createServerClient.js`, v0.10.2), not assumed
+  from docs. Because a later key wins a JS spread merge, this is structurally
+  unoverridable by passing options through that function. Every Supabase client in the
+  app went through that wrapper, including the two calls that MINT an emailed auth
+  token — `signUp()` (`signup/actions.ts`) and `resetPasswordForEmail()`
+  (`forgot-password/actions.ts`) — so both minted `pkce_`-prefixed `token_hash` values.
+  But `/auth/confirm` and `/auth/reset` are both built on the TOKEN-HASH flow
+  (`verifyOtp({ token_hash })`), which structurally cannot accept a PKCE token. Those two
+  routes exist specifically to avoid PKCE's cross-device/email-scanner failure mode (per
+  their own docstrings) — so the two halves of the system were designed against each
+  other from day one.
+
+  **How it was found:** a real Vercel production log for a `/auth/confirm` request (an
+  affected production test account — redacted here, on record in PR #240's discussion)
+  showed the route calling Supabase's `auth/v1/verify` and then making ZERO further
+  external calls — no `parents` lookup, nothing downstream — proving `verifyOtp` rejected
+  the token rather than a gate skipping the block. Independently confirmed: password
+  reset failing live with "may have expired" within one minute of receipt. Both routes,
+  same mechanism.
+
+  **Why it stayed hidden for ~8 weeks:** BOTH the success path and the failure path
+  in `/auth/confirm` returned an un-statused `NextResponse.redirect()`, which Next.js
+  defaults to 307 — the `Location` header differed by outcome, but the status code alone
+  was ambiguous and gave no signal at that level. AND both routes' `verifyOtp`-failure
+  branches logged NOTHING. There was no signal anywhere. **This is the lesson worth
+  recording most durably** — see DECISIONS.md 2026-08-21 standing lessons.
+
+  **The fix (approved option (c), narrowly scoped):**
+  - New `src/lib/supabase/token-hash-client.ts` (+ co-located test): a dedicated client
+    built on the PLAIN `@supabase/supabase-js` `createClient` (NOT the `@supabase/ssr`
+    wrapper), explicitly forcing `flowType: "implicit"`. Used ONLY for the two
+    token-minting calls.
+  - `signupAction` and `requestPasswordReset` switched to `createTokenHashClient()` for
+    `signUp()`/`resetPasswordForEmail()` respectively.
+  - The shared SSR client (`src/lib/supabase/server.ts`) is UNTOUCHED — login, session
+    reads, `/auth/reset`'s own cookie-establishing `verifyOtp`, and `/auth/callback`'s
+    PKCE code-exchange all still use it.
+  - `/auth/callback` deliberately kept: `src/app/(auth)/coppa/page.tsx` forwards old,
+    already-delivered pre-`/auth/confirm` links (`?code=`) to it for backward
+    compatibility.
+  - BOTH routes now log the real `verifyErr` code/status/message on a `verifyOtp`
+    failure (previously silent). User-facing copy unchanged (stays neutral "invalid or
+    expired") — logging-only change. Supabase's AuthError carries a `code` like
+    `otp_expired` for a genuinely expired token, so a real expiry is now distinguishable
+    in logs from a structurally-rejected token.
+  - `token-hash-client.test.ts`: standing regression guard asserting the client's
+    flowType is `"implicit"`, never `"pkce"`, and that it imports from
+    `@supabase/supabase-js` never `@supabase/ssr`. This is the guard against the exact
+    defect recurring silently.
+  - One Codex review finding (camelCase filename violating AGENTS.md's kebab-case
+    convention) — confirmed valid, fixed in commit `ab58e1b`, thread resolved.
+
+  **Verify bar at merge:** `pnpm test` 1954 passed / 13 todo (151 files), `tsc --noEmit`
+  clean, `pnpm lint` 0 errors (2 pre-existing unrelated warnings), `pnpm build` clean. CI
+  `verify-bar` + `rls-integration` + Vercel all green.
+
+  **STILL OWED — the live end-to-end verification was NEVER completed.** Installing the
+  Supabase CLI worked; `supabase start` failed on every image pull — 403 Forbidden
+  against `production.cloudfront.docker.com`, confirmed via the session's own proxy
+  status endpoint as an explicit network-policy denial (`connect_rejected`, "gateway
+  answered 403 to CONNECT"), not a transient error. So: it is PROVEN that the new client
+  passes `flowType: "implicit"` (unit-asserted on the real options object) and PROVEN
+  that `@supabase/ssr` hardcodes pkce (source read) — but NOT proven that a real GoTrue
+  server given this config mints a plain-hash token that the real routes accept end to
+  end. A ready-to-run verification script was handed to Dimitri separately (drives real
+  signup + real reset through the fixed clients, reads captured emails from Mailpit,
+  asserts no `pkce_` prefix, invokes the real route handlers). **The fix is
+  verified-by-construction, not verified-in-production, until Dimitri runs it.** See
+  NEXT_ACTIONS.md.
+
+- **Process note:** PR #239 (the repo-memory update recording PR #238's lifecycle,
+  merge commit `baa1b65`) MERGED first. The PKCE fix commit accidentally landed on PR
+  #239's branch initially; it was reverted there (`00217ff`) and moved to its own
+  dedicated PR #240, because a P0 production fix should not ride on an unrelated docs
+  PR's review.
+
+---
+
 **As of:** 2026-08-21 (ATLAS: HubSpot Contract A account-created parent contact sync) —
 **PR #238 MERGED** (merge commit **7d4580f**, merged_at 2026-08-21T14:14:14Z) into
 `ATLAS-ASSESSMENT`, from branch `claude/relaxed-cerf-ly61pe`. Final CI state at merge:
-`verify-bar` GREEN, `rls-integration` GREEN, Vercel preview GREEN. **This is the current
-`ATLAS-ASSESSMENT` head.**
+`verify-bar` GREEN, `rls-integration` GREEN, Vercel preview GREEN.
 
 **Post-open history (Codex fixes + a real Preview outage, both resolved before merge):**
 1. Codex automated review left 2 findings on the diff; both confirmed and fixed in

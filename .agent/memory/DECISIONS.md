@@ -5,6 +5,101 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-08-21
 
+* **P0 — signup email-confirmation AND password reset were BOTH completely non-functional
+  in production, for every user, silently — root-caused and fixed (PR #240, merge commit
+  f4f5d43, now the `ATLAS-ASSESSMENT` head, 2026-08-21). This is the single most significant
+  defect found in this project's history; recorded with that weight.**
+  **Corrected timeline (verified against commit history — an earlier record of this entry
+  overstated the window as "~4 months since `bfabe14`"; that was wrong and is corrected
+  here, per a Codex review finding on PR #241)**:
+  - 2026-04-29 (`a12596e`/`1867b0e`): signup + the original PKCE `/auth/callback`
+    confirmation went live (a few days after `bfabe14`, 2026-04-26, wired up Supabase
+    itself). Confirmation worked for a normal same-device/browser user in this window; it
+    had a narrower, already-documented weakness (cross-device confirms and email-scanner
+    link pre-fetches, which lack the PKCE `code_verifier` cookie) — NOT the defect below.
+  - 2026-06-27 (`395f48a`): confirmation switched to the token-hash `/auth/confirm` route
+    specifically to fix that cross-device weakness — its own commit message records prod
+    failures under the old PKCE flow. From this point on, confirmation became universally
+    broken for everyone, because the signup client's `flowType` was never changed and stayed
+    forced to `"pkce"` (see root cause below) while the route consuming its token now
+    expected a plain hash.
+  - 2026-06-28 (`1dd4607`): password reset introduced for the first time, built on the same
+    token-hash pattern from inception — it never worked, but it did not exist before this
+    date, so "broken since April" does not apply to it.
+  - 2026-08-21: PR #240 fixes both.
+  **Net: universal breakage ran ~8 weeks (2026-06-27 / 2026-06-28 → 2026-08-21), not ~4
+  months — material because this feeds a live founder question about outreach to affected
+  families; do not use the old "4 months since April" framing for that decision.**
+  Root cause: `@supabase/ssr`'s `createServerClient`/`createBrowserClient`
+  hardcode `flowType: "pkce"` AFTER spreading the caller's own `auth` options — verified by
+  reading the INSTALLED package source directly
+  (`node_modules/@supabase/ssr/dist/module/createServerClient.js`, v0.10.2), not assumed
+  from docs. Because a later key wins a JS spread merge, this is structurally unoverridable
+  by passing options through that function. Every Supabase client in the app went through
+  that wrapper, including the two calls that MINT an emailed auth token: `signUp()`
+  (`signup/actions.ts`) and `resetPasswordForEmail()` (`forgot-password/actions.ts`). Both
+  therefore minted `pkce_`-prefixed `token_hash` values, but `/auth/confirm` and
+  `/auth/reset` are both built on the TOKEN-HASH flow (`verifyOtp({ token_hash })`), which
+  structurally cannot accept a PKCE token. Those two routes exist specifically to avoid
+  PKCE's cross-device/email-scanner failure mode (per their own docstrings) — the two halves
+  of the system were designed against each other from day one. Found via a real Vercel
+  production log for a `/auth/confirm` request showing `verifyOtp` called and then ZERO
+  further external calls, proving rejection rather than a skipped gate; independently
+  confirmed live for password reset. Fix (option (c), narrowly scoped): a new
+  `src/lib/supabase/token-hash-client.ts`, built on the PLAIN `@supabase/supabase-js`
+  `createClient` (not the `@supabase/ssr` wrapper), explicitly forcing
+  `flowType: "implicit"`, used ONLY for the two token-minting calls; the shared SSR client
+  (`server.ts`) is untouched everywhere else (login, session reads, `/auth/reset`'s own
+  cookie-establishing `verifyOtp`, `/auth/callback`'s PKCE code-exchange for old delivered
+  links). Both routes now log the real `verifyErr` code/status/message on failure
+  (previously silent); user-facing copy unchanged. `token-hash-client.test.ts` is a standing
+  regression guard asserting `flowType === "implicit"` and the import source is
+  `@supabase/supabase-js`, never `@supabase/ssr`. Verify bar at merge: 1954 tests passed /
+  13 todo, tsc clean, lint 0 errors, build clean; CI verify-bar + rls-integration + Vercel
+  all green. One Codex finding (camelCase filename vs. AGENTS.md kebab-case) fixed in
+  ab58e1b.
+
+* **Standing lesson #1 — a route whose success and failure paths return the same status
+  code, with no logging on the failure branch, is undiagnosable from the outside (PR #240,
+  2026-08-21).** `/auth/confirm`'s success and failure paths both returned an un-statused
+  `NextResponse.redirect()`, which Next.js defaults to 307 — the `Location` header differed
+  (`/login?confirmed=1...` vs. `/signup?error=verify_failed`), so the responses were not
+  identical, but the STATUS CODE alone was ambiguous and gave no signal to anyone
+  monitoring at that level, and the failure branch logged nothing at all. Roughly 8 weeks of
+  total breakage (see the corrected timeline above) went unnoticed for exactly this reason.
+  Rule going forward:
+  every auth-style failure branch must log the underlying provider error's code/status —
+  applied here to both `/auth/confirm` and `/auth/reset`.
+
+* **Standing lesson #2 — verify third-party library behavior by reading the INSTALLED
+  source, not the docs (PR #240, 2026-08-21).** `@supabase/ssr` accepting an `auth` options
+  object while silently overriding `flowType` after the spread is invisible from the
+  documentation and from the type signature; it was only found by reading
+  `node_modules/@supabase/ssr/dist/module/createServerClient.js` directly. Generalization of
+  guardrail 7's "verify against the code, not the prose" principle to third-party
+  dependencies, not just this repo's own code.
+
+* **Standing lesson #3 (process) — a P0 fix does not ride on an unrelated PR's review; split
+  it (2026-08-21).** The PKCE fix commit initially landed on PR #239's branch (an unrelated
+  repo-memory/docs PR); it was reverted there (`00217ff`) and moved to its own dedicated PR
+  #240 so the P0 production fix could be reviewed and merged on its own timeline rather than
+  waiting on or being entangled with an unrelated PR's review.
+
+* **Open / unconfirmed (needs Dimitri) — PR #240 follow-ups (2026-08-21).** (a) **The live
+  end-to-end verification was never completed and is still owed.** This session proved the
+  new client is configured correctly (unit-asserted `flowType`) and proved `@supabase/ssr`'s
+  hardcoding (source read), but could not prove a real GoTrue server given this config mints
+  a plain-hash token the real routes accept end to end — `supabase start` failed on every
+  Docker image pull (403 Forbidden against `production.cloudfront.docker.com`, confirmed as
+  an explicit network-policy denial, not transient). A ready-to-run verification script
+  (real signup + real reset through the fixed clients, reads captured emails from Mailpit,
+  asserts no `pkce_` prefix, invokes the real route handlers) was handed to Dimitri
+  separately; the fix is verified-by-construction, not verified-in-production, until it is
+  run and the result recorded. (b) **Whether any outreach/recovery is warranted for parents
+  who tried and failed to sign up during the ~4-month window is a founder/business call, not
+  a technical one** — every parent who attempted signup in that window was unable to
+  complete it. Not resolved; flagged only.
+
 * **PR #238 MERGED (merge commit 7d4580f, merged_at 2026-08-21T14:14:14Z) — HubSpot Contract A
   is now live in `ATLAS-ASSESSMENT`, dark until Dimitri sets the token.** Final state at merge:
   `verify-bar` GREEN, `rls-integration` GREEN, Vercel preview GREEN. Two things happened between
