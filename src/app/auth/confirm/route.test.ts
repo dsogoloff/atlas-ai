@@ -178,6 +178,32 @@ describe("GET /auth/confirm — token-hash verification", () => {
     expect(mockAuditInsert).not.toHaveBeenCalled();
   });
 
+  // Regression coverage for the 2026-08-21 outage: this failure branch used
+  // to be completely silent, which is why root-causing the real pkce_-token
+  // defect required a live production log dig instead of a log grep. The
+  // real cause/status distinction (e.g. Supabase's 'otp_expired' for a
+  // genuinely expired/used token vs. anything else for a structurally
+  // rejected one) must reach the logs, not just "verify_failed".
+  it("verifyOtp failure logs the real code/status/message, not just the redirect", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockVerifyOtp.mockResolvedValue({
+      data: { user: null },
+      error: { code: "otp_expired", status: 403, message: "Token has expired or is invalid" },
+    });
+
+    await GET(req("?token_hash=bad&type=email"));
+
+    expect(errSpy).toHaveBeenCalledWith(
+      "[auth] confirm verifyOtp failed",
+      expect.objectContaining({
+        code: "otp_expired",
+        status: 403,
+        message: "Token has expired or is invalid",
+      }),
+    );
+    errSpy.mockRestore();
+  });
+
   it("missing token_hash -> /signup?error=verify_failed without calling verifyOtp", async () => {
     const res = await GET(req("?type=email"));
 

@@ -71,8 +71,11 @@ vi.mock("@/lib/marketing/server", () => ({
   getAttribution: () => mockGetAttribution(),
 }));
 
+vi.mock("@/lib/supabase/token-hash-client", () => ({
+  createTokenHashClient: () => ({ auth: { signUp: mockSignUp } }),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { signUp: mockSignUp } }),
   createServiceClient: () => ({
     auth: { admin: { deleteUser: mockDeleteUser } },
     from: (table: string) => {

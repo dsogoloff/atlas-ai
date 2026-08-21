@@ -89,6 +89,32 @@ describe("GET /auth/reset — token-hash password recovery", () => {
     expect(location(res)).toBe(`${ORIGIN}/forgot-password?error=reset_failed`);
   });
 
+  // Regression coverage for the confirmed-live 2026-08-21 outage: password
+  // reset failed with the SAME "invalid or expired" copy regardless of cause,
+  // and this branch logged nothing — a genuinely expired token was
+  // indistinguishable from the pkce_-token defect without a production log
+  // dig. The real code/status/message must reach the logs even though the
+  // user-facing copy stays neutral (see route.ts comment on this branch).
+  it("verifyOtp failure logs the real code/status/message, not just the redirect", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockVerifyOtp.mockResolvedValue({
+      data: { user: null },
+      error: { code: "otp_expired", status: 403, message: "Token has expired or is invalid" },
+    });
+
+    await GET(req("?token_hash=bad&type=recovery"));
+
+    expect(errSpy).toHaveBeenCalledWith(
+      "[auth] reset verifyOtp failed",
+      expect.objectContaining({
+        code: "otp_expired",
+        status: 403,
+        message: "Token has expired or is invalid",
+      }),
+    );
+    errSpy.mockRestore();
+  });
+
   it("missing token_hash -> reset_failed without calling verifyOtp", async () => {
     const res = await GET(req("?type=recovery"));
 
