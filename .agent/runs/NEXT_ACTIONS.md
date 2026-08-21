@@ -4,20 +4,31 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-21 — P0: signup confirmation + password reset were BOTH broken in prod for ~4 months (PR #240 MERGED)
+## 0. 2026-08-21 — P0: signup confirmation + password reset were BOTH broken in prod, ~8 weeks each (PR #240 MERGED)
 
 **PR #240 MERGED** (merge commit f4f5d43; now the `ATLAS-ASSESSMENT` head). Title:
 "fix(auth): non-PKCE token-minting client for signup confirm + password reset [P0]".
 Root cause: `@supabase/ssr` hardcodes `flowType: "pkce"` after spreading caller options
 (verified from installed package source), so `signUp()`/`resetPasswordForEmail()` minted
 `pkce_`-prefixed tokens that `/auth/confirm` and `/auth/reset`'s `verifyOtp({token_hash})`
-calls structurally cannot accept — broken for EVERY user since the very first Supabase
-commit (`bfabe14`, 2026-04-26) until today, silently, because both the success and
-failure paths returned an un-statused (307) redirect and the failure branch logged
-nothing. Fix: a dedicated `createTokenHashClient()` (plain `@supabase/supabase-js`,
-`flowType: "implicit"`) used only for the two token-minting calls; the shared SSR client
-is untouched everywhere else; both routes now log the real `verifyOtp` error. See
-CURRENT_STATE.md and DECISIONS.md 2026-08-21 for the full account.
+calls structurally cannot accept.
+**Corrected timeline** (an earlier version of this entry said "~4 months since `bfabe14`"
+— wrong, corrected per a Codex review finding on PR #241, verified against commit
+history): signup + the original PKCE `/auth/callback` confirmation went live 2026-04-29
+and worked for normal same-device users (a narrower, separate, already-documented
+cross-device/email-prefetch weakness existed, not this defect). Confirmation switched to
+the token-hash `/auth/confirm` route on **2026-06-27** (`395f48a`) to fix that weakness —
+from that point on it became universally broken for everyone, because the signup
+client's `flowType` was never changed. Password reset was introduced on **2026-06-28**
+(`1dd4607`), built on the token-hash pattern from inception, and never worked. Both fixed
+2026-08-21. **Universal breakage: ~8 weeks each, not ~4 months.** Both routes were silent
+the whole time: both the success and failure paths returned an un-statused (307)
+redirect (their `Location` header differed by outcome, but the status code alone gave no
+signal), and the failure branch logged nothing. Fix: a dedicated `createTokenHashClient()`
+(plain `@supabase/supabase-js`, `flowType: "implicit"`) used only for the two
+token-minting calls; the shared SSR client is untouched everywhere else; both routes now
+log the real `verifyOtp` error. See CURRENT_STATE.md and DECISIONS.md 2026-08-21 for the
+full account.
 
 - [x] **PR #240 merged** (f4f5d43). Verify bar GREEN at merge: pnpm test 1954 passed / 13
       todo (151 files), tsc clean, lint 0 errors, build clean. CI verify-bar +
@@ -39,11 +50,17 @@ CURRENT_STATE.md and DECISIONS.md 2026-08-21 for the full account.
       verified-by-construction, not verified-in-production.
 
 - [ ] **PARKED — whether any outreach/recovery is warranted for parents who tried to sign
-      up while this was broken (needs Dimitri).** Because signup confirmation never
-      worked, every parent who ever attempted to sign up in production was unable to
-      complete it, for the entire ~4 months this was broken. This is a founder/business
-      call (whether and how to reach out, whether it's worth the parent-facing exposure of
-      raising it) — NOT a technical one. Not resolved; do not resolve autonomously.
+      up while this was broken (needs Dimitri).** Scope this to the corrected window: any
+      parent who attempted to confirm their email between **2026-06-27 and 2026-08-21**
+      was unable to complete it (universal breakage — the token-hash route existed but
+      could never accept the client's PKCE token). Before 2026-06-27, confirmation
+      generally worked; only cross-device/email-prefetch confirms in that earlier window
+      may have failed, a narrower and different population. Password reset failed for
+      anyone who used it at all between its introduction (**2026-06-28**) and 2026-08-21.
+      Whether and how to reach out, and whether it's worth the parent-facing exposure of
+      raising it, is a founder/business call — NOT a technical one. Not resolved; do not
+      resolve autonomously, and do not use the old "~4 months since April" framing when
+      making this call — it materially overstated the affected population.
 
 - [ ] **Process note, not an action item:** PR #239 (repo-memory update for PR #238's
       lifecycle) merged first (baa1b65). The PKCE fix commit had accidentally landed on

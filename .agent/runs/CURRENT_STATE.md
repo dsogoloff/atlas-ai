@@ -5,7 +5,7 @@
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
 **As of:** 2026-08-21 (ATLAS: **P0 — signup email-confirmation AND password reset were
-BOTH completely non-functional in production for ~4 months, now fixed**) — **PR #240
+BOTH completely non-functional in production, ~8 weeks each, now fixed**) — **PR #240
 MERGED** (merge commit **f4f5d43**, now the `ATLAS-ASSESSMENT` head). Final CI state at
 merge: `verify-bar` GREEN, `rls-integration` GREEN, Vercel GREEN. **This is the current
 `ATLAS-ASSESSMENT` head, and this is the single most significant defect found in this
@@ -14,10 +14,24 @@ project's history — recorded with that weight.**
 - **PR #240 — "fix(auth): non-PKCE token-minting client for signup confirm + password
   reset [P0]" — MERGED (f4f5d43).**
 
-  **What was broken:** BOTH signup email-confirmation (`/auth/confirm`) AND password
-  reset (`/auth/reset`) were completely non-functional in production, for EVERY user,
-  from **2026-04-26** (commit `bfabe14`, the very first commit that wired up Supabase)
-  until **2026-08-21** — roughly four months. Silently. No error, no alert, no signal.
+  **What was broken, and the corrected timeline** (an earlier record of this entry said
+  "~4 months since `bfabe14`" — verified against commit history and corrected here, per a
+  Codex review finding on PR #241):
+  - 2026-04-29 (`a12596e`/`1867b0e`): signup + the original PKCE `/auth/callback`
+    confirmation went live. Confirmation worked for a normal same-device/browser user;
+    it had a narrower, already-documented weakness (cross-device confirms, email-scanner
+    link pre-fetches) — **not** the defect below.
+  - **2026-06-27** (`395f48a`): confirmation switched to the token-hash `/auth/confirm`
+    route to fix that weakness. From here on, confirmation became universally broken for
+    everyone — the signup client's `flowType` was never changed and stayed forced to
+    `"pkce"` while the route consuming its token now expected a plain hash.
+  - **2026-06-28** (`1dd4607`): password reset introduced for the first time, built on the
+    token-hash pattern from inception — never worked, but did not exist before this date.
+  - 2026-08-21: PR #240 fixes both.
+  **Universal breakage ran ~8 weeks (2026-06-27 / -28 → 2026-08-21), not ~4 months.**
+  Material: this feeds a live founder question about outreach to affected families —
+  do not use the old "4 months since April" framing for that decision. Silently the
+  whole time either way: no error, no alert, no signal.
 
   **Root cause:** `@supabase/ssr`'s `createServerClient`/`createBrowserClient` hardcode
   `flowType: "pkce"` AFTER spreading the caller's own `auth` options — verified by
@@ -34,19 +48,20 @@ project's history — recorded with that weight.**
   their own docstrings) — so the two halves of the system were designed against each
   other from day one.
 
-  **How it was found:** a real Vercel production log for a `/auth/confirm` request
-  (dimitri+11@gmail.com) showed the route calling Supabase's `auth/v1/verify` and then
-  making ZERO further external calls — no `parents` lookup, nothing downstream — proving
-  `verifyOtp` rejected the token rather than a gate skipping the block. Independently
-  confirmed: password reset failing live with "may have expired" within one minute of
-  receipt. Both routes, same mechanism.
+  **How it was found:** a real Vercel production log for a `/auth/confirm` request (an
+  affected production test account — redacted here, on record in PR #240's discussion)
+  showed the route calling Supabase's `auth/v1/verify` and then making ZERO further
+  external calls — no `parents` lookup, nothing downstream — proving `verifyOtp` rejected
+  the token rather than a gate skipping the block. Independently confirmed: password
+  reset failing live with "may have expired" within one minute of receipt. Both routes,
+  same mechanism.
 
-  **Why it stayed hidden for four months:** BOTH the success path and the failure path
+  **Why it stayed hidden for ~8 weeks:** BOTH the success path and the failure path
   in `/auth/confirm` returned an un-statused `NextResponse.redirect()`, which Next.js
-  defaults to 307 — so a failed confirm was byte-identical to a successful one from the
-  outside. AND both routes' `verifyOtp`-failure branches logged NOTHING. There was no
-  signal anywhere. **This is the lesson worth recording most durably** — see
-  DECISIONS.md 2026-08-21 standing lessons.
+  defaults to 307 — the `Location` header differed by outcome, but the status code alone
+  was ambiguous and gave no signal at that level. AND both routes' `verifyOtp`-failure
+  branches logged NOTHING. There was no signal anywhere. **This is the lesson worth
+  recording most durably** — see DECISIONS.md 2026-08-21 standing lessons.
 
   **The fix (approved option (c), narrowly scoped):**
   - New `src/lib/supabase/token-hash-client.ts` (+ co-located test): a dedicated client

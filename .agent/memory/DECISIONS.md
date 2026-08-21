@@ -6,11 +6,31 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 ## 2026-08-21
 
 * **P0 — signup email-confirmation AND password reset were BOTH completely non-functional
-  in production, for every user, for roughly four months, silently — root-caused and fixed
-  (PR #240, merge commit f4f5d43, now the `ATLAS-ASSESSMENT` head, 2026-08-21). This is the
-  single most significant defect found in this project's history; recorded with that
-  weight.** Broken from `bfabe14` (2026-04-26, the very first commit that wired up Supabase)
-  until 2026-08-21. Root cause: `@supabase/ssr`'s `createServerClient`/`createBrowserClient`
+  in production, for every user, silently — root-caused and fixed (PR #240, merge commit
+  f4f5d43, now the `ATLAS-ASSESSMENT` head, 2026-08-21). This is the single most significant
+  defect found in this project's history; recorded with that weight.**
+  **Corrected timeline (verified against commit history — an earlier record of this entry
+  overstated the window as "~4 months since `bfabe14`"; that was wrong and is corrected
+  here, per a Codex review finding on PR #241)**:
+  - 2026-04-29 (`a12596e`/`1867b0e`): signup + the original PKCE `/auth/callback`
+    confirmation went live (a few days after `bfabe14`, 2026-04-26, wired up Supabase
+    itself). Confirmation worked for a normal same-device/browser user in this window; it
+    had a narrower, already-documented weakness (cross-device confirms and email-scanner
+    link pre-fetches, which lack the PKCE `code_verifier` cookie) — NOT the defect below.
+  - 2026-06-27 (`395f48a`): confirmation switched to the token-hash `/auth/confirm` route
+    specifically to fix that cross-device weakness — its own commit message records prod
+    failures under the old PKCE flow. From this point on, confirmation became universally
+    broken for everyone, because the signup client's `flowType` was never changed and stayed
+    forced to `"pkce"` (see root cause below) while the route consuming its token now
+    expected a plain hash.
+  - 2026-06-28 (`1dd4607`): password reset introduced for the first time, built on the same
+    token-hash pattern from inception — it never worked, but it did not exist before this
+    date, so "broken since April" does not apply to it.
+  - 2026-08-21: PR #240 fixes both.
+  **Net: universal breakage ran ~8 weeks (2026-06-27 / 2026-06-28 → 2026-08-21), not ~4
+  months — material because this feeds a live founder question about outreach to affected
+  families; do not use the old "4 months since April" framing for that decision.**
+  Root cause: `@supabase/ssr`'s `createServerClient`/`createBrowserClient`
   hardcode `flowType: "pkce"` AFTER spreading the caller's own `auth` options — verified by
   reading the INSTALLED package source directly
   (`node_modules/@supabase/ssr/dist/module/createServerClient.js`, v0.10.2), not assumed
@@ -42,9 +62,12 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 * **Standing lesson #1 — a route whose success and failure paths return the same status
   code, with no logging on the failure branch, is undiagnosable from the outside (PR #240,
   2026-08-21).** `/auth/confirm`'s success and failure paths both returned an un-statused
-  `NextResponse.redirect()`, which Next.js defaults to 307 — a failed confirm was
-  byte-identical to a successful one externally, and the failure branch logged nothing.
-  Four months of total breakage went unnoticed for exactly this reason. Rule going forward:
+  `NextResponse.redirect()`, which Next.js defaults to 307 — the `Location` header differed
+  (`/login?confirmed=1...` vs. `/signup?error=verify_failed`), so the responses were not
+  identical, but the STATUS CODE alone was ambiguous and gave no signal to anyone
+  monitoring at that level, and the failure branch logged nothing at all. Roughly 8 weeks of
+  total breakage (see the corrected timeline above) went unnoticed for exactly this reason.
+  Rule going forward:
   every auth-style failure branch must log the underlying provider error's code/status —
   applied here to both `/auth/confirm` and `/auth/reset`.
 
