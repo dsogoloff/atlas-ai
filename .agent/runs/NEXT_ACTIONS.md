@@ -83,20 +83,30 @@ HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set in Vercel. Zero ch
 
 - [x] **Dimitri: merge PR #238** — DONE (7d4580f).
 
-- [ ] **Dimitri: apply the `parents.attribution` migration SQL to whatever Supabase
-      project(s) back Preview and Production.** This is what actually caused the Preview
-      signup outage above — the column was never applied to a real DB. Signup no longer
-      depends on it (that was the fix), so this is NOT merge- or signup-blocking, but
-      attribution capture silently no-ops until the column exists. Exact idempotent SQL
-      (from `supabase/migrations/20260821150000_hubspot_contract_a_parent_attribution.sql`):
-      ```sql
-      alter table parents
-        add column if not exists attribution jsonb;
-
-      comment on column parents.attribution is
-        'HubSpot Contract A: first-touch marketing attribution captured at signup (utm_source/medium/campaign/content/term + first_seen), mirroring src/lib/marketing/attribution.ts''s Attribution type. NULL when the visitor arrived untagged. Account-level only — never child data.';
-      ```
-      Safe to run anytime, on any environment, any number of times.
+- [x] **Dimitri: apply the `parents.attribution` migration SQL to production — DONE,
+      confirmed applied (2026-08-21).** This was what actually caused the Preview signup
+      outage above — the column had never been applied to a real DB. Dimitri applied the
+      migration SQL directly in prod Studio. Confirmed via two independent checks:
+      (1) a direct `information_schema.columns` query against prod (initially came back
+      zero rows — before the SQL was applied — then, per Dimitri, he ran it); (2)
+      `pnpm convert:prod-catchup:verify` (`scripts/conversion/prod-bringup/07-verify-prod-schema.ts`),
+      run against prod live, reported `attribution` as a `parents` column present in prod
+      (`prod-only` relative to the comparer's local baseline — see caveat below). Signup
+      itself never depended on this (that was the separate #238 decoupling fix, commit
+      `1c2557a`) — this closes the *capture* half: attribution should now actually persist
+      to HubSpot contacts instead of silently no-op'ing.
+      **Caveat, not yet closed:** that same verify run showed the LOCAL comparison baseline
+      on Dimitri's machine is stale — it predates this migration plus two other
+      August migrations (`atlas_007_staff_mfa_recovery_codes`, `atlas_004_quota_counters`),
+      because `supabase start` reuses an existing local Docker volume rather than
+      replaying migrations (`supabase db reset` does). The verify run still reported
+      "0 DRIFT, 0 MISSING" because prod happened to already have those 3 items as
+      "prod-only" extras — but this was NOT a fully rigorous check of whether prod has
+      *everything* the full current migration set requires, only of what the (stale) local
+      baseline asked for. **Still worth doing**: `supabase db reset` then re-run
+      `pnpm convert:prod-catchup:verify` for a genuinely fresh, no-blind-spots confirmation.
+      **Also still worth doing**: a real end-to-end test (fresh signup + confirm) to verify
+      the HubSpot contact and staff alert actually arrive now that the column exists.
 
 - [ ] **Dimitri (whenever ready, NOT merge-blocking): set `HUBSPOT_ATLAS_SYNC_TOKEN` in
       Vercel to go live.** Re-verify the connected HubSpot portal id live is still

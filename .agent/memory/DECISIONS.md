@@ -5,6 +5,20 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-08-21
 
+* **`parents.attribution` migration (`20260821150000_hubspot_contract_a_parent_attribution.sql`)
+  confirmed applied to production.** Dimitri ran the migration SQL directly in prod Studio.
+  Confirmed by two independent checks: a direct `information_schema.columns` query against
+  prod (zero rows before, per the original report; Dimitri then applied it), and a live
+  `pnpm convert:prod-catchup:verify` run showing `attribution` present on prod's `parents`
+  table. This was the actual root cause of HubSpot Contract A silently no-op'ing (the
+  column the sync writes into didn't exist) — signup itself was already fixed separately
+  (PR #238's decoupling, commit `1c2557a`). **Not yet independently re-verified end-to-end**
+  (a fresh signup/confirm actually producing a HubSpot contact + staff alert) — see
+  NEXT_ACTIONS.md. Also surfaced: the verify run's LOCAL comparison baseline was stale
+  (predates this migration and two others from mid-August), because `supabase start` reuses
+  an existing local volume rather than replaying migrations — `supabase db reset` is needed
+  for a fully rigorous re-check, not yet done.
+
 * **P0 — signup email-confirmation AND password reset were BOTH completely non-functional
   in production, for every user, silently — root-caused and fixed (PR #240, merge commit
   f4f5d43, now the `ATLAS-ASSESSMENT` head, 2026-08-21). This is the single most significant
