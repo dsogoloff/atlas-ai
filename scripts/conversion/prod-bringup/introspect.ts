@@ -62,6 +62,11 @@ export interface IndexDef {
   backsConstraint: boolean;
 }
 
+export interface TriggerDef {
+  table: string;
+  name: string;
+}
+
 export interface Schema {
   source: "local" | "prod";
   /** table -> (column name -> Column) */
@@ -76,6 +81,15 @@ export interface Schema {
   constraints: ConstraintDef[];
   /** local only, best-effort */
   indexes: IndexDef[];
+  /** public-schema function/procedure names (pg_proc). Direct-Postgres only — the
+   *  PostgREST OpenAPI fallback has no representation for routines, so introspectProd()
+   *  always returns this empty. Not deduped by signature/overload: a name appearing here
+   *  means at least one routine by that name exists, which is all 07's existence check needs. */
+  functions: string[];
+  /** user-defined triggers only (tgisinternal = false — excludes the auto-generated FK/RI
+   *  triggers Postgres creates for every foreign key, which are implementation detail, not
+   *  something a migration author asked for). Direct-Postgres only, same reason as functions. */
+  triggers: TriggerDef[];
   /** prod: only enums reachable through an exposed column are visible */
   enumsComplete: boolean;
   /** prod: false — PostgREST cannot read pg_policies */
@@ -274,7 +288,29 @@ export async function introspectSql(
       indexes.push({ table: r.tbl, name: r.idx, def: r.def, isPrimary: r.isprimary, backsConstraint: r.backs !== null });
     }
 
-    return { source, tables, enums, policies, rlsEnabled, constraints, indexes, enumsComplete: true, policiesReadable: true };
+    // Distinct names only: overloads (e.g. create_child_with_consent's single signature
+    // today, but functions CAN be overloaded) collapse to one entry, matching how a
+    // migration author thinks about "does this function exist", not its exact arg list.
+    const functions: string[] = [];
+    const fn = await client.query<{ proname: string }>(`
+      SELECT DISTINCT p.proname
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public'
+      ORDER BY p.proname`);
+    for (const r of fn.rows) functions.push(r.proname);
+
+    const triggers: TriggerDef[] = [];
+    const trg = await client.query<{ tbl: string; tgname: string }>(`
+      SELECT c.relname AS tbl, t.tgname
+      FROM pg_trigger t
+      JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND NOT t.tgisinternal
+      ORDER BY c.relname, t.tgname`);
+    for (const r of trg.rows) triggers.push({ table: r.tbl, name: r.tgname });
+
+    return { source, tables, enums, policies, rlsEnabled, constraints, indexes, functions, triggers, enumsComplete: true, policiesReadable: true };
   } finally {
     await client.end();
   }
@@ -335,6 +371,10 @@ export async function introspectProd(url: string, key: string): Promise<Schema> 
   return {
     source: "prod", tables, enums,
     policies: [], rlsEnabled: new Set(), constraints: [], indexes: [],
+    // The OpenAPI spec describes REST-exposed tables/columns only — it has no concept of
+    // functions or triggers, so this channel always reports empty here. Only the
+    // direct-Postgres channel (introspectProdSql, via introspectSql) can see them.
+    functions: [], triggers: [],
     enumsComplete: false, policiesReadable: false,
   };
 }

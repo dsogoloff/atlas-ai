@@ -10,10 +10,23 @@
 // and compares enum TYPES end to end.
 //
 // Reports table-by-table / column-by-column: MATCH / DRIFT(detail) / MISSING.
-// EXITS NONZERO on any DRIFT or MISSING. Prod-only tables/columns/enum-values are INFO
-// (additive philosophy — prod is allowed to hold extra). This replaces presence-only.
+//
+// Also checks two things a column/table diff cannot see: every public-schema FUNCTION
+// and every user-defined TRIGGER that exists in local (the post-reset, every-migration-
+// applied canonical schema) is checked for existence in prod. These are frequently the
+// entire enforcement mechanism for an invariant (atomic writes, MFA recovery, rate
+// limits, admin tenant scoping) — a silently-missing function/trigger is the same shape
+// of bug as a silently-missing column, just one layer down. Existence-only (no body/
+// definition comparison) — a function present under the same name but with stale logic
+// is not caught here.
+//
+// EXITS NONZERO on any DRIFT, MISSING column/table/enum-value, or missing function/
+// trigger. Prod-only tables/columns/enum-values/functions/triggers are INFO (additive
+// philosophy — prod is allowed to hold extra). This replaces presence-only.
 //
 // Run:  tsx scripts/conversion/prod-bringup/07-verify-prod-schema.ts
+// CI:   .github/workflows/prod-migration-drift.yml runs this on every PR (needs a fresh
+//       `supabase start` for a non-stale local baseline, plus the PROD_DATABASE_URL secret).
 
 import { introspectLocal, introspectProdSql, localConnString, prodConnString } from "./introspect";
 import { fullCompare, isAcceptedDrift, type ColVerdict, type DriftDim } from "./compare";
@@ -69,15 +82,40 @@ async function main(): Promise<void> {
     }
   }
 
-  if (diff.prodOnlyTables.length || diff.prodOnlyEnums.length) {
+  // Functions and triggers aren't covered by the table/column/enum compare above, and
+  // aren't covered by pg_catalog's REST surface at all when introspectProd (OpenAPI) is
+  // the prod channel — but introspectProdSql (direct Postgres, the path this script
+  // uses) reads them the same way it reads everything else. A silently-missing function
+  // is the SAME shape of bug as a silently-missing column: something a migration added
+  // that never reached prod, just one layer down from the columns table lives in — these
+  // are frequently the entire enforcement mechanism for an invariant (atomic writes,
+  // rate limits, admin scoping), not incidental plumbing.
+  w.write("\n=== FUNCTIONS ===\n");
+  if (diff.missingFunctions.length === 0) {
+    w.write("  OK — every local function exists in prod.\n");
+  } else {
+    for (const f of diff.missingFunctions) w.write(`  MISSING  ${f}\n`);
+  }
+
+  w.write("\n=== TRIGGERS ===\n");
+  if (diff.missingTriggers.length === 0) {
+    w.write("  OK — every local trigger exists in prod.\n");
+  } else {
+    for (const t of diff.missingTriggers) w.write(`  MISSING  ${t}\n`);
+  }
+
+  if (diff.prodOnlyTables.length || diff.prodOnlyEnums.length || diff.prodOnlyFunctions.length || diff.prodOnlyTriggers.length) {
     w.write("\n=== PROD-ONLY (INFO — not failures) ===\n");
     if (diff.prodOnlyTables.length) w.write(`  tables: ${diff.prodOnlyTables.join(", ")}\n`);
     if (diff.prodOnlyEnums.length) w.write(`  enum types: ${diff.prodOnlyEnums.join(", ")}\n`);
+    if (diff.prodOnlyFunctions.length) w.write(`  functions: ${diff.prodOnlyFunctions.join(", ")}\n`);
+    if (diff.prodOnlyTriggers.length) w.write(`  triggers: ${diff.prodOnlyTriggers.join(", ")}\n`);
   }
 
   w.write("\n=== RESULT ===\n");
-  w.write(`  columns: ${matchCount} MATCH, ${acceptedCount} ACCEPTED(beta), ${driftCount} DRIFT, ${missingCount} MISSING; enum issues: ${enumDrift}\n`);
-  const failures = driftCount + missingCount + enumDrift;
+  w.write(`  columns: ${matchCount} MATCH, ${acceptedCount} ACCEPTED(beta), ${driftCount} DRIFT, ${missingCount} MISSING; enum issues: ${enumDrift}; ` +
+    `functions: ${diff.missingFunctions.length} MISSING; triggers: ${diff.missingTriggers.length} MISSING\n`);
+  const failures = driftCount + missingCount + enumDrift + diff.missingFunctions.length + diff.missingTriggers.length;
   if (failures === 0) {
     w.write(`  PASS — no unexpected drift. ${acceptedCount} founder-accepted-for-beta drift(s) tolerated; prod otherwise matches local at full attribute fidelity.\n`);
   } else {
