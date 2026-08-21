@@ -692,6 +692,33 @@ describe("submitResponseHandler — staff assessment-completed alert", () => {
     expect(result.body.done).toBe(true);
   });
 
+  // BRIEF-20260820-2031-ATLAS item 1. The rejection case above passes even with
+  // a trailing `.catch()`; this one does not. A `.catch()` can only attach to a
+  // promise that was actually returned, so a SYNCHRONOUS throw escapes the
+  // callback entirely and propagates out of `after()`. Unreachable today
+  // (notifyAssessmentCompleted is `async`), but this pins the guarantee so it
+  // cannot regress if the notifier ever loses the `async` keyword.
+  it("a SYNCHRONOUS throw in the alert cannot escape after()", async () => {
+    const svc = terminatingClient("3");
+    mockStaffAlert.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
+
+    const result = await submitResponseHandler({
+      request: makeRequest(),
+      rlsClient: makeRlsClient(rlsHappy()),
+      serviceClient: svc.client,
+      ip: null,
+      origin: "https://app.samnewyork.com",
+    });
+
+    // The child still gets their completed assessment and placement.
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.done).toBe(true);
+    expect(result.body.placement).toBeDefined();
+  });
+
   it("does not fire on a NON-terminal submit", async () => {
     const p = priors(3);
     const nextPick = { ...QUESTION, id: "q-next" };

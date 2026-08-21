@@ -1150,8 +1150,16 @@ function emitPlacementCreated(
  *
  * Non-blocking: wrapped in `after()` so the send happens once the submit
  * response is already on the wire — the child is staring at the end-of-
- * assessment screen and must not wait on Resend. notifyAssessmentCompleted
- * never throws; the trailing catch is belt-and-suspenders.
+ * assessment screen and must not wait on Resend.
+ *
+ * The try/catch is load-bearing, not decoration: a trailing `.catch()` only
+ * attaches to a promise that was actually returned, so it covers a REJECTION
+ * but not a SYNCHRONOUS throw. notifyAssessmentCompleted is `async` and so
+ * cannot throw synchronously today — but this seam guards a child's ability to
+ * FINISH an assessment, and that guarantee should not rest on a callee keeping
+ * the `async` keyword. Swallowing here makes it unconditional. Identical shape
+ * to notifyStaffAssessmentStarted in sessionStart/handler.ts — the two triggers
+ * are deliberately the same, so copying either one is safe.
  */
 function notifyStaffAssessmentCompleted(
   parentName: string,
@@ -1160,13 +1168,18 @@ function notifyStaffAssessmentCompleted(
   origin: string | null,
 ): void {
   const path = `/instructor/student/${childId}`;
-  after(() =>
-    notifyAssessmentCompleted({
-      parentName,
-      childGrade,
-      studentUrl: origin ? `${origin}${path}` : path,
-    }).catch(() => undefined),
-  );
+  after(async () => {
+    try {
+      await notifyAssessmentCompleted({
+        parentName,
+        childGrade,
+        studentUrl: origin ? `${origin}${path}` : path,
+      });
+    } catch {
+      // Fail-soft by construction. The notifier already logs its own
+      // failures on the [staffAlerts] path; nothing to add here.
+    }
+  });
 }
 
 /**
