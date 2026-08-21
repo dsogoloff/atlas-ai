@@ -3,6 +3,58 @@
 Durable, dated decisions. ⚑ = business/strategy/legal/privacy/pricing — requires Dimitri
 to change. Unmarked = technical, reversible by Claude Code with cause.
 
+## 2026-08-21
+
+* **HubSpot Contract A (account-created contact sync) fires on email CONFIRMATION, reuses the
+  #211/#233 `after()` seam as a SECOND independent call, and carries zero child data — enforced
+  structurally, not just by convention (PR #238, claude/relaxed-cerf-ly61pe, 2026-08-21).**
+  `syncHubSpotContact(contact: AccountCreatedContact)` in `src/lib/hubspot/syncContact.ts`
+  accepts a typed input (email, fullName, accountId, createdAt, attribution) that cannot carry
+  a child field by construction — no spread of an account/child object. Wired into
+  `/auth/confirm/route.ts` inside the existing `firstConfirmation` guard as a SECOND,
+  INDEPENDENT `after()` call alongside — never replacing — the existing staff-alert `after()`
+  call, so a HubSpot outage cannot suppress the staff email and vice versa. POST → 409 → GET →
+  PATCH upsert against HubSpot CRM v3; one 5xx retry, no retry on 4xx, never throws. Field
+  contract: `sam_source` is first-touch-only (never sent on PATCH); `atlas_account_created_date`
+  is epoch milliseconds, not ISO; UTM fields are omitted (not empty-string) when absent, set-if-
+  empty on PATCH. Mirrors the staff-alert allowlist discipline (PR #211) and the guardrail-7
+  code-over-prose rule.
+
+* **HubSpot sync ships DARK by construction — the sync token's presence IS the live gate, no
+  separate flag (PR #238, 2026-08-21).** `getHubspotAtlasSyncToken()` in `src/lib/env.ts`
+  returns `undefined` when `HUBSPOT_ATLAS_SYNC_TOKEN` is unset or blank; there is no
+  `HUBSPOT_SYNC_LIVE`-style companion switch. Nothing is written to HubSpot until Dimitri sets
+  the token in Vercel. `.env.example` carries an explicit reminder to re-verify the connected
+  portal id (245446396) live immediately before setting it in a real deploy — guardrail 6 exists
+  precisely because an inherited, wrong portal id propagated across two cycles before a live
+  read caught it.
+
+* **The new `parents.attribution jsonb` migration is deliberately NOT mirrored into
+  `supabase/seed.sql` (PR #238, 2026-08-21).** AGENTS.md's seed.sql-mirror rule exists to avoid
+  a silent no-op under `supabase db reset` for TENANT-SCOPED ROW-INSERT migrations; this
+  migration is plain additive schema DDL (one nullable column, no data), a shape with no
+  existing mirrored precedent. `signupAction` now persists `getAttribution()` onto the `parents`
+  insert as `attribution` (null when empty, never `{}`).
+
+* **This session re-typed a previously-verified HubSpot Contract A implementation after a prior
+  session's commit was lost to container reclamation, and confirmed push access is genuinely
+  available (2026-08-21).** A 2026-08-20 session (~14:44 ET) built and fully verified the
+  identical brief (same file list, same field contract) but its local commit (`81a48b7`) never
+  reached GitHub — that session had repo READ access but not push, and an attempted Drive backup
+  of the diff as a patch file uploaded empty. Filed as
+  `handovers/INSP-ORCH/2026-08-20_HUBSPOT_contract-a-account-created-sync.BLOCKED-no-github-write-access.handover.md`
+  in the SAM-OS Drive. This session verified push access with a dry run before re-doing the work,
+  consistent with the 2026-08-20 decision that the "stop on push failure" constraint is retired —
+  and it held: `git push` and `gh pr create` both succeeded, landing as PR #238. Filed here mainly
+  so a future session doesn't mistake the presence of two near-identical HubSpot handover
+  narratives for a duplicate-work defect.
+
+* **Branch-name deviation from the SAM-OS brief, flagged rather than silently reconciled
+  (PR #238, 2026-08-21).** The brief named `claude/hubspot-contract-a`; this session's harness
+  assigned `claude/relaxed-cerf-ly61pe` instead. Same base (`origin/ATLAS-ASSESSMENT`), same
+  content — branch name only differs. Noted in the PR body per guardrail practice: a deviation
+  from a brief's literal instruction is surfaced, not corrected in silence.
+
 ## 2026-08-20
 
 * **A trailing `.catch()` on an `after()` callback is NOT sufficient failure isolation; both staff-alert triggers use `try/catch` (PRs #233, and the harmonization PR that followed, 2026-08-20).** `.catch()` can only attach to a promise that was actually returned, so it covers a REJECTION but lets a SYNCHRONOUS throw escape the callback and propagate out of `after()`. This was found while writing the #233 failure-isolation test, which failed against the `.catch()` shape and passed against `try/catch` — and the same was re-verified for the completion trigger by temporarily reverting the fix and watching the new test go red. The failure is UNREACHABLE today because both notifiers are `async` (an async function cannot throw synchronously), so this is not and never was a live bug. It is fixed anyway because these two seams guard a child's ability to BEGIN and to FINISH an assessment, and that guarantee should not rest on a callee keeping the `async` keyword. **Both triggers now have the identical shape on purpose** — #233 deliberately left the completion twin on the weaker pattern (its brief forbade touching existing triggers) and flagged the inconsistency in a comment; that comment is now removed because the inconsistency is gone. The rule going forward: an inconsistency between two adjacent triggers invites the next author to copy the weaker one, so fix the PATTERN, not just the instance.

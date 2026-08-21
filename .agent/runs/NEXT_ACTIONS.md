@@ -4,6 +4,29 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-08-21 — SAM-OS brief: HubSpot Contract A account-created contact sync (PR #238 OPEN)
+
+**BRIEF-20260820-1444-HUBSPOT executed.** PR #238 (`claude/relaxed-cerf-ly61pe` →
+`ATLAS-ASSESSMENT`) OPEN, verify-bar GREEN (1939 tests / 150 files, tsc clean, lint 0
+errors). Ships fully DARK — no HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set
+in Vercel. Zero child data (account-level only: parent name/email, account id, created date,
+first-touch UTM).
+
+- [ ] **Dimitri: merge PR #238** after Vercel preview review. No visible/UI change —
+      internal/technical, nothing to preview visually; confirm CI verify-bar is green before
+      merging. No `supabase db reset` action needed by Dimitri beyond the normal migration
+      apply (additive nullable `parents.attribution jsonb`).
+
+- [ ] **Dimitri (whenever ready, NOT merge-blocking): set `HUBSPOT_ATLAS_SYNC_TOKEN` in
+      Vercel to go live.** Re-verify the connected HubSpot portal id live is still
+      **245446396** immediately before setting it — do not trust any document's claim that
+      it was already checked (guardrail 6). Presence of the token is the only gate; there is
+      no separate LIVE flag.
+
+- [ ] **Follow-on (not blocked, can be picked up next session): BRIEF-20260820-1711-HUBSPOT**
+      — assessment-started/completed child-field events, ship with flag OFF. Was sequenced
+      behind Contract A landing per the SAM-OS HubSpot sequencing index; now unblocked.
+
 ## 0. 2026-08-20 — SAM-OS briefs: assessment-START alert, CLAUDE.md guardrails, post-#233 hardening
 
 Work now arrives as briefs in the SAM-OS Drive `briefs/` folder (INSP-ORCH). **Read

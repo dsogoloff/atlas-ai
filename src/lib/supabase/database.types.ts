@@ -682,6 +682,7 @@ export type Database = {
       }
       parents: {
         Row: {
+          attribution: Json | null
           auth_user_id: string
           created_at: string
           email: string
@@ -692,6 +693,7 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          attribution?: Json | null
           auth_user_id: string
           created_at?: string
           email: string
@@ -702,6 +704,7 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          attribution?: Json | null
           auth_user_id?: string
           created_at?: string
           email?: string
