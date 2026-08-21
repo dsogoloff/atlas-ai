@@ -4,6 +4,73 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-08-21 (ATLAS: HubSpot Contract A account-created parent contact sync) —
+**PR #238 OPEN**, branch `claude/relaxed-cerf-ly61pe` → `ATLAS-ASSESSMENT`. NOT merged
+(Dimitri's attended action after Vercel preview review).
+
+- **PR #238 — claude/relaxed-cerf-ly61pe — OPEN (verify-bar GREEN: 1939 tests / 3 skipped /
+  13 todo, 150 files, up from 1906; tsc --noEmit clean; lint 0 errors, 2 pre-existing
+  unrelated warnings in profile-menu.tsx / layout.tsx). Codex review: manual/skipped, relay
+  not wired in this remote session.**
+  "feat(hubspot): Contract A parent contact sync on account confirmation". Implements
+  **BRIEF-20260820-1444-HUBSPOT** (SAM-OS brief, HubSpot lane, executed in this repo per the
+  lane-routing contract). Fires an account-level HubSpot contact sync ONCE, on the FIRST
+  email confirmation (not raw signup) — same seam as the #211/#233 staff alerts. Scope is
+  account-level only: parent name/email, account id, created date, first-touch UTM
+  attribution. **Zero child data.**
+  New `src/lib/hubspot/syncContact.ts` (+ `syncContact.test.ts`, 27 tests):
+  `syncHubSpotContact(contact: AccountCreatedContact)`, typed allowlist (email, fullName,
+  accountId, createdAt, attribution — no child field of any kind, structurally). POST → 409
+  → GET → PATCH upsert against HubSpot CRM v3 contacts API. Field contract: email,
+  firstname/lastname (split first-space), lifecyclestage (advance-only), sam_source
+  ="atlas_assessment" (first-touch-only, never sent in a PATCH body), contact_category
+  ="prospect_parent" (internal value, set-if-empty), atlas_account_created_date (epoch
+  MILLISECONDS, not ISO), atlas_account_id, utm_source/medium/campaign/content/term (raw,
+  omitted not empty-string when absent, set-if-empty on PATCH). One 5xx retry, no retry on
+  4xx, never throws. DO-NOT-WRITE guarantees (advocate_utm_content, referral_source,
+  signup_source, phone, child_1_grade, any child/assessment/placement/level field) are
+  STRUCTURAL — the input type cannot carry them.
+  New `src/lib/env.ts` `getHubspotAtlasSyncToken()`: returns undefined when
+  `HUBSPOT_ATLAS_SYNC_TOKEN` is unset/blank; the token's presence IS the live gate (no
+  separate LIVE flag). **Ships fully dark until Dimitri sets it in Vercel.**
+  `.env.example` documents the new var, with a reminder to re-verify the connected HubSpot
+  portal id (245446396) live before ever setting it in a real deploy (guardrail 6).
+  `signupAction` (`src/app/(auth)/signup/actions.ts`) now persists `getAttribution()` onto
+  the `parents` insert as `attribution` (null when empty, never `{}`).
+  `/auth/confirm/route.ts` extended its `parents` select (`attribution, created_at`) and
+  added a SECOND, INDEPENDENT `after()` call for `syncHubSpotContact(...)` inside the
+  existing `firstConfirmation` guard, alongside — never replacing — the #211/#233
+  staff-alert `after()` call: a HubSpot outage cannot suppress the staff email and vice
+  versa.
+  New migration `20260821150000_hubspot_contract_a_parent_attribution.sql` — additive
+  nullable `parents.attribution jsonb`. Deliberately NOT mirrored into `supabase/seed.sql`:
+  it is plain schema DDL, not a tenant-scoped row-insert, so AGENTS.md's seed.sql-mirror
+  rule (which exists to avoid a silent no-op under `supabase db reset` for tenant-row
+  inserts) doesn't apply, and no precedent migration of this shape is mirrored either.
+  `database.types.ts` hand-edited to add `attribution: Json | null` to the `parents`
+  Row/Insert/Update types (no codegen script exists in this repo).
+
+  **Re-implementation note:** a prior session (2026-08-20, ~14:44 ET) built and fully
+  verified this exact brief (same file list, same field contract) but its local commit
+  (`81a48b7`) was lost when its ephemeral container was reclaimed — that session had repo
+  READ access but not push access, and an attempted Drive backup of the diff as a patch
+  file failed (uploaded empty). See SAM-OS Drive
+  `handovers/INSP-ORCH/2026-08-20_HUBSPOT_contract-a-account-created-sync.BLOCKED-no-github-write-access.handover.md`.
+  This session confirmed push access IS present (dry-run + actual PR both succeeded) and
+  re-typed the same verified design from that handover's spec — consistent with this file's
+  standing note that push access is granted and the earlier execution constraint is retired.
+
+  **Branch-name deviation:** ships from `claude/relaxed-cerf-ly61pe` (this session's
+  harness-assigned branch), not `claude/hubspot-contract-a` as the SAM-OS brief names — same
+  base off `origin/ATLAS-ASSESSMENT`, same content, different branch name only; flagged in
+  the PR body.
+
+  **Downstream unblocked:** `BRIEF-20260820-1711-HUBSPOT` (assessment-started/completed
+  child-field events, ship with flag OFF) was sequenced behind Contract A landing first —
+  it can now be picked up in a future session.
+
+---
+
 **As of:** 2026-08-20 (ATLAS: assessment-START staff alert, CLAUDE.md SAM-OS wiring + standing
 guardrails, failure-isolation harmonization) — **#233 and #234 MERGED**; trunk head **ae9be83**.
 
