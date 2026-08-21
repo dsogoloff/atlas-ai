@@ -4,6 +4,52 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0. 2026-08-21 — P0: signup confirmation + password reset were BOTH broken in prod for ~4 months (PR #240 MERGED)
+
+**PR #240 MERGED** (merge commit f4f5d43; now the `ATLAS-ASSESSMENT` head). Title:
+"fix(auth): non-PKCE token-minting client for signup confirm + password reset [P0]".
+Root cause: `@supabase/ssr` hardcodes `flowType: "pkce"` after spreading caller options
+(verified from installed package source), so `signUp()`/`resetPasswordForEmail()` minted
+`pkce_`-prefixed tokens that `/auth/confirm` and `/auth/reset`'s `verifyOtp({token_hash})`
+calls structurally cannot accept — broken for EVERY user since the very first Supabase
+commit (`bfabe14`, 2026-04-26) until today, silently, because both the success and
+failure paths returned an un-statused (307) redirect and the failure branch logged
+nothing. Fix: a dedicated `createTokenHashClient()` (plain `@supabase/supabase-js`,
+`flowType: "implicit"`) used only for the two token-minting calls; the shared SSR client
+is untouched everywhere else; both routes now log the real `verifyOtp` error. See
+CURRENT_STATE.md and DECISIONS.md 2026-08-21 for the full account.
+
+- [x] **PR #240 merged** (f4f5d43). Verify bar GREEN at merge: pnpm test 1954 passed / 13
+      todo (151 files), tsc clean, lint 0 errors, build clean. CI verify-bar +
+      rls-integration + Vercel all green. One Codex finding (kebab-case filename)
+      confirmed and fixed, commit ab58e1b.
+
+- [ ] **STILL OWED — run the live end-to-end verification and record the result.** This
+      session PROVED (a) the new client's options object has `flowType: "implicit"` (unit
+      test) and (b) `@supabase/ssr` hardcodes `pkce` (read the installed package source)
+      — but could NOT prove end-to-end that a real GoTrue server given this config mints a
+      plain-hash token the real routes accept, because `supabase start` failed on every
+      Docker image pull (403 Forbidden against `production.cloudfront.docker.com`,
+      confirmed as an explicit network-policy denial via the session's proxy status
+      endpoint, not transient). A ready-to-run verification script was handed to Dimitri
+      separately — it drives a real signup and a real password reset through the fixed
+      clients, reads the captured emails from Mailpit, asserts no `pkce_` prefix on the
+      token, and invokes the real route handlers end to end. **Run it and record the
+      result here before this is considered fully closed.** Until then the fix is
+      verified-by-construction, not verified-in-production.
+
+- [ ] **PARKED — whether any outreach/recovery is warranted for parents who tried to sign
+      up while this was broken (needs Dimitri).** Because signup confirmation never
+      worked, every parent who ever attempted to sign up in production was unable to
+      complete it, for the entire ~4 months this was broken. This is a founder/business
+      call (whether and how to reach out, whether it's worth the parent-facing exposure of
+      raising it) — NOT a technical one. Not resolved; do not resolve autonomously.
+
+- [ ] **Process note, not an action item:** PR #239 (repo-memory update for PR #238's
+      lifecycle) merged first (baa1b65). The PKCE fix commit had accidentally landed on
+      PR #239's branch; it was reverted there (00217ff) and moved to its own PR #240,
+      because a P0 fix should not ride on an unrelated docs PR's review. See DECISIONS.md.
+
 ## 0. 2026-08-21 — SAM-OS brief: HubSpot Contract A account-created contact sync (PR #238 MERGED)
 
 **BRIEF-20260820-1444-HUBSPOT executed and shipped.** PR #238 (`claude/relaxed-cerf-ly61pe` →
