@@ -108,11 +108,16 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
   const fullName = `${data.firstName} ${data.lastName}`.trim();
 
   // HubSpot Contract A capture: the first-touch UTM attribution (if any) is
-  // read here, at signup, and persisted on the parents row so it survives to
-  // the email-confirm ("account created") moment, where
-  // src/lib/hubspot/syncContact.ts forwards it onto the HubSpot contact.
-  // getAttribution() never throws and returns {} when untagged; store NULL
-  // (never `{}`) so an untagged signup has no attribution column noise.
+  // read here, at signup, so it survives to the email-confirm
+  // ("account created") moment, where src/lib/hubspot/syncContact.ts
+  // forwards it onto the HubSpot contact. getAttribution() never throws and
+  // returns {} when untagged — an untagged signup writes nothing.
+  //
+  // Written as a SEPARATE best-effort UPDATE after the parent row is
+  // confirmed created (see below), never on the creation INSERT itself.
+  // Attribution is marketing data; it must never be able to fail — or even
+  // slow down the rollback path of — the transaction that creates a
+  // parent's account. See the "best-effort attribution write" block below.
   const attribution = await getAttribution();
   const hasAttribution = Object.keys(attribution).length > 0;
 
@@ -157,6 +162,8 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
   }
 
   // Insert parents row (service role — RLS would block; no session yet).
+  // ONLY the fields that make an account exist — attribution is deliberately
+  // NOT here, see the best-effort write below.
   const { data: parent, error: parentErr } = await admin
     .from("parents")
     .insert({
@@ -165,7 +172,6 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
       home_center_id: center.id,
       email: data.email,
       name: fullName,
-      attribution: hasAttribution ? (attribution as Json) : null,
     })
     .select("id")
     .single();
@@ -191,6 +197,33 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
       ok: false,
       error: "Could not finish creating your account. Please try again.",
     };
+  }
+
+  // Best-effort HubSpot Contract A attribution write. DECOUPLED from account
+  // creation on purpose: the parent row already exists at this point, so
+  // nothing here can orphan the auth user, and nothing here can turn into
+  // "Could not finish creating your account" for the parent. Any failure —
+  // missing column, bad value, a thrown network error, anything — is logged
+  // and swallowed. Marketing attribution must never be able to block a
+  // parent from creating an account.
+  if (hasAttribution) {
+    try {
+      const { error: attributionErr } = await admin
+        .from("parents")
+        .update({ attribution: attribution as Json })
+        .eq("id", parent.id);
+      if (attributionErr) {
+        console.error("[signup] best-effort attribution write failed", {
+          parentId: parent.id,
+          attributionErr,
+        });
+      }
+    } catch (e) {
+      console.error("[signup] best-effort attribution write threw", {
+        parentId: parent.id,
+        err: e instanceof Error ? e.message : "unknown",
+      });
+    }
   }
 
   // Audit trail (compliance.md §2). All three events fire here: the parent
