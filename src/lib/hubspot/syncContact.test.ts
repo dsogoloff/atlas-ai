@@ -247,9 +247,11 @@ describe("409 upsert path", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
     const [getUrl, getInit] = fetchMock.mock.calls[1];
-    expect(getUrl).toBe(
-      "https://api.hubapi.com/crm/v3/objects/contacts/jordan%40example.com?idProperty=email",
+    const parsedGetUrl = new URL(getUrl);
+    expect(parsedGetUrl.origin + parsedGetUrl.pathname).toBe(
+      "https://api.hubapi.com/crm/v3/objects/contacts/jordan%40example.com",
     );
+    expect(parsedGetUrl.searchParams.get("idProperty")).toBe("email");
     expect(getInit.method).toBe("GET");
 
     const [patchUrl, patchInit] = fetchMock.mock.calls[2];
@@ -263,6 +265,35 @@ describe("409 upsert path", () => {
     // Always-included fields.
     expect(typeof patchBody.properties.atlas_account_created_date).toBe("number");
     expect(patchBody.properties.atlas_account_id).toBe("acct-1");
+  });
+
+  it("GET requests every property the patch logic inspects, comma-separated (not repeated params)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(409, { message: "already exists" }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: "hs-1", properties: {} }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: "hs-1" }));
+
+    await syncHubSpotContact(CONTACT);
+
+    const [getUrl] = fetchMock.mock.calls[1];
+    const parsedGetUrl = new URL(getUrl);
+    // Single-object GET convention: one `properties` param, comma-separated
+    // — not repeated `properties=` params (that's the SEARCH endpoint).
+    expect(parsedGetUrl.searchParams.getAll("properties")).toHaveLength(1);
+    const requestedProperties = parsedGetUrl.searchParams.get("properties")!.split(",");
+    for (const expected of [
+      "firstname",
+      "lastname",
+      "contact_category",
+      "lifecyclestage",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_content",
+      "utm_term",
+    ]) {
+      expect(requestedProperties).toContain(expected);
+    }
   });
 
   it("set-if-empty: does not overwrite an existing non-empty utm_content, sam_source, or firstname", async () => {
@@ -329,13 +360,48 @@ describe("409 upsert path", () => {
     expect(patchBody.properties).not.toHaveProperty("lifecyclestage");
   });
 
-  it("lifecycle-stage advance-only: an unrecognized existing value still advances to 'lead'", async () => {
+  it("lifecycle-stage advance-only: a non-empty UNRECOGNIZED existing stage is left alone entirely", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse(409, {}))
       .mockResolvedValueOnce(
         jsonResponse(200, {
           id: "hs-1",
-          properties: { lifecyclestage: "some_custom_hubspot_stage" },
+          properties: { lifecyclestage: "custom_partner_stage" },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { id: "hs-1" }));
+
+    await syncHubSpotContact(CONTACT);
+
+    const patchBody = JSON.parse(fetchMock.mock.calls[2][1].body) as {
+      properties: Record<string, unknown>;
+    };
+    // Unrecognized-but-populated existing stage: we can't tell advance from
+    // downgrade, so `lifecyclestage` must not appear in the PATCH at all.
+    expect(patchBody.properties).not.toHaveProperty("lifecyclestage");
+  });
+
+  it("lifecycle-stage advance-only: existing missing/empty -> writes 'lead'", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(409, {}))
+      .mockResolvedValueOnce(jsonResponse(200, { id: "hs-1", properties: {} }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: "hs-1" }));
+
+    await syncHubSpotContact(CONTACT);
+
+    const patchBody = JSON.parse(fetchMock.mock.calls[2][1].body) as {
+      properties: Record<string, unknown>;
+    };
+    expect(patchBody.properties.lifecyclestage).toBe("lead");
+  });
+
+  it("lifecycle-stage advance-only: a KNOWN lower-ranked existing stage ('subscriber') advances to 'lead'", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(409, {}))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          id: "hs-1",
+          properties: { lifecyclestage: "subscriber" },
         }),
       )
       .mockResolvedValueOnce(jsonResponse(200, { id: "hs-1" }));

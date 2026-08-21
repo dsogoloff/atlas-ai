@@ -98,8 +98,19 @@ async function upsertExisting(
 ): Promise<void> {
   let getRes: Response;
   try {
+    // Single-object GET (/crm/v3/objects/{objectType}/{objectId}) takes a
+    // single comma-separated `properties` value, NOT repeated `properties=`
+    // params — that repeated-param form is the v3 SEARCH endpoint's
+    // convention. Every property buildPatchProperties() inspects below must
+    // be listed here, or HubSpot's DEFAULT property set silently omits it
+    // and the set-if-empty logic mistakes "not requested" for "empty",
+    // clobbering real values (e.g. a live utm_content placement tag).
+    const params = new URLSearchParams({
+      idProperty: "email",
+      properties: GET_PROPERTIES.join(","),
+    });
     getRes = await fetch(
-      `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`,
+      `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/${encodeURIComponent(email)}?${params.toString()}`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
@@ -214,10 +225,29 @@ const SAM_SOURCE = "atlas_assessment";
 const CONTACT_CATEGORY = "prospect_parent";
 const NEW_LIFECYCLE_STAGE = "lead";
 
-/** HubSpot's standard lifecycle-stage order, low to high. Unrecognized /
- *  missing values rank 0 — a known value always "advances" over them, and a
- *  HubSpot-only custom stage outside this ladder is never downgraded because
- *  it never enters this map. */
+/** Every property the set-if-empty / advance-only logic in
+ *  buildPatchProperties() inspects on the existing contact. Passed as the
+ *  409-lookup GET's `properties` query param — HubSpot's single-object GET
+ *  only returns its small DEFAULT set otherwise, and a property missing from
+ *  the response (never requested) is indistinguishable from one that's
+ *  genuinely empty in HubSpot, which would make set-if-empty overwrite it. */
+const GET_PROPERTIES = [
+  "firstname",
+  "lastname",
+  "contact_category",
+  "lifecyclestage",
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+];
+
+/** HubSpot's standard lifecycle-stage order, low to high. `lifecycleRank`
+ *  returns `undefined` for any value outside this ladder (including a real,
+ *  populated HubSpot-only custom stage) — callers must treat "unrecognized"
+ *  as its own case, never coerce it to a rank, or an unknown-but-real
+ *  existing stage gets silently overwritten (that coercion was the bug). */
 const LIFECYCLE_STAGE_RANK: Record<string, number> = {
   subscriber: 1,
   lead: 2,
@@ -229,9 +259,8 @@ const LIFECYCLE_STAGE_RANK: Record<string, number> = {
   other: 8,
 };
 
-function lifecycleRank(value: unknown): number {
-  if (typeof value !== "string" || value === "") return 0;
-  return LIFECYCLE_STAGE_RANK[value] ?? 0;
+function lifecycleRank(value: string): number | undefined {
+  return LIFECYCLE_STAGE_RANK[value];
 }
 
 function splitName(fullName: string): { firstname: string; lastname: string } {
@@ -313,9 +342,22 @@ function buildPatchProperties(
     if (isEmptyExisting(existing[key])) properties[key] = value;
   }
 
-  // Advance-only.
-  if (lifecycleRank(existing.lifecyclestage) < lifecycleRank(NEW_LIFECYCLE_STAGE)) {
+  // Advance-only, three-way on the existing value:
+  //  - missing/empty                    -> write NEW_LIFECYCLE_STAGE
+  //  - known stage, rank < new stage     -> write NEW_LIFECYCLE_STAGE
+  //  - known stage, rank >= new stage    -> leave alone (already advanced)
+  //  - non-empty but NOT in the ladder   -> leave alone (unrecognized custom
+  //                                         stage; we can't tell advance from
+  //                                         downgrade, so never touch it)
+  const existingLifecycle = existing.lifecyclestage;
+  if (isEmptyExisting(existingLifecycle)) {
     properties.lifecyclestage = NEW_LIFECYCLE_STAGE;
+  } else if (typeof existingLifecycle === "string") {
+    const existingRank = lifecycleRank(existingLifecycle);
+    const newRank = lifecycleRank(NEW_LIFECYCLE_STAGE);
+    if (existingRank !== undefined && newRank !== undefined && existingRank < newRank) {
+      properties.lifecyclestage = NEW_LIFECYCLE_STAGE;
+    }
   }
 
   return properties;
