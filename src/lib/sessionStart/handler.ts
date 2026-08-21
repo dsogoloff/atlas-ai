@@ -527,12 +527,14 @@ export async function sessionStartHandler({
  * response is already on the wire — a child tapping "begin" must never wait on
  * Resend, and a Resend outage must never stop an assessment from starting.
  *
- * The try/catch (rather than the twin's trailing `.catch()`) is deliberate: a
- * trailing `.catch()` only ever attaches to a returned promise, so it covers a
- * REJECTION but not a SYNCHRONOUS throw. notifyAssessmentStarted is `async` and
- * so cannot throw synchronously today — but this seam is the one guarding a
- * child's ability to begin an assessment, and that guarantee should not rest on
- * a callee keeping the `async` keyword. Swallowing here makes it unconditional.
+ * The try/catch is load-bearing, not decoration: a trailing `.catch()` only
+ * attaches to a promise that was actually returned, so it covers a REJECTION
+ * but not a SYNCHRONOUS throw. notifyAssessmentStarted is `async` and so cannot
+ * throw synchronously today — but this seam guards a child's ability to BEGIN
+ * an assessment, and that guarantee should not rest on a callee keeping the
+ * `async` keyword. Swallowing here makes it unconditional. Identical shape to
+ * notifyStaffAssessmentCompleted in responseSubmit/handler.ts — the two
+ * triggers are deliberately the same, so copying either one is safe.
  */
 function notifyStaffAssessmentStarted(
   parentName: string,

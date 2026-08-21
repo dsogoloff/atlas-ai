@@ -4,6 +4,55 @@
 > Replaces the technical `*_handover.md` files (ATLAS / CONVERSION / AGENTS). State-focused;
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
+**As of:** 2026-08-20 (ATLAS: assessment-START staff alert, CLAUDE.md SAM-OS wiring + standing
+guardrails, failure-isolation harmonization) — **#233 and #234 MERGED**; trunk head **ae9be83**.
+
+This lane now runs under **SAM-OS** as the ATLAS lane of the Inspirea project, coordinated by
+INSP-ORCH. Work arrives as briefs in the SAM-OS Drive `briefs/` folder; the PR is the only seam
+out of the box. `!!!_STOP_v2_2026-08-20_1857_…md` is the folder's triage file and must be read
+before building any brief in it — **and briefs must be triaged by BODY, never by filename.**
+
+**Push access is GRANTED and the earlier execution constraint is RETIRED.** Prior sessions
+operated under a "if push fails, stop and file a BLOCKED handover" constraint; `git push` to
+`origin` now works normally for `claude/*` branches. `ATLAS-ASSESSMENT` remains protected — it
+still rejects direct pushes, and merging is still Dimitri's attended action. Do not reintroduce
+the bundle/workaround behaviour that constraint was guarding against.
+
+- **PR #233 — claude/staff-alert-assessment-start — MERGED (8899ef2; verify-bar GREEN: 1905
+  tests, tsc clean, lint 0 errors; rls-integration green).**
+  "feat(alerts): staff email alert on assessment start". Adds a THIRD trigger,
+  `notifyAssessmentStarted`, to the #211 notifier — the pilot center is now told when a child
+  BEGINS an assessment, not only on account-confirm and completion. **Live on merge** (no new
+  flag): it is gated on the SAME `LEAD_NOTIFY_LIVE` switch as the other two, so it starts
+  sending the moment that flag is flipped and not before.
+  Wired to the fresh-session seam in `sessionStart/handler.ts`, alongside the
+  `short_test_started` / `comprehensive_test_started` emit. That placement is what makes it
+  ONCE PER SESSION: resume-with-progress, zero-progress resume/refresh, the 23505 race loss,
+  first-pick rollback and the consent block all return before that line, and the partial unique
+  index on `(child_id) WHERE status='IN_PROGRESS'` forbids a second open session. All six
+  routes are pinned by tests.
+  COPPA allowlist REUSED VERBATIM from the completion alert — parent name, child GRADE, staff
+  record link — deliberately NOT widened. `parents.name` is the only field added to the start
+  path's read. Subject is `S.A.M assessment STARTED: …`; the uppercase STARTED is the
+  distinguishing token against the completion alert's lowercase `completed`, since the two now
+  arrive as a pair per session.
+  `/api/assess/start` resolves the canonical origin DEFENSIVELY — `getAppPublicOrigin()` throws
+  when `APP_PUBLIC_ORIGIN` is unset, and on this path that must degrade to a bare-path link
+  rather than 500 a child out of starting an assessment.
+
+- **PR #234 — claude/claude-md-sam-os-wiring — MERGED (ae9be83; CI green).**
+  "docs(claude): SAM-OS lane wiring + standing guardrails". Commits the SAM-OS positioning that
+  had been sitting UNCOMMITTED in the main working tree (source of a recurring session-start
+  drift alarm), and adds a `⛔ STANDING GUARDRAILS` section at the very top of `CLAUDE.md` —
+  above every other section — declared to outrank every brief, memory file and the rest of the
+  document. Seven items: level never to HubSpot; permitted child data = first name + grade only;
+  nothing child-derived leaves HubSpot; never auto-publish; propose-don't-push (`claude/*` + PR);
+  re-read the live HubSpot portal (245446396) rather than inheriting an id; and **verify
+  allowlists against the CODE, never against a brief's prose**. Rationale: repo context loads
+  every session by construction, Drive context only if the prompt says so.
+  Also restored a trailing newline the uncommitted edit had stripped, and added a branch-naming
+  note reconciling guardrail 5 (`claude/*`) with the Workflow section's older `lane/*` wording.
+
 **As of:** 2026-08-13 (ATLAS: staff alerts, director CTA, dead-link cleanup, COPPA copy, re-clamp script, self-hosted fonts) — **#211–#217 ALL MERGED**; trunk head **07e7bb1**.
 
 Two standing caveats:

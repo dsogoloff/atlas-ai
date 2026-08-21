@@ -4,7 +4,42 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (#211–#217 ALL MERGED)
+## 0. 2026-08-20 — SAM-OS briefs: assessment-START alert, CLAUDE.md guardrails, post-#233 hardening
+
+Work now arrives as briefs in the SAM-OS Drive `briefs/` folder (INSP-ORCH). **Read
+`!!!_STOP_v2_2026-08-20_1857_…md` before building any brief in that folder, and triage by BODY,
+never by filename.** Execute one brief per run; do not pick up neighbouring briefs.
+
+- [x] **BRIEF-20260820-1735-ATLAS — assessment-START staff alert.** PR #233, MERGED (8899ef2).
+      Verify bar GREEN (1905 tests, tsc clean, lint 0 errors); rls-integration green.
+
+- [x] **BRIEF-20260820-2031-ATLAS item 3 — `CLAUDE.md` drift + standing guardrails.** PR #234,
+      MERGED (ae9be83). Drift decision reported to INSP-ORCH: **COMMITTED, not restored** — the
+      diff was legitimate SAM-OS wiring. Item 3 was consequently SKIPPED when the rest of
+      BRIEF-20260820-2031-ATLAS was executed.
+
+- [x] **BRIEF-20260820-2031-ATLAS items 1, 2, 4 — failure-isolation harmonization, repo memory,
+      workspace cleanup.** Completion trigger moved to the same `try/catch` shape as the started
+      trigger, with a test proving a SYNCHRONOUS throw cannot escape `after()` (verified
+      load-bearing by reverting the fix and watching it fail). COPPA allowlist untouched.
+
+- [ ] **Dimitri: flip `LEAD_NOTIFY_LIVE=true` in Vercel — NOW ENABLES THREE ALERTS, NOT TWO.**
+      Carried forward from #211 and re-stated because the surface changed: the switch now also
+      turns on the assessment-STARTED alert (#233), so staff will receive a START/COMPLETE
+      **pair per session** rather than one email. Subjects are deliberately distinguishable
+      (`S.A.M assessment STARTED: …` vs `S.A.M assessment completed: …`). Still no other env var
+      required — the recipient defaults in code to `parents@samnewyork.com`; set
+      `STAFF_ALERT_TO` only to route elsewhere (e.g. a QA inbox).
+      Two operational notes: server env vars bind at BUILD, so a change needs a **redeploy**;
+      and a successful send logs **NOTHING** — `[staffAlerts]` logs only on failure, so absence
+      of logs means success, not silence.
+
+- [ ] **Housekeeping: the main repo working tree has unrelated uncommitted files.**
+      `.agent/runs/CURRENT_STATE.md`, `.agent/runs/NEXT_ACTIONS.md`, `README.md`, `package.json`,
+      plus an untracked `public/SAM Logo w SM Short.png`. Untouched by #233/#234 and still
+      undecided — commit via a lane PR or restore, founder's call.
+
+## 1. 2026-08-13 — Staff alerts, director CTA, dead links, COPPA copy, re-clamp (#211–#217 ALL MERGED)
 
 Six lane PRs plus the follow-on build fix (#217), all verify-bar GREEN and CI green.
 
