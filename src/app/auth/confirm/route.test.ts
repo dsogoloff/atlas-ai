@@ -19,10 +19,16 @@ const mockPriorConfirms = vi.fn<() => Promise<{ data: Array<{ id: string }> }>>(
   async () => ({ data: [] }),
 );
 const mockNotifyAccountCreated = vi.fn(async () => undefined);
+const mockSyncHubSpotContact = vi.fn(async () => undefined);
 
 vi.mock("@/lib/staffAlerts/notify", () => ({
   notifyAccountCreated: (...args: unknown[]) =>
     mockNotifyAccountCreated(...(args as [])),
+}));
+
+vi.mock("@/lib/hubspot/syncContact", () => ({
+  syncHubSpotContact: (...args: unknown[]) =>
+    mockSyncHubSpotContact(...(args as [])),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -86,6 +92,7 @@ afterEach(() => {
   mockMaybeSingle.mockReset();
   mockAuditInsert.mockClear();
   mockNotifyAccountCreated.mockClear();
+  mockSyncHubSpotContact.mockClear();
   mockPriorConfirms.mockReset();
   mockPriorConfirms.mockResolvedValue({ data: [] });
 });
@@ -197,6 +204,8 @@ describe("GET /auth/confirm — staff account-created alert", () => {
     home_center_id: "c1",
     name: "Jordan Lee",
     email: "jordan@example.com",
+    attribution: { utm_source: "facebook" },
+    created_at: "2026-08-20T10:00:00.000Z",
   };
 
   function confirmedParent() {
@@ -280,5 +289,81 @@ describe("GET /auth/confirm — staff account-created alert", () => {
     const u = new URL(location(await GET(req("?token_hash=abc&type=email"))));
     expect(u.pathname).toBe("/login");
     expect(u.searchParams.get("confirmed")).toBe("1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// HubSpot Contract A sync — SEPARATE, INDEPENDENT after() call alongside the
+// staff alert. Neither must be able to suppress the other.
+// ---------------------------------------------------------------------------
+describe("GET /auth/confirm — HubSpot Contract A sync", () => {
+  const PARENT = {
+    id: "p1",
+    tenant_id: "t1",
+    home_center_id: "c1",
+    name: "Jordan Lee",
+    email: "jordan@example.com",
+    attribution: { utm_source: "facebook" },
+    created_at: "2026-08-20T10:00:00.000Z",
+  };
+
+  function confirmedParent() {
+    mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockMaybeSingle.mockResolvedValue({ data: PARENT });
+  }
+
+  it("fires once on the FIRST confirmation, in the same branch as the staff alert", async () => {
+    confirmedParent();
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockSyncHubSpotContact).toHaveBeenCalledTimes(1);
+    expect(mockNotifyAccountCreated).toHaveBeenCalledTimes(1);
+    expect(mockSyncHubSpotContact).toHaveBeenCalledWith({
+      email: "jordan@example.com",
+      fullName: "Jordan Lee",
+      accountId: "p1",
+      createdAt: "2026-08-20T10:00:00.000Z",
+      attribution: { utm_source: "facebook" },
+    });
+  });
+
+  it("does NOT fire on a repeat/non-first confirmation", async () => {
+    confirmedParent();
+    mockPriorConfirms.mockResolvedValue({ data: [{ id: "audit-1" }] });
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockSyncHubSpotContact).not.toHaveBeenCalled();
+    expect(mockNotifyAccountCreated).not.toHaveBeenCalled();
+  });
+
+  it("a rejection from the HubSpot call does not block the staff alert or the redirect", async () => {
+    confirmedParent();
+    mockSyncHubSpotContact.mockRejectedValueOnce(new Error("hubspot down"));
+
+    const u = new URL(location(await GET(req("?token_hash=abc&type=email"))));
+
+    expect(u.pathname).toBe("/login");
+    expect(u.searchParams.get("confirmed")).toBe("1");
+    expect(mockNotifyAccountCreated).toHaveBeenCalledTimes(1);
+  });
+
+  it("a rejection from the staff alert does not block the HubSpot sync", async () => {
+    confirmedParent();
+    mockNotifyAccountCreated.mockRejectedValueOnce(new Error("resend down"));
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockSyncHubSpotContact).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fire when no parent row exists for the confirmed user", async () => {
+    mockVerifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+
+    await GET(req("?token_hash=abc&type=email"));
+
+    expect(mockSyncHubSpotContact).not.toHaveBeenCalled();
   });
 });

@@ -24,7 +24,9 @@ import {
   guardAuthAttempt,
 } from "@/lib/quota/authGuard";
 import { canonicalUrl } from "@/lib/config/publicOrigin";
+import { getAttribution } from "@/lib/marketing/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/database.types";
 import { SignupSchema, type SignupInput } from "./schema";
 
 const TENANT_SLUG = "inspirea_singapore_math";
@@ -105,6 +107,15 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
 
   const fullName = `${data.firstName} ${data.lastName}`.trim();
 
+  // HubSpot Contract A capture: the first-touch UTM attribution (if any) is
+  // read here, at signup, and persisted on the parents row so it survives to
+  // the email-confirm ("account created") moment, where
+  // src/lib/hubspot/syncContact.ts forwards it onto the HubSpot contact.
+  // getAttribution() never throws and returns {} when untagged; store NULL
+  // (never `{}`) so an untagged signup has no attribution column noise.
+  const attribution = await getAttribution();
+  const hasAttribution = Object.keys(attribution).length > 0;
+
   // Create auth user (queues verification email — see compliance.md §2).
   const auth = await createClient();
   const { data: signup, error: signupErr } = await auth.auth.signUp({
@@ -154,6 +165,7 @@ export async function signupAction(input: SignupInput): Promise<SignupResult> {
       home_center_id: center.id,
       email: data.email,
       name: fullName,
+      attribution: hasAttribution ? (attribution as Json) : null,
     })
     .select("id")
     .single();

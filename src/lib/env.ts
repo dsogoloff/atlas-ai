@@ -252,6 +252,29 @@ export function isFranchisorDashboardEnabled(): boolean {
   return rolloutFlag("ENABLE_FRANCHISOR_DASHBOARD");
 }
 
+// ---------------------------------------------------------------------------
+// HubSpot Contract A — account-level parent contact sync on email confirm.
+// src/lib/hubspot/syncContact.ts.
+//
+// No separate "LIVE" flag here, unlike the gates above: the token's mere
+// presence IS the gate. There is nothing this sync can spend money on by
+// existing (unlike LEAD_NOTIFY_LIVE, which guards a paid Resend send), and a
+// present-but-wrong token just fails the HubSpot call fail-soft — so a single
+// knob is enough, and it collapses "configured" and "enabled" into one state
+// instead of two that can drift out of sync.
+//
+// DO NOT set this in a real deploy until the connected HubSpot portal ID
+// (245446396) has been RE-VERIFIED LIVE against the actual connected portal —
+// never inherit it from a document (CLAUDE.md guardrail 6: an inherited,
+// wrong portal id propagated across two cycles here before a live read
+// caught it). This getter does not perform that check; it is a human
+// pre-condition on the deploy action of setting the var at all.
+// ---------------------------------------------------------------------------
+export function getHubspotAtlasSyncToken(): string | undefined {
+  const raw = process.env.HUBSPOT_ATLAS_SYNC_TOKEN?.trim();
+  return raw ? raw : undefined;
+}
+
 /** Registry of the 11 §12 flags: strategy key → (env var, getter). Lets
  *  callers/tests enumerate the set and assert the default-off invariant
  *  without hand-listing every flag. */

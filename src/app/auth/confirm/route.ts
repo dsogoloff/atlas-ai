@@ -33,6 +33,8 @@ import { NextResponse, after, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { canonicalUrl } from "@/lib/config/publicOrigin";
+import { syncHubSpotContact } from "@/lib/hubspot/syncContact";
+import type { Attribution } from "@/lib/marketing/attribution";
 import { notifyAccountCreated } from "@/lib/staffAlerts/notify";
 import { consumeAuthAttempt } from "@/lib/quota/authLimits";
 import { extractClientIp } from "@/lib/questionAccessLog/log";
@@ -105,7 +107,9 @@ export async function GET(request: NextRequest) {
     .from("parents")
     // name + email feed the staff account-created alert below; they are the
     // ONLY parent fields that leave the box (see staffAlerts/notify.ts).
-    .select("id, tenant_id, home_center_id, name, email")
+    // attribution + created_at additionally feed the HubSpot Contract A sync
+    // (account-level only — see hubspot/syncContact.ts).
+    .select("id, tenant_id, home_center_id, name, email, attribution, created_at")
     .eq("auth_user_id", verified.user.id)
     .maybeSingle();
 
@@ -165,6 +169,21 @@ export async function GET(request: NextRequest) {
           // an attacker-controlled "admin" link inside an email we send to
           // staff — a phishing vector into the admin panel.
           adminUrl: canonicalUrl("/admin"),
+        }).catch(() => undefined),
+      );
+
+      // HubSpot Contract A — SEPARATE, INDEPENDENT after() call. Never nested
+      // inside or replacing the staff alert above: a HubSpot outage must
+      // never suppress the staff email, and vice versa. syncHubSpotContact
+      // never throws by contract; the trailing catch is belt-and-suspenders.
+      // Account-level only — no child data (see hubspot/syncContact.ts).
+      after(() =>
+        syncHubSpotContact({
+          email: parent.email,
+          fullName: parent.name,
+          accountId: parent.id,
+          createdAt: parent.created_at,
+          attribution: parent.attribution as Attribution | null,
         }).catch(() => undefined),
       );
     }

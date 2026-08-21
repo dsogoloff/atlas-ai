@@ -17,13 +17,20 @@ const mockDeleteUser = vi.fn<
 
 // Per-table service-client stub. select/eq/insert chain and resolve to the
 // shape each call site consumes (maybeSingle / single / awaited list / insert).
+// `onInsert` (used by the parents stub) captures the exact insert payload so
+// tests can assert on it.
 function tableStub(handlers: {
   single?: unknown;
   maybeSingle?: unknown;
   list?: unknown;
+  onInsert?: (payload: Record<string, unknown>) => void;
 }) {
   const b: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "insert"]) b[m] = () => b;
+  for (const m of ["select", "eq"]) b[m] = () => b;
+  b.insert = (payload: Record<string, unknown>) => {
+    handlers.onInsert?.(payload);
+    return b;
+  };
   b.single = async () => handlers.single ?? { data: null, error: null };
   b.maybeSingle = async () => handlers.maybeSingle ?? { data: null, error: null };
   b.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
@@ -35,6 +42,15 @@ let parentInsertResult: { data: unknown; error: unknown } = {
   data: { id: "p1" },
   error: null,
 };
+let capturedParentInsert: Record<string, unknown> | undefined;
+
+const mockGetAttribution = vi.fn<() => Promise<Record<string, string>>>(
+  async () => ({}),
+);
+
+vi.mock("@/lib/marketing/server", () => ({
+  getAttribution: () => mockGetAttribution(),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { signUp: mockSignUp } }),
@@ -52,7 +68,12 @@ vi.mock("@/lib/supabase/server", () => ({
             },
           });
         case "parents":
-          return tableStub({ single: parentInsertResult });
+          return tableStub({
+            single: parentInsertResult,
+            onInsert: (payload) => {
+              capturedParentInsert = payload;
+            },
+          });
         case "vpc_audit_log":
           return tableStub({ list: { data: null, error: null } });
         default:
@@ -87,6 +108,9 @@ afterEach(() => {
   mockSignUp.mockReset();
   mockDeleteUser.mockClear();
   parentInsertResult = { data: { id: "p1" }, error: null };
+  capturedParentInsert = undefined;
+  mockGetAttribution.mockReset();
+  mockGetAttribution.mockResolvedValue({});
   vi.unstubAllEnvs();
 });
 
@@ -138,5 +162,39 @@ describe("signupAction — orphan rollback on parents-insert failure", () => {
     expect(mockDeleteUser).toHaveBeenCalledWith("u1");
     expect(errSpy).toHaveBeenCalled(); // rollback failure logged
     errSpy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// HubSpot Contract A capture — src/lib/marketing/server's getAttribution()
+// lands on the parents insert; empty attribution persists as NULL, not {}.
+// ---------------------------------------------------------------------------
+describe("signupAction — attribution capture on the parents insert", () => {
+  it("persists getAttribution()'s result as `attribution` on the parents insert", async () => {
+    mockSignUp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockGetAttribution.mockResolvedValue({
+      utm_source: "facebook",
+      utm_medium: "paid_social",
+      utm_campaign: "sam_ny_fall",
+      first_seen: "2026-08-03T12:00:00.000Z",
+    });
+
+    await signupAction(INPUT);
+
+    expect(capturedParentInsert?.attribution).toEqual({
+      utm_source: "facebook",
+      utm_medium: "paid_social",
+      utm_campaign: "sam_ny_fall",
+      first_seen: "2026-08-03T12:00:00.000Z",
+    });
+  });
+
+  it("persists an empty {} attribution as NULL, not {}", async () => {
+    mockSignUp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    mockGetAttribution.mockResolvedValue({});
+
+    await signupAction(INPUT);
+
+    expect(capturedParentInsert?.attribution).toBeNull();
   });
 });
