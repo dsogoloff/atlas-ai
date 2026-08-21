@@ -29,7 +29,7 @@ import "server-only";
 // explicitly below anyway so the intent is never implicit-by-accident, and
 // so a regression (someone "helpfully" removing the option, or swapping
 // this back to the @supabase/ssr wrapper) is a one-line diff a reviewer can
-// catch, backed by tokenHashClient.test.ts's guard.
+// catch, backed by token-hash-client.test.ts's guard.
 // ---------------------------------------------------------------------------
 //
 // SCOPE: use this ONLY for calls that mint an emailed token. Every other

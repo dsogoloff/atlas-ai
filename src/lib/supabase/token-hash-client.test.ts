@@ -33,7 +33,7 @@ vi.mock("@/lib/env", () => ({
   },
 }));
 
-import { createTokenHashClient } from "./tokenHashClient";
+import { createTokenHashClient } from "./token-hash-client";
 
 describe("createTokenHashClient", () => {
   it("forces flowType 'implicit' — never 'pkce'", () => {
@@ -52,7 +52,7 @@ describe("createTokenHashClient", () => {
     // legitimately mentions "@supabase/ssr" in prose to explain why it's
     // avoided.
     const source = await import("node:fs/promises").then((fs) =>
-      fs.readFile(new URL("./tokenHashClient.ts", import.meta.url), "utf-8"),
+      fs.readFile(new URL("./token-hash-client.ts", import.meta.url), "utf-8"),
     );
     const importLines = source
       .split("\n")

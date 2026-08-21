@@ -23,7 +23,7 @@
 
 import { guardAuthAttempt } from "@/lib/quota/authGuard";
 import { canonicalUrl } from "@/lib/config/publicOrigin";
-import { createTokenHashClient } from "@/lib/supabase/tokenHashClient";
+import { createTokenHashClient } from "@/lib/supabase/token-hash-client";
 
 import { ForgotPasswordSchema, type ForgotPasswordInput } from "./schema";
 
@@ -58,7 +58,7 @@ export async function requestPasswordReset(
     // finding — a password-reset link pointed at an attacker's domain is a
     // direct account takeover, delivered inside a genuine email from us.
     //
-    // Dedicated non-PKCE client — see tokenHashClient.ts. resetPasswordForEmail
+    // Dedicated non-PKCE client — see token-hash-client.ts. resetPasswordForEmail
     // mints the recovery-email token; /auth/reset verifies it via
     // verifyOtp({ token_hash }), which needs a plain-hash token, not the
     // pkce_-prefixed one the shared @supabase/ssr client would mint.

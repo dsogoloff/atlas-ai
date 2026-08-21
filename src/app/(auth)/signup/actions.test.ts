@@ -71,7 +71,7 @@ vi.mock("@/lib/marketing/server", () => ({
   getAttribution: () => mockGetAttribution(),
 }));
 
-vi.mock("@/lib/supabase/tokenHashClient", () => ({
+vi.mock("@/lib/supabase/token-hash-client", () => ({
   createTokenHashClient: () => ({ auth: { signUp: mockSignUp } }),
 }));
 
