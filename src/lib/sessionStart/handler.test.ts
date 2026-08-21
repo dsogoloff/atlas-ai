@@ -16,7 +16,16 @@ vi.mock("@/lib/analytics/emit", () => ({
   emit: vi.fn().mockResolvedValue(undefined),
 }));
 
+// The assessment-STARTED staff alert goes out through the same `after()` seam.
+// Stub the transport so these tests assert the CALL CONTRACT (fired once, with
+// the allowlisted payload) — the notifier's own Resend/gating/COPPA behaviour
+// is covered in src/lib/staffAlerts/notify.test.ts.
+vi.mock("@/lib/staffAlerts/notify", () => ({
+  notifyAssessmentStarted: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { emit } from "@/lib/analytics/emit";
+import { notifyAssessmentStarted } from "@/lib/staffAlerts/notify";
 import { STRANDS } from "@/lib/engine/levels";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -24,10 +33,13 @@ import { sessionStartHandler } from "./handler";
 import type { StartRequest } from "./types";
 
 const mockEmit = vi.mocked(emit);
+const mockNotifyStarted = vi.mocked(notifyAssessmentStarted);
 
 afterEach(() => {
   vi.unstubAllEnvs();
   mockEmit.mockClear();
+  mockNotifyStarted.mockClear();
+  mockNotifyStarted.mockResolvedValue(undefined);
 });
 
 // ===========================================================================
@@ -218,6 +230,14 @@ const PARENT_OK: MockResult = {
   data: { id: PARENT_ID, tenant_id: TENANT_ID },
   error: null,
 };
+
+// `name` is the sole parent field that leaves the box on the start path (the
+// assessment-STARTED staff alert). Kept as a separate fixture so the existing
+// suite continues to exercise the handler without it.
+const PARENT_NAMED: MockResult = {
+  data: { id: PARENT_ID, tenant_id: TENANT_ID, name: "Jordan Lee" },
+  error: null,
+};
 const CHILD_OK: MockResult = {
   // grade_level/birth_year are read by the comprehensive-engine tier
   // derivation (deriveTier) on the comprehensive first-pick branch. null grade
@@ -252,12 +272,14 @@ function callHandler(args: {
   serviceClient: SupabaseClient<Database>;
   ip?: string | null;
   request?: StartRequest;
+  origin?: string | null;
 }) {
   return sessionStartHandler({
     request: args.request ?? REQ,
     rlsClient: args.rlsClient,
     serviceClient: args.serviceClient,
     ip: args.ip ?? "203.0.113.7",
+    origin: args.origin ?? null,
   });
 }
 
@@ -1181,5 +1203,290 @@ describe("sessionStartHandler / test_type + funnel branching", () => {
       "short_test_started",
       expect.objectContaining({ sessionId: SESSION_ID }),
     );
+  });
+});
+
+// ===========================================================================
+// Assessment-STARTED staff alert (BRIEF-20260820-1735-ATLAS)
+// ===========================================================================
+//
+// The acceptance bar is ONCE PER SESSION. The alert is deliberately wired to
+// the same fresh-session seam as the started analytics event, so every
+// re-entry route — resume with progress, zero-progress resume, refresh, and
+// the concurrent-insert race loss — must reach the handler WITHOUT alerting.
+
+describe("sessionStartHandler / assessment-started staff alert", () => {
+  /** Script for a clean fresh start (one session insert, one pick, one log). */
+  function freshScripts() {
+    return {
+      assessment_sessions: [
+        { data: null, error: null }, // existing-session check (none)
+        { data: { id: SESSION_ID }, error: null }, // INSERT...returning id
+      ],
+      questions: [{ data: [questionRow()], error: null }],
+      question_access_log: [{ data: null, error: null }],
+    };
+  }
+
+  it("fires exactly once on a fresh session, with the allowlisted payload", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_GRADE_K,
+    });
+    const svc = makeServiceClient(freshScripts());
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      origin: "https://app.samnewyork.com",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockNotifyStarted).toHaveBeenCalledTimes(1);
+    // EXACT payload equality, not objectContaining — this is the COPPA
+    // allowlist assertion at the call site. An extra field here (band, prior
+    // version, birth year, child name) fails the test rather than shipping.
+    expect(mockNotifyStarted).toHaveBeenCalledWith({
+      parentName: "Jordan Lee",
+      childGrade: "K",
+      studentUrl: `https://app.samnewyork.com/instructor/student/${CHILD_ID}`,
+    });
+  });
+
+  it("degrades the student link to a bare path when no origin is configured", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_GRADE_K,
+    });
+    const svc = makeServiceClient(freshScripts());
+
+    // A missing APP_PUBLIC_ORIGIN must not stop the alert (and certainly not
+    // the assessment) — the route resolves origin to null in that case.
+    await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+      origin: null,
+    });
+
+    expect(mockNotifyStarted).toHaveBeenCalledTimes(1);
+    expect(mockNotifyStarted.mock.calls[0][0].studentUrl).toBe(
+      `/instructor/student/${CHILD_ID}`,
+    );
+  });
+
+  it("carries a null grade through rather than inventing one", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_OK, // grade_level: null
+    });
+    const svc = makeServiceClient(freshScripts());
+
+    await callHandler({ rlsClient: rls, serviceClient: svc.client });
+
+    expect(mockNotifyStarted).toHaveBeenCalledTimes(1);
+    expect(mockNotifyStarted.mock.calls[0][0].childGrade).toBeNull();
+  });
+
+  // -------------------------------------------------------------------------
+  // No re-alert on re-entry
+  // -------------------------------------------------------------------------
+
+  it("does NOT re-alert when resuming a session that has progress", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_OK,
+    });
+    const q1 = questionRow();
+    const svc = makeServiceClient({
+      assessment_sessions: [{ data: { id: SESSION_ID }, error: null }],
+      question_access_log: [
+        {
+          data: [{ question_id: q1.id, created_at: "2026-05-07T10:00:00Z" }],
+          error: null,
+        },
+        { data: null, error: null },
+      ],
+      responses: [
+        { data: null, count: 1, error: null }, // hasProgress → resumed
+        { data: [], error: null },
+        { data: [], error: null },
+      ],
+      questions: [{ data: q1, error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.resumed).toBe(true);
+    expect(mockNotifyStarted).not.toHaveBeenCalled();
+  });
+
+  it("does NOT re-alert on a zero-progress resume (the refresh / Strict-Mode case)", async () => {
+    // This is the important one: the session exists but has no responses, so
+    // the response LOOKS like a fresh start to the client (no resume banner).
+    // A refresh must still not produce a second alert.
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_OK,
+    });
+    const q1 = questionRow();
+    const svc = makeServiceClient({
+      assessment_sessions: [{ data: { id: SESSION_ID }, error: null }],
+      question_access_log: [
+        { data: [{ question_id: q1.id, created_at: "t" }], error: null },
+        { data: null, error: null },
+      ],
+      responses: [
+        { data: null, count: 0, error: null }, // no progress → fresh-looking
+        { data: [], error: null },
+        { data: [], error: null },
+      ],
+      questions: [{ data: q1, error: null }],
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.body.resumed).toBeUndefined(); // looks fresh…
+    expect(mockNotifyStarted).not.toHaveBeenCalled(); // …but is not
+  });
+
+  it("does NOT alert when the INSERT loses the unique-index race", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_OK,
+    });
+    const q1 = questionRow();
+    const svc = makeServiceClient({
+      assessment_sessions: [
+        { data: null, error: null },
+        { data: null, error: { message: "duplicate key", code: "23505" } },
+        { data: { id: SESSION_ID }, error: null },
+      ],
+      question_access_log: [
+        { data: [{ question_id: q1.id, created_at: "t" }], error: null },
+        { data: null, error: null },
+      ],
+      responses: [
+        { data: null, count: 0, error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+      ],
+      questions: [{ data: q1, error: null }],
+    });
+
+    await callHandler({ rlsClient: rls, serviceClient: svc.client });
+
+    // The losing request is a duplicate of a start already announced by the
+    // winner — alerting here would double-send for one session.
+    expect(mockNotifyStarted).not.toHaveBeenCalled();
+  });
+
+  it("does NOT alert when the session is rolled back on first-pick exhaustion", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      assessment_sessions: [
+        { data: null, error: null },
+        { data: { id: SESSION_ID }, error: null },
+        { data: null, error: null }, // rollback DELETE
+      ],
+      // Every strand's picker call comes back empty → total exhaustion.
+      questions: STRANDS.map(() => ({ data: [], error: null })),
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(false);
+    // No session survived, so there is nothing to announce.
+    expect(mockNotifyStarted).not.toHaveBeenCalled();
+  });
+
+  it("does NOT alert when the consent gate blocks the start", async () => {
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_OK,
+    });
+    const svc = makeServiceClient({
+      consent_records: [{ data: [], error: null }], // no unrevoked consent
+    });
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(mockNotifyStarted).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Failure isolation
+  // -------------------------------------------------------------------------
+
+  it("still returns 200 when the alert transport rejects", async () => {
+    // notifyAssessmentStarted never throws in production, but if it ever did,
+    // a Resend outage must not stop a child starting an assessment.
+    mockNotifyStarted.mockRejectedValue(new Error("resend down"));
+
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_GRADE_K,
+    });
+    const svc = makeServiceClient(freshScripts());
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.status).toBe(200);
+    expect(result.body.session_id).toBe(SESSION_ID);
+  });
+
+  it("still returns 200 when the alert transport throws synchronously", async () => {
+    mockNotifyStarted.mockImplementation(() => {
+      throw new Error("boom");
+    });
+
+    const rls = makeRlsClient({
+      user: { id: USER_ID },
+      parent: PARENT_NAMED,
+      child: CHILD_GRADE_K,
+    });
+    const svc = makeServiceClient(freshScripts());
+
+    const result = await callHandler({
+      rlsClient: rls,
+      serviceClient: svc.client,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.status).toBe(200);
   });
 });

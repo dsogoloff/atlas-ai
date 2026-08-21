@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   notifyAccountCreated,
   notifyAssessmentCompleted,
+  notifyAssessmentStarted,
   type AccountCreatedAlert,
   type AssessmentCompletedAlert,
+  type AssessmentStartedAlert,
 } from "./notify";
 
 const ACCOUNT: AccountCreatedAlert = {
@@ -14,6 +16,12 @@ const ACCOUNT: AccountCreatedAlert = {
 };
 
 const COMPLETED: AssessmentCompletedAlert = {
+  parentName: "Jordan Lee",
+  childGrade: "3",
+  studentUrl: "https://app.samnewyork.com/instructor/student/child-1",
+};
+
+const STARTED: AssessmentStartedAlert = {
   parentName: "Jordan Lee",
   childGrade: "3",
   studentUrl: "https://app.samnewyork.com/instructor/student/child-1",
@@ -60,6 +68,7 @@ describe("staff alerts — gated off (default)", () => {
   it("no-ops without sending when LEAD_NOTIFY_LIVE is unset", async () => {
     await expect(notifyAccountCreated(ACCOUNT)).resolves.toBeUndefined();
     await expect(notifyAssessmentCompleted(COMPLETED)).resolves.toBeUndefined();
+    await expect(notifyAssessmentStarted(STARTED)).resolves.toBeUndefined();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -67,6 +76,14 @@ describe("staff alerts — gated off (default)", () => {
     vi.stubEnv("LEAD_NOTIFY_LIVE", "false");
     await notifyAccountCreated(ACCOUNT);
     await notifyAssessmentCompleted(COMPLETED);
+    await notifyAssessmentStarted(STARTED);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no-ops the started alert on a near-miss flag value ('TRUE')", async () => {
+    // The gate is a STRICT lowercase 'true' comparison; anything else is off.
+    vi.stubEnv("LEAD_NOTIFY_LIVE", "TRUE");
+    await expect(notifyAssessmentStarted(STARTED)).resolves.toBeUndefined();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -92,6 +109,19 @@ describe("recipient — code default + STAFF_ALERT_TO override", () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
     await notifyAssessmentCompleted(COMPLETED);
     expect(sentBody().to).toBe("qa-inbox@example.com");
+  });
+
+  it("honours STAFF_ALERT_TO for the started alert too", async () => {
+    vi.stubEnv("STAFF_ALERT_TO", "qa-inbox@example.com");
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyAssessmentStarted(STARTED);
+    expect(sentBody().to).toBe("qa-inbox@example.com");
+  });
+
+  it("defaults the started alert to the pilot center inbox", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyAssessmentStarted(STARTED);
+    expect(sentBody().to).toBe("parents@samnewyork.com");
   });
 
   it("falls back to the default when STAFF_ALERT_TO is whitespace only", async () => {
@@ -159,6 +189,69 @@ describe("notifyAssessmentCompleted — live", () => {
   });
 });
 
+describe("notifyAssessmentStarted — live", () => {
+  beforeEach(stubLiveEnv);
+
+  it("posts one branded Resend message with the grade and student link", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyAssessmentStarted(STARTED);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.resend.com/emails");
+    expect(init.headers.Authorization).toBe("Bearer re_test_key");
+
+    const body = sentBody();
+    expect(body.from).toBe("S.A.M New York <noreply@example.com>");
+    expect(body.subject).toBe("S.A.M assessment STARTED: Jordan Lee (grade 3)");
+    expect(body.text).toContain("Child grade: 3");
+    expect(body.text).toContain(
+      "https://app.samnewyork.com/instructor/student/child-1",
+    );
+  });
+
+  it("renders a readable subject when the child's grade was never captured", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyAssessmentStarted({ ...STARTED, childGrade: null });
+
+    const body = sentBody();
+    expect(body.subject).toBe(
+      "S.A.M assessment STARTED: Jordan Lee (grade not provided)",
+    );
+    expect(body.subject).not.toContain("null");
+    expect(body.text).not.toContain("null");
+  });
+
+  // The pair now lands in the same inbox minutes apart — this is the test that
+  // keeps them from becoming confusable if either subject is ever edited.
+  it("is not confusable with the completion alert's subject", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyAssessmentStarted(STARTED);
+    const startedSubject = sentBody().subject;
+
+    fetchMock.mockClear();
+    await notifyAssessmentCompleted(COMPLETED);
+    const completedSubject = JSON.parse(
+      fetchMock.mock.calls[0][1].body,
+    ).subject as string;
+
+    expect(startedSubject).not.toBe(completedSubject);
+    // The distinguishing token is uppercase STARTED; the completion alert must
+    // not carry it, and the start alert must not claim completion.
+    expect(startedSubject).toContain("STARTED");
+    expect(completedSubject).not.toContain("STARTED");
+    expect(startedSubject).not.toContain("completed");
+  });
+
+  it("does not change the existing completion subject", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await notifyAssessmentCompleted(COMPLETED);
+    expect(sentBody().subject).toBe(
+      "S.A.M assessment completed: Jordan Lee (grade 3)",
+    );
+  });
+});
+
 // ---------------------------------------------------------------------------
 // COPPA — the payload is an allowlist, and this is the test that enforces it.
 // ---------------------------------------------------------------------------
@@ -197,6 +290,39 @@ describe("COPPA payload discipline", () => {
     }
   });
 
+  it("the started alert leaks no result, no child name and no DOB", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    // Same adversarial shape as the completion case: a careless caller spreads
+    // a whole child/session object in. TypeScript rejects it at the call site;
+    // the cast proves the RUNTIME body is built from the allowlist only. This
+    // matters most on the START path, where a future edit might be tempted to
+    // attach the engine's seeded prior or the child's band anchor.
+    await notifyAssessmentStarted({
+      ...STARTED,
+      childName: "Aiden",
+      birthYear: 2016,
+      overallLevel: "3B",
+      placementBand: "3B",
+      priorVersion: "v1",
+      strandMastery: { number_operations: 0.8 },
+      misconceptions: ["MC-014"],
+    } as unknown as AssessmentStartedAlert);
+
+    const serialized = fetchMock.mock.calls[0][1].body as string;
+    for (const leak of [
+      "Aiden",
+      "2016",
+      "3B",
+      "placementBand",
+      "priorVersion",
+      "strandMastery",
+      "number_operations",
+      "MC-014",
+    ]) {
+      expect(serialized).not.toContain(leak);
+    }
+  });
+
   it("the account alert carries no child fields at all", async () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
     await notifyAccountCreated({
@@ -218,6 +344,7 @@ describe("fail-soft — never blocks confirm or finalization", () => {
     fetchMock.mockResolvedValue({ ok: false, status: 422 });
     await expect(notifyAccountCreated(ACCOUNT)).resolves.toBeUndefined();
     await expect(notifyAssessmentCompleted(COMPLETED)).resolves.toBeUndefined();
+    await expect(notifyAssessmentStarted(STARTED)).resolves.toBeUndefined();
     expect(errorSpy).toHaveBeenCalled();
   });
 
@@ -225,6 +352,16 @@ describe("fail-soft — never blocks confirm or finalization", () => {
     fetchMock.mockRejectedValue(new Error("network down"));
     await expect(notifyAccountCreated(ACCOUNT)).resolves.toBeUndefined();
     await expect(notifyAssessmentCompleted(COMPLETED)).resolves.toBeUndefined();
+    await expect(notifyAssessmentStarted(STARTED)).resolves.toBeUndefined();
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it("the started alert does not throw when RESEND_API_KEY is missing", async () => {
+    // The env getter throws by design; a child starting an assessment must not
+    // be able to trip over it.
+    vi.stubEnv("RESEND_API_KEY", "");
+    await expect(notifyAssessmentStarted(STARTED)).resolves.toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalled();
   });
 

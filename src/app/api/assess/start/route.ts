@@ -9,6 +9,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAppPublicOrigin } from "@/lib/config/publicOrigin";
 import { extractClientIp } from "@/lib/questionAccessLog/log";
 import { sessionStartHandler } from "@/lib/sessionStart/handler";
 import { StartRequestSchema } from "@/lib/sessionStart/types";
@@ -37,6 +38,26 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceClient();
   const ip = extractClientIp(request.headers);
 
+  // Origin for the assessment-STARTED staff alert's student link.
+  //
+  // ATLAS-011: the CANONICAL origin, not `new URL(request.url).origin` — that
+  // is built from the Host / X-Forwarded-Host header, so a forged host would
+  // put an attacker-controlled student-record link into an email we send to
+  // staff.
+  //
+  // getAppPublicOrigin() THROWS when APP_PUBLIC_ORIGIN is unset or malformed.
+  // On the submit path that surfaces as a 500, which is tolerable. Here it is
+  // not: a misconfigured env var must never stop a child from starting an
+  // assessment for the sake of an internal courtesy email. So it degrades to
+  // null and the alert falls back to a bare path — the same fail-soft posture
+  // the notifier itself takes.
+  let origin: string | null = null;
+  try {
+    origin = getAppPublicOrigin();
+  } catch {
+    origin = null;
+  }
+
   // Defensive catch: the handler returns StartHandlerResult for known
   // error paths, but pickQuestion's content-type guards (and any future
   // unexpected throws) can leak. Map to a generic 500 without exposing
@@ -48,6 +69,7 @@ export async function POST(request: NextRequest) {
       rlsClient,
       serviceClient,
       ip,
+      origin,
     });
   } catch (e) {
     console.error("[start] unhandled error", e);
