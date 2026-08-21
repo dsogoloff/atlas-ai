@@ -1,3 +1,5 @@
+> **Atlas Assessment** — the adaptive K–8 math assessment platform for S.A.M. centers, built by Inspirea Labs. See `.agent/memory/PROJECT_BRIEF.md` for scope and architecture, and `AGENTS.md` for engineering conventions.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
