@@ -5,6 +5,56 @@ to change. Unmarked = technical, reversible by Claude Code with cause.
 
 ## 2026-08-21
 
+* **PR #238 MERGED (merge commit 7d4580f, merged_at 2026-08-21T14:14:14Z) — HubSpot Contract A
+  is now live in `ATLAS-ASSESSMENT`, dark until Dimitri sets the token.** Final state at merge:
+  `verify-bar` GREEN, `rls-integration` GREEN, Vercel preview GREEN. Two things happened between
+  PR open and merge, both resolved before Dimitri merged — recorded below.
+
+* **Standing lesson: a migration-adding PR must state, in its own body, whether/how the
+  migration reaches Preview/Production, and give the exact SQL — omitting it caused a live
+  signup outage on Preview (PR #238, 2026-08-21).** This repo has no CI/Vercel step that ever
+  applies a migration to a real, non-ephemeral database (confirmed by reading
+  `.github/workflows/verify.yml`) — it is always a manual founder step via Supabase Studio. PR
+  #238's original body omitted that instruction; Dimitri's Preview deploy hit "Could not finish
+  creating your account" because `parents.attribution` had never been applied to the database
+  Preview points at. The PR body was updated afterward to carry the exact idempotent SQL. Going
+  forward, every migration-adding PR must include that SQL and the apply instruction in its body
+  from the start, not added reactively after an outage.
+
+* **The PR #238 Preview signup outage was compounded by writing `attribution` on the SAME insert
+  as the required account-creation fields — fixed by decoupling into a separate best-effort
+  UPDATE (commit 1c2557a, 2026-08-21).** Root cause had two parts: (1) the `parents.attribution`
+  column was missing on whatever DB Preview points at (see lesson above), and (2) the original
+  `signupAction` wrote `attribution` in the same `parents` INSERT as the required fields, so the
+  missing column failed the WHOLE insert, which rolled back the just-created auth user and
+  surfaced the generic "Could not finish creating your account" error to the parent. Fix: the
+  `parents` INSERT now carries only account-creation fields; `attribution` is written by a
+  separate, best-effort UPDATE after the parent row is confirmed created, wrapped in try/catch,
+  logged-and-swallowed on any failure (returned error or thrown exception) — it can never fail
+  signup, roll back the auth user, or surface to the parent. 5 tests added/rewritten in
+  `src/app/(auth)/signup/actions.test.ts`; 2 are load-bearing regression tests explicitly
+  confirmed to go RED against the pre-fix code (reverted locally, re-ran, confirmed 4 failures,
+  then restored the fix) before finalizing. General lesson: an ancillary, best-effort field must
+  never share a transaction/insert with fields required for a critical path to succeed.
+
+* **Codex review on PR #238 found 2 real findings; both fixed before merge (commit a1732de,
+  2026-08-21).** (1) The 409-upsert lookup GET didn't request HubSpot custom properties, so the
+  set-if-empty logic could clobber a real existing value (e.g. a live `utm_content` placement
+  tag) — fixed by requesting an explicit comma-separated `properties` list on the GET. (2)
+  `lifecycleRank()` coerced any unrecognized/custom HubSpot lifecycle stage to rank 0, so an
+  unrecognized-but-real custom stage was always silently overwritten with "lead" — fixed to leave
+  `lifecyclestage` untouched entirely when the existing value is non-empty and not on the known
+  ladder.
+
+* **Open / unconfirmed (needs Dimitri) — PR #238 post-merge follow-ups (2026-08-21).** (a) Apply
+  the `parents.attribution` migration SQL to whatever Supabase project(s) back Preview and
+  Production — exact SQL in `supabase/migrations/20260821150000_hubspot_contract_a_parent_attribution.sql`
+  and in NEXT_ACTIONS.md; idempotent, not signup-blocking (that was the fix above), but
+  attribution capture silently no-ops until it's applied. (b) Set `HUBSPOT_ATLAS_SYNC_TOKEN` in
+  Vercel when ready to go live — re-verify the connected HubSpot portal id (245446396) live
+  immediately before setting it (guardrail 6), do not trust any document's claim it was already
+  checked. Cannot auto-resolve either; both require Dimitri's action outside this repo.
+
 * **HubSpot Contract A (account-created contact sync) fires on email CONFIRMATION, reuses the
   #211/#233 `after()` seam as a SECOND independent call, and carries zero child data — enforced
   structurally, not just by convention (PR #238, claude/relaxed-cerf-ly61pe, 2026-08-21).**
