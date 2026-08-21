@@ -4,18 +4,36 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
-## 0. 2026-08-21 — SAM-OS brief: HubSpot Contract A account-created contact sync (PR #238 OPEN)
+## 0. 2026-08-21 — SAM-OS brief: HubSpot Contract A account-created contact sync (PR #238 MERGED)
 
-**BRIEF-20260820-1444-HUBSPOT executed.** PR #238 (`claude/relaxed-cerf-ly61pe` →
-`ATLAS-ASSESSMENT`) OPEN, verify-bar GREEN (1939 tests / 150 files, tsc clean, lint 0
-errors). Ships fully DARK — no HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set
-in Vercel. Zero child data (account-level only: parent name/email, account id, created date,
-first-touch UTM).
+**BRIEF-20260820-1444-HUBSPOT executed and shipped.** PR #238 (`claude/relaxed-cerf-ly61pe` →
+`ATLAS-ASSESSMENT`) **MERGED** (merge commit 7d4580f, merged_at 2026-08-21T14:14:14Z; now the
+`ATLAS-ASSESSMENT` head). `verify-bar` GREEN, `rls-integration` GREEN, Vercel preview GREEN at
+merge. Codex left 2 findings (409-lookup missing a `properties` request; `lifecycleRank()`
+coercing unknown custom stages to "lead") — both fixed, commit a1732de. A real Vercel PREVIEW
+signup failure was found and root-caused post-open (missing `parents.attribution` column on
+whatever DB Preview points at, compounded by writing `attribution` on the same insert as the
+required account-creation fields) and fixed by decoupling the writes, commit 1c2557a — see
+CURRENT_STATE.md and DECISIONS.md 2026-08-21 for the full account. Ships fully DARK — no
+HubSpot writes happen until `HUBSPOT_ATLAS_SYNC_TOKEN` is set in Vercel. Zero child data
+(account-level only: parent name/email, account id, created date, first-touch UTM).
 
-- [ ] **Dimitri: merge PR #238** after Vercel preview review. No visible/UI change —
-      internal/technical, nothing to preview visually; confirm CI verify-bar is green before
-      merging. No `supabase db reset` action needed by Dimitri beyond the normal migration
-      apply (additive nullable `parents.attribution jsonb`).
+- [x] **Dimitri: merge PR #238** — DONE (7d4580f).
+
+- [ ] **Dimitri: apply the `parents.attribution` migration SQL to whatever Supabase
+      project(s) back Preview and Production.** This is what actually caused the Preview
+      signup outage above — the column was never applied to a real DB. Signup no longer
+      depends on it (that was the fix), so this is NOT merge- or signup-blocking, but
+      attribution capture silently no-ops until the column exists. Exact idempotent SQL
+      (from `supabase/migrations/20260821150000_hubspot_contract_a_parent_attribution.sql`):
+      ```sql
+      alter table parents
+        add column if not exists attribution jsonb;
+
+      comment on column parents.attribution is
+        'HubSpot Contract A: first-touch marketing attribution captured at signup (utm_source/medium/campaign/content/term + first_seen), mirroring src/lib/marketing/attribution.ts''s Attribution type. NULL when the visitor arrived untagged. Account-level only — never child data.';
+      ```
+      Safe to run anytime, on any environment, any number of times.
 
 - [ ] **Dimitri (whenever ready, NOT merge-blocking): set `HUBSPOT_ATLAS_SYNC_TOKEN` in
       Vercel to go live.** Re-verify the connected HubSpot portal id live is still
@@ -26,6 +44,13 @@ first-touch UTM).
 - [ ] **Follow-on (not blocked, can be picked up next session): BRIEF-20260820-1711-HUBSPOT**
       — assessment-started/completed child-field events, ship with flag OFF. Was sequenced
       behind Contract A landing per the SAM-OS HubSpot sequencing index; now unblocked.
+
+- [ ] **Standing lesson, applies to all future migration-adding PRs (recorded 2026-08-21 after
+      the PR #238 Preview outage):** a migration-adding PR must state in its own body
+      whether/how the migration reaches Preview/Production — this repo has no automated path,
+      it is always a manual founder step — and must give the exact SQL to paste into Supabase
+      Studio. PR #238 initially omitted that instruction and it caused a live signup failure
+      on Preview. See DECISIONS.md 2026-08-21.
 
 ## 0. 2026-08-20 — SAM-OS briefs: assessment-START alert, CLAUDE.md guardrails, post-#233 hardening
 

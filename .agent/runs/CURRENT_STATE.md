@@ -5,8 +5,45 @@
 > durable rationale goes to `DECISIONS.md`, debt to `TECHNICAL_DEBT.md`.
 
 **As of:** 2026-08-21 (ATLAS: HubSpot Contract A account-created parent contact sync) —
-**PR #238 OPEN**, branch `claude/relaxed-cerf-ly61pe` → `ATLAS-ASSESSMENT`. NOT merged
-(Dimitri's attended action after Vercel preview review).
+**PR #238 MERGED** (merge commit **7d4580f**, merged_at 2026-08-21T14:14:14Z) into
+`ATLAS-ASSESSMENT`, from branch `claude/relaxed-cerf-ly61pe`. Final CI state at merge:
+`verify-bar` GREEN, `rls-integration` GREEN, Vercel preview GREEN. **This is the current
+`ATLAS-ASSESSMENT` head.**
+
+**Post-open history (Codex fixes + a real Preview outage, both resolved before merge):**
+1. Codex automated review left 2 findings on the diff; both confirmed and fixed in
+   **commit a1732de**:
+   - The 409-upsert lookup GET didn't request HubSpot custom properties, so the
+     set-if-empty logic could clobber a real existing value (e.g. a live `utm_content`
+     placement tag) — fixed by requesting an explicit comma-separated `properties` list on
+     the GET.
+   - `lifecycleRank()` coerced any unrecognized/custom HubSpot lifecycle stage to rank 0,
+     so an unrecognized-but-real custom stage was always silently overwritten with "lead" —
+     fixed to leave `lifecyclestage` untouched entirely when the existing value is
+     non-empty and not on the known ladder.
+2. Dimitri reported a **Vercel PREVIEW signup failure** ("Could not finish creating your
+   account"). Root-caused and fixed in **commit 1c2557a**:
+   - The `parents.attribution` column had never been applied to whichever database the
+     Preview deployment points at — this repo has no CI/Vercel step that ever applies
+     migrations to a real, non-ephemeral database (confirmed by reading
+     `.github/workflows/verify.yml`).
+   - The original implementation wrote `attribution` on the SAME insert as the required
+     account-creation fields, so the missing column failed the WHOLE insert, rolled back
+     the just-created auth user, and surfaced the generic error to the parent.
+   - Fix: decoupled writes. The `parents` INSERT now carries only account-creation fields;
+     `attribution` is written by a separate, best-effort UPDATE after the parent row is
+     confirmed created, wrapped in try/catch, logged-and-swallowed on any failure (returned
+     error or thrown exception) — never fails signup, never rolls back the auth user, never
+     surfaces to the parent.
+   - 5 tests added/rewritten in `src/app/(auth)/signup/actions.test.ts`, including 2
+     load-bearing regression tests explicitly confirmed to go RED against the pre-fix code
+     (reverted locally, re-ran, confirmed 4 failures, then restored the fix) before
+     finalizing.
+   - The PR body was updated to add the exact idempotent SQL Dimitri needs to paste into
+     Supabase Studio to actually add the column — this instruction had been missing from
+     the original PR body, and its absence is the proximate cause of the outage (see
+     DECISIONS.md 2026-08-21 for the standing lesson).
+3. Dimitri merged PR #238 after the fix; see gates above.
 
 - **PR #238 — claude/relaxed-cerf-ly61pe — OPEN (verify-bar GREEN: 1939 tests / 3 skipped /
   13 todo, 150 files, up from 1906; tsc --noEmit clean; lint 0 errors, 2 pre-existing
