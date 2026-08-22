@@ -88,10 +88,16 @@ nothing destructive runs until prod is shown to hold zero real families.
 8. **`07-verify-prod-schema.ts`** — **FULL attribute comparison** (prod **direct Postgres** vs
    canonical local). For every local public table it compares each column on `data_type` (incl.
    numeric precision/scale + varchar length via `format_type`), `is_nullable`, `column_default`,
-   and compares enum TYPES end to end. Reports **table-by-table / column-by-column:
-   MATCH / DRIFT(detail) / MISSING**; **exits nonzero** on any DRIFT or MISSING. Prod-only
-   tables/columns/enum-values are INFO (additive — prod may hold extra).
+   and compares enum TYPES end to end. Also checks every public-schema **function** and every
+   user-defined **trigger** in local for existence in prod (added 2026-08-21 — these aren't
+   incidental plumbing, they're frequently the entire enforcement mechanism for an invariant,
+   e.g. `create_child_with_consent`, `consume_quota`; existence-only, no body comparison).
+   Reports **table-by-table / column-by-column: MATCH / DRIFT(detail) / MISSING**, plus
+   function/trigger MISSING; **exits nonzero** on any of those. Prod-only
+   tables/columns/enum-values/functions/triggers are INFO (additive — prod may hold extra).
    - `pnpm convert:prod-catchup:verify`
+   - Also runs in CI on every PR: `.github/workflows/prod-migration-drift.yml` (needs a
+     `PROD_DATABASE_URL` repo secret — see that file's header for setup).
 
 9. **`09-gen-prod-type-remediation.ts`** — classifies every column DRIFT and writes:
    - `remediation.generated.sql` — **AUTO-SAFE only** (can't fail on existing rows / no data

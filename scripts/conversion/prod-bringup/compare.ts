@@ -41,6 +41,15 @@ export interface FullDiff {
   prodOnlyTables: string[];
   enums: EnumResult[];
   prodOnlyEnums: string[];
+  /** Function names present in local (the canonical expected schema) but absent in prod —
+   *  a real gap, same failure weight as a missing table/column. */
+  missingFunctions: string[];
+  /** Present in prod, absent in local — INFO, not a failure (additive philosophy). */
+  prodOnlyFunctions: string[];
+  /** "table.trigger" pairs present in local but absent in prod — a real gap. */
+  missingTriggers: string[];
+  /** Present in prod, absent in local — INFO, not a failure. */
+  prodOnlyTriggers: string[];
 }
 
 /** Normalise a column default for comparison. Both sides come from pg_get_expr so they are
@@ -107,7 +116,21 @@ export function fullCompare(local: Schema, prod: Schema): FullDiff {
   }
   const prodOnlyEnums = [...prod.enums.keys()].filter((n) => !local.enums.has(n)).sort();
 
-  return { tables, prodOnlyTables, enums, prodOnlyEnums };
+  const prodFnSet = new Set(prod.functions);
+  const localFnSet = new Set(local.functions);
+  const missingFunctions = [...localFnSet].filter((f) => !prodFnSet.has(f)).sort();
+  const prodOnlyFunctions = [...prodFnSet].filter((f) => !localFnSet.has(f)).sort();
+
+  const triggerKey = (t: { table: string; name: string }) => `${t.table}.${t.name}`;
+  const prodTrgSet = new Set(prod.triggers.map(triggerKey));
+  const localTrgSet = new Set(local.triggers.map(triggerKey));
+  const missingTriggers = [...localTrgSet].filter((t) => !prodTrgSet.has(t)).sort();
+  const prodOnlyTriggers = [...prodTrgSet].filter((t) => !localTrgSet.has(t)).sort();
+
+  return {
+    tables, prodOnlyTables, enums, prodOnlyEnums,
+    missingFunctions, prodOnlyFunctions, missingTriggers, prodOnlyTriggers,
+  };
 }
 
 // ----------------------------------------------------------- type classification
