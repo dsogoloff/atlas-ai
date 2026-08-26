@@ -113,12 +113,12 @@ export function SignupForm({ centerName }: Props) {
             className="font-caption text-caption text-sam-navy ml-1"
             htmlFor="first-name"
           >
-            First Name
+            Parent&rsquo;s First Name
           </label>
           <input
             className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all placeholder:text-sam-gray-mid/50 bg-white aria-[invalid=true]:border-sam-red"
             id="first-name"
-            placeholder="Enter first name"
+            placeholder="Enter parent's first name"
             type="text"
             aria-invalid={!!errors.firstName}
             {...register("firstName")}
@@ -134,12 +134,12 @@ export function SignupForm({ centerName }: Props) {
             className="font-caption text-caption text-sam-navy ml-1"
             htmlFor="last-name"
           >
-            Last Name
+            Parent&rsquo;s Last Name
           </label>
           <input
             className="w-full h-12 px-4 rounded-xl border border-sam-gray-light focus:border-sam-red focus:ring-1 focus:ring-sam-red outline-none transition-all placeholder:text-sam-gray-mid/50 bg-white aria-[invalid=true]:border-sam-red"
             id="last-name"
-            placeholder="Enter last name"
+            placeholder="Enter parent's last name"
             type="text"
             aria-invalid={!!errors.lastName}
             {...register("lastName")}
@@ -239,11 +239,21 @@ export function SignupForm({ centerName }: Props) {
               </span>
               COPPA &amp; School-Operator Consent
             </label>
+            {/* CONSENT WORDING: the authorizing counterparty is tenant-
+                resolved. Final wording is counsel-gated — see the PR's
+                founder list.
+
+                DO NOT put a JSX comment (or any other expression child)
+                between two words of the sentence below. An expression child
+                SPLITS the surrounding text into two nodes, and JSX then strips
+                the newline-adjacent whitespace at the end of the first and the
+                start of the second — silently fusing the words. A comment
+                sitting between "will" and "register" is exactly how
+                "I willregister." shipped to production in counsel-approved
+                consent text. Rendered output is guarded by
+                consent-text.test.tsx. */}
             <p className="font-caption text-[12px] text-sam-gray-mid leading-relaxed">
               I am the parent or legal guardian of the child(ren) I will
-              {/* CONSENT WORDING: the authorizing counterparty is tenant-
-                  resolved. Final wording is counsel-gated — see the PR's
-                  founder list. */}
               register. I authorize {getBranding().productName} to share my
               child&rsquo;s assessment
               results (placement level, strand-level results, detected
