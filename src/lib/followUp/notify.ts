@@ -1,15 +1,27 @@
 import "server-only";
 
 // Pilot-center notification for a short-test follow-up lead (Resend
-// transactional email). DEFAULT-OFF + FAIL-SOFT: when LEAD_NOTIFY_LIVE is not
-// 'true' this no-ops, so the lead still persists and nothing is sent / no money
-// is spent until the founder configures Resend + flips the flag (mirrors the
-// misconception-classifier / report-narration LLM gates). Never throws — a
-// notification failure must not fail the parent's submit.
+// transactional email).
+//
+// THIS ALERT IS THE PRIMARY MECHANISM. A parent who ticks "have my local
+// S.A.M center contact me" is asking to be phoned, and this email is how the
+// director finds out. It is written to be ACTIONABLE ON A PHONE: the parent's
+// name, a tappable phone number and a tappable email address lead the message,
+// so a director can call straight from the notification without opening the
+// portal, the database, or anything else.
+//
+// FAIL-SOFT but NEVER SILENT: the notifier still never throws — a mail failure
+// must not fail the parent's submit — but every path that does NOT send now
+// emits a structured `[followUp] lead NOT notified` line carrying a reason.
+// The previous version returned silently when the gate was off, which is how a
+// lead could reach nobody with no trace anywhere.
+//
+// Nothing is ever lost: submitFollowUpLeadCore persists the row BEFORE calling
+// this, so a failed alert costs a delay, not a lead. The dead-letter line
+// deliberately carries NO PII — the lead is recoverable from follow_up_leads.
 //
 // DATA SCOPE: parent contact + zip + child's school only (Tier 1/2 lead data).
-// NO diagnostic result is included. Uses the Resend HTTP API directly via fetch
-// (no SDK dependency).
+// NO diagnostic result, NO child name, NO grade, NO placement level.
 
 import { getBranding } from "@/lib/branding";
 import {
@@ -31,6 +43,28 @@ function brandedFrom(): string {
   return `${getBranding().email.senderName} <${raw}>`;
 }
 
+/**
+ * Single structured marker for every non-send. Greppable in the Vercel logs as
+ * `[followUp] lead NOT notified`. No PII — the row is in follow_up_leads.
+ */
+function deadLetter(reason: string, extra: Record<string, unknown> = {}): void {
+  console.error("[followUp] lead NOT notified", { reason, ...extra });
+}
+
+/** `tel:` target — strip everything a dialler cannot use, keep a leading +. */
+function telHref(phone: string): string {
+  const plus = phone.trim().startsWith("+") ? "+" : "";
+  return `tel:${plus}${phone.replace(/[^0-9]/g, "")}`;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export interface FollowUpLeadNotification {
   /** Null when the school field is gated off (LEAD_SCHOOL_FIELD_LIVE). */
   schoolName: string | null;
@@ -39,28 +73,66 @@ export interface FollowUpLeadNotification {
   parentPhone: string | null;
   /** Parent zip/location (required on the form). */
   zip: string;
+  /** When the lead came in. Defaults to now — the send is awaited inline with
+   *  the insert, so "now" is the submission time to within milliseconds.
+   *  Injectable so tests are deterministic. */
+  submittedAt?: Date;
 }
 
 export async function notifyFollowUpLead(
   lead: FollowUpLeadNotification,
 ): Promise<void> {
-  if (!isLeadNotifyLive()) return; // gated off → no send, no spend
+  if (!isLeadNotifyLive()) {
+    // Previously a silent `return`. A lead reaching nobody must leave a trace.
+    deadLetter("LEAD_NOTIFY_LIVE is not 'true'");
+    return;
+  }
 
   try {
+    const phone = lead.parentPhone?.trim() || null;
+    const school = lead.schoolName?.trim() || null;
+    const received = (lead.submittedAt ?? new Date()).toISOString();
+
+    // Actionable fields FIRST — a director reading this on a phone should be
+    // able to act from the first three lines.
     const lines = [
-      "New short-test follow-up lead (manual triage):",
+      "A parent asked their local S.A.M center to contact them about a full assessment.",
       "",
-      `Child's school: ${lead.schoolName ?? "(not collected)"}`,
-      `Parent: ${lead.parentName}`,
-      `Email: ${lead.parentEmail}`,
-      `Phone: ${lead.parentPhone ?? "(not provided)"}`,
-      `Zip/location: ${lead.zip}`,
+      `Parent:   ${lead.parentName}`,
+      `Phone:    ${phone ?? "(not provided)"}`,
+      `Email:    ${lead.parentEmail}`,
+      `Zip:      ${lead.zip}`,
+      `School:   ${school ?? "(not provided)"}`,
+      `Received: ${received}`,
       "",
-      "Lead/contact data only — no assessment result is included.",
+      "Contact details only — no assessment result and no child data are included.",
     ];
-    // Subject carries the school when present, else the zip — never an empty
-    // "— " / "— null" tail when the school is blank or gated off.
-    const subjectTag = lead.schoolName?.trim() || lead.zip;
+
+    // HTML twin so the phone number and email are TAPPABLE on mobile. Plain
+    // text auto-linkification is client-dependent; explicit hrefs are not.
+    const html = [
+      `<p>A parent asked their local S.A.M center to contact them about a full assessment.</p>`,
+      `<table cellpadding="4" style="font-family:system-ui,sans-serif;font-size:15px">`,
+      `<tr><td><strong>Parent</strong></td><td>${escapeHtml(lead.parentName)}</td></tr>`,
+      `<tr><td><strong>Phone</strong></td><td>${
+        phone
+          ? `<a href="${escapeHtml(telHref(phone))}">${escapeHtml(phone)}</a>`
+          : "(not provided)"
+      }</td></tr>`,
+      `<tr><td><strong>Email</strong></td><td><a href="mailto:${escapeHtml(
+        lead.parentEmail,
+      )}">${escapeHtml(lead.parentEmail)}</a></td></tr>`,
+      `<tr><td><strong>Zip</strong></td><td>${escapeHtml(lead.zip)}</td></tr>`,
+      `<tr><td><strong>School</strong></td><td>${
+        school ? escapeHtml(school) : "(not provided)"
+      }</td></tr>`,
+      `<tr><td><strong>Received</strong></td><td>${escapeHtml(received)}</td></tr>`,
+      `</table>`,
+      `<p style="color:#666;font-size:13px">Contact details only — no assessment result and no child data are included.</p>`,
+    ].join("");
+
+    // Subject names the PARENT so the alert is identifiable from a phone's
+    // lock screen without opening it.
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -70,15 +142,16 @@ export async function notifyFollowUpLead(
       body: JSON.stringify({
         from: brandedFrom(),
         to: getLeadNotifyToEmail(),
-        subject: `New assessment lead — ${subjectTag}`,
+        subject: `Call this parent — ${lead.parentName} (${lead.zip})`,
         text: lines.join("\n"),
+        html,
       }),
     });
     if (!res.ok) {
-      console.error("[followUp] notify failed", { status: res.status });
+      deadLetter("resend returned a non-OK status", { status: res.status });
     }
   } catch (e) {
-    console.error("[followUp] notify threw", {
+    deadLetter("exception while sending", {
       err: e instanceof Error ? e.message : "unknown",
     });
   }
