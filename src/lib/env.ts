@@ -100,9 +100,38 @@ export function isLeadSchoolFieldEnabled(): boolean {
 export function getResendApiKey(): string {
   return required("RESEND_API_KEY");
 }
-/** Where the pilot center receives lead notifications. */
+/**
+ * The single pilot center's inbox. Shared default for BOTH outbound staff
+ * mailers — the follow-up lead notifier and the #211 assessment staff alerts —
+ * so neither can be silently disabled by a missing environment variable.
+ *
+ * Single-center assumption: one address for every alert. When a second center
+ * exists this becomes center-scoped (TODO.md, "Multi-center — center-scoped
+ * director contact").
+ */
+export const DEFAULT_STAFF_ALERT_TO = "parents@samnewyork.com";
+
+/**
+ * Where the pilot center receives follow-up LEAD notifications.
+ *
+ * This used to be `required("LEAD_NOTIFY_TO_EMAIL")`, which THREW when the
+ * variable was unset — and because the notifier resolves the recipient inside
+ * its own try/catch, that throw was swallowed into a console line and the lead
+ * silently notified nobody.
+ *
+ * That made this one variable a single point of failure that nothing else
+ * shared: the #211 staff alerts use the same RESEND_API_KEY, the same
+ * LEAD_NOTIFY_FROM_EMAIL and the same LEAD_NOTIFY_LIVE gate, but resolve their
+ * recipient via getStaffAlertToEmail(), which has a code default. So staff
+ * alerts could be arriving while every follow-up lead alert died — which is
+ * exactly the asymmetry observed on 2026-08-25.
+ *
+ * It now mirrors getStaffAlertToEmail(): same pilot inbox default, env var
+ * kept as an override. A missing variable can no longer lose a lead.
+ */
 export function getLeadNotifyToEmail(): string {
-  return required("LEAD_NOTIFY_TO_EMAIL");
+  const override = process.env.LEAD_NOTIFY_TO_EMAIL?.trim();
+  return override ? override : DEFAULT_STAFF_ALERT_TO;
 }
 /** Verified Resend sender address for lead notifications. */
 export function getLeadNotifyFromEmail(): string {
@@ -113,18 +142,12 @@ export function getLeadNotifyFromEmail(): string {
  * Where S.A.M staff receive assessment ALERTS (account confirmed / assessment
  * completed) — src/lib/staffAlerts/notify.ts.
  *
- * Unlike the lead-notify addresses this has a code DEFAULT, so the feature
- * ships with no Vercel env action: the single pilot center's inbox is
- * parents@samnewyork.com. STAFF_ALERT_TO overrides it (e.g. to route alerts at
- * a staging address during QA). Sending is still gated on LEAD_NOTIFY_LIVE and
- * still needs RESEND_API_KEY + LEAD_NOTIFY_FROM_EMAIL — this only decides the
- * recipient.
- *
- * Single-center assumption: one address for every alert. When a second center
- * exists this becomes center-scoped (TODO.md, "Multi-center — center-scoped
- * director contact").
+ * Has a code DEFAULT (DEFAULT_STAFF_ALERT_TO, above), so the feature ships
+ * with no Vercel env action. STAFF_ALERT_TO overrides it (e.g. to route alerts
+ * at a staging address during QA). Sending is still gated on LEAD_NOTIFY_LIVE
+ * and still needs RESEND_API_KEY + LEAD_NOTIFY_FROM_EMAIL — this only decides
+ * the recipient.
  */
-export const DEFAULT_STAFF_ALERT_TO = "parents@samnewyork.com";
 export function getStaffAlertToEmail(): string {
   const override = process.env.STAFF_ALERT_TO?.trim();
   return override ? override : DEFAULT_STAFF_ALERT_TO;
