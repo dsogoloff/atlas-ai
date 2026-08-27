@@ -188,6 +188,7 @@ import {
 } from "@/lib/shortTest/outcome";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
+import { syncHubSpotAssessmentMilestone } from "@/lib/hubspot/syncContact";
 import { notifyAssessmentCompleted } from "@/lib/staffAlerts/notify";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import {
@@ -819,6 +820,7 @@ export async function submitResponseHandler({
       childRow?.grade_level ?? null,
       origin,
     );
+    syncHubSpotAssessmentCompleted(parent.id);
 
     return success({
       is_correct: isCorrect,
@@ -882,6 +884,7 @@ export async function submitResponseHandler({
       childRow?.grade_level ?? null,
       origin,
     );
+    syncHubSpotAssessmentCompleted(parent.id);
 
     return success({
       is_correct: isCorrect,
@@ -1180,6 +1183,31 @@ function notifyStaffAssessmentCompleted(
       // failures on the [staffAlerts] path; nothing to add here.
     }
   });
+}
+
+/**
+ * HubSpot Contract A / D-0061: stamp assessment_completed_date on the parent's
+ * EXISTING contact. Fired from the SAME two fresh-submit terminal paths as
+ * notifyStaffAssessmentCompleted, which is what makes it once per completed
+ * session — the idempotent-retry branches deliberately emit nothing.
+ *
+ * Sends a TIMESTAMP and the account id, nothing else. The placement level,
+ * band, score, strand mastery and responses stay out of HubSpot (D-0055
+ * stands; D-0061 permits only the two timestamps), and AssessmentMilestoneUpdate
+ * is structurally incapable of carrying them.
+ *
+ * Update-only: when no contact bears this atlas_account_id the sync logs and
+ * returns without creating one, so an account-less session cannot produce a CRM
+ * record. Non-blocking via after(); the sync never throws.
+ */
+function syncHubSpotAssessmentCompleted(accountId: string): void {
+  after(() =>
+    syncHubSpotAssessmentMilestone({
+      accountId,
+      milestone: "completed",
+      occurredAt: new Date().toISOString(),
+    }).catch(() => undefined),
+  );
 }
 
 /**
