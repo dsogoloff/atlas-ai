@@ -136,6 +136,7 @@ import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { hasValidConsent } from "@/lib/consent/verify";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
 import { toNextRequestJson } from "@/lib/responseSubmit/types";
+import { syncHubSpotAssessmentMilestone } from "@/lib/hubspot/syncContact";
 import { notifyAssessmentStarted } from "@/lib/staffAlerts/notify";
 import type { Database } from "@/lib/supabase/database.types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
@@ -489,6 +490,20 @@ export async function sessionStartHandler({
     child.id,
     child.grade_level,
     origin,
+  );
+
+  // HubSpot Contract A / D-0061: stamp assessment_started_date on the parent's
+  // EXISTING contact. Same once-per-session seam as the alert above. Sends a
+  // TIMESTAMP and the account id only — no level, band, score or strand data,
+  // and the payload type cannot carry any. Update-only: when no contact bears
+  // this atlas_account_id the sync logs and returns without creating one, so an
+  // account-less session can never produce a CRM record.
+  after(() =>
+    syncHubSpotAssessmentMilestone({
+      accountId: parent.id,
+      milestone: "started",
+      occurredAt: new Date().toISOString(),
+    }).catch(() => undefined),
   );
 
   // Fresh-session first pick: no responses persisted yet, so the served

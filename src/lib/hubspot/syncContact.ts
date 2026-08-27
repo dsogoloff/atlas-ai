@@ -54,6 +54,30 @@ export interface AccountCreatedContact {
   attribution?: Attribution | null;
 }
 
+/** Which assessment lifecycle timestamp is being recorded. */
+export type AssessmentMilestone = "started" | "completed";
+
+/**
+ * D-0061 — assessment lifecycle TIMESTAMPS on an existing parent contact.
+ *
+ * D-0055 permits child first name + grade in HubSpot; D-0061 amends it to also
+ * permit these two timestamps and NOTHING else from the assessment. The
+ * assessed LEVEL, band, score, strand mastery and raw responses stay out —
+ * that number is proprietary and HubSpot does not need it.
+ *
+ * The guarantee is structural, exactly as on AccountCreatedContact: this type
+ * carries an account id, a milestone discriminator and an instant. There is no
+ * field a level could travel in, and none must ever be added. A "just in case"
+ * runtime filter would be weaker than the type.
+ */
+export interface AssessmentMilestoneUpdate {
+  /** parents.id (uuid). The ONLY key used to match an existing contact. */
+  accountId: string;
+  milestone: AssessmentMilestone;
+  /** ISO instant of the milestone — converted to epoch millis on write. */
+  occurredAt: string;
+}
+
 /**
  * Env-gated, fail-soft upsert of one account-level HubSpot contact. No-ops
  * immediately (no fetch at all) when HUBSPOT_ATLAS_SYNC_TOKEN is unset/blank.
@@ -85,6 +109,117 @@ export async function syncHubSpotContact(
 
   // Any other 4xx (or an already-exhausted-retry 5xx) — log and give up.
   console.error("[hubspot] contact create failed", { status: createRes.status });
+}
+
+// =============================================================================
+// D-0061 — assessment milestone timestamps. UPDATE-ONLY, NEVER CREATE.
+// =============================================================================
+
+/**
+ * Write one assessment timestamp onto an ALREADY-EXISTING parent contact.
+ *
+ * NO CONSENT, NO RECORD. This function can only ever PATCH. It matches on
+ * `atlas_account_id` and, when no contact carries that id, it logs and returns
+ * — it has no create path at all. That matters because the contact is created
+ * exclusively on first EMAIL CONFIRMATION (auth/confirm/route.ts), which is
+ * the consent gate: "a contact with this atlas_account_id exists" IS the proof
+ * that a consented parent account exists. An anonymous or account-less
+ * assessment session therefore cannot produce a HubSpot record, because the
+ * only branch that writes requires a contact to already be there.
+ *
+ * Matching is by `atlas_account_id`, never by email: email is mutable and a
+ * shared/typo'd address could collide onto the wrong family's record.
+ *
+ * Env-gated and fail-soft like syncHubSpotContact — no fetch at all when
+ * HUBSPOT_ATLAS_SYNC_TOKEN is unset, and never throws under any path. Every
+ * failure dead-letters through a `[hubspot]`-prefixed console.error.
+ */
+export async function syncHubSpotAssessmentMilestone(
+  update: AssessmentMilestoneUpdate,
+): Promise<void> {
+  const token = getHubspotAtlasSyncToken();
+  if (!token) return; // gated off — no fetch, no spend, no call
+
+  const contactId = await findContactIdByAtlasAccountId(token, update.accountId);
+  if (!contactId) return; // already logged — and DELIBERATELY no create path
+
+  const property = MILESTONE_PROPERTY[update.milestone];
+  const patchRes = await requestWithRetry(
+    token,
+    "PATCH",
+    `/crm/v3/objects/contacts/${encodeURIComponent(contactId)}`,
+    { properties: { [property]: toEpochMillis(update.occurredAt) } },
+  );
+
+  if (!patchRes) return; // already logged
+  if (!patchRes.ok) {
+    console.error("[hubspot] assessment milestone update failed", {
+      milestone: update.milestone,
+      status: patchRes.status,
+    });
+  }
+}
+
+/**
+ * Resolve a contact id from `atlas_account_id` via the v3 search endpoint.
+ * Returns undefined — after logging — when there is no match, when the match
+ * is ambiguous, or on any transport/parse failure. Undefined always means
+ * "do not write", never "create one".
+ */
+async function findContactIdByAtlasAccountId(
+  token: string,
+  accountId: string,
+): Promise<string | undefined> {
+  const res = await requestWithRetry(token, "POST", "/crm/v3/objects/contacts/search", {
+    filterGroups: [
+      {
+        filters: [
+          { propertyName: "atlas_account_id", operator: "EQ", value: accountId },
+        ],
+      },
+    ],
+    properties: ["atlas_account_id"],
+    limit: 2, // 2 is enough to detect ambiguity without paging
+  });
+
+  if (!res) return undefined; // threw — already logged
+  if (!res.ok) {
+    console.error("[hubspot] assessment milestone contact search failed", {
+      status: res.status,
+    });
+    return undefined;
+  }
+
+  let results: Array<{ id?: string }>;
+  try {
+    const body = (await res.json()) as { results?: Array<{ id?: string }> };
+    results = body.results ?? [];
+  } catch (e) {
+    console.error("[hubspot] assessment milestone search returned malformed JSON", {
+      err: e instanceof Error ? e.message : "unknown",
+    });
+    return undefined;
+  }
+
+  if (results.length === 0) {
+    // The expected, healthy no-op: no consented parent contact for this
+    // account, so nothing is written and nothing is created.
+    console.error("[hubspot] assessment milestone skipped — no contact for atlas_account_id");
+    return undefined;
+  }
+  if (results.length > 1) {
+    console.error("[hubspot] assessment milestone skipped — atlas_account_id is ambiguous", {
+      matches: results.length,
+    });
+    return undefined;
+  }
+
+  const id = results[0]?.id;
+  if (typeof id !== "string" || id === "") {
+    console.error("[hubspot] assessment milestone search returned no id");
+    return undefined;
+  }
+  return id;
 }
 
 // =============================================================================
@@ -225,6 +360,21 @@ const SAM_SOURCE = "atlas_assessment";
 const CONTACT_CATEGORY = "prospect_parent";
 const NEW_LIFECYCLE_STAGE = "lead";
 
+/**
+ * D-0061 typed whitelist: the ONLY two HubSpot properties the assessment
+ * milestone path may write, and the complete mapping from milestone to
+ * property. `satisfies` pins the value type so a property name cannot be
+ * mistyped, and the Record<AssessmentMilestone, …> key type means adding a
+ * third milestone is a compile error until it is deliberately mapped here.
+ *
+ * Nothing level-, band- or score-shaped appears in this map, and nothing may
+ * be added to it without amending D-0061.
+ */
+const MILESTONE_PROPERTY = {
+  started: "assessment_started_date",
+  completed: "assessment_completed_date",
+} as const satisfies Record<AssessmentMilestone, string>;
+
 /** Every property the set-if-empty / advance-only logic in
  *  buildPatchProperties() inspects on the existing contact. Passed as the
  *  409-lookup GET's `properties` query param — HubSpot's single-object GET
@@ -263,13 +413,25 @@ function lifecycleRank(value: string): number | undefined {
   return LIFECYCLE_STAGE_RANK[value];
 }
 
+/**
+ * Split a stored full name into HubSpot's firstname/lastname.
+ *
+ * Trimming the WHOLE string is not enough: `parents.name` is built as
+ * `${firstName} ${lastName}`.trim(), which strips only the ends. A trailing
+ * space typed into the signup first-name box survives as an INTERIOR double
+ * space — "Yara  Kasovitz" — and splitting on the first space then yields
+ * `lastname: " Kasovitz"`. That exact value is live on a real contact today.
+ *
+ * Splitting on a whitespace RUN, and trimming each part, makes the output
+ * insensitive to leading, trailing, doubled and tab whitespace alike.
+ */
 function splitName(fullName: string): { firstname: string; lastname: string } {
   const trimmed = fullName.trim();
-  const spaceIdx = trimmed.indexOf(" ");
-  if (spaceIdx === -1) return { firstname: trimmed, lastname: "" };
+  const match = /\s+/.exec(trimmed);
+  if (!match) return { firstname: trimmed, lastname: "" };
   return {
-    firstname: trimmed.slice(0, spaceIdx),
-    lastname: trimmed.slice(spaceIdx + 1),
+    firstname: trimmed.slice(0, match.index).trim(),
+    lastname: trimmed.slice(match.index + match[0].length).trim(),
   };
 }
 
