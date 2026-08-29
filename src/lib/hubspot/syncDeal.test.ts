@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   dealNameFor,
+  renamedDealName,
   shouldAdvance,
   STAGE,
   syncHubSpotEnrollmentDeal,
@@ -28,8 +29,8 @@ function res(status: number, body: unknown, ok = status < 300) {
   return { ok, status, json: async () => body };
 }
 const contactHit = () => res(200, { results: [{ id: CONTACT_ID }] });
-const dealHit = (stage: string) =>
-  res(200, { results: [{ id: DEAL_ID, properties: { dealstage: stage } }] });
+const dealHit = (stage: string, name = "Kasovitz family") =>
+  res(200, { results: [{ id: DEAL_ID, properties: { dealstage: stage, dealname: name } }] });
 const dealNone = () => res(200, { results: [] });
 
 function call(i: number) {
@@ -225,6 +226,22 @@ describe("deal sync — ADVANCE, forward-only", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("renames a waitlist deal to the family form on upgrade", async () => {
+    fetchMock.mockResolvedValueOnce(contactHit());
+    fetchMock.mockResolvedValueOnce(dealHit(STAGE.newLead, "Amy (waitlist)"));
+    fetchMock.mockResolvedValueOnce(res(200, {}));
+    await syncHubSpotEnrollmentDeal({ ...STARTED, parentFullName: "Amy Kasovitz" });
+    expect(bodyOf(2).properties.dealname).toBe("Kasovitz family");
+  });
+
+  it("does NOT touch dealname when the deal is already family-form", async () => {
+    fetchMock.mockResolvedValueOnce(contactHit());
+    fetchMock.mockResolvedValueOnce(dealHit(STAGE.atlasAccountCreated, "Kasovitz family"));
+    fetchMock.mockResolvedValueOnce(res(200, {}));
+    await syncHubSpotEnrollmentDeal(STARTED);
+    expect(bodyOf(2).properties).not.toHaveProperty("dealname");
+  });
+
   it("PATCHes the matched deal id", async () => {
     fetchMock.mockResolvedValueOnce(contactHit());
     fetchMock.mockResolvedValueOnce(dealHit(STAGE.atlasAccountCreated));
@@ -285,18 +302,64 @@ describe("deal sync — no child result ever reaches HubSpot", () => {
   });
 });
 
-describe("deal name", () => {
-  it("uses the last name", () => {
-    expect(dealNameFor("Jessica Kasovitz")).toBe("Kasovitz family");
+// ---------------------------------------------------------------------------
+// The name is a function of the best identity available, re-evaluated on every
+// event. At New Lead the waitlist has only a first name and an email, so
+// "<Last> family" is unbuildable there BY DESIGN — not a fallback for bad data.
+// ---------------------------------------------------------------------------
+describe("deal name — best available identity", () => {
+  it("uses the last name when one exists", () => {
+    expect(dealNameFor({ fullName: "Jessica Kasovitz" })).toBe("Kasovitz family");
   });
   it("survives the interior double space that produced ' Kasovitz'", () => {
-    expect(dealNameFor("Yara  Kasovitz")).toBe("Kasovitz family");
+    expect(dealNameFor({ fullName: "Yara  Kasovitz" })).toBe("Kasovitz family");
   });
-  it("falls back to the first name for a single-token name", () => {
-    expect(dealNameFor("Prince")).toBe("Prince family");
+  it("uses the waitlist form when only a first name exists", () => {
+    expect(dealNameFor({ fullName: "Amy" })).toBe("Amy (waitlist)");
   });
-  it("never produces a bare ' family'", () => {
-    expect(dealNameFor("   ")).toBe("Atlas family");
+  it("uses the email LOCAL PART when there is no name at all", () => {
+    expect(dealNameFor({ email: "amymnle@gmail.com" })).toBe("amymnle (waitlist)");
+  });
+  it("never uses the full email address as a deal name", () => {
+    const name = dealNameFor({ email: "amymnle@gmail.com" });
+    expect(name).not.toContain("@");
+    expect(name).not.toContain("gmail.com");
+  });
+  it("prefers a first name over the email local part", () => {
+    expect(dealNameFor({ fullName: "Amy", email: "xyz@gmail.com" })).toBe("Amy (waitlist)");
+  });
+  it("never produces a bare ' family' or ' (waitlist)'", () => {
+    expect(dealNameFor({ fullName: "   " })).toBe("Atlas family");
+    expect(dealNameFor({})).toBe("Atlas family");
+  });
+  it("uses lowercase 'family' — the majority convention", () => {
+    expect(dealNameFor({ fullName: "Jessica Kasovitz" })).not.toContain("Family");
+  });
+});
+
+describe("deal name — upgrade only, never downgrade", () => {
+  it("upgrades a waitlist name once a last name exists", () => {
+    expect(renamedDealName("Amy (waitlist)", { fullName: "Amy Kasovitz" })).toBe(
+      "Kasovitz family",
+    );
+  });
+  it("upgrades an email-local waitlist name", () => {
+    expect(
+      renamedDealName("amymnle (waitlist)", { fullName: "Amy Kasovitz" }),
+    ).toBe("Kasovitz family");
+  });
+  it("leaves an already-upgraded family name alone", () => {
+    expect(renamedDealName("Kasovitz family", { fullName: "Jessica Kasovitz" })).toBeUndefined();
+  });
+  it("NEVER downgrades a family name back to a waitlist form", () => {
+    expect(renamedDealName("Kasovitz family", { fullName: "Amy" })).toBeUndefined();
+    expect(renamedDealName("Kasovitz family", { email: "a@b.com" })).toBeUndefined();
+    expect(renamedDealName("Kasovitz family", {})).toBeUndefined();
+  });
+  it("does not rewrite a manually capitalised family name", () => {
+    // "Kasovitz Family" is already the informative form; casing is a backfill
+    // concern, not something the live sync should churn on every event.
+    expect(renamedDealName("Kasovitz Family", { fullName: "Jessica Kasovitz" })).toBeUndefined();
   });
 });
 
