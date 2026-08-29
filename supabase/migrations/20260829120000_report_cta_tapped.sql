@@ -1,0 +1,21 @@
+-- Report CTA taps — record the click server-side BEFORE the mail draft opens.
+--
+-- Both contact CTAs at the bottom of the parent report are mailto links, so
+-- today a tap produces at best an email and at worst nothing at all: a parent
+-- writing from an address other than their account attaches to no contact, and
+-- a parent who taps but never sends leaves no trace whatsoever.
+--
+-- This adds ONE enum value so the tap becomes a fact we can report on. The CTA
+-- identity travels in props.cta, not in the event name, so a third CTA needs no
+-- further migration.
+--
+-- Deliberately NOT reused: 'center_followup_opted_in'. That event currently
+-- means "the parent acted on the director CTA" and is actively being analysed;
+-- firing it for "Questions? Talk to us" as well would silently corrupt an
+-- existing funnel metric.
+--
+-- Privacy (strategy §6.4, D-0055/D-0061): props carries the CTA slug only. No
+-- child name, grade, assessment level, band, score or response ever enters
+-- analytics_events.props.
+
+alter type analytics_event_name add value if not exists 'report_cta_tapped';

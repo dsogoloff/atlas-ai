@@ -19,7 +19,7 @@ import type { resolveNarrationProse } from "@/lib/report/narration/resolve";
 import { rollUpToParentStrands } from "@/lib/report/strand-mastery";
 import type { ReportContent } from "@/lib/report/types";
 
-import { CenterFollowupCta } from "./center-followup-cta";
+import { CenterFollowupCta, TrackedMailtoLink } from "./center-followup-cta";
 import { FindingsList } from "./findings-list";
 import { ParentReportFeedback } from "./parent-report-feedback";
 import { PlacementCard } from "./placement-card";
@@ -377,12 +377,14 @@ function NextSteps({ sessionId }: { sessionId: string }) {
           color: "var(--color-report-text-light)",
         }}
       >
-        <Link
+        <TrackedMailtoLink
+          sessionId={sessionId}
+          cta="questions_talk_to_us"
           href={CTA_LINKS.questionsTalkToUs}
           className="hover:text-[color:var(--color-report-navy)] transition-colors"
         >
           Questions? Talk to us
-        </Link>
+        </TrackedMailtoLink>
         <Link
           href={`/report/answers?session=${sessionId}`}
           className="hover:text-[color:var(--color-report-navy)] transition-colors"

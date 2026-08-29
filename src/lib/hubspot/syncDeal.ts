@@ -98,12 +98,15 @@ const TERMINAL_STAGES: ReadonlySet<string> = new Set([
 export type DealEvent =
   | "account_created"
   | "assessment_started"
-  | "assessment_completed";
+  | "assessment_completed"
+  /** A parent tapped a contact CTA on their report — they are reaching out. */
+  | "contact_requested";
 
 const EVENT_STAGE: Record<DealEvent, string> = {
   account_created: STAGE.atlasAccountCreated,
   assessment_started: STAGE.assessmentStarted,
   assessment_completed: STAGE.assessmentCompleted,
+  contact_requested: STAGE.inConversation,
 };
 
 /**
@@ -115,6 +118,8 @@ const EVENT_STATUS: Record<DealEvent, "Started" | "Completed" | null> = {
   account_created: null,
   assessment_started: "Started",
   assessment_completed: "Completed",
+  // Tapping "contact us" says nothing about whether the assessment was taken.
+  contact_requested: null,
 };
 
 /** Deal→Contact association (HubSpot-defined type id 3). */

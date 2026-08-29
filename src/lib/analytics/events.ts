@@ -28,6 +28,7 @@ export const ANALYTICS_EVENTS = {
   PARENT_REPORT_GENERATED: "parent_report_generated",
   PARENT_REPORT_VIEWED: "parent_report_viewed",
   CENTER_FOLLOWUP_OPTED_IN: "center_followup_opted_in",
+  REPORT_CTA_TAPPED: "report_cta_tapped",
   PARENT_SATISFACTION_SUBMITTED: "parent_satisfaction_submitted",
   INSTRUCTOR_REPORT_VIEWED: "instructor_report_viewed",
   PLACEMENT_RECOMMENDATION_CREATED: "placement_recommendation_created",

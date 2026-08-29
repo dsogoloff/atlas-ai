@@ -1,18 +1,57 @@
 "use client";
 
-// Client wrapper for the report's primary "Schedule a conversation with a
-// S.A.M center director" CTA. Exists only to fire center_followup_opted_in on
-// the parent's click (the funnel opt-in signal) — the visual chrome is
-// unchanged from the prior server-rendered anchor, and the href stays the
-// CTA_LINKS placeholder until real scheduling is wired (DECISIONS 2026-05-30).
+// The report's two contact CTAs. Both are mailto links, and BOTH now record
+// the tap server-side before the mail draft opens.
 //
-// Fail-soft: the emit is fire-and-forget via the recordCenterFollowupOptIn
-// server action (itself never throws); navigation proceeds regardless. A ref
-// guards against double-counting if the parent clicks more than once.
+// ---------------------------------------------------------------------------
+// WHY THE CALL IS NOT AWAITED
+// ---------------------------------------------------------------------------
+// Awaiting a fetch inside a click handler breaks the user-gesture chain on
+// iOS, and the mail app may then simply not open. So the record is fired and
+// forgotten and navigation is never blocked on it. That ordering is
+// deliberate: a lost record is recoverable, a parent who taps and gets nothing
+// is not. If the call fails for any reason the mailto still fires and no error
+// ever surfaces to the parent.
+//
+// IDEMPOTENCE. A tap is recorded at most once per browser session per CTA per
+// assessment session. sessionStorage is used rather than a useRef so the guard
+// survives a remount or a back-navigation; every access is wrapped, because
+// sessionStorage throws outright in some privacy modes.
+//
+// NO ACCOUNT, NO RECORD. The server action resolves the authenticated parent
+// and returns silently for an anonymous viewer — the client does not need to
+// know, and still opens the draft.
 
 import { useRef } from "react";
 
-import { recordCenterFollowupOptIn } from "./feedback-actions";
+import {
+  recordCenterFollowupOptIn,
+  recordReportCtaTap,
+  type ReportCta,
+} from "./feedback-actions";
+
+/** At most once per (session, CTA) per browser session. Returns false when the
+ *  tap has already been recorded. Fails OPEN — if storage is unavailable we
+ *  would rather record twice than lose the signal entirely. */
+function claimOnce(sessionId: string, cta: ReportCta): boolean {
+  const key = `atlas:cta:${cta}:${sessionId}`;
+  try {
+    if (window.sessionStorage.getItem(key)) return false;
+    window.sessionStorage.setItem(key, "1");
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+/** Fire-and-forget. Never awaited, never throws into the click handler. */
+function record(sessionId: string, cta: ReportCta): void {
+  try {
+    void recordReportCtaTap(sessionId, cta).catch(() => undefined);
+  } catch {
+    // A synchronous throw must not stop the navigation either.
+  }
+}
 
 export function CenterFollowupCta({
   sessionId,
@@ -26,9 +65,16 @@ export function CenterFollowupCta({
   const fired = useRef(false);
 
   function handleClick() {
-    if (fired.current) return;
-    fired.current = true;
-    void recordCenterFollowupOptIn(sessionId);
+    // The existing funnel signal, unchanged: once per mount, analytics only.
+    if (!fired.current) {
+      fired.current = true;
+      void recordCenterFollowupOptIn(sessionId);
+    }
+    // New: the server-side record + deal advance to "In Conversation".
+    if (claimOnce(sessionId, "director_conversation")) {
+      record(sessionId, "director_conversation");
+    }
+    // Navigation proceeds regardless — nothing above is awaited.
   }
 
   return (
@@ -49,6 +95,35 @@ export function CenterFollowupCta({
       >
         &rarr;
       </span>
+    </a>
+  );
+}
+
+/**
+ * The secondary "Questions? Talk to us" mailto, which recorded NOTHING before
+ * this change. Same fire-and-forget contract; visual output is byte-identical
+ * to the plain <Link> it replaces.
+ */
+export function TrackedMailtoLink({
+  sessionId,
+  cta,
+  href,
+  className,
+  children,
+}: {
+  sessionId: string;
+  cta: ReportCta;
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  function handleClick() {
+    if (claimOnce(sessionId, cta)) record(sessionId, cta);
+  }
+
+  return (
+    <a href={href} onClick={handleClick} className={className}>
+      {children}
     </a>
   );
 }
