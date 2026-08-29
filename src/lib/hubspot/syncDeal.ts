@@ -127,14 +127,18 @@ const DEAL_TO_CONTACT_TYPE_ID = 3;
 export interface DealEventInput {
   /** parents.id (uuid) — the key used to find the parent's contact. */
   accountId: string;
-  /** parents.name; the deal is named "<last name> family". */
+  /** parents.name. May be a single token, or absent, earlier in the funnel. */
   parentFullName: string;
+  /** Optional. Only used as the LAST identity fallback, and only ever its
+   *  local part — the full address is never used as a deal name. */
+  parentEmail?: string | null;
   event: DealEvent;
 }
 
 interface OpenDeal {
   id: string;
   stage: string;
+  name: string;
 }
 
 /**
@@ -192,7 +196,7 @@ async function findOpenDeal(
           associations: [{ objectType: "contacts", operator: "EQUAL", objectIds: [contactId] }],
         },
       ],
-      properties: ["dealstage", "pipeline"],
+      properties: ["dealstage", "pipeline", "dealname"],
       limit: 100,
     },
     LOG,
@@ -223,7 +227,8 @@ async function findOpenDeal(
     const stage = row.properties?.dealstage;
     if (!id || typeof stage !== "string") continue;
     if (TERMINAL_STAGES.has(stage)) continue; // Enrolled / Not Proceeding only
-    open.push({ id, stage });
+    const name = typeof row.properties?.dealname === "string" ? row.properties.dealname : "";
+    open.push({ id, stage, name });
   }
 
   if (open.length === 0) return undefined;
@@ -243,12 +248,63 @@ async function findOpenDeal(
 // CREATE
 // ===========================================================================
 
-/** "<last name> family", per the brief. Falls back to the first name, then a
- *  neutral label, so a single-token or blank name never yields " family". */
-export function dealNameFor(parentFullName: string): string {
-  const { firstname, lastname } = splitName(parentFullName);
-  const base = lastname || firstname;
-  return base ? `${base} family` : "Atlas family";
+/**
+ * The deal name is a FUNCTION OF THE BEST IDENTITY AVAILABLE, re-evaluated on
+ * every event — not a value fixed at creation.
+ *
+ * This is a design constraint, not a fallback for bad data. A prospect who
+ * arrives at "New Lead" came through the waitlist, which collects only a first
+ * name and an email. No last name exists at that point, so "<Last> family" is
+ * literally unbuildable there. The name therefore starts as the best token we
+ * have and is UPGRADED when a last name appears at account creation.
+ *
+ *   last name known      -> "<Last> family"        e.g. "Kasovitz family"
+ *   first name only      -> "<First> (waitlist)"   e.g. "Amy (waitlist)"
+ *   neither, email only  -> "<local> (waitlist)"   e.g. "amymnle (waitlist)"
+ *
+ * The email's LOCAL PART only — a full address is never a deal name.
+ * Lowercase "family" is the convention (the majority of existing deals).
+ */
+export function dealNameFor(identity: {
+  fullName?: string | null;
+  email?: string | null;
+}): string {
+  const { firstname, lastname } = splitName(identity.fullName ?? "");
+  if (lastname) return `${lastname} family`;
+
+  const token = firstname || emailLocalPart(identity.email);
+  if (token) return `${token} (waitlist)`;
+  return "Atlas family";
+}
+
+/** The part before "@", trimmed. Never the full address. */
+function emailLocalPart(email: string | null | undefined): string {
+  const at = (email ?? "").trim();
+  if (!at) return "";
+  const idx = at.indexOf("@");
+  return (idx === -1 ? at : at.slice(0, idx)).trim();
+}
+
+/** A name already in the "<Last> family" form — the most informative shape. */
+function isFamilyForm(name: string): boolean {
+  return /\sfamily$/i.test(name.trim());
+}
+
+/**
+ * Rename ONLY when the deal gains information: a waitlist-form name becoming a
+ * family-form one. Never the reverse. The founder approved the upgrade
+ * explicitly — it is the same deal learning a last name, not a new record — but
+ * a downgrade would destroy a good name whenever a full name was momentarily
+ * unavailable, so it is structurally impossible here.
+ */
+export function renamedDealName(
+  currentName: string,
+  identity: { fullName?: string | null; email?: string | null },
+): string | undefined {
+  const desired = dealNameFor(identity);
+  if (!isFamilyForm(desired)) return undefined; // never downgrade
+  if (isFamilyForm(currentName)) return undefined; // already upgraded
+  return desired;
 }
 
 async function createDeal(
@@ -258,7 +314,7 @@ async function createDeal(
 ): Promise<void> {
   const status = EVENT_STATUS[input.event];
   const properties: Record<string, string> = {
-    dealname: dealNameFor(input.parentFullName),
+    dealname: dealNameFor({ fullName: input.parentFullName, email: input.parentEmail }),
     pipeline: PIPELINE_ID,
     dealstage: EVENT_STAGE[input.event],
     entry_path: "Assessment",
@@ -330,6 +386,15 @@ async function advanceDeal(
 
   const target = EVENT_STAGE[input.event];
   if (shouldAdvance(deal.stage, target)) properties.dealstage = target;
+
+  // The name is re-evaluated on EVERY event, not fixed at creation: a waitlist
+  // deal named "Amy (waitlist)" becomes "Kasovitz family" the moment a last
+  // name exists. Upgrade-only — see renamedDealName.
+  const renamed = renamedDealName(deal.name, {
+    fullName: input.parentFullName,
+    email: input.parentEmail,
+  });
+  if (renamed) properties.dealname = renamed;
 
   if (Object.keys(properties).length === 0) return; // nothing to do — no call
 

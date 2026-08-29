@@ -209,6 +209,10 @@ export async function GET(request: NextRequest) {
           await syncHubSpotEnrollmentDeal({
             accountId: parent.id,
             parentFullName: parent.name,
+            // Last-resort identity for the deal name (local part only). At
+            // account creation a full name normally exists, so this is rarely
+            // reached — it matters for a waitlist deal being upgraded.
+            parentEmail: parent.email,
             event: "account_created",
           });
         } catch {
