@@ -34,6 +34,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { canonicalUrl } from "@/lib/config/publicOrigin";
 import { syncHubSpotContact } from "@/lib/hubspot/syncContact";
+import { syncHubSpotEnrollmentDeal } from "@/lib/hubspot/syncDeal";
 import type { Attribution } from "@/lib/marketing/attribution";
 import { notifyAccountCreated } from "@/lib/staffAlerts/notify";
 import { consumeAuthAttempt } from "@/lib/quota/authLimits";
@@ -190,15 +191,30 @@ export async function GET(request: NextRequest) {
       // never suppress the staff email, and vice versa. syncHubSpotContact
       // never throws by contract; the trailing catch is belt-and-suspenders.
       // Account-level only — no child data (see hubspot/syncContact.ts).
-      after(() =>
-        syncHubSpotContact({
-          email: parent.email,
-          fullName: parent.name,
-          accountId: parent.id,
-          createdAt: parent.created_at,
-          attribution: parent.attribution as Attribution | null,
-        }).catch(() => undefined),
-      );
+      after(async () => {
+        try {
+          await syncHubSpotContact({
+            email: parent.email,
+            fullName: parent.name,
+            accountId: parent.id,
+            createdAt: parent.created_at,
+            attribution: parent.attribution as Attribution | null,
+          });
+          // The deal upsert MUST follow the contact sync, not race it: it
+          // finds the family by atlas_account_id, and on a brand-new account
+          // that contact does not exist until the call above returns. Run
+          // concurrently, the deal would be skipped exactly when it is most
+          // needed. Still one after(), so a HubSpot outage cannot suppress the
+          // staff email above.
+          await syncHubSpotEnrollmentDeal({
+            accountId: parent.id,
+            parentFullName: parent.name,
+            event: "account_created",
+          });
+        } catch {
+          // Both are fail-soft by contract; this is belt-and-suspenders.
+        }
+      });
     }
   }
 

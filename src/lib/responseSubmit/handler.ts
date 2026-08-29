@@ -189,6 +189,7 @@ import {
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
 import { syncHubSpotAssessmentMilestone } from "@/lib/hubspot/syncContact";
+import { syncHubSpotEnrollmentDeal } from "@/lib/hubspot/syncDeal";
 import { notifyAssessmentCompleted } from "@/lib/staffAlerts/notify";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import {
@@ -821,6 +822,7 @@ export async function submitResponseHandler({
       origin,
     );
     syncHubSpotAssessmentCompleted(parent.id);
+    syncHubSpotEnrollmentDealCompleted(parent.id, parent.name);
 
     return success({
       is_correct: isCorrect,
@@ -885,6 +887,7 @@ export async function submitResponseHandler({
       origin,
     );
     syncHubSpotAssessmentCompleted(parent.id);
+    syncHubSpotEnrollmentDealCompleted(parent.id, parent.name);
 
     return success({
       is_correct: isCorrect,
@@ -1206,6 +1209,31 @@ function syncHubSpotAssessmentCompleted(accountId: string): void {
       accountId,
       milestone: "completed",
       occurredAt: new Date().toISOString(),
+    }).catch(() => undefined),
+  );
+}
+
+/**
+ * HubSpot Enrollment pipeline: create or advance the family's deal to
+ * "Assessment Completed" and set assessment_status = Completed.
+ *
+ * Forward-only on stage — an enroll-first family already at "In Conversation",
+ * "Class Requested" or "Registered iClassPro" keeps its stage — but the status
+ * is set on every event, because it is the cross-path dimension that must stay
+ * accurate regardless of where the family sits in the funnel.
+ *
+ * Stage and status only. No level, band, score or child field: DealEventInput
+ * cannot express one.
+ */
+function syncHubSpotEnrollmentDealCompleted(
+  accountId: string,
+  parentFullName: string,
+): void {
+  after(() =>
+    syncHubSpotEnrollmentDeal({
+      accountId,
+      parentFullName,
+      event: "assessment_completed",
     }).catch(() => undefined),
   );
 }
