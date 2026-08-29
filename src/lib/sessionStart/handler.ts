@@ -137,6 +137,7 @@ import { hasValidConsent } from "@/lib/consent/verify";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
 import { toNextRequestJson } from "@/lib/responseSubmit/types";
 import { syncHubSpotAssessmentMilestone } from "@/lib/hubspot/syncContact";
+import { syncHubSpotEnrollmentDeal } from "@/lib/hubspot/syncDeal";
 import { notifyAssessmentStarted } from "@/lib/staffAlerts/notify";
 import type { Database } from "@/lib/supabase/database.types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
@@ -503,6 +504,17 @@ export async function sessionStartHandler({
       accountId: parent.id,
       milestone: "started",
       occurredAt: new Date().toISOString(),
+    }).catch(() => undefined),
+  );
+
+  // HubSpot Enrollment pipeline: create or advance the family's deal to
+  // "Assessment Started" and set assessment_status = Started. Forward-only on
+  // stage; status is set regardless. No child data — stage + status only.
+  after(() =>
+    syncHubSpotEnrollmentDeal({
+      accountId: parent.id,
+      parentFullName: parent.name,
+      event: "assessment_started",
     }).catch(() => undefined),
   );
 

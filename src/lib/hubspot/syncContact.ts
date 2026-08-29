@@ -166,7 +166,7 @@ export async function syncHubSpotAssessmentMilestone(
  * is ambiguous, or on any transport/parse failure. Undefined always means
  * "do not write", never "create one".
  */
-async function findContactIdByAtlasAccountId(
+export async function findContactIdByAtlasAccountId(
   token: string,
   accountId: string,
 ): Promise<string | undefined> {
@@ -309,11 +309,15 @@ async function upsertExisting(
  * attempt threw (already logged) — callers must check for undefined before
  * reading `.status`.
  */
-async function requestWithRetry(
+export async function requestWithRetry(
   token: string,
   method: "POST" | "PATCH",
   path: string,
   body: unknown,
+  /** Log context, so the deal sync's failures are distinguishable from the
+   *  contact sync's in the Vercel logs. Default preserves the original
+   *  strings exactly. */
+  label = "contact sync",
 ): Promise<Response | undefined> {
   const attempt = async (): Promise<Response | undefined> => {
     try {
@@ -326,7 +330,7 @@ async function requestWithRetry(
         body: JSON.stringify(body),
       });
     } catch (e) {
-      console.error("[hubspot] contact sync request threw", {
+      console.error(`[hubspot] ${label} request threw`, {
         method,
         err: e instanceof Error ? e.message : "unknown",
       });
@@ -343,7 +347,7 @@ async function requestWithRetry(
   const second = await attempt();
   if (!second) return undefined; // threw on retry — already logged
   if (second.status >= 500) {
-    console.error("[hubspot] contact sync failed after retry", {
+    console.error(`[hubspot] ${label} failed after retry`, {
       method,
       status: second.status,
     });
@@ -425,7 +429,7 @@ function lifecycleRank(value: string): number | undefined {
  * Splitting on a whitespace RUN, and trimming each part, makes the output
  * insensitive to leading, trailing, doubled and tab whitespace alike.
  */
-function splitName(fullName: string): { firstname: string; lastname: string } {
+export function splitName(fullName: string): { firstname: string; lastname: string } {
   const trimmed = fullName.trim();
   const match = /\s+/.exec(trimmed);
   if (!match) return { firstname: trimmed, lastname: "" };
