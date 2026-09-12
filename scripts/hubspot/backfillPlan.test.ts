@@ -239,8 +239,11 @@ describe("planAccount", () => {
     expect(row.properties).toEqual({
       child_1_name: "Ada",
       child_1_grade: "3",
+      // datetime — full precision.
       [ATTEMPT_PROPERTIES.firstStartedAt]: Date.parse("2026-01-05T10:00:00.000Z"),
-      [ATTEMPT_PROPERTIES.firstCompletedAt]: Date.parse("2026-01-05T10:30:00.000Z"),
+      // `date` in the portal — midnight UTC of the completion day, or HubSpot
+      // rejects the whole PATCH. 10:30Z on the 5th floors to the 5th.
+      [ATTEMPT_PROPERTIES.firstCompletedAt]: Date.UTC(2026, 0, 5),
       [ATTEMPT_PROPERTIES.attemptCount]: 1,
     });
   });
@@ -381,14 +384,17 @@ describe("childSlotNotes", () => {
     expect(childSlotNotes([{ firstName: "Ada", grade: "   " }])).toEqual([]);
   });
 
-  it("flags that a third child's NAME cannot be written (child_3_name is not in the portal)", () => {
+  it("no longer flags a third child's name — child_3_name exists as of 2026-09-12", () => {
+    // Slot 3 was name-less while the portal lacked child_3_name. The property
+    // has since been created, so all three names are writable and there is
+    // nothing to warn about. The note itself is kept for any FUTURE slot that
+    // has no name property (CHILD_SLOTS still models `name: string | null`).
     const notes = childSlotNotes([
       { firstName: "Ada", grade: "3" },
       { firstName: "Bo", grade: "1" },
       { firstName: "Cy", grade: "K" },
     ]);
-    expect(notes.join(" ")).toMatch(/Cy: first name NOT written/);
-    expect(notes.join(" ")).toMatch(/child_3_name does not exist/);
+    expect(notes.join(" ")).not.toMatch(/first name NOT written/);
   });
 
   it("flags children beyond the last portal slot", () => {

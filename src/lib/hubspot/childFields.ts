@@ -138,17 +138,21 @@ export interface ChildCrmRecord {
 /**
  * Slot → property names, as they exist in the LIVE portal.
  *
- * NOTE the asymmetry, verified live 2026-09-12 and NOT an oversight here:
- * `child_1_name` and `child_2_name` exist, `child_1/2/3_grade` exist, but
- * **`child_3_name` DOES NOT EXIST** in the portal. Slot 3 therefore carries a
- * grade and no name. Creating that property is a portal schema change and is
- * pending founder approval — do not add it to this table until it exists, or
- * every write that includes a third child will 400.
+ * `child_3_name` was MISSING from the portal until 2026-09-12 and slot 3 was
+ * name-less as a result. It has since been created (verified live, type
+ * `string`, matching child_1_name / child_2_name), so slot 3 now carries a name
+ * like its siblings.
+ *
+ * The `name: string | null` shape is kept rather than simplified: it is what
+ * lets a slot exist with no name property, and re-deriving it later would mean
+ * re-learning why it was there. A null name is still skipped by
+ * buildChildProperties — writing a property this portal does not have would 400
+ * the whole PATCH.
  */
 export const CHILD_SLOTS: readonly { name: string | null; grade: string }[] = [
   { name: "child_1_name", grade: "child_1_grade" },
   { name: "child_2_name", grade: "child_2_grade" },
-  { name: null, grade: "child_3_grade" },
+  { name: "child_3_name", grade: "child_3_grade" },
 ];
 
 /**

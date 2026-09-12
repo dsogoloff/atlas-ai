@@ -422,6 +422,51 @@ export const ATTEMPT_PROPERTIES = {
   attemptCount: "assessment_attempt_count",
 } as const satisfies Record<string, string>;
 
+/**
+ * The HubSpot TYPE of each attempt property, read from the live portal
+ * (245446396) on 2026-09-12. This is not documentation — it drives coercion,
+ * and getting it wrong breaks more than the field it describes.
+ *
+ * ⚠️  `first_assessment_completed_date` is a **date**, while its sibling
+ * `first_assessment_started_date` is a **datetime**. That asymmetry is real and
+ * was confirmed against the portal, not assumed from the names.
+ *
+ * A HubSpot `date` property accepts ONLY midnight-UTC epoch millis. Hand it a
+ * real timestamp like 2026-09-11T23:54:00.584Z and HubSpot rejects the ENTIRE
+ * PATCH — so one mistyped value would also take down the
+ * `assessment_started_date` / `assessment_completed_date` writes travelling in
+ * the same request, for every parent. Same blast radius as an unknown property.
+ *
+ * When adding a property here, read its type from the portal first.
+ */
+export const ATTEMPT_PROPERTY_TYPES = {
+  [ATTEMPT_PROPERTIES.firstStartedAt]: "datetime",
+  [ATTEMPT_PROPERTIES.firstCompletedAt]: "date",
+  [ATTEMPT_PROPERTIES.attemptCount]: "number",
+} as const satisfies Record<string, "date" | "datetime" | "number">;
+
+/**
+ * Midnight UTC of the day an instant falls on, in epoch millis — the only
+ * shape a HubSpot `date` property accepts.
+ *
+ * Built from the UTC components deliberately: using local getFullYear() etc.
+ * would resolve to the wrong calendar day for any instant near a day boundary
+ * whenever the server's zone is not UTC, and Vercel functions are not
+ * guaranteed to run in UTC.
+ */
+export function toUtcMidnightMillis(iso: string): number {
+  const d = new Date(iso);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
+/** Coerce one ISO instant to the wire value its property's type accepts. */
+export function toHubspotDateValue(
+  iso: string,
+  type: "date" | "datetime",
+): number {
+  return type === "date" ? toUtcMidnightMillis(iso) : toEpochMillis(iso);
+}
+
 export function buildMilestoneProperties(
   update: AssessmentMilestoneUpdate,
   property: string,
@@ -435,13 +480,16 @@ export function buildMilestoneProperties(
 
   properties[ATTEMPT_PROPERTIES.attemptCount] = attempt.attemptCount;
   if (attempt.firstStartedAt !== null) {
-    properties[ATTEMPT_PROPERTIES.firstStartedAt] = toEpochMillis(
+    properties[ATTEMPT_PROPERTIES.firstStartedAt] = toHubspotDateValue(
       attempt.firstStartedAt,
+      ATTEMPT_PROPERTY_TYPES[ATTEMPT_PROPERTIES.firstStartedAt],
     );
   }
   if (attempt.firstCompletedAt !== null) {
-    properties[ATTEMPT_PROPERTIES.firstCompletedAt] = toEpochMillis(
+    // Coerced to midnight UTC: this one is a `date`, not a `datetime`.
+    properties[ATTEMPT_PROPERTIES.firstCompletedAt] = toHubspotDateValue(
       attempt.firstCompletedAt,
+      ATTEMPT_PROPERTY_TYPES[ATTEMPT_PROPERTIES.firstCompletedAt],
     );
   }
   return properties;

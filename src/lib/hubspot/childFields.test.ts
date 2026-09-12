@@ -91,14 +91,16 @@ describe("buildChildProperties", () => {
     });
   });
 
-  it("writes child_3_GRADE but never child_3_name — that property does not exist in the portal", () => {
+  it("writes a third child's name AND grade now that child_3_name exists", () => {
+    // child_3_name was absent from the portal until 2026-09-12, so slot 3 was
+    // grade-only. It has since been created (verified live, type string).
     const props = buildChildProperties([
       { firstName: "A", grade: "1" },
       { firstName: "B", grade: "2" },
       { firstName: "C", grade: "3" },
     ]);
     expect(props.child_3_grade).toBe("3");
-    expect(props).not.toHaveProperty("child_3_name");
+    expect(props.child_3_name).toBe("C");
   });
 
   it("omits an unmapped grade rather than writing a bad enum value", () => {
