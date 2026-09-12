@@ -25,7 +25,7 @@ import {
   isHubspotAttemptPropertiesLive,
 } from "@/lib/env";
 
-const HUBSPOT_API_BASE = "https://api.hubapi.com";
+export const HUBSPOT_API_BASE = "https://api.hubapi.com";
 
 /** Real delay in ms before the single 5xx retry. Runs inside after() — never
  *  on the request path — so a real wait is fine (see env.ts docblock). */
