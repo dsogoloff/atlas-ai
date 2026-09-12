@@ -54,6 +54,12 @@ vi.mock("../../_components/shell", () => ({
   InstructorNotice: () => null,
 }));
 vi.mock("@/lib/report/assemble", () => ({ assembleReportContent: vi.fn() }));
+// Attempt history has its own reader + component tests; stub the read so the
+// chainable query stub below doesn't have to serve both a single-row and a
+// list shape from the same assessment_sessions fixture.
+vi.mock("@/lib/assessmentHistory/attempts", () => ({
+  fetchAttemptHistory: async () => [],
+}));
 vi.mock("next/link", () => ({ default: () => null }));
 
 // current_estimate validity is driven by a `__valid` marker on the fixture so a

@@ -37,6 +37,9 @@ import type { Database } from "@/lib/supabase/database.types";
 
 import { ReportArticle } from "@/app/(parent)/report/report-article";
 
+import { fetchAttemptHistory } from "@/lib/assessmentHistory/attempts";
+
+import { AttemptHistory } from "./attempt-history";
 import { StaffPlacementBlock } from "./staff-placement-block";
 import {
   ENGINE_STRAND_LABELS,
@@ -183,6 +186,13 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
 
   const hasReport =
     session !== null && isPlacementEstimateJson(session.current_estimate);
+
+  // Every retained attempt for this child (re-takes are retained events, not
+  // corrections). Read with the SAME RLS-scoped client as `child` and `session`
+  // above — no service-role read: an attempt outside the caller's center /
+  // tenant must stay invisible. The per-attempt assessed level it carries is
+  // ATLAS-ONLY and never leaves this surface (D-0055 / D-0061).
+  const attempts = await fetchAttemptHistory(supabase, child.id);
 
   // The report's underlying tables (responses, taxonomy, misconceptions,
   // curriculum_recommendations, report_narrations) are read with the SERVICE
@@ -362,6 +372,11 @@ export default async function StudentDiagnosticPage({ params }: PageProps) {
             )}
           </>
         )}
+
+        {/* Attempt history — shown to instructor AND admin, and on the
+            no-report path too (an in-progress first attempt is exactly what a
+            director wants to see there). */}
+        <AttemptHistory attempts={attempts} />
 
         {/* Report-viewed tracking + the usefulness rating are instructor-only
             affordances (the rating is authored by an instructor; the admin
