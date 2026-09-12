@@ -1,0 +1,26 @@
+{
+  // RESOLUTION-ONLY config for `tsx`. Type-checking still comes from the root
+  // tsconfig.json, whose `include` already covers scripts/**/*.ts — this file
+  // exists solely so a one-time script can import src/lib modules that declare
+  // `import "server-only"`.
+  //
+  // `server-only` is not a real installed package here: Next.js's bundler
+  // intercepts that specifier, and vitest aliases it (vitest.config.ts ->
+  // vitest.shims/server-only.ts). A plain `tsx` script has neither, so
+  // importing e.g. src/lib/hubspot/childFields.ts dies with MODULE_NOT_FOUND.
+  // Mapping it to the same no-op shim vitest uses fixes that for scripts ONLY.
+  //
+  // Deliberately NOT added to the root tsconfig: Next.js reads root `paths` in
+  // its webpack resolution, so a root mapping would replace the real
+  // server-only guard in the app build and silently remove the client-boundary
+  // protection it exists to provide.
+  //
+  // Used via: tsx --tsconfig scripts/tsconfig.json <script>
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["../src/*"],
+      "server-only": ["../vitest.shims/server-only.ts"]
+    }
+  }
+}

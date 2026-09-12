@@ -136,7 +136,7 @@ import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { hasValidConsent } from "@/lib/consent/verify";
 import { replayEngineState } from "@/lib/responseSubmit/replay";
 import { toNextRequestJson } from "@/lib/responseSubmit/types";
-import { syncHubSpotAssessmentMilestone } from "@/lib/hubspot/syncContact";
+import { emitAssessmentEvent } from "@/lib/hubspot/emitAssessmentEvent";
 import { syncHubSpotEnrollmentDeal } from "@/lib/hubspot/syncDeal";
 import { notifyAssessmentStarted } from "@/lib/staffAlerts/notify";
 import type { Database } from "@/lib/supabase/database.types";
@@ -493,17 +493,24 @@ export async function sessionStartHandler({
     origin,
   );
 
-  // HubSpot Contract A / D-0061: stamp assessment_started_date on the parent's
-  // EXISTING contact. Same once-per-session seam as the alert above. Sends a
-  // TIMESTAMP and the account id only — no level, band, score or strand data,
-  // and the payload type cannot carry any. Update-only: when no contact bears
-  // this atlas_account_id the sync logs and returns without creating one, so an
+  // HubSpot Contract A / D-0061: stamp assessment_started_date, emit this
+  // attempt's START as a timeline Activity entry, and sync the child first
+  // name + grade. Same once-per-session seam as the alert above — and because
+  // re-takes are a supported, RETAINED event, this fires once per ATTEMPT and
+  // is deliberately NOT deduped across attempts.
+  //
+  // The event carries the account id, a timestamp read back off the session row
+  // and the attempt number — no level, band, score or strand data, and the
+  // payload types cannot carry any. Update-only: when no contact bears this
+  // atlas_account_id the syncs log and return without creating one, so an
   // account-less session can never produce a CRM record.
   after(() =>
-    syncHubSpotAssessmentMilestone({
-      accountId: parent.id,
-      milestone: "started",
-      occurredAt: new Date().toISOString(),
+    emitAssessmentEvent({
+      serviceClient,
+      parentId: parent.id,
+      childId: child.id,
+      sessionId,
+      event: "started",
     }).catch(() => undefined),
   );
 

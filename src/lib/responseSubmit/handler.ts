@@ -188,7 +188,7 @@ import {
 } from "@/lib/shortTest/outcome";
 import type { PickedQuestionRow } from "@/lib/questionPicker/types";
 import { findOutstandingQuestion } from "@/lib/sessionShared/findOutstanding";
-import { syncHubSpotAssessmentMilestone } from "@/lib/hubspot/syncContact";
+import { emitAssessmentEvent } from "@/lib/hubspot/emitAssessmentEvent";
 import { syncHubSpotEnrollmentDeal } from "@/lib/hubspot/syncDeal";
 import { notifyAssessmentCompleted } from "@/lib/staffAlerts/notify";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -821,7 +821,12 @@ export async function submitResponseHandler({
       childRow?.grade_level ?? null,
       origin,
     );
-    syncHubSpotAssessmentCompleted(parent.id);
+    syncHubSpotAssessmentCompleted(
+      serviceClient,
+      parent.id,
+      session.child_id,
+      request.session_id,
+    );
     syncHubSpotEnrollmentDealCompleted(parent.id, parent.name);
 
     return success({
@@ -886,7 +891,12 @@ export async function submitResponseHandler({
       childRow?.grade_level ?? null,
       origin,
     );
-    syncHubSpotAssessmentCompleted(parent.id);
+    syncHubSpotAssessmentCompleted(
+      serviceClient,
+      parent.id,
+      session.child_id,
+      request.session_id,
+    );
     syncHubSpotEnrollmentDealCompleted(parent.id, parent.name);
 
     return success({
@@ -1189,26 +1199,42 @@ function notifyStaffAssessmentCompleted(
 }
 
 /**
- * HubSpot Contract A / D-0061: stamp assessment_completed_date on the parent's
- * EXISTING contact. Fired from the SAME two fresh-submit terminal paths as
+ * HubSpot Contract A / D-0061: stamp assessment_completed_date, emit this
+ * attempt's COMPLETE as a timeline Activity entry, and sync the child first
+ * name + grade. Fired from the SAME two fresh-submit terminal paths as
  * notifyStaffAssessmentCompleted, which is what makes it once per completed
- * session — the idempotent-retry branches deliberately emit nothing.
+ * SESSION — the idempotent-retry branches deliberately emit nothing.
  *
- * Sends a TIMESTAMP and the account id, nothing else. The placement level,
- * band, score, strand mastery and responses stay out of HubSpot (D-0055
- * stands; D-0061 permits only the two timestamps), and AssessmentMilestoneUpdate
- * is structurally incapable of carrying them.
+ * Once per session is NOT once per child: re-takes are a supported, retained
+ * event (founder decision 2026-09-12), so a second attempt emits its own
+ * second set, and nothing here dedupes across attempts. The completion DATE
+ * property is latest-wins by design; the first-attempt date and the attempt
+ * count are carried alongside it so the earlier attempt is never lost.
  *
- * Update-only: when no contact bears this atlas_account_id the sync logs and
- * returns without creating one, so an account-less session cannot produce a CRM
- * record. Non-blocking via after(); the sync never throws.
+ * Sends the account id, the attempt number, and a timestamp READ BACK off the
+ * session row (not `now`, so the event carries this attempt's true instant).
+ * The placement level, band, score, strand mastery and responses stay out of
+ * HubSpot (D-0055 stands; D-0061 permits only timestamps and counts) — the
+ * payload types are structurally incapable of carrying them, and attempt
+ * history is narrowed through toCrmSummary() before it reaches any sync.
+ *
+ * Update-only: when no contact bears this atlas_account_id the syncs log and
+ * return without creating one, so an account-less session cannot produce a CRM
+ * record. Non-blocking via after(); the syncs never throw.
  */
-function syncHubSpotAssessmentCompleted(accountId: string): void {
+function syncHubSpotAssessmentCompleted(
+  serviceClient: SupabaseClient<Database>,
+  accountId: string,
+  childId: string,
+  sessionId: string,
+): void {
   after(() =>
-    syncHubSpotAssessmentMilestone({
-      accountId,
-      milestone: "completed",
-      occurredAt: new Date().toISOString(),
+    emitAssessmentEvent({
+      serviceClient,
+      parentId: accountId,
+      childId,
+      sessionId,
+      event: "completed",
     }).catch(() => undefined),
   );
 }

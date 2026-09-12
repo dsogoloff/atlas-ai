@@ -20,7 +20,10 @@ import "server-only";
 
 import type { Attribution } from "@/lib/marketing/attribution";
 import { UTM_KEYS } from "@/lib/marketing/attribution";
-import { getHubspotAtlasSyncToken } from "@/lib/env";
+import {
+  getHubspotAtlasSyncToken,
+  isHubspotAttemptPropertiesLive,
+} from "@/lib/env";
 
 const HUBSPOT_API_BASE = "https://api.hubapi.com";
 
@@ -76,6 +79,21 @@ export interface AssessmentMilestoneUpdate {
   milestone: AssessmentMilestone;
   /** ISO instant of the milestone — converted to epoch millis on write. */
   occurredAt: string;
+  /**
+   * Attempt-history summary for this child's parent. OPTIONAL: omitted, the
+   * write behaves exactly as before (latest-attempt dates only).
+   *
+   * COUNTS AND TIMESTAMPS ONLY. `AttemptCrmSummary` from
+   * src/lib/assessmentHistory/attempts.ts is assignable to this, and that is
+   * the intended producer. There is no field an assessed level, band or score
+   * could travel in, and none must ever be added (D-0055 / D-0061).
+   */
+  attempt?: {
+    /** Number of COMPLETED attempts. */
+    attemptCount: number;
+    firstStartedAt: string | null;
+    firstCompletedAt: string | null;
+  };
 }
 
 /**
@@ -148,7 +166,7 @@ export async function syncHubSpotAssessmentMilestone(
     token,
     "PATCH",
     `/crm/v3/objects/contacts/${encodeURIComponent(contactId)}`,
-    { properties: { [property]: toEpochMillis(update.occurredAt) } },
+    { properties: buildMilestoneProperties(update, property) },
   );
 
   if (!patchRes) return; // already logged
@@ -304,14 +322,17 @@ async function upsertExisting(
 // =============================================================================
 
 /**
- * POST/PATCH with exactly one retry on a 5xx (after RETRY_DELAY_MS), and no
+ * POST/PATCH/PUT with exactly one retry on a 5xx (after RETRY_DELAY_MS), and no
  * retry on anything else. Returns the final Response, or undefined when every
  * attempt threw (already logged) — callers must check for undefined before
  * reading `.status`.
+ *
+ * PUT is here for the v4 default-association endpoint used by
+ * assessmentActivity.ts, which takes no request body.
  */
 export async function requestWithRetry(
   token: string,
-  method: "POST" | "PATCH",
+  method: "POST" | "PATCH" | "PUT",
   path: string,
   body: unknown,
   /** Log context, so the deal sync's failures are distinguishable from the
@@ -327,7 +348,9 @@ export async function requestWithRetry(
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        // The v4 association endpoint is a bodyless PUT; sending "undefined"
+        // as a literal body string would 400 it.
+        body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch (e) {
       console.error(`[hubspot] ${label} request threw`, {
@@ -374,6 +397,56 @@ const NEW_LIFECYCLE_STAGE = "lead";
  * Nothing level-, band- or score-shaped appears in this map, and nothing may
  * be added to it without amending D-0061.
  */
+/**
+ * The milestone patch body.
+ *
+ * `assessment_started_date` / `assessment_completed_date` stay LATEST-WINS by
+ * design: a re-take legitimately restamps them, and staff asked for the most
+ * recent attempt to be what the CRM shows (founder decision 2026-09-12). The
+ * FIRST-attempt values are carried separately so nothing is lost.
+ *
+ * The three attempt properties are withheld unless
+ * HUBSPOT_ATTEMPT_PROPERTIES_LIVE === 'true', because they do not exist in the
+ * portal yet and ONE unknown property rejects the WHOLE patch — which would
+ * break the latest-date writes that work today. See the env docblock.
+ */
+/**
+ * The three attempt-history contact properties, PENDING FOUNDER APPROVAL and
+ * not yet created in portal 245446396. Single source of truth: the backfill
+ * script imports this rather than redeclaring the names, so approving a
+ * different name is a one-line change in one place.
+ */
+export const ATTEMPT_PROPERTIES = {
+  firstStartedAt: "first_assessment_started_date",
+  firstCompletedAt: "first_assessment_completed_date",
+  attemptCount: "assessment_attempt_count",
+} as const satisfies Record<string, string>;
+
+export function buildMilestoneProperties(
+  update: AssessmentMilestoneUpdate,
+  property: string,
+): Record<string, string | number> {
+  const properties: Record<string, string | number> = {
+    [property]: toEpochMillis(update.occurredAt),
+  };
+
+  const { attempt } = update;
+  if (!attempt || !isHubspotAttemptPropertiesLive()) return properties;
+
+  properties[ATTEMPT_PROPERTIES.attemptCount] = attempt.attemptCount;
+  if (attempt.firstStartedAt !== null) {
+    properties[ATTEMPT_PROPERTIES.firstStartedAt] = toEpochMillis(
+      attempt.firstStartedAt,
+    );
+  }
+  if (attempt.firstCompletedAt !== null) {
+    properties[ATTEMPT_PROPERTIES.firstCompletedAt] = toEpochMillis(
+      attempt.firstCompletedAt,
+    );
+  }
+  return properties;
+}
+
 const MILESTONE_PROPERTY = {
   started: "assessment_started_date",
   completed: "assessment_completed_date",

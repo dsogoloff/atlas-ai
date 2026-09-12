@@ -298,6 +298,26 @@ export function getHubspotAtlasSyncToken(): string | undefined {
   return raw ? raw : undefined;
 }
 
+/**
+ * Gate for the THREE attempt-history contact properties that do not exist in
+ * the HubSpot portal yet: `first_assessment_started_date`,
+ * `first_assessment_completed_date`, `assessment_attempt_count`.
+ *
+ * This is NOT a §12 strategy flag (it gates no user-facing behaviour), so it is
+ * deliberately kept out of ROLLOUT_FLAGS and its default-off invariant test.
+ * It is a SCHEMA-READINESS gate, and it is load-bearing:
+ *
+ *   HubSpot rejects an ENTIRE PATCH when it contains one unknown property.
+ *
+ * So shipping these keys before the founder creates the properties would not
+ * fail softly on the new fields — it would take down the `assessment_started_date`
+ * / `assessment_completed_date` writes that work today, for every parent. Flip
+ * this to 'true' only AFTER the three properties exist in portal 245446396.
+ */
+export function isHubspotAttemptPropertiesLive(): boolean {
+  return process.env.HUBSPOT_ATTEMPT_PROPERTIES_LIVE === "true";
+}
+
 /** Registry of the 11 §12 flags: strategy key → (env var, getter). Lets
  *  callers/tests enumerate the set and assert the default-off invariant
  *  without hand-listing every flag. */
