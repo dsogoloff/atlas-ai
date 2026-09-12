@@ -17,6 +17,7 @@ import {
   type SatisfactionInput,
   type SatisfactionResult,
 } from "@/lib/analytics/satisfaction";
+import { syncHubSpotEnrollmentDeal } from "@/lib/hubspot/syncDeal";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { isLeadSchoolFieldEnabled } from "@/lib/env";
 import { notifyFollowUpLead } from "@/lib/followUp/notify";
@@ -146,6 +147,91 @@ export async function recordCenterFollowupOptIn(
     );
   } catch (e) {
     console.error("[analytics] recordCenterFollowupOptIn threw", {
+      err: e instanceof Error ? e.message : "unknown",
+    });
+  }
+}
+
+/** The report's two contact CTAs, as slugs. Stable identifiers — the visible
+ *  labels are copy and may change without invalidating recorded history. */
+export type ReportCta = "director_conversation" | "questions_talk_to_us";
+
+/**
+ * Record that a parent tapped a contact CTA on their report, and advance the
+ * family's deal to "In Conversation".
+ *
+ * WHY THIS EXISTS. Both CTAs are mailto links, so until now a tap produced at
+ * best an email and at worst nothing:
+ *   - a parent writing from an address other than their account attaches to no
+ *     contact (this happened to the first real customer),
+ *   - a parent who taps and never sends leaves no trace at all,
+ *   - and even a successful send is an email, not a fact we can report on.
+ * Recording server-side turns the tap itself into that fact.
+ *
+ * NO ACCOUNT, NO RECORD. An anonymous or logged-out viewer resolves no parent
+ * and returns silently — the same rule as the assessment sync. The caller does
+ * not await this, so the mail draft opens regardless.
+ *
+ * PRIVACY. props carries the CTA slug only. No child name, grade, assessment
+ * level, band, score or response — D-0061's boundary, unchanged.
+ *
+ * Never throws.
+ */
+export async function recordReportCtaTap(
+  sessionId: string,
+  cta: ReportCta,
+): Promise<void> {
+  try {
+    if (!UUID_RE.test(sessionId)) return;
+
+    const rls = await createClient();
+    const {
+      data: { user },
+    } = await rls.auth.getUser();
+    if (!user) return; // anonymous viewer — record nothing
+
+    const { data: parent } = await rls
+      .from("parents")
+      .select("id, tenant_id, name")
+      .maybeSingle();
+    if (!parent) return;
+
+    const { data: session } = await rls
+      .from("assessment_sessions")
+      .select("id, child_id")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (!session) return;
+
+    // Same dual-role bypass close as recordCenterFollowupOptIn: confirm the
+    // session's child is the caller's own before attributing anything.
+    const { data: ownedChild } = await rls
+      .from("children")
+      .select("id")
+      .eq("id", session.child_id)
+      .eq("parent_id", parent.id)
+      .maybeSingle();
+    if (!ownedChild) return;
+
+    await emit(createServiceClient(), ANALYTICS_EVENTS.REPORT_CTA_TAPPED, {
+      tenantId: parent.tenant_id,
+      childId: session.child_id,
+      sessionId: session.id,
+      props: { cta },
+    });
+
+    // Advance the family's deal to "In Conversation" — they are reaching out.
+    // Forward-only via the existing rank comparison: a family already at a
+    // later stage is never moved backwards, and a repeat tap is a no-op.
+    // Reuses the DealEventInput seam and its typed whitelist rather than
+    // opening a parallel path to HubSpot.
+    await syncHubSpotEnrollmentDeal({
+      accountId: parent.id,
+      parentFullName: parent.name,
+      event: "contact_requested",
+    });
+  } catch (e) {
+    console.error("[analytics] recordReportCtaTap threw", {
       err: e instanceof Error ? e.message : "unknown",
     });
   }

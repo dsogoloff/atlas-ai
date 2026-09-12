@@ -22,6 +22,9 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("./center-followup-cta", () => ({
   CenterFollowupCta: () => <span>CENTER_FOLLOWUP_CTA</span>,
+  // The secondary "Questions? Talk to us" mailto is now a tracked client
+  // component too; render its children so the link text still asserts.
+  TrackedMailtoLink: ({ children }: { children?: React.ReactNode }) => children,
 }));
 vi.mock("./parent-report-feedback", () => ({
   ParentReportFeedback: () => <span>PARENT_FEEDBACK_ISLAND</span>,

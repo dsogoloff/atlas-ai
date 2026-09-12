@@ -1396,6 +1396,7 @@ export type Database = {
         | "parent_report_generated"
         | "parent_report_viewed"
         | "center_followup_opted_in"
+        | "report_cta_tapped"
         | "parent_satisfaction_submitted"
         | "instructor_report_viewed"
         | "placement_recommendation_created"
