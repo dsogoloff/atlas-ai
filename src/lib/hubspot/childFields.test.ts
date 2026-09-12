@@ -148,18 +148,24 @@ describe("syncHubSpotChildFields", () => {
 
   it("PATCHes the matched contact with the child properties", async () => {
     vi.stubEnv("HUBSPOT_ATLAS_SYNC_TOKEN", TOKEN);
-    fetchMock.mockResolvedValueOnce(searchHit()).mockResolvedValueOnce(res(200, {}));
+    // Three calls since the fill-only-when-empty change: search, then the
+    // mandatory read of current values, then the PATCH. See
+    // childFieldsFillOnly.test.ts for the fill-vs-preserve behaviour itself.
+    fetchMock
+      .mockResolvedValueOnce(searchHit())
+      .mockResolvedValueOnce(res(200, { id: CONTACT_ID, properties: {} }))
+      .mockResolvedValueOnce(res(200, {}));
 
     await syncHubSpotChildFields({
       accountId: ACCOUNT_ID,
       children: [{ firstName: "Daniel", grade: "K" }],
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    const [url, init] = fetchMock.mock.calls[1];
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const [url, init] = fetchMock.mock.calls[2];
     expect(url).toBe(`https://api.hubapi.com/crm/v3/objects/contacts/${CONTACT_ID}`);
     expect(init.method).toBe("PATCH");
-    expect(callBody(1).properties).toEqual({
+    expect(callBody(2).properties).toEqual({
       child_1_name: "Daniel",
       child_1_grade: "k",
     });
@@ -189,7 +195,10 @@ describe("syncHubSpotChildFields", () => {
 
   it("never throws when HubSpot rejects the write", async () => {
     vi.stubEnv("HUBSPOT_ATLAS_SYNC_TOKEN", TOKEN);
-    fetchMock.mockResolvedValueOnce(searchHit()).mockResolvedValueOnce(res(400, {}));
+    fetchMock
+      .mockResolvedValueOnce(searchHit())
+      .mockResolvedValueOnce(res(200, { id: CONTACT_ID, properties: {} }))
+      .mockResolvedValueOnce(res(400, {}));
 
     await expect(
       syncHubSpotChildFields({

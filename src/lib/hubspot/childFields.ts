@@ -21,10 +21,38 @@ import "server-only";
 // happens here; splitting would risk turning a two-word first name into a
 // surname.
 // ---------------------------------------------------------------------------
+//
+// FILL-ONLY-WHEN-EMPTY (founder decision 2026-09-12).
+// This module used to PATCH child fields authoritatively from Atlas. It no
+// longer does: a non-empty value in HubSpot is treated as staff-owned and is
+// NEVER overwritten. Atlas only FILLS BLANKS.
+//
+// Two consequences worth understanding before changing anything here:
+//
+//   1. The read is mandatory. We cannot know a slot is empty without asking, so
+//      every write is now preceded by a GET, and that GET must request EXACTLY
+//      the properties we intend to inspect — HubSpot returns only a small
+//      DEFAULT set otherwise, and a property missing from the response is
+//      indistinguishable from one that is genuinely empty. That mistake would
+//      turn this guard into the very clobbering it exists to prevent. Same
+//      trap, same fix, as the 409-upsert lookup in syncContact.ts.
+//
+//   2. It FAILS CLOSED. If the read fails, or returns something unparseable,
+//      we write NOTHING. "Could not tell whether it was empty" must never
+//      degrade into "assume empty and overwrite".
+//
+// `assessment_attempt_count` is deliberately NOT subject to this rule: it lives
+// in syncContact.ts, is family-level, and is Atlas-derived rather than
+// staff-typed.
+// ---------------------------------------------------------------------------
 
 import { getHubspotAtlasSyncToken } from "@/lib/env";
 
-import { findContactIdByAtlasAccountId, requestWithRetry } from "./syncContact";
+import {
+  HUBSPOT_API_BASE,
+  findContactIdByAtlasAccountId,
+  requestWithRetry,
+} from "./syncContact";
 
 const LOG = "child fields";
 
@@ -146,6 +174,74 @@ export function buildChildProperties(
   return properties;
 }
 
+/**
+ * Every child property this module may write — and therefore the EXACT list the
+ * pre-write GET must request. Derived from CHILD_SLOTS so the two cannot drift:
+ * adding a slot automatically widens the read.
+ */
+export const CHILD_PROPERTY_NAMES: readonly string[] = CHILD_SLOTS.flatMap(
+  (slot) => (slot.name === null ? [slot.grade] : [slot.name, slot.grade]),
+);
+
+/** Matches isEmptyExisting in syncContact.ts. A whitespace-only HubSpot value
+ *  counts as FILLED: a human typed it, and this module fills blanks rather
+ *  than tidying what staff wrote. */
+function isEmptyExisting(value: unknown): boolean {
+  return value === undefined || value === null || value === "";
+}
+
+/**
+ * Pure: drop every candidate property that already holds a value in HubSpot.
+ * What survives is only the genuinely empty slots.
+ */
+export function fillOnlyEmpty(
+  candidate: Readonly<Record<string, string>>,
+  existing: Readonly<Record<string, unknown>>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(candidate)) {
+    if (isEmptyExisting(existing[key])) out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Current values of CHILD_PROPERTY_NAMES on one contact.
+ *
+ * Returns undefined on ANY failure — transport, non-2xx, or malformed JSON.
+ * Undefined means "do not write", never "nothing is set": see the fail-closed
+ * note in the header.
+ */
+async function readExistingChildProperties(
+  token: string,
+  contactId: string,
+): Promise<Record<string, unknown> | undefined> {
+  // Single-object GET takes ONE comma-separated `properties` value, not
+  // repeated params (that is the SEARCH endpoint's convention).
+  const params = new URLSearchParams({
+    properties: CHILD_PROPERTY_NAMES.join(","),
+  });
+  try {
+    const res = await fetch(
+      `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/${encodeURIComponent(contactId)}?${params.toString()}`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!res.ok) {
+      console.error(`[hubspot] ${LOG}: existing-value lookup failed`, {
+        status: res.status,
+      });
+      return undefined;
+    }
+    const body = (await res.json()) as { properties?: Record<string, unknown> };
+    return body.properties ?? {};
+  } catch (e) {
+    console.error(`[hubspot] ${LOG}: existing-value lookup threw`, {
+      err: e instanceof Error ? e.message : "unknown",
+    });
+    return undefined;
+  }
+}
+
 export interface ChildFieldsUpdate {
   /** parents.id — the `atlas_account_id` on the HubSpot contact. */
   accountId: string;
@@ -155,9 +251,15 @@ export interface ChildFieldsUpdate {
 }
 
 /**
- * Env-gated, fail-soft PATCH of one contact's child fields. UPDATE-ONLY: when
- * no contact bears this atlas_account_id it logs and returns without creating
- * one, so an account-less session can never mint a CRM record. Never throws.
+ * Env-gated, fail-soft PATCH of one contact's child fields.
+ *
+ * FILL-ONLY-WHEN-EMPTY: reads the contact first and writes only the slots that
+ * are blank. A staff-typed value is never overwritten, and a failed read means
+ * nothing is written at all.
+ *
+ * UPDATE-ONLY: when no contact bears this atlas_account_id it logs and returns
+ * without creating one, so an account-less session can never mint a CRM record.
+ * Never throws.
  */
 export async function syncHubSpotChildFields(
   update: ChildFieldsUpdate,
@@ -165,14 +267,20 @@ export async function syncHubSpotChildFields(
   const token = getHubspotAtlasSyncToken();
   if (!token) return; // gated off — no fetch, no spend, no call
 
-  const properties = buildChildProperties(update.children);
-  if (Object.keys(properties).length === 0) return; // nothing Atlas can assert
+  const candidate = buildChildProperties(update.children);
+  if (Object.keys(candidate).length === 0) return; // nothing Atlas can assert
 
   const contactId = await findContactIdByAtlasAccountId(token, update.accountId);
   if (!contactId) {
     console.error(`[hubspot] ${LOG}: no contact for atlas_account_id`);
     return;
   }
+
+  const existing = await readExistingChildProperties(token, contactId);
+  if (existing === undefined) return; // fail closed — already logged
+
+  const properties = fillOnlyEmpty(candidate, existing);
+  if (Object.keys(properties).length === 0) return; // every slot staff-filled
 
   const res = await requestWithRetry(
     token,
