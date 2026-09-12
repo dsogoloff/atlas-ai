@@ -44,15 +44,18 @@ import {
  * reviewer can see the complete set of non-child keys this backfill can emit.
  *
  * The child properties are deliberately NOT listed here: they are owned by
- * CHILD_SLOTS in src/lib/hubspot/childFields.ts (which also encodes that
- * `child_3_name` does not exist in the portal), and duplicating them would let
+ * CHILD_SLOTS in src/lib/hubspot/childFields.ts, and duplicating them would let
  * the two drift.
  *
  * HubSpot rejects an ENTIRE PATCH when it contains one unknown property, so
  * until the properties exist these keys must stay off the wire — see
  * `attemptPropertiesLive` on BackfillAccountInput.
  */
-import { ATTEMPT_PROPERTIES } from "@/lib/hubspot/syncContact";
+import {
+  ATTEMPT_PROPERTIES,
+  ATTEMPT_PROPERTY_TYPES,
+  toHubspotDateValue,
+} from "@/lib/hubspot/syncContact";
 
 // Re-exported so the CLI and its tests have one import site for the names.
 export { ATTEMPT_PROPERTIES };
@@ -244,8 +247,23 @@ export function planAccount(input: BackfillAccountInput): BackfillPlanRow {
   notes.push(...childSlotNotes(input.children));
 
   if (input.attemptPropertiesLive) {
-    const firstStarted = toEpochMillis(summary.firstStartedAt);
-    const firstCompleted = toEpochMillis(summary.firstCompletedAt);
+    // Coerced to each property's ACTUAL portal type. first_assessment_completed_date
+    // is a `date`, not a `datetime`: it accepts ONLY midnight-UTC epoch millis, and
+    // a raw instant would 400 the whole PATCH. Same rule the live emit follows.
+    const firstStarted =
+      summary.firstStartedAt === null
+        ? null
+        : toHubspotDateValue(
+            summary.firstStartedAt,
+            ATTEMPT_PROPERTY_TYPES[ATTEMPT_PROPERTIES.firstStartedAt],
+          );
+    const firstCompleted =
+      summary.firstCompletedAt === null
+        ? null
+        : toHubspotDateValue(
+            summary.firstCompletedAt,
+            ATTEMPT_PROPERTY_TYPES[ATTEMPT_PROPERTIES.firstCompletedAt],
+          );
     if (firstStarted !== null) {
       properties[ATTEMPT_PROPERTIES.firstStartedAt] = firstStarted;
     }
@@ -294,7 +312,7 @@ export function childSlotNotes(children: readonly ChildCrmRecord[]): string[] {
     const label = child.firstName.trim() === "" ? `child ${i + 1}` : child.firstName.trim();
     if (CHILD_SLOTS[i].name === null && child.firstName.trim() !== "") {
       notes.push(
-        `${label}: first name NOT written — slot ${i + 1} has no name property in the portal (child_3_name does not exist)`,
+        `${label}: first name NOT written — slot ${i + 1} has no name property in the portal`,
       );
     }
     const hasGradeText = child.grade !== null && child.grade.trim() !== "";

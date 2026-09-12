@@ -25,7 +25,11 @@ const BASE: AssessmentMilestoneUpdate = {
 
 const LATEST_MILLIS = new Date(BASE.occurredAt).getTime();
 const FIRST_START_MILLIS = new Date("2026-09-11T23:47:15.352Z").getTime();
-const FIRST_DONE_MILLIS = new Date("2026-09-11T23:54:00.584Z").getTime();
+// first_assessment_completed_date is a HubSpot `date` (verified live
+// 2026-09-12), so it is written as MIDNIGHT UTC of the completion day, not
+// the raw instant. Its datetime sibling above keeps full precision.
+// See attemptPropertyTypes.test.ts for the coercion itself.
+const FIRST_DONE_MILLIS = Date.UTC(2026, 8, 11);
 
 beforeEach(() => vi.stubEnv("HUBSPOT_ATTEMPT_PROPERTIES_LIVE", ""));
 afterEach(() => vi.unstubAllEnvs());
@@ -63,7 +67,8 @@ describe("buildMilestoneProperties — schema gate ON", () => {
 
   it("keeps the milestone property LATEST-wins, not first-wins", () => {
     const props = buildMilestoneProperties(BASE, "assessment_completed_date");
-    // The latest attempt's instant, and the first attempt's carried separately.
+    // The latest attempt's instant (full datetime precision), and the first
+    // attempt's carried separately (floored to midnight — it is a `date`).
     expect(props.assessment_completed_date).toBe(LATEST_MILLIS);
     expect(props.first_assessment_completed_date).toBe(FIRST_DONE_MILLIS);
     expect(props.assessment_completed_date).not.toBe(

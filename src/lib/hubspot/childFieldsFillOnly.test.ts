@@ -106,14 +106,17 @@ describe("CHILD_PROPERTY_NAMES", () => {
       "child_1_grade",
       "child_2_name",
       "child_2_grade",
+      "child_3_name",
       "child_3_grade",
     ]) {
       expect(CHILD_PROPERTY_NAMES).toContain(name);
     }
   });
 
-  it("does not request child_3_name — it does not exist in the portal", () => {
-    expect(CHILD_PROPERTY_NAMES).not.toContain("child_3_name");
+  it("requests child_3_name now that the portal has it", () => {
+    // Created 2026-09-12. If the GET omitted it, a populated child_3_name would
+    // read as empty and be overwritten — the exact clobbering this guards.
+    expect(CHILD_PROPERTY_NAMES).toContain("child_3_name");
   });
 });
 
