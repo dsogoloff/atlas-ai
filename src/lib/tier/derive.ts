@@ -18,7 +18,7 @@
 // always returns a Tier (the birth_year fallback is total). No throws.
 
 // =============================================================================
-// CALENDAR TODO — bump in fall 2026
+// CALENDAR TODO — bump in fall 2027
 // =============================================================================
 // CURRENT_ACADEMIC_YEAR_START is the calendar year of the most recent
 // fall-semester start. Hardcoded (rather than computed from Date.now())
@@ -27,9 +27,9 @@
 //
 // derive.test.ts contains a trip-wire test that fails when this constant
 // drifts from the active academic year. When that test breaks (around
-// September 2026), bump to 2026, then 2027, etc.
+// September 2027), bump to 2027, then 2028, etc.
 // =============================================================================
-export const CURRENT_ACADEMIC_YEAR_START = 2025;
+export const CURRENT_ACADEMIC_YEAR_START = 2026;
 
 export type Tier = "K_4" | "G5_8";
 

@@ -125,28 +125,44 @@ describe("parseGradeLevel", () => {
 });
 
 describe("tierFromBirthYear", () => {
-  // ageAtStart = CURRENT_ACADEMIC_YEAR_START (2025) - birthYear.
+  // ageAtStart = CURRENT_ACADEMIC_YEAR_START - birthYear.
   // Boundary: ageAtStart >= 10 → G5_8.
+  //
+  // Birth years are expressed RELATIVE to the constant, matching
+  // proctoring/mode.test.ts and questionPicker/levelBand.test.ts. These were
+  // absolute (2020, 2019, ...) and silently pinned to the 2025 academic year,
+  // so the annual bump broke the 4th-grade boundary case rather than being the
+  // one-line change the trip-wire promises. Relative keeps it one line.
+  const bornAtAge = (age: number) => CURRENT_ACADEMIC_YEAR_START - age;
 
   it("returns K_4 for birth years that put a child below 5th grade", () => {
-    expect(tierFromBirthYear(2020)).toBe("K_4"); // age 5 — K
-    expect(tierFromBirthYear(2019)).toBe("K_4"); // age 6 — 1st
-    expect(tierFromBirthYear(2018)).toBe("K_4"); // age 7 — 2nd
-    expect(tierFromBirthYear(2017)).toBe("K_4"); // age 8 — 3rd
-    expect(tierFromBirthYear(2016)).toBe("K_4"); // age 9 — 4th
+    expect(tierFromBirthYear(bornAtAge(5))).toBe("K_4"); // age 5 — K
+    expect(tierFromBirthYear(bornAtAge(6))).toBe("K_4"); // age 6 — 1st
+    expect(tierFromBirthYear(bornAtAge(7))).toBe("K_4"); // age 7 — 2nd
+    expect(tierFromBirthYear(bornAtAge(8))).toBe("K_4"); // age 8 — 3rd
+    expect(tierFromBirthYear(bornAtAge(9))).toBe("K_4"); // age 9 — 4th
   });
 
   it("returns G5_8 for birth years that put a child at 5th grade or higher", () => {
-    expect(tierFromBirthYear(2015)).toBe("G5_8"); // age 10 — 5th
-    expect(tierFromBirthYear(2014)).toBe("G5_8"); // age 11 — 6th
-    expect(tierFromBirthYear(2013)).toBe("G5_8"); // age 12 — 7th
-    expect(tierFromBirthYear(2012)).toBe("G5_8"); // age 13 — 8th
+    expect(tierFromBirthYear(bornAtAge(10))).toBe("G5_8"); // age 10 — 5th
+    expect(tierFromBirthYear(bornAtAge(11))).toBe("G5_8"); // age 11 — 6th
+    expect(tierFromBirthYear(bornAtAge(12))).toBe("G5_8"); // age 12 — 7th
+    expect(tierFromBirthYear(bornAtAge(13))).toBe("G5_8"); // age 13 — 8th
+  });
+
+  it("pins the K_4 / G5_8 boundary at age 10 exactly", () => {
+    // The line the annual bump moves a cohort across, asserted directly so a
+    // future bump cannot shift it unnoticed.
+    expect(tierFromBirthYear(bornAtAge(9))).toBe("K_4");
+    expect(tierFromBirthYear(bornAtAge(10))).toBe("G5_8");
   });
 
   it("handles schema-edge years without throwing", () => {
-    // Schema check: birth_year between 2000 and 2030.
-    expect(tierFromBirthYear(2000)).toBe("G5_8"); // ageAtStart 25 — far past 8th
-    expect(tierFromBirthYear(2030)).toBe("K_4"); // ageAtStart -5 — pre-birth
+    // Schema check: birth_year between 2000 and 2030. Deliberately ABSOLUTE —
+    // these assert the DB CHECK bounds, not an age, so they must not drift
+    // with the academic year.
+    expect(tierFromBirthYear(2000)).toBe("G5_8"); // decades past 8th
+    expect(tierFromBirthYear(2030)).toBe("K_4"); // negative age — pre-birth
   });
 });
 
