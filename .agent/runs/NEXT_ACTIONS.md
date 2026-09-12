@@ -4,6 +4,104 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0-GATE. 2026-09-11 — PARKED: merged deal automation has never fired in prod
+
+**Status: PARKED — needs Dimitri. Do not auto-resolve.**
+
+A brief arrived describing an "assessment events / deal stage / child fields" build as if
+none of it existed, and describing a **deal-creation regression around 2026-09-09**. Both
+premises are wrong; the correction is recorded here so the next session does not rebuild
+merged code (the recorded failure class in DECISIONS.md 2026-08-20, and Conduct Standard R2).
+
+**What was actually verified this cycle (2026-09-11):**
+
+* The working checkout was **8 commits behind `origin/ATLAS-ASSESSMENT`**. Everything the
+  brief called missing is merged and on origin: PR #247 (`syncHubSpotAssessmentMilestone`,
+  assessment date properties), PR #248 + #250 (`src/lib/hubspot/syncDeal.ts`, 416 lines,
+  37 tests — create/advance the Enrollment deal, forward-only, matched via
+  `atlas_account_id`). Local has since been fast-forwarded to `eeacf3d`.
+* **There is no deal regression.** All **36 deals in portal 245446396 carry
+  `hs_object_source_label: CRM_UI`** — every one hand-keyed by staff. Atlas has never
+  created a deal via the API. Older Atlas contacts have deals because staff typed them in;
+  the newest two have not been typed in yet. Stella Tang (09-10) is NEWER than Stacy
+  Kingston (09-09) and HAS a deal, which alone disproves the date-cutoff story.
+* Stage ids re-resolved live this cycle and they MATCH the merged `STAGE` constants:
+  pipeline `default`; Assessment Started = `presentationscheduled`; Assessment Completed =
+  `decisionmakerboughtin`. (This portal reuses HubSpot default ids under new labels —
+  `closedlost` is labelled "Class Requested" and is mid-funnel, NOT lost.)
+
+**So the merged deal code is correct and appears never to have executed.** It is fail-soft:
+every failure is a bare `console.error`, so a silent no-op is indistinguishable from
+"never deployed" from outside.
+
+**GATE — two founder-held checks, neither reachable from this lane:**
+
+1. **Has production redeployed since PR #250 merged 2026-08-29?** Server env vars bind at
+   BUILD (see the operational note in item 1 below), so a merge without a redeploy leaves
+   prod running pre-deal code.
+2. **Does the HubSpot private-app token carry `crm.objects.deals.write`?** The contact
+   writes demonstrably succeed (assessment dates land), so the token is valid — but contact
+   scope does not imply deal scope, and a missing deal scope would fail exactly this way.
+
+Until one of those comes back, writing more deal code cannot fix anything.
+
+**RESOLVED, not a defect: staff alerts firing "3x per event" for Olga Nekrasova.**
+Reported first as duplicate sends, then escalated as a "runaway re-processing loop" with her
+`assessment_started_date` / `assessment_completed_date` being overwritten to the current time
+(observed drifting 23:47/23:54 -> 02:23/02:25 on 2026-09-11/12). The drift is REAL and was
+re-verified live this cycle. The loop explanation is NOT supported by the code.
+
+**Actual cause: the assessment was genuinely re-run, three times, on that account.** Verified:
+
+* `sessionStart/handler.ts:225-300` checks ONLY for an existing **IN_PROGRESS** session. There
+  is **no guard against a child who already has a COMPLETED session** — once an assessment
+  finishes, `/start` creates a brand-new session unconditionally, every time. Repeat runs are
+  currently an unlimited, supported path.
+* Both milestone timestamps are `new Date().toISOString()` computed at call time
+  (`sessionStart/handler.ts:502`, `responseSubmit/handler.ts:1211`), so every fresh run
+  legitimately restamps both properties to "now". The CRM fields are **last-run-wins by
+  design**, not corrupted by a retry.
+* `assessment_started_date` sits behind the fresh-session INSERT guard (partial unique index on
+  `(child_id) WHERE status='IN_PROGRESS'`); a retry or concurrent duplicate returns via
+  `resumeExisting()` and writes nothing. So the started timestamp CANNOT move without a real
+  new session.
+* Nothing retries these calls: they are `after()` fire-and-forget wrapped in
+  `.catch(() => undefined)`, and the repo contains **no cron, queue, outbox or scheduler** —
+  `.github/workflows/verify.yml` is the only workflow and has no `schedule:`. The
+  "handler throws after side effects and is redelivered forever" shape has no mechanism here.
+* Consistent with the blast radius: only this one account drifted. Nataliya, Stacy and Jessica
+  each assessed once and their timestamps are stable.
+
+**Therefore three assessment runs produced three start alerts and three completion alerts —
+correct behaviour of a system with no repeat-run guard. Idempotency is the WRONG fix**: these
+are three distinct real events, and deduplicating them would suppress genuine ones.
+
+**GATE — product semantics, needs Dimitri (two independent decisions):**
+
+1. **Should a child be able to re-take an assessment at all?** Today: unlimited, no guard, no
+   staff visibility that run #3 is a re-take rather than a new family. Options: block repeats,
+   allow with an explicit "re-assess" action, or leave open.
+2. **What should the CRM date fields MEAN on a re-take** — first-ever assessment, or most
+   recent? Today they are most-recent. Do NOT "restore the earliest value" as a bug-fix until
+   this is decided: if the family genuinely assessed three times, the latest completion may be
+   the correct value, and the alerts were not spurious.
+
+Deliberately NOT changed this cycle: no rewrite of Olga's timestamps, and no dedup layer.
+Both would have destroyed the evidence for a defect that does not exist.
+
+**Unbuilt work confirmed real this cycle (awaiting scope decision, NOT blocked on the gate):**
+* **No idempotency key anywhere** on the milestone / deal / alert path — all fire
+  unconditionally from `after()`. Worth fixing on its own merits; a DB-backed once-per-session
+  marker neutralises all three duplicate hypotheses.
+* **No Activity/timeline entry.** Only date properties are written, and a property PATCH
+  creates no timeline Activity — which is the original complaint.
+* **Child fields have never been synced.** Determination for the test account: the data
+  **exists Atlas-side and failed to sync**, it was NOT "never captured" — `children.name` is
+  NOT NULL and is first-name-only by design (`add-child/schema.ts:6`), and `gradeLevel` has
+  been REQUIRED at capture since 2026-06-22 (`schema.ts:12`). Portal schema note:
+  `child_1_name`, `child_2_name` and `child_1/2/3_grade` exist, but **`child_3_name` does
+  not**, and the grade properties are an ENUM (`pre_k`, `k`, `1`–`8`), not free text.
+
 ## 0. 2026-08-21 — P0: signup confirmation + password reset were BOTH broken in prod, ~8 weeks each (PR #240 MERGED)
 
 **PR #240 MERGED** (merge commit f4f5d43; now the `ATLAS-ASSESSMENT` head). Title:
