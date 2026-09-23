@@ -102,11 +102,14 @@ interface ServiceMock {
   client: SupabaseClient<Database>;
   inserts: Array<{ table: string; row: unknown }>;
   updates: Array<{ table: string; patch: unknown }>;
+  /** ATLAS-003 claim_next_question arg objects, in call order. */
+  rpcCalls: Array<Record<string, unknown>>;
 }
 
 function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
   const inserts: Array<{ table: string; row: unknown }> = [];
   const updates: Array<{ table: string; patch: unknown }> = [];
+  const rpcCalls: Array<Record<string, unknown>> = [];
   // Strand-discovery `questions` SELECTs — discoverEmptyBankStrands AND (Picker
   // Calibration) discoverShortEligibleCounts — both select EXACTLY "strand".
   // Tests don't script them; inject a synthetic "bank populates every strand"
@@ -116,6 +119,20 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
   // order. Routing by select columns (not call position) means the two
   // discovery reads never steal a staged picker entry.
   const client = {
+    // ATLAS-003: the progression now claims the next question through an RPC
+    // that CASes on the session and logs the serve in one transaction. A single
+    // submit always WINS that claim, so the stub echoes the caller's pick back —
+    // which is exactly what "claimed" looks like. The contended paths
+    // (superseded / completed) are proven against a real database in
+    // tests/integration/submit-idempotency.itest.ts, since the whole mechanism
+    // is a row lock and a mock cannot exhibit one.
+    rpc(fn: string, args: Record<string, unknown>) {
+      if (fn === "claim_next_question") {
+        rpcCalls.push(args);
+        return Promise.resolve({ data: args.p_next_question_id, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
     from(table: string) {
       let selectCols = "";
       // Item #10 Phase 3: replay's new SELECT queries (assessment_sessions
@@ -221,6 +238,7 @@ function makeServiceClient(scripts: Record<string, MockResult[]>): ServiceMock {
     client: client as unknown as SupabaseClient<Database>,
     inserts,
     updates,
+    rpcCalls,
   };
 }
 
@@ -473,20 +491,26 @@ describe("submitResponseHandler — happy path mid-session", () => {
     expect(result.body.placement).toBeUndefined();
     expect(result.body.termination_reason).toBeUndefined();
 
-    // responses INSERT plus question_access_log INSERT.
     const responseInsert = svc.inserts.find((i) => i.table === "responses");
     expect(responseInsert?.row).toEqual(expectedInsertFor(5000));
 
-    const logInsert = svc.inserts.find(
-      (i) => i.table === "question_access_log",
-    );
-    expect(logInsert?.row).toMatchObject({
-      tenant_id: PARENT.tenant_id,
-      session_id: SESSION_ID,
-      child_id: CHILD_ID,
-      question_id: nextPick.id,
-      ip_address: "203.0.113.7",
+    // ATLAS-003: the serve log moved INSIDE claim_next_question, so it is no
+    // longer a separate question_access_log insert — it is written in the same
+    // transaction as the claim, which is the point. Assert the claim carries
+    // the same facts the log row used to.
+    expect(svc.rpcCalls).toHaveLength(1);
+    expect(svc.rpcCalls[0]).toMatchObject({
+      p_session_id: SESSION_ID,
+      p_tenant_id: PARENT.tenant_id,
+      p_child_id: CHILD_ID,
+      p_next_question_id: nextPick.id,
+      p_ip: "203.0.113.7",
+      // CAS key: advance only if the session still expects what we answered.
+      p_answered_question_id: QUESTION_ID,
     });
+    expect(
+      svc.inserts.filter((i) => i.table === "question_access_log"),
+    ).toHaveLength(0);
 
     // current_estimate UPDATE happened.
     const estUpdate = svc.updates.find((u) => u.table === "assessment_sessions");
@@ -1408,7 +1432,10 @@ describe("submitResponseHandler — Item #12 Phase 7.5 picker loop", () => {
     expect(result.body.next_question?.id).toBe(servedFromSecondStrand.id);
     // Single audit-log INSERT — for the served question only, NOT for the
     // exhausted strand (no question was actually shown).
-    expect(svc.inserts.filter((i) => i.table === "question_access_log")).toHaveLength(1);
+    // ATLAS-003: exactly ONE claim — the loop may try several strands, but only
+    // one serve is ever recorded. (The log now rides inside the claim.)
+    expect(svc.rpcCalls).toHaveLength(1);
+    expect(svc.inserts.filter((i) => i.table === "question_access_log")).toHaveLength(0);
     expect(result.body.termination_reason).toBeUndefined();
   });
 
