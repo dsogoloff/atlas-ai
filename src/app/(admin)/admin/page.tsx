@@ -10,6 +10,8 @@
 // (compliance §6.2 / §10.3). Rows link to the SHARED student detail under
 // /instructor/student/[childId] — never a duplicated detail page.
 
+import Link from "next/link";
+
 import { RosterStats, RosterTable } from "@/app/(instructor)/instructor/_components/roster-view";
 import {
   InstructorNotice,
@@ -60,6 +62,12 @@ export default async function AdminHomePage() {
               : `${roster.length} students across all centers`}
         </p>
       </div>
+
+      <p className="mb-6">
+        <Link href="/admin/leads" className="font-headline-adult text-sam-navy underline">
+          Follow-up leads
+        </Link>
+      </p>
 
       {roster.length > 0 && (
         <>

@@ -4,6 +4,27 @@
 > skip to the next ungated item). Tick/move items as they complete; record outcomes in
 > CURRENT_STATE.md and durable decisions in DECISIONS.md.
 
+## 0-GATE. 2026-10-21 — PARKED: BRIEF-20260826-1240 leftovers (needs Dimitri)
+
+**Status: PARKED — needs Dimitri. Do not auto-resolve.** `/admin/leads` (staff list of
+`follow_up_leads`, parent contact only, `requireStaffAal2` + admin-only + tenant-scoped service
+read) is built on `claude/BRIEF-20260826-1240-ATLAS`. Item 2 (notifier) had already shipped as
+PR #246; item 4 was withdrawn by AMENDMENT 1248. Still open:
+
+1. **Item 1, attended live test** — submit the follow-up form on production with the opt-in
+   ticked and a throwaway email; confirm whether anything reaches parents@samnewyork.com. Not
+   runnable from this lane (production access).
+2. **"Which leads have not been contacted"** — cannot be shown today: `follow_up_leads` has no
+   contacted/status column. Adding one is a migration (+ `seed.sql` mirror check) on a PII table
+   and a product call (who marks a lead contacted, and where). The page shows received date, age
+   and opt-in state only.
+3. **Drive-write conflict** — the routine prompt asks for a SAM-OS pointer handover and moving the
+   brief to `briefs/done/`; CLAUDE.md says this lane never writes the SAM-OS Drive (the PR is the
+   only seam). CLAUDE.md won; no Drive writes were made. INSP-ORCH should lift the PR body.
+4. **CLAUDE.md names Conduct Standard v3**, but SAM-OS holds
+   `ORCHESTRATOR_CONDUCT_STANDARD_v4_2026-09-02_SUPERSEDES-v3` (adds R11). Pointer not changed in
+   this PR; needs a one-line docs PR.
+
 ## 0-GATE. 2026-09-11 — PARKED: merged deal automation has never fired in prod
 
 **Status: PARKED — needs Dimitri. Do not auto-resolve.**
